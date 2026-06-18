@@ -7,7 +7,7 @@ import { createGeminiService } from "@core/ai/gemini.ts";
 import { createOpenRouterService } from "@core/ai/openrouter.ts";
 import type { AIService } from "@core/ai/types.ts";
 
-const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-lite";
+const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
 const DEFAULT_OPENROUTER_MODEL = "google/gemini-2.5-flash-lite";
 const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
@@ -29,9 +29,40 @@ function requireEnv(name: string): string {
   return apiKey;
 }
 
+// Retry transient Gemini failures (503 overload, 429 rate limit) with
+// exponential backoff. Non-transient errors throw immediately.
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  tries = 3,
+  baseMs = 600,
+): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < tries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const msg = String((err as Error)?.message || err);
+      const transient = /\b(503|429|overload|UNAVAILABLE|RESOURCE_EXHAUSTED)\b/i
+        .test(msg);
+      lastErr = err;
+      if (!transient || i === tries - 1) throw err;
+      await new Promise((r) => setTimeout(r, baseMs * 2 ** i));
+    }
+  }
+  throw lastErr;
+}
+
 function buildModel(apiKey: string, modelName: string) {
   const genAI = new GoogleGenerativeAI(apiKey);
-  return genAI.getGenerativeModel({ model: modelName });
+  const model = genAI.getGenerativeModel({ model: modelName });
+  // Wrap generateContent so every Gemini call gets transient-error retries.
+  const originalGenerateContent = model.generateContent.bind(model);
+  model.generateContent =
+    ((...args: Parameters<typeof originalGenerateContent>) =>
+      withRetry(() =>
+        originalGenerateContent(...args)
+      )) as typeof model.generateContent;
+  return model;
 }
 
 export function getAIProvider(): AIProvider {
