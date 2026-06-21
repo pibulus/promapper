@@ -150,6 +150,27 @@ Deno.test("buildTopicExtractionPrompt without existing nodes has no reuse contex
   assertEquals(prompt.includes("EXISTING TOPICS"), false);
 });
 
+Deno.test("buildTopicExtractionPrompt encodes quality rules (kebab ids, generic-label ban)", () => {
+  const prompt = buildTopicExtractionPrompt("text");
+  assertStringIncludes(prompt, "kebab-case");
+  assertStringIncludes(prompt, "Avoid labels like");
+  assertStringIncludes(prompt, "Return only JSON");
+});
+
+Deno.test("buildTopicExtractionPrompt includes existing relationships when edges given", () => {
+  const nodes = [
+    { id: "budget", label: "Budget", color: "#aaa", emoji: "💰" },
+    { id: "timeline", label: "Timeline", color: "#bbb", emoji: "📅" },
+  ];
+  const edges = [
+    { source_topic_id: "budget", target_topic_id: "timeline", color: "#888" },
+  ];
+  const prompt = buildTopicExtractionPrompt("some text", nodes, edges);
+  assertStringIncludes(prompt, "EXISTING RELATIONSHIPS");
+  // edge endpoints rendered by label, not raw id
+  assertStringIncludes(prompt, "Budget -> Timeline");
+});
+
 // ===================================================================
 // buildSummaryPrompt
 // ===================================================================
@@ -185,4 +206,9 @@ Deno.test("ACTION_ITEMS_BASE_PROMPT contains JSON schema example", () => {
   assertStringIncludes(ACTION_ITEMS_BASE_PROMPT, '"description"');
   assertStringIncludes(ACTION_ITEMS_BASE_PROMPT, '"assignee"');
   assertStringIncludes(ACTION_ITEMS_BASE_PROMPT, '"due_date"');
+});
+
+Deno.test("ACTION_ITEMS_BASE_PROMPT uses empty-array contract, not the 'No action items' sentinel", () => {
+  assertStringIncludes(ACTION_ITEMS_BASE_PROMPT, "empty array");
+  assertEquals(ACTION_ITEMS_BASE_PROMPT.includes("No action items"), false);
 });

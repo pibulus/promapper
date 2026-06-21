@@ -11,6 +11,7 @@ import type {
   ActionItem,
   Conversation,
   Edge,
+  EdgeInput,
   Node,
   NodeInput,
   Transcript,
@@ -39,6 +40,7 @@ export async function processAudio(
   conversationId: string,
   existingActionItems: ActionItem[] = [],
   existingNodes: NodeInput[] = [],
+  existingEdges: EdgeInput[] = [],
 ): Promise<ConversationFlowResult> {
   // Parallel AI analysis
   const analysis = await analyzeAudio(
@@ -46,6 +48,7 @@ export async function processAudio(
     audioInput,
     existingActionItems,
     existingNodes,
+    existingEdges,
   );
 
   // Generate title from transcription
@@ -108,6 +111,7 @@ export async function processText(
   speakers: string[] = [],
   existingActionItems: ActionItem[] = [],
   existingNodes: NodeInput[] = [],
+  existingEdges: EdgeInput[] = [],
 ): Promise<ConversationFlowResult> {
   // Parallel AI analysis
   const analysis = await analyzeText(
@@ -116,6 +120,7 @@ export async function processText(
     speakers,
     existingActionItems,
     existingNodes,
+    existingEdges,
   );
 
   // Generate title

@@ -10,15 +10,16 @@ import type {
   ActionItemInput,
   ActionItemStatusUpdate,
   ConversationGraph,
+  EdgeInput,
   NodeInput,
   TranscriptionResult,
 } from "../types/index.ts";
 
 import {
-  cleanJsonResponse,
   extractSpeakers,
   parseActionItemsResponse,
   parseGraphResponse,
+  parseStatusUpdatesResponse,
 } from "./helpers.ts";
 import {
   buildActionItemsPrompt,
@@ -167,19 +168,11 @@ export function createGeminiService(model: any): AIService {
         }
 
         const text = result.response.text();
-        const cleanedText = cleanJsonResponse(text);
 
-        if (cleanedText.trim() === "[]") {
-          return [];
-        }
-
-        try {
-          return JSON.parse(cleanedText);
-        } catch (e) {
-          console.error("Error parsing action item status JSON:", e);
-          console.error("Raw text was:", text);
-          return [];
-        }
+        // Validate against real IDs + enum so a hallucinated id/status can't
+        // silently flip the wrong task.
+        const existingIds = new Set(existingActionItems.map((item) => item.id));
+        return parseStatusUpdatesResponse(text, existingIds);
       } catch (error) {
         console.error("Error checking action item status:", error);
         return [];
@@ -193,11 +186,16 @@ export function createGeminiService(model: any): AIService {
     async extractTopics(
       text: string,
       existingNodes: NodeInput[] = [],
+      existingEdges: EdgeInput[] = [],
     ): Promise<ConversationGraph> {
       if (!text) return { nodes: [], edges: [] };
 
       try {
-        const prompt = buildTopicExtractionPrompt(text, existingNodes);
+        const prompt = buildTopicExtractionPrompt(
+          text,
+          existingNodes,
+          existingEdges,
+        );
         const result = await model.generateContent(prompt);
         const response = await result.response;
         return parseGraphResponse(response.text());

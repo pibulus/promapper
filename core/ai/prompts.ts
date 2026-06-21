@@ -5,7 +5,7 @@
  * Framework-agnostic, reusable across any implementation
  */
 
-import type { ActionItem, NodeInput } from "../types/index.ts";
+import type { ActionItem, EdgeInput, NodeInput } from "../types/index.ts";
 
 // ===================================================================
 // TRANSCRIPTION
@@ -25,8 +25,8 @@ Make sure you show each speaker's name before their text.
 // ACTION ITEMS
 // ===================================================================
 
-export const ACTION_ITEMS_BASE_PROMPT = `Extract action items
-If there are not action item then make one called 'No action items' and set the assignee to null and the due date to null.
+export const ACTION_ITEMS_BASE_PROMPT = `Extract action items.
+If there are no action items, return an empty array [].
 Return only a JSON array like this:
 [
   {
@@ -112,6 +112,7 @@ TRANSCRIPT: ${transcript}`;
 export const buildTopicExtractionPrompt = (
   text: string,
   existingNodes: NodeInput[] = [],
+  existingEdges: EdgeInput[] = [],
 ): string => {
   // Build existing nodes context to reuse them
   const existingNodesContext = existingNodes.length > 0
@@ -122,47 +123,71 @@ export const buildTopicExtractionPrompt = (
     }\n\nIMPORTANT: If you identify a topic that is the same as or very similar to an existing topic above, REUSE the existing node ID instead of creating a new one. Only create NEW node IDs for genuinely new topics that don't match any existing ones.`
     : "";
 
-  return `Analyze the following conversation and extract the main topics and their relationships.
-I want a you to break down the conversation into the topics covered and how they are related.
-I'm not interested in a chronoliogical order, but rather the relationships of the topics.
+  // Build existing edges context to preserve relationships across appends.
+  const labelById = new Map(existingNodes.map((node) => [node.id, node.label]));
+  const existingEdgesContext = existingEdges.length > 0
+    ? `\n\nEXISTING RELATIONSHIPS (preserve these when still relevant):\n${
+      existingEdges.map((edge) => {
+        const source = labelById.get(edge.source_topic_id) ||
+          edge.source_topic_id;
+        const target = labelById.get(edge.target_topic_id) ||
+          edge.target_topic_id;
+        return `- ${source} -> ${target}`;
+      }).join("\n")
+    }`
+    : "";
 
-The purpose of this it to provide a live visualisation of the conversation for note taking but also to
-prevent interruptions of the speaker by letting all participants have a visualisation of what all the topics
-that have been mentioned/discussed so that they can circle back to them later.
-Make sure to include all the main topics and their relationships, err in favour of more topics rather than less.
+  return `Analyze the following conversation and extract a high-quality topic map.
 
-Use a color scheme for the edges to show the relationships between the topics.
-Base the colours on having a white background but being muted and understated modern style of understated colours.
-Dont make it black and white.
+Goal:
+- Show the concepts discussed and how they relate, not the chronological order.
+- Help people see what has been covered so they can make connections and circle back later.
 
-Provide an emoji for each topic in the emoji field. Do not include the emoji in the label.
+Topic quality rules:
+- Create 5-12 specific topics for a substantial conversation, fewer for short input.
+- Prefer concrete noun phrases over generic buckets. Avoid labels like "Introduction", "Key Points", "Discussion", "Problem", or "Next Steps" unless the conversation is literally about that.
+- Keep labels short: 1-4 words, no emoji in the label.
+- Each new topic id must be stable lowercase kebab-case based on the label, e.g. "silk-yield" or "public-backlash".
+- Reuse existing topic IDs exactly when the new text continues an existing topic.
+- Use one semantically meaningful emoji per topic. Avoid generic emoji unless the topic is genuinely broad.
+
+Relationship quality rules:
+- Edges should mean a real conceptual relationship: dependency, cause/effect, contrast, implementation path, risk, or evidence.
+- Avoid duplicate edges and self loops.
+- Prefer a readable graph: usually 1-3 relationships per topic.
+- If possible, keep the graph connected, but do not invent weak relationships just to connect everything.
+
+Color rules:
+- Use muted modern hex colors that read on a white background.
+- Use distinct node colors for different topic families.
+- Use edge colors to subtly group relationship types; avoid pure black.
 
 Return a JSON object with the following structure:
 {
 	"nodes": [
 		{
-			"id": "node1",
-			"label": "Topic 1",
-			"color": "#4287f5",
-			"emoji": "😀"
+			"id": "silk-yield",
+			"label": "Silk Yield",
+			"color": "#5B8DEF",
+			"emoji": "🧵"
 		},
 		{
-			"id": "node2",
-			"label": "Topic 2",
-			"color": "#42f5a7",
-			"emoji": "🤔"
+			"id": "public-backlash",
+			"label": "Public Backlash",
+			"color": "#D66B8F",
+			"emoji": "📣"
 		}
 	],
 	"edges": [
 		{
-			"source_topic_id": "node1",
-			"target_topic_id": "node2",
-			"color": "#999999"
+			"source_topic_id": "silk-yield",
+			"target_topic_id": "public-backlash",
+			"color": "#8A8F98"
 		}
 	]
-}${existingNodesContext}
+}${existingNodesContext}${existingEdgesContext}
 
-IMPORTANT: Only summarise the conversation which is the text below denoted as CONVERSATION.
+Return only JSON. Do not include markdown fences, comments, or explanation.
 
 CONVERSATION: ${text}`;
 };

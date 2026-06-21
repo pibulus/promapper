@@ -13,6 +13,7 @@ import type {
   ActionItemInput,
   ActionItemStatusUpdate,
   ConversationGraph,
+  EdgeInput,
   NodeInput,
 } from "../types/index.ts";
 
@@ -32,10 +33,11 @@ export async function analyzeText(
   speakers: string[] = [],
   existingActionItems: ActionItem[] = [],
   existingNodes: NodeInput[] = [],
+  existingEdges: EdgeInput[] = [],
 ): Promise<AnalysisResult> {
   // Run all AI operations in parallel
   const [topics, actionItems, statusUpdates, summary] = await Promise.all([
-    aiService.extractTopics(text, existingNodes),
+    aiService.extractTopics(text, existingNodes, existingEdges),
     aiService.extractActionItems(text, speakers, existingActionItems),
     existingActionItems.length > 0
       ? aiService.checkActionItemStatus(text, existingActionItems)
@@ -59,6 +61,7 @@ export async function analyzeAudio(
   audioInput: AudioPart,
   existingActionItems: ActionItem[] = [],
   existingNodes: NodeInput[] = [],
+  existingEdges: EdgeInput[] = [],
 ): Promise<
   AnalysisResult & { transcription: { text: string; speakers: string[] } }
 > {
@@ -67,7 +70,7 @@ export async function analyzeAudio(
 
   // Then run parallel analysis on the transcribed text
   const [topics, actionItems, statusUpdates, summary] = await Promise.all([
-    aiService.extractTopics(transcription.text, existingNodes),
+    aiService.extractTopics(transcription.text, existingNodes, existingEdges),
     aiService.extractActionItems(
       audioInput,
       transcription.speakers,

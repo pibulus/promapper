@@ -193,16 +193,39 @@ Deno.test("extractTopics returns empty graph on empty text", async () => {
   assertEquals(graph, { nodes: [], edges: [] });
 });
 
-Deno.test("extractTopics parses valid graph JSON", async () => {
+Deno.test("extractTopics parses + normalizes valid graph JSON", async () => {
   const graphJson = JSON.stringify({
-    nodes: [{ id: "n1", label: "Budget", color: "#aaa", emoji: "💰" }],
-    edges: [{ source_topic_id: "n1", target_topic_id: "n2", color: "#bbb" }],
+    nodes: [
+      { id: "n1", label: "Budget", color: "#aabbcc", emoji: "💰" },
+      { id: "n2", label: "Timeline", color: "#ddeeff", emoji: "📅" },
+    ],
+    edges: [{ source_topic_id: "n1", target_topic_id: "n2", color: "#bbbbbb" }],
   });
   const service = createGeminiService(mockModel(graphJson));
   const graph = await service.extractTopics("budget discussion");
-  assertEquals(graph.nodes.length, 1);
+  assertEquals(graph.nodes.length, 2);
   assertEquals(graph.nodes[0].label, "Budget");
+  // "n1" is a real id (not the generic node1/topic1 pattern), so it is kept
+  assertEquals(graph.nodes[0].id, "n1");
   assertEquals(graph.edges.length, 1);
+  assertEquals(graph.edges[0].source_topic_id, "n1");
+  assertEquals(graph.edges[0].target_topic_id, "n2");
+});
+
+Deno.test("extractTopics slugifies generic node/topic ids", async () => {
+  const graphJson = JSON.stringify({
+    nodes: [{
+      id: "node1",
+      label: "Public Backlash",
+      color: "#5b8def",
+      emoji: "📣",
+    }],
+    edges: [],
+  });
+  const service = createGeminiService(mockModel(graphJson));
+  const graph = await service.extractTopics("text");
+  // generic placeholder id -> stable kebab slug from the label
+  assertEquals(graph.nodes[0].id, "public-backlash");
 });
 
 Deno.test("extractTopics returns empty graph on invalid JSON", async () => {

@@ -3,6 +3,7 @@ import type {
   ActionItemInput,
   ActionItemStatusUpdate,
   ConversationGraph,
+  EdgeInput,
   NodeInput,
   TranscriptionResult,
 } from "../types/index.ts";
@@ -53,6 +54,7 @@ export interface AIService {
   extractTopics(
     text: string,
     existingNodes?: NodeInput[],
+    existingEdges?: EdgeInput[],
   ): Promise<ConversationGraph>;
   generateSummary(text: string): Promise<string>;
   generateMarkdown(formatPrompt: string, text: string): Promise<string>;

@@ -5,12 +5,12 @@
  */
 
 import { encodeBase64 } from "$std/encoding/base64.ts";
-import type { ActionItem, NodeInput } from "../types/index.ts";
+import type { ActionItem, EdgeInput, NodeInput } from "../types/index.ts";
 import {
-  cleanJsonResponse,
   extractSpeakers,
   parseActionItemsResponse,
   parseGraphResponse,
+  parseStatusUpdatesResponse,
 } from "./helpers.ts";
 import {
   buildActionItemsPrompt,
@@ -307,19 +307,11 @@ export function createOpenRouterService(
         const text = typeof input === "string"
           ? await chatText(`${prompt}\n\nText: ${input}`)
           : await chatAudio(prompt, input);
-        const cleanedText = cleanJsonResponse(text);
 
-        if (cleanedText.trim() === "[]") {
-          return [];
-        }
-
-        try {
-          return JSON.parse(cleanedText);
-        } catch (error) {
-          console.error("Error parsing action item status JSON:", error);
-          console.error("Raw text was:", text);
-          return [];
-        }
+        // Validate against real IDs + enum so a hallucinated id/status can't
+        // silently flip the wrong task.
+        const existingIds = new Set(existingActionItems.map((item) => item.id));
+        return parseStatusUpdatesResponse(text, existingIds);
       } catch (error) {
         console.error("Error checking action item status:", error);
         return [];
@@ -329,12 +321,15 @@ export function createOpenRouterService(
     async extractTopics(
       text: string,
       existingNodes: NodeInput[] = [],
+      existingEdges: EdgeInput[] = [],
     ) {
       if (!text) return { nodes: [], edges: [] };
 
       try {
         return parseGraphResponse(
-          await chatText(buildTopicExtractionPrompt(text, existingNodes)),
+          await chatText(
+            buildTopicExtractionPrompt(text, existingNodes, existingEdges),
+          ),
         );
       } catch (error) {
         console.error("Error extracting topics:", error);

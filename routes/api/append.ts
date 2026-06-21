@@ -49,6 +49,7 @@ export const handler: Handlers = {
         | null;
       const existingSummary = formData.get("existingSummary") as string | null;
       const existingNodesJson = formData.get("existingNodes") as string | null;
+      const existingEdgesJson = formData.get("existingEdges") as string | null;
 
       if (!audioFile) {
         return new Response(
@@ -82,6 +83,7 @@ export const handler: Handlers = {
         conversationId,
       );
       const existingNodes = parseExistingNodes(existingNodesJson);
+      const existingEdges = parseExistingEdges(existingEdgesJson);
       const { part: audioPart, fileName } = await uploadAudioFile(audioFile);
 
       // Process audio through nervous system with existing action items and nodes
@@ -99,6 +101,7 @@ export const handler: Handlers = {
           conversationId,
           existingActionItems,
           existingNodes,
+          existingEdges,
         );
       } finally {
         await deleteUploadedFile(fileName);
@@ -237,6 +240,17 @@ function parseExistingNodes(json: string | null) {
     return Array.isArray(parsed) ? parsed.slice(0, 200) : [];
   } catch (error) {
     console.warn("Failed to parse existing nodes:", error);
+    return [];
+  }
+}
+
+function parseExistingEdges(json: string | null) {
+  if (!json) return [];
+  try {
+    const parsed = JSON.parse(json);
+    return Array.isArray(parsed) ? parsed.slice(0, 400) : [];
+  } catch (error) {
+    console.warn("Failed to parse existing edges:", error);
     return [];
   }
 }
