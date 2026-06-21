@@ -13,6 +13,7 @@ import {
 import { guardRequest } from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
 import { deleteUploadedFile, uploadAudioFile } from "@services/audio.ts";
+import { pushResultToRoom } from "@services/partyUpdates.ts";
 
 export const handler: Handlers = {
   async POST(req) {
@@ -63,6 +64,9 @@ export const handler: Handlers = {
           await deleteUploadedFile(fileName);
         }
 
+        // If this came from a live room, push the result to all collaborators.
+        await pushResultToRoom(formData.get("roomId") as string | null, result);
+
         return new Response(JSON.stringify(result), {
           headers: { "Content-Type": "application/json" },
         });
@@ -73,7 +77,7 @@ export const handler: Handlers = {
       // ===============================================================
 
       const body = await req.json();
-      const { text, speakers = [] } = body;
+      const { text, speakers = [], roomId = null } = body;
 
       if (!text) {
         return new Response(
@@ -89,6 +93,9 @@ export const handler: Handlers = {
         conversationId,
         speakers,
       );
+
+      // If this came from a live room, push the result to all collaborators.
+      await pushResultToRoom(roomId, result);
 
       return new Response(JSON.stringify(result), {
         headers: { "Content-Type": "application/json" },

@@ -17,6 +17,7 @@ import type { ActionItem } from "@core/types/index.ts";
 import { guardRequest } from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
 import { deleteUploadedFile, uploadAudioFile } from "@services/audio.ts";
+import { pushResultToRoom } from "@services/partyUpdates.ts";
 
 export const handler: Handlers = {
   async POST(req) {
@@ -148,6 +149,12 @@ export const handler: Handlers = {
         ...result,
         actionItems: mergedActionItems,
       };
+
+      // If this came from a live room, push the merged result to collaborators.
+      await pushResultToRoom(
+        formData.get("roomId") as string | null,
+        finalResult,
+      );
 
       return new Response(JSON.stringify(finalResult), {
         headers: { "Content-Type": "application/json" },
