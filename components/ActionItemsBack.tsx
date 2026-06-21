@@ -201,7 +201,8 @@ export default function ActionItemsBack(
                   onClick={() => copyToClipboard(buildSummary(items))}
                   class="card-back-btn"
                 >
-                  📋 Copy summary
+                  <i class="fa fa-clipboard" aria-hidden="true"></i>{" "}
+                  Copy summary
                 </button>
                 <button
                   type="button"

@@ -61,6 +61,10 @@ export const softMint: Theme = {
   cssVars: {
     "--color-base-solid": "#e8f8f5",
     "--shadow-soft": "0 4px 12px rgba(93, 190, 170, 0.12)",
+    // Cool theme: pull card surfaces a few degrees toward the page's near-white
+    // so cards belong to the page instead of floating warm-cream.
+    "--surface-card": "#f2fbf8",
+    "--surface-card-deep": "#e9f6f2",
     "--gradient-bg":
       "radial-gradient(circle at 20% 20%, rgba(93, 190, 170, 0.14), transparent 45%), radial-gradient(circle at 80% 10%, rgba(200, 240, 220, 0.18), transparent 50%), linear-gradient(125deg, #f4fdf9 0%, #e8f8f5 50%, #f0fdf7 100%)",
   },
@@ -82,6 +86,9 @@ export const lavenderDusk: Theme = {
   cssVars: {
     "--color-base-solid": "#efe5f7",
     "--shadow-soft": "0 4px 12px rgba(155, 126, 199, 0.12)",
+    // Cool theme: nudge card surfaces toward the page's lilac near-white.
+    "--surface-card": "#f8f4fd",
+    "--surface-card-deep": "#f0eafa",
     "--gradient-bg":
       "radial-gradient(circle at 20% 20%, rgba(155, 126, 199, 0.14), transparent 45%), radial-gradient(circle at 80% 10%, rgba(219, 201, 237, 0.18), transparent 50%), linear-gradient(125deg, #faf7ff 0%, #f0e8f8 50%, #f5f0ff 100%)",
   },

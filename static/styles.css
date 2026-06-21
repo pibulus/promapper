@@ -114,9 +114,19 @@
     var(--color-accent) 8%,
     transparent
   );
-  /* Warm amber for status/attention (overdue, due-soon) — a data point, not a siren. */
-  --status-amber: rgba(255, 224, 171, 0.55);
-  --status-amber-ink: var(--soft-brown);
+  /* Warm amber for status/attention (overdue, due-soon) — a data point, not a
+     siren. Leans into the active accent via color-mix so it reads on-theme
+     (honey on PEACH, accent-tinted honey on MINT/ROSE) instead of orphaned. */
+  --status-amber: color-mix(
+    in srgb,
+    var(--color-accent) 15%,
+    rgba(255, 224, 171, 0.5)
+  );
+  --status-amber-ink: color-mix(
+    in srgb,
+    var(--color-accent) 55%,
+    var(--soft-brown)
+  );
 
   /* Module tokens */
   --module-ink: #1a130f;
@@ -131,6 +141,13 @@
   --soft-brown: #3a2a22; /* Secondary warm dark - use for accents/secondary text */
   --soft-cream: #fff7ef; /* Warm cream for input backgrounds - NOT pure white */
   --soft-cream-dark: #faf3e9; /* Slightly darker cream for subtle inset areas */
+
+  /* Card surface tokens. Default to warm cream (the soul of the 4 warm themes).
+     Cool themes (MINT/LAVENDER) override these in core/theme/themes.ts so cards
+     sit in the same temperature as their page instead of floating warm. All
+     card-surface consumers point at these, so an override propagates everywhere. */
+  --surface-card: var(--soft-cream);
+  --surface-card-deep: var(--soft-cream-dark);
 
   /* ===================================================================
      UNIFIED DESIGN SYSTEM - Typography, Shadows, Surfaces
@@ -159,9 +176,10 @@
     0.25
   ); /* Neo-brutalist offset shadow */
 
-  /* Warm Surface Colors */
-  --surface-cream: var(--soft-cream); /* Main card backgrounds */
-  --surface-cream-hover: var(--soft-cream-dark); /* Hover state for cards */
+  /* Warm Surface Colors (now route through --surface-card so cool themes can
+     shift card temperature without touching the raw --soft-cream golden master). */
+  --surface-cream: var(--surface-card); /* Main card backgrounds */
+  --surface-cream-hover: var(--surface-card-deep); /* Hover state for cards */
   --surface-white-warm: #fffef7; /* Warmest near-white */
   --surface-glass-warm: rgba(255, 247, 239, 0.65); /* Warm glassmorphism */
 
@@ -1530,7 +1548,7 @@ body {
     background: linear-gradient(
       180deg,
       color-mix(in srgb, var(--color-accent) 10%, transparent) 0%,
-      var(--soft-cream) 100%
+      var(--surface-card) 100%
     ) !important;
   }
 
@@ -1587,6 +1605,10 @@ body {
   backdrop-filter: blur(var(--glass-blur));
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border-radius: var(--border-radius-lg);
+  /* Barely-there accent-tinted edge so each theme reads distinct at a glance
+     (ROSE ≠ PEACH) without coloring the surface. */
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 20%, var(--color-border));
   box-shadow: var(--shadow-lifted);
   height: 100%;
   overflow: hidden;
@@ -1679,7 +1701,7 @@ body {
   /* Neutral cream header with an accent stripe — readable on every theme
      (accent-on-white text failed WCAG AA) and gives the 4 cards a calmer,
      more cohesive top band instead of 4 saturated accent blocks. */
-  background: var(--soft-cream-dark);
+  background: var(--surface-card-deep);
   padding: var(--card-padding);
   border-bottom: var(--border-width) solid var(--color-border);
   border-left: 4px solid var(--color-accent);
@@ -1716,7 +1738,7 @@ body {
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--color-accent) 10%, transparent) 0%,
-    var(--soft-cream) 100%
+    var(--surface-card) 100%
   );
 }
 
@@ -1825,7 +1847,11 @@ body {
   border-radius: 50%;
   margin-right: 5px;
   vertical-align: middle;
-  background: rgba(248, 196, 113, 0.95);
+  background: color-mix(
+    in srgb,
+    var(--color-accent) 22%,
+    rgba(248, 196, 113, 0.95)
+  );
 }
 
 .action-item-description {
@@ -1967,7 +1993,7 @@ body {
 .card-back-bar {
   height: 0.5rem;
   border-radius: 999px;
-  background: var(--soft-cream-dark);
+  background: var(--surface-card-deep);
   overflow: hidden;
 }
 .card-back-bar-fill {
@@ -2042,13 +2068,25 @@ body {
 
 /* Filter pills (Mine / Hide done) */
 .action-filter-pill {
+  position: relative;
   font-size: var(--tiny-size);
   font-weight: 600;
-  padding: 0.2rem 0.6rem;
+  padding: 0.35rem 0.7rem;
   border-radius: 999px;
   border: 2px solid var(--color-border);
   cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast);
+}
+/* 44px touch target without growing the visual (mirrors the checkbox/edit btn). */
+.action-filter-pill::before {
+  content: "";
+  position: absolute;
+  inset: 50%;
+  min-width: 44px;
+  min-height: 44px;
+  width: 100%;
+  height: 100%;
+  transform: translate(-50%, -50%);
 }
 
 .action-filter-pill:hover {
@@ -2063,7 +2101,8 @@ body {
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
   background: var(--status-amber);
-  border: 1px solid var(--border-cream-medium);
+  border: 1px solid
+    color-mix(in srgb, var(--color-accent) 18%, var(--color-border));
   color: var(--status-amber-ink);
 }
 
