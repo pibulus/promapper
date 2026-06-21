@@ -17,6 +17,27 @@ export const conversationData = signal<ConversationData | null>(null);
 // Flag to prevent auto-save when viewing shared conversations
 export const isViewingShared = signal<boolean>(false);
 
+// Live-collab loopback guard: when a remote update is being applied, this is
+// true so the live-sync broadcaster doesn't echo it back to the room.
+export const applyingRemoteUpdate = { current: false };
+
+/**
+ * Apply a conversation snapshot that arrived from the live room, without
+ * triggering a re-broadcast (echo loop). Use this instead of assigning
+ * conversationData.value directly for remote updates.
+ */
+export function applyRemoteConversation(data: ConversationData): void {
+  applyingRemoteUpdate.current = true;
+  try {
+    conversationData.value = data;
+  } finally {
+    // Release after the synchronous signal-effect microtask flush.
+    queueMicrotask(() => {
+      applyingRemoteUpdate.current = false;
+    });
+  }
+}
+
 // Global processing state (true when AI is analyzing)
 export const isProcessing = signal<boolean>(false);
 
