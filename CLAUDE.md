@@ -173,15 +173,34 @@ Adding a tool should be drop-a-file + register-a-line:
    flows locally, but browser-recorded `audio/webm` should be verified on real
    desktop and iPhone. Interactive graph gestures (drag-to-merge, rename/delete)
    and the history star/backup flow also want real-device QA.
-3. **Live collaboration (queued)**: PartyKit collab is NOT yet ported (it was
-   step 11 of the plan, intentionally deferred). When tackled: build the worker
-   on ziplist's room structure + project_mapper's server-push, with the
-   chat-sidebar and named-presence UX mined from the `conversation_mapper`
-   `live-collab-action-items` / `dev` branches. PartyKit's bundler does NOT
-   honor Deno import aliases — the worker + protocol file must use relative
-   imports.
-4. **Filtered action-item sharing (queued)**: share one assignee's subset with
+3. **Filtered action-item sharing (queued)**: share one assignee's subset with
    filter metadata (from the `action-items-filtered-sharing` branch).
+
+## Live Collaboration (PartyKit)
+
+Built and working locally (`./node_modules/.bin/partykit dev`). Open a
+conversation, hit "Go Live" → `/live/<roomId>`; anyone with the link views +
+edits in real time, AI results push to the room, plus presence, chat, named
+avatars, and join/leave toasts. Room id is the secret (no passwords); rooms
+expire 24h after last activity.
+
+- Worker: `party/conversationRoom.ts` + `party/conversationProtocol.ts`.
+  RELATIVE IMPORTS ONLY — the PartyKit bundler ignores Deno `@core/` aliases, so
+  the protocol's sanitizers mirror `core/realtime/shareProtocol.ts` on purpose.
+  `partykit.json` registers it under the `conversation` party name. `deno check`
+  excludes `party/` (it imports `partykit/server`, an npm-only type).
+- Client: `signals/partyService.ts` (PartySocket), `signals/liveSync.ts`
+  (loopback-guarded two-way sync — `applyRemoteConversation` sets a guard so the
+  outbound effect doesn't echo), `signals/presenceStore.ts` +
+  `signals/partyConnectionStore.ts`. Route `routes/live/[roomId].tsx` +
+  `islands/LiveCollabIsland.tsx` + `islands/ChatSidebar.tsx`.
+- Server-push: `services/partyUpdates.ts`; `/api/process` + `/api/append` POST
+  results to the room when a `roomId` is passed. `/api/live/create` seeds a
+  room.
+- **To deploy (manual):** `npm run party:deploy` (needs a PartyKit/Cloudflare
+  account), then set `PUBLIC_PARTYKIT_HOST` (and `PARTYKIT_HOST` +
+  `PARTYKIT_UPDATE_TOKEN`) in the app env. Unset = collab silently disabled
+  (single-player unaffected).
 
 ## When Adding Features
 
