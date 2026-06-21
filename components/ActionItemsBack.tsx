@@ -129,12 +129,12 @@ export default function ActionItemsBack(
               {(overdue > 0 || dueSoon > 0) && (
                 <div class="flex flex-wrap gap-2">
                   {overdue > 0 && (
-                    <span class="action-filter-pill is-danger">
+                    <span class="action-status-pill">
                       {overdue} overdue
                     </span>
                   )}
                   {dueSoon > 0 && (
-                    <span class="action-filter-pill">
+                    <span class="action-status-pill">
                       {dueSoon} due soon
                     </span>
                   )}

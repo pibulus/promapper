@@ -634,7 +634,7 @@ export default function ActionItemsCard(
                   ? (
                     <div class="empty-state">
                       <div class="empty-state-icon">📋</div>
-                      <div class="empty-state-text">No action items yet</div>
+                      <div class="empty-state-text">It's quiet here.</div>
                       <button
                         onClick={() => showAddModal.value = true}
                         class="action-header-btn px-3 py-1 rounded mt-2"
@@ -713,7 +713,7 @@ export default function ActionItemsCard(
                             }`,
                             boxShadow: item.status === "completed"
                               ? "none"
-                              : "2px 2px 0 rgba(0,0,0,0.1)",
+                              : "2px 2px 0 rgba(30,23,20,0.12)",
                             // touch-action none on draggable rows lets long-press
                             // grab take over from scrolling without the browser
                             // hijacking the gesture.
@@ -1111,12 +1111,16 @@ export default function ActionItemsCard(
                                         <i class="fa fa-calendar text-xs">
                                         </i>
                                         <span
+                                          class={isOverdue ? "is-overdue" : ""}
                                           style={{
                                             color: isOverdue
-                                              ? "var(--color-danger)"
+                                              ? "var(--soft-brown)"
                                               : item.due_date
                                               ? "var(--color-text)"
                                               : "var(--color-text-secondary)",
+                                            fontWeight: isOverdue
+                                              ? "700"
+                                              : "400",
                                           }}
                                         >
                                           {item.due_date
@@ -1124,9 +1128,13 @@ export default function ActionItemsCard(
                                             : "None"}
                                         </span>
                                       </button>
-                                      {/* Date presets */}
+                                      {
+                                        /* Date presets — quiet until the row is
+                                          hovered/focused (always-on for touch),
+                                          so rows aren't crammed with editor UI. */
+                                      }
                                       <div
-                                        class="flex gap-1 mt-1 flex-wrap"
+                                        class="action-item-date-presets flex gap-1 mt-1 flex-wrap"
                                         style={{ fontSize: "var(--tiny-size)" }}
                                       >
                                         <button
@@ -1282,8 +1290,8 @@ export default function ActionItemsCard(
             onClick={confirmDelete}
             class="flex-1 py-2 px-4 rounded font-bold text-white"
             style={{
-              background: "var(--color-danger)",
-              border: "none",
+              background: "var(--soft-black)",
+              border: "2px solid var(--border-cream-strong)",
               fontSize: "var(--small-size)",
               transition: "var(--transition-fast)",
             }}
@@ -1354,8 +1362,8 @@ export default function ActionItemsCard(
             }}
             class="flex-1 py-2 px-4 rounded font-bold text-white"
             style={{
-              background: "var(--color-danger)",
-              border: "none",
+              background: "var(--soft-black)",
+              border: "2px solid var(--border-cream-strong)",
               fontSize: "var(--small-size)",
               transition: "var(--transition-fast)",
             }}
@@ -1588,11 +1596,10 @@ export default function ActionItemsCard(
                 <button
                   type="button"
                   onClick={() => newItemDueDate.value = ""}
-                  class="action-filter-pill"
+                  class="action-filter-pill is-danger"
                   style={{
                     padding: "0.15rem 0.55rem",
                     fontSize: "var(--tiny-size)",
-                    color: "var(--color-danger)",
                   }}
                 >
                   Clear

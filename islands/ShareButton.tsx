@@ -67,106 +67,136 @@ export default function ShareButton() {
     }
   }
 
+  const isLocalOnly = share.value?.mode === "local-only";
+
   return (
     <div class="relative">
-      {/* Share Button */}
+      {
+        /* Share Button — neutral house chip (dark ink fill), one accent system,
+          no per-button semantic rainbow. */
+      }
       <button
         onClick={handleShare}
         disabled={!canShare.value || isGenerating.value}
-        class={`inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg border-2 px-3 py-2 font-bold transition-colors sm:px-4 ${
-          canShare.value && !isGenerating.value
-            ? "bg-green-500 text-white border-green-700 hover:bg-green-600"
-            : "bg-gray-300 text-gray-500 border-gray-400 cursor-not-allowed"
-        }`}
+        class="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 px-3 py-2 font-bold sm:px-4"
+        style={{
+          borderRadius: "var(--border-radius-sm)",
+          border: "2px solid var(--border-cream-medium)",
+          background: canShare.value && !isGenerating.value
+            ? "var(--soft-black)"
+            : "var(--surface-cream-hover)",
+          color: canShare.value && !isGenerating.value
+            ? "var(--soft-cream)"
+            : "var(--color-text-secondary)",
+          cursor: canShare.value && !isGenerating.value
+            ? "pointer"
+            : "not-allowed",
+          transition: "var(--transition-fast)",
+        }}
         title="Share conversation"
         aria-label="Share conversation"
       >
         <span aria-hidden="true">{isGenerating.value ? "🔄" : "🔗"}</span>
         <span class="hidden sm:inline">
-          {isGenerating.value ? "Generating..." : "Share Conversation"}
+          {isGenerating.value ? "Generating…" : "Share"}
         </span>
       </button>
 
-      {/* Share URL Display */}
+      {
+        /* Share URL popover — warm cream surface; local-only uses a warm amber
+          status tint (a heads-up, not an error). */
+      }
       {share.value && (
         <div
-          class={`absolute right-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] space-y-2 rounded-lg border-2 p-3 shadow-lg ${
-            share.value.mode !== "local-only"
-              ? "bg-green-50 border-green-300"
-              : "bg-amber-50 border-amber-300"
-          }`}
+          class="absolute right-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] space-y-2 p-3"
+          style={{
+            borderRadius: "var(--border-radius)",
+            border: "2px solid var(--border-cream-medium)",
+            background: isLocalOnly
+              ? "var(--status-amber)"
+              : "var(--surface-cream)",
+            boxShadow: "var(--shadow-md)",
+          }}
         >
           <p
-            class={`text-xs font-bold ${
-              share.value.mode !== "local-only"
-                ? "text-green-800"
-                : "text-amber-900"
-            }`}
+            class="text-xs font-bold"
+            style={{ color: "var(--color-text)" }}
           >
             {share.value.mode === "public-url"
-              ? "Portable share link:"
+              ? "Portable share link"
               : share.value.mode === "server-share"
-              ? "Share link:"
-              : "Saved on this device:"}
+              ? "Share link"
+              : "Saved on this device"}
           </p>
           <div class="flex gap-2">
             <input
               type="text"
               value={share.value.url}
               readonly
-              class={`min-w-0 flex-1 rounded border-2 bg-white px-2 py-1 font-mono text-xs ${
-                share.value.mode !== "local-only"
-                  ? "border-green-300"
-                  : "border-amber-300"
-              }`}
+              class="min-w-0 flex-1 px-2 py-1 font-mono text-xs"
+              style={{
+                borderRadius: "var(--border-radius-sm)",
+                border: "2px solid var(--border-cream)",
+                background: "var(--surface-white-warm)",
+                color: "var(--color-text)",
+              }}
               onClick={(e) => (e.target as HTMLInputElement).select()}
             />
             <button
               onClick={handleCopyUrl}
-              class={`min-h-9 rounded border-2 px-3 py-1 text-xs font-bold text-white ${
-                share.value.mode !== "local-only"
-                  ? "bg-green-500 border-green-700 hover:bg-green-600"
-                  : "bg-amber-500 border-amber-700 hover:bg-amber-600"
-              }`}
-              title={share.value.mode !== "local-only"
-                ? "Copy share link"
-                : "Copy this-device link"}
-              aria-label={share.value.mode !== "local-only"
-                ? "Copy share link"
-                : "Copy this-device link"}
+              class="min-h-9 px-3 py-1 text-xs font-bold"
+              style={{
+                borderRadius: "var(--border-radius-sm)",
+                border: "none",
+                background: "var(--color-accent)",
+                color: "#fff",
+              }}
+              title="Copy link"
+              aria-label="Copy link"
             >
               📋
             </button>
           </div>
           <p
-            class={`text-xs ${
-              share.value.mode !== "local-only"
-                ? "text-green-700"
-                : "text-amber-800"
-            }`}
+            class="text-xs"
+            style={{ color: "var(--color-text-secondary)" }}
           >
             {share.value.mode === "public-url"
-              ? "✅ Portable link includes the shared data"
+              ? "Portable link includes the shared data"
               : share.value.mode === "server-share"
-              ? "✅ Link is stored server-side and expires in 30 days"
-              : "⚠️ Too large for a portable URL. This link only works in this browser."}
+              ? "Stored server-side, expires in 30 days"
+              : "Too large for a portable URL — this link only works in this browser"}
           </p>
         </div>
       )}
 
-      {/* Copied Notification */}
+      {/* Copied notification — warm rose, on-accent. */}
       {showCopied.value && (
-        <div class="bg-purple-100 border-2 border-purple-400 rounded-lg p-2 text-center animate-pulse">
-          <p class="text-sm font-bold text-purple-700">
-            ✨ Copied to clipboard!
+        <div
+          class="p-2 text-center"
+          style={{
+            borderRadius: "var(--border-radius-sm)",
+            border:
+              "2px solid color-mix(in srgb, var(--color-accent) 25%, transparent)",
+            background: "var(--accent-rose-wash)",
+          }}
+        >
+          <p
+            class="text-sm font-bold"
+            style={{ color: "var(--color-accent)" }}
+          >
+            ✨ Copied to clipboard
           </p>
         </div>
       )}
 
-      {/* Help Text */}
+      {/* Help text */}
       {!canShare.value && (
-        <p class="text-xs text-gray-500 text-center">
-          Upload a conversation to enable sharing
+        <p
+          class="text-xs text-center"
+          style={{ color: "var(--color-text-secondary)" }}
+        >
+          Add a conversation to enable sharing
         </p>
       )}
     </div>

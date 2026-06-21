@@ -95,12 +95,28 @@
   --z-modal: 50;
   --z-drawer: 40;
 
-  /* Status Colors */
+  /* Status Colors
+     ⚠️ --color-danger* is RESERVED for true data-loss confirm modals ONLY.
+     This is a pastel-punk app — "No red. No scolding." Destructive affordances
+     (clear/remove/delete pills + buttons) signal intent by RECESSION + the warm
+     rose wash below, never by alarm red. Do NOT put --color-danger* (or raw
+     Tailwind red/green/amber/gray) on card surfaces, pills, or text. */
   --color-danger: #dc2626; /* AA with white text (was #ef4444 @ 3.76) */
   --color-danger-bg: #fee2e2;
   --color-danger-border: #fecaca;
   --color-danger-text: #b91c1c;
   --color-danger-dark: #dc2626;
+
+  /* Warm-rose wash for destructive intent (recession, not alarm). */
+  --accent-rose-wash: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  --accent-rose-wash-soft: color-mix(
+    in srgb,
+    var(--color-accent) 8%,
+    transparent
+  );
+  /* Warm amber for status/attention (overdue, due-soon) — a data point, not a siren. */
+  --status-amber: rgba(255, 224, 171, 0.55);
+  --status-amber-ink: var(--soft-brown);
 
   /* Module tokens */
   --module-ink: #1a130f;
@@ -306,6 +322,10 @@ body {
 .action-item-delete-btn {
   position: relative;
   background: var(--soft-cream-dark);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
 }
 /* 44px touch target without growing the 24px visual (mirrors the checkbox). */
 .action-item-delete-btn::before {
@@ -317,8 +337,10 @@ body {
   transform: translate(-50%, -50%);
 }
 .action-item-delete-btn:hover {
-  background: var(--color-danger-bg);
-  color: var(--color-danger-text);
+  /* Warm rose lift (project_mapper/ziplist pattern) — never reddens. */
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--surface-cream));
+  color: var(--color-accent);
+  transform: scale(1.08) rotate(6deg);
 }
 
 /* Chevron button next to assignee input in the Add modal */
@@ -1733,8 +1755,77 @@ body {
   }
 }
 
+/* Drag handle — a discoverable grabbable affordance (the reorder feature was
+   invisible). Faint at rest, warms + lifts on row hover; turns accent on grab. */
+.drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--border-radius-sm);
+  opacity: 0.35;
+  transition:
+    opacity var(--transition-fast),
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+.action-item-card:hover .drag-handle,
+.action-item-card:focus-within .drag-handle {
+  opacity: 0.75;
+}
+.drag-handle:hover {
+  background: var(--surface-cream-hover);
+  color: var(--color-accent) !important;
+}
+@media (hover: none) {
+  .drag-handle {
+    opacity: 0.6;
+  }
+}
 .drag-handle:active {
   cursor: grabbing;
+  color: var(--color-accent) !important;
+}
+
+/* Date presets quiet at rest, revealed on row hover/focus — keeps rows calm
+   instead of crammed with editor buttons. The date chip stays the always-on
+   tap target. Touch (no hover) keeps them visible since there's no hover. */
+.action-item-date-presets {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    opacity var(--transition-fast),
+    max-height var(--transition-medium);
+}
+.action-item-card:hover .action-item-date-presets,
+.action-item-card:focus-within .action-item-date-presets {
+  max-height: 3rem;
+  opacity: 1;
+}
+@media (hover: none) {
+  .action-item-date-presets {
+    max-height: 3rem;
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .action-item-date-presets {
+    transition: none;
+  }
+}
+
+/* Overdue date: warm amber dot as a gentle nudge, not red alarm text. */
+.is-overdue::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+  background: rgba(248, 196, 113, 0.95);
 }
 
 .action-item-description {
@@ -1910,13 +2001,18 @@ body {
   opacity: 0.4;
   cursor: default;
 }
+/* Destructive bulk button: the QUIETEST control — recedes, no red. Hover only
+   reveals a faint warm-rose wash. Safety comes from the undo toast, not alarm. */
 .card-back-btn.is-danger {
-  background: var(--color-danger-bg);
-  border-color: var(--color-danger-border);
-  color: var(--color-danger-text);
+  background: transparent;
+  border-color: var(--border-cream);
+  color: var(--color-text-secondary);
+  font-weight: 600;
 }
 .card-back-btn.is-danger:hover:not(:disabled) {
-  border-color: var(--color-danger);
+  background: var(--accent-rose-wash-soft);
+  border-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  color: var(--color-accent);
 }
 
 /* Section divider above an actions block. */
@@ -1959,16 +2055,29 @@ body {
   border-color: var(--color-accent);
 }
 
-/* Clear-date pill: a soft danger tint so it reads as "remove" without the cry-
-   wolf weight of a full danger button (it just nulls a due date, one-tap
-   reversible). Stops it adopting the accent hover ring meant for set-actions. */
+/* Status pill (overdue / due soon) — a warm amber DATA POINT, not a siren.
+   Both states share the amber so they read as "status"; the label differentiates. */
+.action-status-pill {
+  font-size: var(--tiny-size);
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--status-amber);
+  border: 1px solid var(--border-cream-medium);
+  color: var(--status-amber-ink);
+}
+
+/* Clear-date pill: recessive ghost (it just nulls a due date — one-tap,
+   reversible). No red; hover only warms with a faint rose wash. */
 .action-filter-pill.is-danger {
-  color: var(--color-danger);
-  background: var(--color-danger-bg);
-  border-color: var(--color-danger-border);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border-color: var(--border-cream);
 }
 .action-filter-pill.is-danger:hover {
-  border-color: var(--color-danger);
+  background: var(--accent-rose-wash);
+  border-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  color: var(--color-accent);
 }
 
 /* ===================================================================
