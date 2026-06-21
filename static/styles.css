@@ -1645,6 +1645,7 @@ body {
 }
 
 .action-item-checkbox-button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1659,6 +1660,17 @@ body {
     background 160ms ease,
     border-color 160ms ease,
     transform 160ms ease;
+}
+
+/* Expand the hit area to a 44px touch target without changing the 22px visual
+   (marking done is the #1 action — a half-size target is felt every time). */
+.action-item-checkbox-button::before {
+  content: "";
+  position: absolute;
+  inset: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
 }
 
 .action-item-checkbox-button:hover,
@@ -1679,6 +1691,21 @@ body {
 
 .action-item-delete {
   box-shadow: 0 2px 6px rgba(30, 23, 20, 0.08);
+}
+
+/* Filter pills (Mine / Hide done) */
+.action-filter-pill {
+  font-size: var(--tiny-size);
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 2px solid var(--color-border);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.action-filter-pill:hover {
+  border-color: var(--color-accent);
 }
 
 .topic-visualizations-shell {

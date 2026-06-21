@@ -54,6 +54,7 @@ export default function DashboardIsland() {
         {/* Card 3: Action Items */}
         <ActionItemsCard
           actionItems={actionItems}
+          conversationId={conversation.id ?? ""}
           onUpdateItems={setActionItems}
         />
 

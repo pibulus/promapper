@@ -21,6 +21,7 @@ interface ActionItem {
 
 interface ActionItemsCardProps {
   actionItems: ActionItem[];
+  conversationId: string;
   onUpdateItems: (items: ActionItem[]) => void;
 }
 
@@ -61,11 +62,15 @@ function formatFriendlyDate(dateString: string): string {
 }
 
 export default function ActionItemsCard(
-  { actionItems, onUpdateItems }: ActionItemsCardProps,
+  { actionItems, conversationId, onUpdateItems }: ActionItemsCardProps,
 ) {
   // State
   const visibleItems = useSignal<ActionItem[]>(actionItems);
   const sortMode = useSignal<"manual" | "assignee" | "date">("manual");
+  // Filters: reduce the list (sort only reorders). Two booleans cover ~90% of
+  // "what's mine / what's still open" without a heavy filter UI.
+  const filterMine = useSignal(false);
+  const hideDone = useSignal(false);
 
   // Pointer-based drag-to-reorder (mouse + touch + pen). Declared here, above
   // the sortedActionItems computed that reads previewOrder, so there's no
@@ -202,6 +207,22 @@ export default function ActionItemsCard(
     return () => modal.removeEventListener("keydown", handleTab);
   }, [showAddModal.value]);
 
+  // Header progress count: "N of M done" (the emotional payoff of a list).
+  const progress = useComputed(() => {
+    const total = visibleItems.value.length;
+    const done = visibleItems.value.filter((i) => i.status === "completed")
+      .length;
+    return { total, done };
+  });
+
+  const sortLabel = useComputed(() =>
+    sortMode.value === "manual"
+      ? "Manual"
+      : sortMode.value === "assignee"
+      ? "By person"
+      : "By date"
+  );
+
   // Filter and sort action items
   const sortedActionItems = useComputed(() => {
     let filteredItems = [...visibleItems.value];
@@ -212,6 +233,15 @@ export default function ActionItemsCard(
         item.description.toLowerCase().includes(query) ||
         item.assignee?.toLowerCase().includes(query) ||
         item.due_date?.includes(query)
+      );
+    }
+
+    if (filterMine.value) {
+      filteredItems = filteredItems.filter((item) => item.assignee === "Me");
+    }
+    if (hideDone.value) {
+      filteredItems = filteredItems.filter((item) =>
+        item.status !== "completed"
       );
     }
 
@@ -402,7 +432,8 @@ export default function ActionItemsCard(
 
     const newItem: ActionItem = {
       id: crypto.randomUUID(),
-      conversation_id: visibleItems.value[0]?.conversation_id || "",
+      conversation_id: conversationId ||
+        visibleItems.value[0]?.conversation_id || "",
       description: newItemDescription.value.trim(),
       assignee: newItemAssignee.value.trim() || null,
       due_date: newItemDueDate.value || null,
@@ -437,27 +468,41 @@ export default function ActionItemsCard(
       <div class="w-full">
         <div class="dashboard-card">
           <div class="dashboard-card-header">
-            <h3>Action Items</h3>
+            <h3>
+              Action Items
+              {progress.value.total > 0 && (
+                <span
+                  style={{
+                    marginLeft: "0.5rem",
+                    fontSize: "var(--tiny-size)",
+                    fontWeight: "500",
+                    color: "var(--color-text-secondary)",
+                  }}
+                >
+                  {progress.value.done} of {progress.value.total} done
+                </span>
+              )}
+            </h3>
             <div class="flex gap-2">
               <button
                 onClick={cycleSortMode}
-                class="px-2 py-1 rounded cursor-pointer action-header-btn"
+                class="px-2 py-1 rounded cursor-pointer action-header-btn flex items-center gap-1"
                 style={{
                   background: "var(--surface-cream)",
                   fontSize: "var(--tiny-size)",
                   transition: "var(--transition-fast)",
                 }}
-                title={sortMode.value === "manual"
-                  ? "Sort: Manual (drag to reorder)"
-                  : sortMode.value === "assignee"
-                  ? "Sort: By assignee"
-                  : "Sort: By due date"}
+                aria-label={`Sort: ${sortLabel.value}. Click to change.`}
+                title={`Sort: ${sortLabel.value}`}
               >
-                {sortMode.value === "manual"
-                  ? "🤚"
-                  : sortMode.value === "assignee"
-                  ? "👤"
-                  : "📅"}
+                <span aria-hidden="true">
+                  {sortMode.value === "manual"
+                    ? "🤚"
+                    : sortMode.value === "assignee"
+                    ? "👤"
+                    : "📅"}
+                </span>
+                <span class="hidden sm:inline">{sortLabel.value}</span>
               </button>
               <button
                 onClick={() => showAddModal.value = true}
@@ -467,9 +512,10 @@ export default function ActionItemsCard(
                   fontSize: "var(--tiny-size)",
                   transition: "var(--transition-fast)",
                 }}
+                aria-label="Add action item"
                 title="Add new item"
               >
-                ➕
+                <span aria-hidden="true">➕</span>
               </button>
             </div>
           </div>
@@ -485,6 +531,7 @@ export default function ActionItemsCard(
               onInput={(e) =>
                 searchQuery.value = (e.target as HTMLInputElement).value}
               placeholder="Search"
+              aria-label="Search action items"
               class="w-full rounded px-2 py-1 focus:outline-none"
               style={{
                 fontSize: "var(--tiny-size)",
@@ -492,14 +539,35 @@ export default function ActionItemsCard(
                 transition: "var(--transition-fast)",
               }}
             />
-            {sortMode.value === "manual" && (
-              <p
-                class="text-xs mt-1 italic"
-                style={{ color: "var(--color-text-secondary)" }}
+            {/* Filter pills — reduce the list (sort only reorders) */}
+            <div class="flex gap-2 mt-2">
+              <button
+                onClick={() => (filterMine.value = !filterMine.value)}
+                class="action-filter-pill"
+                aria-pressed={filterMine.value}
+                style={{
+                  background: filterMine.value
+                    ? "var(--color-accent)"
+                    : "var(--surface-cream)",
+                  color: filterMine.value ? "#fff" : "var(--color-text)",
+                }}
               >
-                Drag to reorder
-              </p>
-            )}
+                Mine
+              </button>
+              <button
+                onClick={() => (hideDone.value = !hideDone.value)}
+                class="action-filter-pill"
+                aria-pressed={hideDone.value}
+                style={{
+                  background: hideDone.value
+                    ? "var(--color-accent)"
+                    : "var(--surface-cream)",
+                  color: hideDone.value ? "#fff" : "var(--color-text)",
+                }}
+              >
+                Hide done
+              </button>
+            </div>
           </div>
 
           {/* List */}
