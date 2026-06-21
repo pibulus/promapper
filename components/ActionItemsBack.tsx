@@ -1,10 +1,13 @@
 /**
  * ActionItemsBack — the flip side of the Action Items card.
  *
- * Calm at-a-glance utility for the list: progress, a per-person breakdown, and
- * bulk actions that would otherwise clutter the front. Presentational — it takes
- * the items + callbacks and renders; the front card owns the data + mutations.
+ * Calm at-a-glance utility: progress, per-person load, an overdue/due-soon
+ * nudge, and bulk actions. Presentational — the front card owns the data +
+ * mutations; this composes from the shared `.card-back-*` vocabulary so all
+ * card backs stay consistent (no per-card style reinvention).
  */
+
+import { copyToClipboard } from "../utils/toast.ts";
 
 interface ActionItem {
   id: string;
@@ -20,6 +23,43 @@ interface ActionItemsBackProps {
   onClearDone: () => void;
 }
 
+/** Local YYYY-MM-DD for today + offsetDays (no UTC shift). */
+function localDateISO(offsetDays: number): string {
+  const now = new Date();
+  const d = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + offsetDays,
+  );
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${
+    String(d.getDate()).padStart(2, "0")
+  }`;
+}
+
+/** Plain-text summary for sharing/pasting (open grouped by person, then done). */
+function buildSummary(items: ActionItem[]): string {
+  const open = items.filter((i) => i.status === "pending");
+  const done = items.filter((i) => i.status === "completed");
+  const lines: string[] = [
+    `Action items — ${done.length}/${items.length} done`,
+    "",
+  ];
+  if (open.length) {
+    lines.push("Open:");
+    for (const i of open) {
+      const who = i.assignee?.trim() ? ` (@${i.assignee.trim()})` : "";
+      const due = i.due_date ? ` [due ${i.due_date}]` : "";
+      lines.push(`- ${i.description}${who}${due}`);
+    }
+    lines.push("");
+  }
+  if (done.length) {
+    lines.push("Done:");
+    for (const i of done) lines.push(`- ${i.description}`);
+  }
+  return lines.join("\n").trim();
+}
+
 export default function ActionItemsBack(
   { items, onMarkAllDone, onClearDone }: ActionItemsBackProps,
 ) {
@@ -28,7 +68,7 @@ export default function ActionItemsBack(
   const pending = total - done;
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
 
-  // Per-person open counts (pending only — "who still owes what").
+  // Per-person open load (pending only — "who still owes what"), most-loaded first.
   const byPerson = new Map<string, number>();
   for (const i of items) {
     if (i.status !== "pending") continue;
@@ -36,6 +76,20 @@ export default function ActionItemsBack(
     byPerson.set(who, (byPerson.get(who) ?? 0) + 1);
   }
   const people = [...byPerson.entries()].sort((a, b) => b[1] - a[1]);
+  const maxLoad = people.reduce((m, [, n]) => Math.max(m, n), 0);
+
+  // Timeliness nudge (pending only).
+  const todayISO = localDateISO(0);
+  const soonISO = localDateISO(2);
+  const overdue =
+    items.filter((i) =>
+      i.status === "pending" && i.due_date && i.due_date < todayISO
+    ).length;
+  const dueSoon =
+    items.filter((i) =>
+      i.status === "pending" && i.due_date && i.due_date >= todayISO &&
+      i.due_date <= soonISO
+    ).length;
 
   return (
     <div class="dashboard-card">
@@ -51,63 +105,45 @@ export default function ActionItemsBack(
             </div>
           )
           : (
-            <div class="flex flex-col gap-4">
+            <div class="card-back-sections">
               {/* Progress */}
               <div>
-                <div
-                  class="flex items-baseline justify-between"
-                  style={{ marginBottom: "0.4rem" }}
-                >
+                <div class="card-back-stat" style={{ marginBottom: "0.4rem" }}>
+                  <span class="card-back-label">Progress</span>
                   <span
-                    style={{
-                      fontSize: "var(--small-size)",
-                      color: "var(--color-text-secondary)",
-                    }}
+                    class="card-back-stat-value"
+                    style={{ color: "var(--color-text)" }}
                   >
-                    Progress
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "var(--small-size)",
-                      fontWeight: "700",
-                      color: "var(--color-text)",
-                    }}
-                  >
-                    {done} / {total} done · {pct}%
+                    {done} / {total} · {pct}%
                   </span>
                 </div>
-                <div
-                  style={{
-                    height: "0.5rem",
-                    borderRadius: "999px",
-                    background: "var(--soft-cream-dark)",
-                    overflow: "hidden",
-                  }}
-                >
+                <div class="card-back-bar">
                   <div
-                    style={{
-                      width: `${pct}%`,
-                      height: "100%",
-                      borderRadius: "999px",
-                      background: "var(--color-accent)",
-                      transition: "width var(--transition-slow)",
-                    }}
+                    class="card-back-bar-fill"
+                    style={{ "--fill": `${pct}%` }}
                   />
                 </div>
               </div>
 
-              {/* Per-person open counts */}
+              {/* Timeliness nudge — only when there's something to flag. */}
+              {(overdue > 0 || dueSoon > 0) && (
+                <div class="flex flex-wrap gap-2">
+                  {overdue > 0 && (
+                    <span class="action-filter-pill is-danger">
+                      {overdue} overdue
+                    </span>
+                  )}
+                  {dueSoon > 0 && (
+                    <span class="action-filter-pill">
+                      {dueSoon} due soon
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Per-person open load, as proportion bars. */}
               <div>
-                <div
-                  style={{
-                    fontSize: "var(--tiny-size)",
-                    fontWeight: "600",
-                    letterSpacing: "0.04em",
-                    textTransform: "uppercase",
-                    color: "var(--color-text-secondary)",
-                    marginBottom: "0.5rem",
-                  }}
-                >
+                <div class="card-back-label" style={{ marginBottom: "0.5rem" }}>
                   Open by person
                 </div>
                 {people.length === 0
@@ -122,27 +158,28 @@ export default function ActionItemsBack(
                     </p>
                   )
                   : (
-                    <div class="flex flex-col gap-1.5">
+                    <div class="flex flex-col gap-2">
                       {people.map(([who, count]) => (
-                        <div
-                          key={who}
-                          class="flex items-center justify-between"
-                          style={{
-                            fontSize: "var(--small-size)",
-                            color: "var(--color-text)",
-                          }}
-                        >
-                          <span class="truncate">{who}</span>
-                          <span
-                            style={{
-                              flexShrink: 0,
-                              marginLeft: "0.5rem",
-                              fontWeight: "700",
-                              color: "var(--color-text-secondary)",
-                            }}
+                        <div key={who}>
+                          <div
+                            class="card-back-stat"
+                            style={{ marginBottom: "0.2rem" }}
                           >
-                            {count}
-                          </span>
+                            <span class="truncate">{who}</span>
+                            <span class="card-back-stat-value">{count}</span>
+                          </div>
+                          <div class="card-back-bar">
+                            <div
+                              class="card-back-bar-fill"
+                              style={{
+                                "--fill": `${
+                                  maxLoad === 0
+                                    ? 0
+                                    : Math.round((count / maxLoad) * 100)
+                                }%`,
+                              }}
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -150,37 +187,27 @@ export default function ActionItemsBack(
               </div>
 
               {/* Bulk actions */}
-              <div
-                class="flex flex-col gap-2"
-                style={{
-                  paddingTop: "0.75rem",
-                  borderTop: "var(--border-width) solid var(--color-border)",
-                }}
-              >
+              <div class="card-back-actions">
                 <button
                   type="button"
                   onClick={onMarkAllDone}
                   disabled={pending === 0}
-                  class="action-header-btn px-3 py-2 rounded font-bold disabled:opacity-40"
-                  style={{
-                    fontSize: "var(--small-size)",
-                    border: "2px solid var(--color-border)",
-                    background: "var(--surface-cream)",
-                  }}
+                  class="card-back-btn"
                 >
                   ✓ Mark all done{pending > 0 ? ` (${pending})` : ""}
                 </button>
                 <button
                   type="button"
+                  onClick={() => copyToClipboard(buildSummary(items))}
+                  class="card-back-btn"
+                >
+                  📋 Copy summary
+                </button>
+                <button
+                  type="button"
                   onClick={onClearDone}
                   disabled={done === 0}
-                  class="action-header-btn px-3 py-2 rounded font-bold disabled:opacity-40"
-                  style={{
-                    fontSize: "var(--small-size)",
-                    border: "2px solid var(--color-danger-border)",
-                    background: "var(--color-danger-bg)",
-                    color: "var(--color-danger-text)",
-                  }}
+                  class="card-back-btn is-danger"
                 >
                   🧹 Clear done{done > 0 ? ` (${done})` : ""}
                 </button>

@@ -676,7 +676,7 @@ export default function ActionItemsCard(
                           index === firstCompletedIndex && (
                           <div class="action-done-divider">
                             <span class="action-done-rule" aria-hidden="true" />
-                            <span class="action-done-label">
+                            <span class="card-back-label action-done-label">
                               Done · {progress.value.done}
                             </span>
                             <span class="action-done-rule" aria-hidden="true" />
