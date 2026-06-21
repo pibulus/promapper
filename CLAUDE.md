@@ -63,7 +63,6 @@ API_AUTH_TOKEN=...
     shareStore.ts               # Memory/Supabase share-store adapters
   types/                        # Conversation, transcript, node, edge, action item
   storage/                      # Local storage and URL share helpers
-  export/                       # Markdown export formats and transforms
 
 /services/                      # Server-side provider/auth/audio helpers
   ai.ts                         # Provider selection and service caching
@@ -155,7 +154,7 @@ the existing conversation.
    desktop and iPhone.
 3. **Theme system clarity**: There are theme variables and local theme restore
    code, but system dark-mode behavior is not a settled feature.
-4. **Island count**: There are 15 islands. Some graph wrappers or selectors may
+4. **Island count**: There are 14 islands. Some graph wrappers or selectors may
    be foldable later, but do not refactor this until behavior is covered.
 
 ## When Adding Features

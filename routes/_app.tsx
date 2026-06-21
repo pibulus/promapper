@@ -60,32 +60,6 @@ export default function App({ Component }: PageProps) {
 
         {/* Styles */}
         <link rel="stylesheet" href="/styles.css" />
-
-        {/* Initialize theme from localStorage before render */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-            try {
-              const stored = localStorage.getItem('project-mapper-theme') ||
-                localStorage.getItem('conversation-mapper-theme');
-              if (stored && !localStorage.getItem('project-mapper-theme')) {
-                localStorage.setItem('project-mapper-theme', stored);
-              }
-              if (stored) {
-                const theme = JSON.parse(stored);
-                // Apply all theme variables (OKLCH colors + gradient)
-                Object.entries(theme).forEach(([key, value]) => {
-                  if (key.startsWith('--color-') || key === '--gradient-bg') {
-                    document.documentElement.style.setProperty(key, value);
-                  }
-                });
-              }
-            } catch (e) {
-              console.error('Error setting initial theme:', e);
-            }
-          `,
-          }}
-        />
       </head>
       <body>
         <div class="scroll-progress" aria-hidden="true"></div>
