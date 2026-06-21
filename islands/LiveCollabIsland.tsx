@@ -22,6 +22,7 @@ import {
   remoteUsers,
   setLocalIdentity,
   userColor,
+  userEmoji,
 } from "@signals/presenceStore.ts";
 import { startLiveSync, stopLiveSync } from "@signals/liveSync.ts";
 import { sendRename } from "@signals/partyService.ts";
@@ -156,16 +157,14 @@ export default function LiveCollabIsland(
                   height: "26px",
                   borderRadius: "50%",
                   background: userColor(u.id),
-                  color: "#fff",
                   border: "2px solid var(--soft-cream)",
-                  fontSize: "0.7rem",
-                  fontWeight: "700",
+                  fontSize: "0.85rem",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                {(u.alias || u.avatar || "?").charAt(0).toUpperCase()}
+                {userEmoji(u.id)}
               </span>
             ))}
           </div>
