@@ -38,6 +38,56 @@ export function applyRemoteConversation(data: ConversationData): void {
   }
 }
 
+// ===================================================================
+// UNDO (last action only)
+// ===================================================================
+
+// The single previous conversationData snapshot, captured right before a
+// destructive in-place mutation. Because conversation-ops returns NEW objects
+// (never mutates), the prior .value is already a complete, zero-cost pre-state —
+// undo is just reassigning it. Last-action-only by design: it pairs with the
+// undo toast's lifetime, no stack to reason about.
+let undoSnapshot: ConversationData | null = null;
+
+/**
+ * Remember the current conversation as the undo target, then run the mutation.
+ * Call this from store actions wrapping a destructive change. Returns true if a
+ * snapshot was captured (i.e. there was data to undo).
+ */
+export function withUndo(mutate: () => void): boolean {
+  const prev = conversationData.value;
+  mutate();
+  // Only arm undo if the mutation actually changed the reference (ops no-op by
+  // returning the same object when nothing changed).
+  if (prev && conversationData.value !== prev) {
+    undoSnapshot = prev;
+    return true;
+  }
+  return false;
+}
+
+/** True if there's a captured snapshot to roll back to. */
+export function canUndo(): boolean {
+  return undoSnapshot !== null;
+}
+
+/**
+ * Restore the last captured snapshot. Goes through the signal so the autosave
+ * effect AND the live-sync broadcaster both re-persist/rebroadcast the restored
+ * state. One-shot: clears the snapshot so a second undo is a no-op.
+ */
+export function undoLastMutation(): boolean {
+  if (!undoSnapshot) return false;
+  conversationData.value = undoSnapshot;
+  undoSnapshot = null;
+  return true;
+}
+
+/** Forget any pending undo (e.g. after a non-undoable navigation/reset). */
+export function clearUndo(): void {
+  undoSnapshot = null;
+}
+
 // Global processing state (true when AI is analyzing)
 export const isProcessing = signal<boolean>(false);
 

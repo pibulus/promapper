@@ -25,24 +25,33 @@ export function updateActionItems(
 
 /**
  * Toggle a single action item's completed/pending status by id, stamping
- * updated_at. Clears the ai_checked flag since this is a manual user action.
+ * updated_at. Clears the ai_checked/checked_reason flags: a manual toggle is the
+ * user overriding the AI, so the item must no longer count as AI-decided —
+ * otherwise a later append's status reconciliation could silently re-flip it.
  */
 export function toggleActionItemStatus(
   data: ConversationData,
   id: string,
   now: string,
 ): ConversationData {
-  const actionItems = data.actionItems.map((item) =>
-    item.id === id
-      ? {
-        ...item,
-        status: item.status === "completed"
-          ? ("pending" as const)
-          : ("completed" as const),
-        updated_at: now,
-      }
-      : item
-  );
+  const actionItems = data.actionItems.map((item) => {
+    if (item.id !== id) return item;
+    // Rebuild without ai_checked/checked_reason (these are optional fields on
+    // the action item; omitting them on a manual toggle is the whole point).
+    const { ai_checked: _ai, checked_reason: _reason, ...rest } = item as
+      & typeof item
+      & {
+        ai_checked?: boolean;
+        checked_reason?: string;
+      };
+    return {
+      ...rest,
+      status: item.status === "completed"
+        ? ("pending" as const)
+        : ("completed" as const),
+      updated_at: now,
+    };
+  });
   return { ...data, actionItems };
 }
 

@@ -14,7 +14,11 @@
 
 import { useEffect, useRef } from "preact/hooks";
 import { useComputed, useSignal } from "@preact/signals";
-import { conversationData } from "@signals/conversationStore.ts";
+import {
+  canUndo,
+  conversationData,
+  undoLastMutation,
+} from "@signals/conversationStore.ts";
 import {
   EmojimapHandle,
   forceDirectedEmojimap,
@@ -25,6 +29,7 @@ import {
   persistTopicPositions,
   renameTopic,
 } from "@signals/actionItemsStore.ts";
+import { showUndoToast } from "@utils/toast.ts";
 import * as htmlToImage from "html-to-image";
 import ContextMenu from "../components/ContextMenu.tsx";
 
@@ -186,6 +191,9 @@ export default function ForceDirectedGraph(
           if (window.confirm(`Delete topic "${label}"?`)) {
             deleteTopic(node.id);
             if (selectedNodeId.value === node.id) selectedNodeId.value = null;
+            if (canUndo()) {
+              showUndoToast(`Deleted "${label}"`, undoLastMutation);
+            }
           }
         },
         onClickEdge: (_event: MouseEvent, edge: { id?: string }) => {
@@ -203,9 +211,21 @@ export default function ForceDirectedGraph(
           contextMenuVisible.value = true;
         },
         onMergeNodes: (sourceId: string, targetId: string) => {
+          // Grab labels before the merge removes the source node.
+          const nodes = conversationData.value?.nodes ?? [];
+          const sourceLabel = nodes.find((n) => n.id === sourceId)?.label ??
+            "topic";
+          const targetLabel = nodes.find((n) => n.id === targetId)?.label ??
+            "topic";
           mergeTopics(sourceId, targetId);
           // Clear selection if the merged-away node was selected
           if (selectedNodeId.value === sourceId) selectedNodeId.value = null;
+          if (canUndo()) {
+            showUndoToast(
+              `Merged "${sourceLabel}" into "${targetLabel}"`,
+              undoLastMutation,
+            );
+          }
         },
         onPositionsChange: handlePositionsChange,
       },

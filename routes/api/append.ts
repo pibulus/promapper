@@ -12,7 +12,11 @@
 import { Handlers } from "$fresh/server.ts";
 import { processAudio } from "@core/orchestration/conversation-flow.ts";
 import type { ConversationFlowResult } from "@core/orchestration/conversation-flow.ts";
-import { mergeAppendActionItems } from "@core/orchestration/append-merge.ts";
+import {
+  mergeAppendActionItems,
+  mergeAppendEdges,
+  mergeAppendNodes,
+} from "@core/orchestration/append-merge.ts";
 import type { ActionItem } from "@core/types/index.ts";
 import { guardRequest } from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
@@ -144,10 +148,28 @@ export const handler: Handlers = {
         } pending`,
       );
 
+      // Union the topic map: append GROWS the map. Without this the AI's fresh
+      // extraction of just the new clip would REPLACE nodes/edges, silently
+      // deleting established topics, their relationships, and hand-dragged
+      // positions on every recording. New wins on label/emoji; existing
+      // positions are preserved; existing topics never vanish.
+      const mergedNodes = mergeAppendNodes(existingNodes, result.nodes);
+      const validNodeIds = new Set(mergedNodes.map((n) => n.id));
+      const mergedEdges = mergeAppendEdges(
+        existingEdges,
+        result.edges,
+        validNodeIds,
+      );
+      console.log(
+        `🕸️ Topic map merged: ${mergedNodes.length} nodes, ${mergedEdges.length} edges`,
+      );
+
       // Build final result
       const finalResult = {
         ...result,
         actionItems: mergedActionItems,
+        nodes: mergedNodes,
+        edges: mergedEdges,
       };
 
       // If this came from a live room, push the merged result to collaborators.

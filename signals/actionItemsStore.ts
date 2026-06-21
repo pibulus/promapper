@@ -8,7 +8,7 @@
  * a single seam to hook).
  */
 
-import { conversationData } from "./conversationStore.ts";
+import { conversationData, withUndo } from "@signals/conversationStore.ts";
 import type { ConversationData } from "../core/types/conversation-data.ts";
 import {
   deleteTopic as deleteTopicOp,
@@ -25,7 +25,10 @@ type ActionItem = ConversationData["actionItems"][number];
 export function setActionItems(actionItems: ActionItem[]): void {
   const current = conversationData.value;
   if (!current) return;
-  conversationData.value = updateActionItemsOp(current, actionItems);
+  // Arm undo: replacing the list covers delete-item and clear-done, both lossy.
+  withUndo(() => {
+    conversationData.value = updateActionItemsOp(current, actionItems);
+  });
 }
 
 export function toggleActionItem(id: string): void {
@@ -57,13 +60,18 @@ export function renameTopic(id: string, label: string): void {
 export function deleteTopic(id: string): void {
   const current = conversationData.value;
   if (!current) return;
-  conversationData.value = deleteTopicOp(current, id);
+  withUndo(() => {
+    conversationData.value = deleteTopicOp(current, id);
+  });
 }
 
 export function mergeTopics(sourceId: string, targetId: string): void {
   const current = conversationData.value;
   if (!current) return;
-  conversationData.value = mergeTopicsOp(current, sourceId, targetId);
+  // Drag-to-merge silently destroys a node — the most likely accidental loss.
+  withUndo(() => {
+    conversationData.value = mergeTopicsOp(current, sourceId, targetId);
+  });
 }
 
 export function persistTopicPositions(

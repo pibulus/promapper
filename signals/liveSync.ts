@@ -15,13 +15,13 @@ import {
   applyingRemoteUpdate,
   applyRemoteConversation,
   conversationData,
-} from "./conversationStore.ts";
+} from "@signals/conversationStore.ts";
 import {
   type ChatMessage,
   chatMessages,
   partyConnected,
   unreadChatCount,
-} from "./partyConnectionStore.ts";
+} from "@signals/partyConnectionStore.ts";
 import {
   connectToRoom,
   disconnectFromRoom,
@@ -29,12 +29,12 @@ import {
   type PartyConnectOptions,
   sendChat,
   sendConversationUpdate,
-} from "./partyService.ts";
+} from "@signals/partyService.ts";
 import {
   getLocalIdentity,
   type RemoteUser,
   remoteUserName,
-} from "./presenceStore.ts";
+} from "@signals/presenceStore.ts";
 import type { ConversationData } from "../core/types/conversation-data.ts";
 
 let stopBroadcast: (() => void) | null = null;

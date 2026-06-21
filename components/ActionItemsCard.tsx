@@ -13,6 +13,8 @@ import {
   soundTick,
   soundToggle,
 } from "@utils/sound.ts";
+import { showUndoToast } from "@utils/toast.ts";
+import { canUndo, undoLastMutation } from "@signals/conversationStore.ts";
 import Modal from "./Modal.tsx";
 
 interface ActionItem {
@@ -327,17 +329,23 @@ export default function ActionItemsCard(
       hapticBump();
       soundCheckoff();
     }
-    const updatedItems = visibleItems.value.map((item) =>
-      item.id === itemId
-        ? {
-          ...item,
-          status:
-            (item.status === "completed"
-              ? "pending"
-              : "completed") as ActionItem["status"],
-        }
-        : item
-    );
+    const updatedItems = visibleItems.value.map((item) => {
+      if (item.id !== itemId) return item;
+      // Manual toggle overrides the AI: drop ai_checked/checked_reason so a
+      // later append's status reconciliation can't silently re-flip it. Stamp
+      // updated_at so merge ordering treats this as the latest word.
+      const { ai_checked: _ai, checked_reason: _reason, ...rest } = item as
+        & ActionItem
+        & { ai_checked?: boolean; checked_reason?: string };
+      return {
+        ...rest,
+        status:
+          (item.status === "completed" ? "pending" : "completed") as ActionItem[
+            "status"
+          ],
+        updated_at: new Date().toISOString(),
+      };
+    });
     publishItems(updatedItems);
   }
 
@@ -408,12 +416,19 @@ export default function ActionItemsCard(
 
   function confirmDelete() {
     if (!confirmDeleteItemId.value) return;
+    const removed = visibleItems.value.find((item) =>
+      item.id === confirmDeleteItemId.value
+    );
     publishItems(
       visibleItems.value.filter((item) =>
         item.id !== confirmDeleteItemId.value
       ),
     );
     confirmDeleteItemId.value = null;
+    if (canUndo()) {
+      const label = removed?.description?.slice(0, 40) || "item";
+      showUndoToast(`Deleted "${label}"`, undoLastMutation);
+    }
   }
 
   function addNewItem() {
@@ -1308,10 +1323,19 @@ export default function ActionItemsCard(
         <div class="flex gap-2">
           <button
             onClick={() => {
+              const clearedCount =
+                visibleItems.value.filter((i) => i.status === "completed")
+                  .length;
               publishItems(
                 visibleItems.value.filter((i) => i.status !== "completed"),
               );
               showClearDoneConfirm.value = false;
+              if (canUndo()) {
+                showUndoToast(
+                  `Cleared ${clearedCount} done`,
+                  undoLastMutation,
+                );
+              }
             }}
             class="flex-1 py-2 px-4 rounded font-bold text-white"
             style={{

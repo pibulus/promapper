@@ -14,6 +14,7 @@ import {
   getConversationList,
   loadConversation,
   replaceAllConversations,
+  restoreConversation,
   type StoredConversation,
   toggleConversationStarred,
 } from "../core/storage/localStorage.ts";
@@ -23,7 +24,7 @@ import {
   serializeBackup,
 } from "../core/storage/backup.ts";
 import { conversationData } from "@signals/conversationStore.ts";
-import { showToast } from "../utils/toast.ts";
+import { showToast, showUndoToast } from "../utils/toast.ts";
 
 // Cache date formatter outside component to avoid recreating
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -88,15 +89,27 @@ export default function MobileHistoryMenu() {
 
   function confirmDelete() {
     if (showConfirmDelete.value) {
-      deleteConversation(showConfirmDelete.value);
+      const id = showConfirmDelete.value;
+      // Snapshot the full record BEFORE deleting so undo can restore it
+      // byte-for-byte — a deleted conversation is otherwise gone forever.
+      const removed = loadConversation(id);
+      const wasActive = conversationData.value?.conversation.id === id;
 
-      // Clear active conversation if it was deleted
-      if (conversationData.value?.conversation.id === showConfirmDelete.value) {
-        conversationData.value = null;
-      }
+      deleteConversation(id);
+      if (wasActive) conversationData.value = null;
 
       refreshList();
       showConfirmDelete.value = null;
+
+      if (removed) {
+        const title = removed.conversation.title?.slice(0, 40) ||
+          "conversation";
+        showUndoToast(`Deleted "${title}"`, () => {
+          restoreConversation(removed);
+          if (wasActive) conversationData.value = removed;
+          refreshList();
+        });
+      }
     }
   }
 

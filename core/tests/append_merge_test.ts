@@ -1,9 +1,39 @@
 import { assertEquals } from "./_assert.ts";
 import {
   mergeAppendActionItems,
+  mergeAppendEdges,
+  mergeAppendNodes,
   normalizeDescription,
 } from "../orchestration/append-merge.ts";
 import type { ActionItem } from "../types/index.ts";
+
+interface TestNode {
+  id: string;
+  label: string;
+  emoji: string;
+  color: string;
+  position?: { x: number; y: number };
+}
+
+interface TestEdge {
+  id?: string;
+  source_topic_id: string;
+  target_topic_id: string;
+  color: string;
+}
+
+function node(id: string, label = id, extra: Partial<TestNode> = {}): TestNode {
+  return { id, label, emoji: "💡", color: "#cccccc", ...extra };
+}
+
+function edge(source: string, target: string, id?: string): TestEdge {
+  return {
+    id,
+    source_topic_id: source,
+    target_topic_id: target,
+    color: "#999",
+  };
+}
 
 const timestamp = "2026-06-10T00:00:00.000Z";
 
@@ -123,6 +153,63 @@ Deno.test("mergeAppendActionItems keeps distinct tasks that share words", () => 
   );
 
   assertEquals(merged.length, 2);
+});
+
+// ===================================================================
+// TOPIC MAP UNION (append grows the map, never replaces it)
+// ===================================================================
+
+Deno.test("mergeAppendNodes keeps existing topics the new clip didn't mention", () => {
+  const existing = [node("alpha"), node("beta")];
+  const extracted = [node("gamma")]; // new clip only mentioned gamma
+  const merged = mergeAppendNodes(existing, extracted);
+  assertEquals(merged.map((n) => n.id).sort(), ["alpha", "beta", "gamma"]);
+});
+
+Deno.test("mergeAppendNodes: new wins on label/emoji, existing position preserved", () => {
+  const existing = [
+    node("alpha", "Old Label", { position: { x: 100, y: 200 }, emoji: "🌱" }),
+  ];
+  const extracted = [node("alpha", "New Label", { emoji: "🌳" })];
+  const merged = mergeAppendNodes(existing, extracted);
+  assertEquals(merged.length, 1);
+  assertEquals(merged[0].label, "New Label");
+  assertEquals(merged[0].emoji, "🌳");
+  // Hand-dragged position survives even though the new node had none.
+  assertEquals(merged[0].position, { x: 100, y: 200 });
+});
+
+Deno.test("mergeAppendNodes adds brand-new topics from the new clip", () => {
+  const merged = mergeAppendNodes([node("alpha")], [
+    node("alpha"),
+    node("beta"),
+  ]);
+  assertEquals(merged.map((n) => n.id).sort(), ["alpha", "beta"]);
+});
+
+Deno.test("mergeAppendEdges unions edges without dropping or duplicating", () => {
+  const existing = [edge("a", "b", "e1")];
+  const extracted = [edge("a", "b"), edge("b", "c")]; // a->b dupes, b->c is new
+  const valid = new Set(["a", "b", "c"]);
+  const merged = mergeAppendEdges(existing, extracted, valid);
+  // a->b kept once (with its original id), b->c added.
+  assertEquals(merged.length, 2);
+  const ab = merged.find((e) =>
+    e.source_topic_id === "a" && e.target_topic_id === "b"
+  );
+  assertEquals(ab?.id, "e1"); // existing edge kept its identity
+});
+
+Deno.test("mergeAppendEdges drops dangling edges and self-loops", () => {
+  const valid = new Set(["a", "b"]);
+  const merged = mergeAppendEdges([], [
+    edge("a", "b"),
+    edge("a", "z"), // z not in node set -> dropped
+    edge("a", "a"), // self-loop -> dropped
+  ], valid);
+  assertEquals(merged.length, 1);
+  assertEquals(merged[0].source_topic_id, "a");
+  assertEquals(merged[0].target_topic_id, "b");
 });
 
 Deno.test("normalizeDescription collapses noise but preserves meaning", () => {

@@ -33,6 +33,80 @@ export function showToast(
   };
   const { icon, bg } = config[type];
 
+  const toast = buildToastShell(message, icon, bg, type);
+  document.body.appendChild(toast);
+
+  // Auto-remove after duration
+  setTimeout(() => dismissToast(toast), duration);
+
+  return toast;
+}
+
+/**
+ * Shows a toast with a clickable "Undo" button. Used for reversible destructive
+ * actions (delete conversation, merge topic, clear done, etc.). Clicking Undo
+ * runs `onUndo`, cancels the auto-dismiss, and removes the toast immediately.
+ * Returns a handle to dismiss it programmatically.
+ *
+ * Styled as "warning" so it reads as "heads up, this happened" rather than a
+ * green success. Longer default lifetime (6s) since the user has to react.
+ */
+export function showUndoToast(
+  message: string,
+  onUndo: () => void,
+  duration: number = 6000,
+): { dismiss: () => void } {
+  if (typeof window === "undefined") return { dismiss: () => {} };
+
+  const { icon, bg } = {
+    icon: "fa-rotate-left",
+    bg: "#d4a01a", // warning amber
+  };
+  const toast = buildToastShell(message, icon, bg, "info");
+
+  let timer = 0;
+  const close = () => {
+    if (timer) clearTimeout(timer);
+    timer = 0;
+    dismissToast(toast);
+  };
+
+  // Real <button> element + addEventListener (no innerHTML) — keeps the
+  // anti-XSS guarantee even though label text here is static.
+  const undoBtn = document.createElement("button");
+  undoBtn.type = "button";
+  undoBtn.textContent = "Undo";
+  undoBtn.style.cssText =
+    `margin-left:auto;flex-shrink:0;cursor:pointer;border:none;` +
+    `background:rgba(255,255,255,0.22);color:#fff;font-weight:700;` +
+    `font-size:0.8rem;padding:0.25rem 0.7rem;border-radius:8px;`;
+  undoBtn.addEventListener("click", () => {
+    try {
+      onUndo();
+    } catch (err) {
+      console.error("Undo failed:", err);
+    }
+    close();
+  });
+
+  toast.appendChild(undoBtn);
+  document.body.appendChild(toast);
+
+  timer = setTimeout(() => {
+    timer = 0;
+    dismissToast(toast);
+  }, duration);
+
+  return { dismiss: close };
+}
+
+/** Build the shared toast div (pill, icon, message). No timers attached. */
+function buildToastShell(
+  message: string,
+  icon: string,
+  bg: string,
+  type: ToastType,
+): HTMLElement {
   const toast = document.createElement("div");
   toast.className = "toast-pop";
   toast.setAttribute("role", type === "error" ? "alert" : "status");
@@ -54,15 +128,14 @@ export function showToast(
   msgEl.textContent = message;
 
   toast.append(iconEl, msgEl);
-  document.body.appendChild(toast);
-
-  // Auto-remove after duration
-  setTimeout(() => {
-    toast.classList.add("animate-slide-out-right");
-    setTimeout(() => toast.remove(), 300);
-  }, duration);
-
   return toast;
+}
+
+/** Slide-out + remove a toast element (idempotent). */
+function dismissToast(toast: HTMLElement): void {
+  if (!toast.isConnected) return;
+  toast.classList.add("animate-slide-out-right");
+  setTimeout(() => toast.remove(), 300);
 }
 
 /**

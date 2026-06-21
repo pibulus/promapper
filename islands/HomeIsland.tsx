@@ -7,11 +7,16 @@
 
 import { signal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
-import { conversationData } from "@signals/conversationStore.ts";
+import {
+  canUndo,
+  conversationData,
+  undoLastMutation,
+} from "@signals/conversationStore.ts";
 import {
   getActiveConversationId,
   loadConversation,
 } from "../core/storage/localStorage.ts";
+import { showToast } from "@utils/toast.ts";
 import UploadIsland from "./UploadIsland.tsx";
 import DashboardIsland from "./DashboardIsland.tsx";
 import MobileHistoryMenu from "./MobileHistoryMenu.tsx";
@@ -39,6 +44,26 @@ export default function HomeIsland() {
         );
       }
     }
+  }, []);
+
+  // Cmd/Ctrl+Z → undo the last destructive map/action-item mutation. Skipped
+  // while typing in a field so native text-undo still works there.
+  useEffect(() => {
+    function onKeydown(e: KeyboardEvent) {
+      const isUndo = (e.metaKey || e.ctrlKey) && !e.shiftKey &&
+        e.key.toLowerCase() === "z";
+      if (!isUndo) return;
+      const el = e.target as HTMLElement | null;
+      const tag = el?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || el?.isContentEditable) {
+        return;
+      }
+      if (!canUndo()) return;
+      e.preventDefault();
+      if (undoLastMutation()) showToast("Undone", "info");
+    }
+    globalThis.addEventListener("keydown", onKeydown);
+    return () => globalThis.removeEventListener("keydown", onKeydown);
   }, []);
 
   // Get transcript for MarkdownMaker

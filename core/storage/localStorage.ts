@@ -154,6 +154,19 @@ export function deleteConversation(id: string): void {
 }
 
 /**
+ * Re-insert a previously-deleted conversation exactly as it was (used by the
+ * delete-conversation undo). Unlike saveConversation, this preserves the
+ * original id/createdAt/updatedAt/starred instead of re-deriving them, so an
+ * undo restores the record byte-for-byte and keeps its place in the list.
+ */
+export function restoreConversation(stored: StoredConversation): void {
+  if (typeof window === "undefined" || !stored?.id) return;
+  const conversations = getAllConversations();
+  conversations[stored.id] = stored;
+  localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+}
+
+/**
  * Get the currently active conversation ID
  */
 export function getActiveConversationId(): string | null {

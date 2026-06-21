@@ -89,6 +89,28 @@ Deno.test("toggleActionItemStatus flips status and stamps updated_at", () => {
   );
 });
 
+Deno.test("toggleActionItemStatus clears ai_checked/checked_reason on manual toggle", () => {
+  const data = baseData();
+  // Simulate an item the AI auto-completed in a prior append.
+  data.actionItems[0] = {
+    ...data.actionItems[0],
+    status: "completed",
+    ai_checked: true,
+    checked_reason: "The recording said it was shipped.",
+  } as typeof data.actionItems[0];
+
+  const next = toggleActionItemStatus(data, "a1", "2026-06-21T12:00:00.000Z");
+  const item = next.actionItems[0] as typeof next.actionItems[0] & {
+    ai_checked?: boolean;
+    checked_reason?: string;
+  };
+  // Manual override flips status AND strips the AI markers so a later append's
+  // status reconciliation can't re-flip it back to completed.
+  assertEquals(item.status, "pending");
+  assertEquals(item.ai_checked, undefined);
+  assertEquals(item.checked_reason, undefined);
+});
+
 Deno.test("toggleActionItemStatus ignores unknown ids", () => {
   const data = baseData();
   const next = toggleActionItemStatus(data, "ghost", "now");
