@@ -25,6 +25,7 @@ import * as $MarkdownMakerDrawer from "./islands/MarkdownMakerDrawer.tsx";
 import * as $MobileHistoryMenu from "./islands/MobileHistoryMenu.tsx";
 import * as $ShareButton from "./islands/ShareButton.tsx";
 import * as $SharedConversationLoader from "./islands/SharedConversationLoader.tsx";
+import * as $ThemeSwitcher from "./islands/ThemeSwitcher.tsx";
 import * as $UploadIsland from "./islands/UploadIsland.tsx";
 import * as $VisualizationSelector from "./islands/VisualizationSelector.tsx";
 import type { Manifest } from "$fresh/server.ts";
@@ -56,6 +57,7 @@ const manifest = {
     "./islands/MobileHistoryMenu.tsx": $MobileHistoryMenu,
     "./islands/ShareButton.tsx": $ShareButton,
     "./islands/SharedConversationLoader.tsx": $SharedConversationLoader,
+    "./islands/ThemeSwitcher.tsx": $ThemeSwitcher,
     "./islands/UploadIsland.tsx": $UploadIsland,
     "./islands/VisualizationSelector.tsx": $VisualizationSelector,
   },

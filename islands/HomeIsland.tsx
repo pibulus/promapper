@@ -18,6 +18,7 @@ import MobileHistoryMenu from "./MobileHistoryMenu.tsx";
 import ShareButton from "./ShareButton.tsx";
 import MarkdownMakerDrawer from "./MarkdownMakerDrawer.tsx";
 import AudioRecorder from "./AudioRecorder.tsx";
+import ThemeSwitcher from "./ThemeSwitcher.tsx";
 
 const drawerOpen = signal(false);
 
@@ -175,6 +176,7 @@ export default function HomeIsland() {
                 >
                   ProMapper
                 </a>
+                <ThemeSwitcher />
               </>
             )}
         </div>
