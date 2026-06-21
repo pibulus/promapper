@@ -146,7 +146,7 @@ export default function HomeIsland() {
                   {/* Export button */}
                   <button
                     onClick={() => drawerOpen.value = !drawerOpen.value}
-                    class="btn btn--secondary"
+                    class="btn btn--secondary btn--compact"
                     aria-label="Export conversation"
                     title="Export"
                   >

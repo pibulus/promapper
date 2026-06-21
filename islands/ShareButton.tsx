@@ -78,7 +78,7 @@ export default function ShareButton() {
       <button
         onClick={handleShare}
         disabled={!canShare.value || isGenerating.value}
-        class="btn btn--secondary"
+        class="btn btn--secondary btn--compact"
         title="Share conversation"
         aria-label="Share conversation"
       >

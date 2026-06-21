@@ -46,7 +46,7 @@ export default function GoLiveButton() {
     <button
       onClick={goLive}
       disabled={loading.value}
-      class="btn btn--secondary"
+      class="btn btn--secondary btn--compact"
       aria-label="Start a live collaboration room"
       title="Go live — collaborate in real time"
     >

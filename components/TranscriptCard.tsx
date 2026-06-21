@@ -83,9 +83,10 @@ export default function TranscriptCard(
                 <div
                   class="whitespace-pre-wrap leading-relaxed"
                   style={{
-                    fontSize: "var(--text-size)",
+                    fontFamily: "var(--font-mono)",
+                    fontSize: "var(--small-size)",
                     color: "var(--color-text)",
-                    lineHeight: "1.8",
+                    lineHeight: "1.7",
                   }}
                   dangerouslySetInnerHTML={{
                     __html: formatTranscriptSafe(transcript.text),

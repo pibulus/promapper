@@ -453,34 +453,36 @@ export default function AudioRecorder(
       {/* Compact button in header */}
       <button
         onClick={() => isExpanded.value = !isExpanded.value}
-        class="flex items-center gap-2 px-3 py-2 rounded-lg hover:brightness-110 transition-all relative"
+        class={`btn btn--secondary btn--compact relative${
+          isRecording.value ? "" : " btn--icon"
+        }`}
         style={{
-          background: isRecording.value ? "#EF4444" : "var(--color-accent)",
-          border: `2px solid var(--color-border)`,
-          color: "white",
-          fontWeight: "600",
-          fontSize: "var(--text-size)",
-          boxShadow: "var(--shadow-soft)",
+          color: "var(--color-accent)",
+          ...(isRecording.value
+            ? { background: "var(--accent-rose-wash)" }
+            : {}),
         }}
-        title={isRecording.value ? "Recording..." : "Audio Recordings"}
+        title={isRecording.value ? "Recording…" : "Audio recordings"}
+        aria-label={isRecording.value ? "Recording" : "Audio recordings"}
       >
         <i
           class={isRecording.value
             ? "fa fa-circle animate-pulse"
             : "fa fa-microphone"}
+          aria-hidden="true"
         >
         </i>
         {isRecording.value && (
-          <span class="font-mono text-sm">
+          <span style={{ fontFamily: "var(--font-mono)" }} class="text-sm">
             {formatTime(timeRemaining.value)}
           </span>
         )}
         {recordings.value.length > 0 && !isRecording.value && (
           <span
-            class="absolute -top-1 -right-1 bg-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center"
+            class="absolute -top-1 -right-1 text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center"
             style={{
-              color: "var(--color-accent)",
-              border: "2px solid var(--color-border)",
+              background: "var(--color-accent)",
+              color: "#fff",
             }}
           >
             {recordings.value.length}

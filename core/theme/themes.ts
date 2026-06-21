@@ -48,93 +48,88 @@ export const bubblegum: Theme = {
 };
 
 /**
- * Soft Mint
- * Cool, clear, energising — gentle green tones.
+ * Sky — vivid deep-sky-blue pop. Fresh, hip, electric.
  */
-export const softMint: Theme = {
-  name: "MINT",
-  vibe: "fresh & clear",
-  base: "linear-gradient(135deg, #e8f8f5 0%, #cdeee8 100%)",
+export const sky: Theme = {
+  name: "SKY",
+  vibe: "fresh & electric",
+  base: "linear-gradient(135deg, #e3f4ff 0%, #eef9ff 100%)",
   secondary: "rgba(255, 255, 255, 0.65)",
-  accent: "#10b8a0",
-  text: "#23423b",
-  textSecondary: "#6f8f88",
-  border: "rgba(44, 74, 66, 0.1)",
+  accent: "#0aa6ff",
+  text: "#1f3344",
+  textSecondary: "#6f8597",
+  border: "rgba(31, 51, 68, 0.1)",
   cssVars: {
-    "--color-base-solid": "#e8f8f5",
-    "--shadow-soft": "0 4px 12px rgba(93, 190, 170, 0.12)",
-    // Cool theme: pull card surfaces a few degrees toward the page's near-white
-    // so cards belong to the page instead of floating warm-cream.
-    "--surface-card": "#f2fbf8",
-    "--surface-card-deep": "#e9f6f2",
+    "--color-base-solid": "#e3f4ff",
+    "--shadow-soft": "0 4px 12px rgba(10, 166, 255, 0.12)",
+    "--surface-card": "#f3faff",
+    "--surface-card-deep": "#e8f5ff",
     "--gradient-bg":
-      "radial-gradient(circle at 20% 20%, rgba(93, 190, 170, 0.14), transparent 45%), radial-gradient(circle at 80% 10%, rgba(200, 240, 220, 0.18), transparent 50%), linear-gradient(125deg, #f4fdf9 0%, #e8f8f5 50%, #f0fdf7 100%)",
+      "radial-gradient(circle at 18% 18%, rgba(10, 166, 255, 0.16), transparent 46%), radial-gradient(circle at 82% 12%, rgba(120, 220, 255, 0.18), transparent 50%), radial-gradient(circle at 70% 85%, rgba(168, 247, 220, 0.14), transparent 52%), linear-gradient(125deg, #f2fbff 0%, #eef9ff 50%, #f4feff 100%)",
   },
 };
 
 /**
- * Lavender Dusk
- * Calm, creative, slightly dreamy purple palette.
+ * Grape — electric purple pop. Bold, creative, confident.
  */
-export const lavenderDusk: Theme = {
-  name: "LAVENDER",
-  vibe: "calm & creative",
-  base: "linear-gradient(135deg, #efe5f7 0%, #dbc9ed 100%)",
+export const grape: Theme = {
+  name: "GRAPE",
+  vibe: "bold & creative",
+  base: "linear-gradient(135deg, #f0ebff 0%, #f6f1ff 100%)",
   secondary: "rgba(255, 255, 255, 0.65)",
-  accent: "#9b5de5",
-  text: "#3d3a42",
-  textSecondary: "#8b8390",
-  border: "rgba(61, 58, 66, 0.1)",
+  accent: "#7c5cff",
+  text: "#312a45",
+  textSecondary: "#807a96",
+  border: "rgba(49, 42, 69, 0.1)",
   cssVars: {
-    "--color-base-solid": "#efe5f7",
-    "--shadow-soft": "0 4px 12px rgba(155, 126, 199, 0.12)",
-    // Cool theme: nudge card surfaces toward the page's lilac near-white.
-    "--surface-card": "#f8f4fd",
-    "--surface-card-deep": "#f0eafa",
+    "--color-base-solid": "#f0ebff",
+    "--shadow-soft": "0 4px 12px rgba(124, 92, 255, 0.12)",
+    "--surface-card": "#f7f4ff",
+    "--surface-card-deep": "#efe9ff",
     "--gradient-bg":
-      "radial-gradient(circle at 20% 20%, rgba(155, 126, 199, 0.14), transparent 45%), radial-gradient(circle at 80% 10%, rgba(219, 201, 237, 0.18), transparent 50%), linear-gradient(125deg, #faf7ff 0%, #f0e8f8 50%, #f5f0ff 100%)",
+      "radial-gradient(circle at 18% 18%, rgba(124, 92, 255, 0.16), transparent 46%), radial-gradient(circle at 82% 12%, rgba(255, 120, 200, 0.16), transparent 50%), radial-gradient(circle at 70% 85%, rgba(120, 200, 255, 0.14), transparent 52%), linear-gradient(125deg, #f7f3ff 0%, #f4f0ff 50%, #fbf4ff 100%)",
   },
 };
 
 /**
- * Butter Yellow
- * Sunny, optimistic, warm without being orange.
+ * Lime — vivid fresh green pop. Zingy, optimistic, alive.
  */
-export const butterYellow: Theme = {
-  name: "BUTTER",
-  vibe: "sunny & optimistic",
-  base: "linear-gradient(135deg, #fff8d6 0%, #ffeea3 100%)",
+export const lime: Theme = {
+  name: "LIME",
+  vibe: "zingy & alive",
+  base: "linear-gradient(135deg, #e6fbef 0%, #f0fdf5 100%)",
   secondary: "rgba(255, 255, 255, 0.65)",
-  accent: "#e0a000",
-  text: "#3a3220",
-  textSecondary: "#7a6e54",
-  border: "rgba(58, 50, 32, 0.1)",
+  accent: "#10b550",
+  text: "#1f3a2b",
+  textSecondary: "#6f8c7c",
+  border: "rgba(31, 58, 43, 0.1)",
   cssVars: {
-    "--color-base-solid": "#fff8d6",
-    "--shadow-soft": "0 4px 12px rgba(212, 160, 26, 0.12)",
+    "--color-base-solid": "#e6fbef",
+    "--shadow-soft": "0 4px 12px rgba(16, 181, 80, 0.12)",
+    "--surface-card": "#f2fdf6",
+    "--surface-card-deep": "#e8fbef",
     "--gradient-bg":
-      "radial-gradient(circle at 20% 20%, rgba(255, 220, 80, 0.14), transparent 45%), radial-gradient(circle at 80% 10%, rgba(255, 248, 214, 0.18), transparent 50%), linear-gradient(125deg, #fffef5 0%, #fff9e0 50%, #fffcf0 100%)",
+      "radial-gradient(circle at 18% 18%, rgba(16, 181, 80, 0.16), transparent 46%), radial-gradient(circle at 82% 12%, rgba(255, 224, 110, 0.16), transparent 50%), radial-gradient(circle at 70% 85%, rgba(120, 220, 255, 0.12), transparent 52%), linear-gradient(125deg, #f3fef7 0%, #eefdf3 50%, #f6fef8 100%)",
   },
 };
 
 /**
- * Dusty Rose
- * Soft pinkish-mauve, a quieter alternative to the peach default.
+ * Gold — bright confident gold pop (the GOOD yellow, never vom-mustard).
  */
-export const dustyRose: Theme = {
-  name: "ROSE",
-  vibe: "soft & romantic",
-  base: "linear-gradient(135deg, #ffe6f0 0%, #ffcce0 100%)",
+export const gold: Theme = {
+  name: "GOLD",
+  vibe: "sunny & confident",
+  base: "linear-gradient(135deg, #fff6da 0%, #fffaea 100%)",
   secondary: "rgba(255, 255, 255, 0.65)",
-  accent: "#ff5d8f",
-  text: "#3d2a35",
-  textSecondary: "#8b7580",
-  border: "rgba(61, 42, 53, 0.1)",
+  accent: "#f5b300",
+  text: "#3a3016",
+  textSecondary: "#8a7b54",
+  border: "rgba(58, 48, 22, 0.1)",
   cssVars: {
-    "--color-base-solid": "#ffe6f0",
-    "--shadow-soft": "0 4px 12px rgba(196, 96, 122, 0.12)",
+    "--color-base-solid": "#fff6da",
+    "--shadow-soft": "0 4px 12px rgba(245, 179, 0, 0.14)",
     "--gradient-bg":
-      "radial-gradient(circle at 20% 20%, rgba(232, 93, 143, 0.14), transparent 45%), radial-gradient(circle at 80% 10%, rgba(255, 204, 224, 0.18), transparent 50%), linear-gradient(125deg, #fff5f9 0%, #ffe8f2 50%, #fff0f7 100%)",
+      "radial-gradient(circle at 18% 18%, rgba(255, 200, 30, 0.18), transparent 46%), radial-gradient(circle at 82% 12%, rgba(255, 130, 190, 0.14), transparent 50%), radial-gradient(circle at 70% 85%, rgba(120, 220, 255, 0.12), transparent 52%), linear-gradient(125deg, #fffdf2 0%, #fffae6 50%, #fffef4 100%)",
   },
 };
 
@@ -144,10 +139,10 @@ export const dustyRose: Theme = {
 
 export const proMapperThemes: Theme[] = [
   bubblegum,
-  softMint,
-  lavenderDusk,
-  butterYellow,
-  dustyRose,
+  sky,
+  grape,
+  lime,
+  gold,
 ];
 
 export const proMapperThemeConfig: ThemeSystemConfig = {
