@@ -1708,6 +1708,47 @@ body {
   border-color: var(--color-accent);
 }
 
+/* ===================================================================
+   ACTION ITEMS CARD — Edit button, quick-add, focus ring, overdue
+   ================================================================ */
+
+/* Edit button — hover-reveal on desktop, always visible on touch */
+.action-item-edit-btn {
+  background: var(--soft-cream-dark);
+  opacity: 0;
+  transition: opacity var(--transition-fast), background var(--transition-fast);
+}
+.action-item-card:hover .action-item-edit-btn {
+  opacity: 1;
+}
+@media (hover: none) {
+  .action-item-edit-btn {
+    opacity: 1;
+  }
+}
+.action-item-edit-btn:hover {
+  background: var(--surface-cream-hover);
+  color: var(--color-accent);
+}
+
+/* Focus ring for the list container */
+.action-items-scroll:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+/* Quick-add input */
+.action-quick-add {
+  border: 2px dashed var(--color-border);
+  border-radius: 8px;
+  transition: border-color var(--transition-fast);
+}
+.action-quick-add:focus {
+  border-color: var(--color-accent);
+  border-style: solid;
+  outline: none;
+}
+
 .topic-visualizations-shell {
   min-height: 500px;
 }
