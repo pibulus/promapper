@@ -5,6 +5,7 @@
  */
 
 import { conversationData } from "@signals/conversationStore.ts";
+import { renameSpeaker, setActionItems } from "@signals/actionItemsStore.ts";
 import TranscriptCard from "../components/TranscriptCard.tsx";
 import SummaryCard from "../components/SummaryCard.tsx";
 import ActionItemsCard from "../components/ActionItemsCard.tsx";
@@ -32,46 +33,7 @@ export default function DashboardIsland() {
   const { conversation, transcript, actionItems, nodes, summary } =
     conversationData.value;
 
-  // Handler to update action items
-  function handleUpdateActionItems(updatedItems: typeof actionItems) {
-    conversationData.value = {
-      ...conversationData.value!,
-      actionItems: updatedItems,
-    };
-  }
-
-  function handleRenameSpeaker(oldName: string, newName: string) {
-    const current = conversationData.value;
-    if (!current || oldName === newName) return;
-
-    const escapedOldName = oldName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const speakerPrefix = new RegExp(`(^|\\n)${escapedOldName}:`, "g");
-    const updatedText = current.transcript.text.replace(
-      speakerPrefix,
-      `$1${newName}:`,
-    );
-
-    const updatedConversationTranscript = current.conversation.transcript
-      .replace(speakerPrefix, `$1${newName}:`);
-
-    const nextSpeakers = current.transcript.speakers.map((speaker) =>
-      speaker === oldName ? newName : speaker
-    );
-
-    conversationData.value = {
-      ...current,
-      conversation: {
-        ...current.conversation,
-        transcript: updatedConversationTranscript,
-      },
-      transcript: {
-        ...current.transcript,
-        text: updatedText,
-        speakers: Array.from(new Set(nextSpeakers)),
-      },
-    };
-  }
-
+  // Mutations delegate to the action-items store (pure transforms in core/).
   return (
     <div>
       {/* Grid Container - Simple CSS Grid */}
@@ -79,7 +41,7 @@ export default function DashboardIsland() {
         {/* Card 1: Transcript */}
         <TranscriptCard
           transcript={transcript}
-          onRenameSpeaker={handleRenameSpeaker}
+          onRenameSpeaker={renameSpeaker}
         />
 
         {/* Card 2: Summary */}
@@ -92,7 +54,7 @@ export default function DashboardIsland() {
         {/* Card 3: Action Items */}
         <ActionItemsCard
           actionItems={actionItems}
-          onUpdateItems={handleUpdateActionItems}
+          onUpdateItems={setActionItems}
         />
 
         {/* Card 4: Topic Visualizations - FULL WIDTH (spans all columns) */}
