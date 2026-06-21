@@ -143,15 +143,14 @@ export default function HomeIsland() {
                       ""}
                   />
 
-                  {/* Export button */}
+                  {/* Export button — icon only */}
                   <button
                     onClick={() => drawerOpen.value = !drawerOpen.value}
-                    class="btn btn--secondary btn--compact"
+                    class="btn btn--secondary btn--compact btn--icon"
                     aria-label="Export conversation"
                     title="Export"
                   >
                     <i class="fa fa-file-export" aria-hidden="true"></i>
-                    <span class="hidden sm:inline">Export</span>
                   </button>
 
                   {/* Go Live + Share + sound mute */}

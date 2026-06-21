@@ -42,18 +42,21 @@ function mix(a: string, b: string, aWeight: number): string {
 // The default card surface (--surface-card → --soft-cream). Cool themes nudge it
 // but stay near this lightness, so it's a faithful contrast baseline.
 const CARD_SURFACE = "#fff7ef";
+const DEEPEN = "#1b1020"; // CSS: --accent-strong = color-mix(accent 72%, #1b1020)
 
-Deno.test("every theme's header band (pale accent tint) passes AA with its dark ink", () => {
+Deno.test("every theme's VIVID header band passes AA with white text", () => {
   for (const theme of proMapperThemes) {
-    // CSS: --header-band = color-mix(accent 14%, surface). Ink = theme.text.
-    const band = mix(theme.accent, CARD_SURFACE, 0.14);
-    const ratio = contrast(theme.text, band);
+    // CSS: band is built on --accent-strong (accent 72% + deepen), white ink.
+    // GOLD overrides --accent-strong to a deeper shade (its hue is light).
+    const strong = theme.cssVars?.["--accent-strong"] ??
+      mix(theme.accent, DEEPEN, 0.72);
+    const ratio = contrast("#ffffff", strong);
     assertEquals(
       ratio >= 4.5,
       true,
-      `Theme "${theme.name}" header band ${band} vs ink ${theme.text} is ${
+      `Theme "${theme.name}" header band ${strong} vs white is ${
         ratio.toFixed(2)
-      }:1 — below the 4.5:1 AA floor`,
+      }:1 — below the 4.5:1 AA floor (deepen --accent-strong for this theme)`,
     );
   }
 });

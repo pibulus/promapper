@@ -31,7 +31,7 @@
   --color-base: linear-gradient(135deg, #ffe8f3 0%, #fff3ec 100%);
   --color-base-solid: #ffe8f3;
   --color-secondary: rgba(255, 255, 255, 0.62);
-  --color-accent: #ff4d97;
+  --color-accent: #ff2e88;
   --color-text: #2b2430;
   --color-text-secondary: #8a7e88;
   --color-border: rgba(43, 36, 48, 0.1);
@@ -109,18 +109,23 @@
      by construction (edit here → propagates to every card/button/chip).
      ================================================================ */
 
-  /* Candy header band — a SLIM, PALE TINT of the accent with DARK ink (not a
-     saturated slab). This keeps the band light + airy and lets the accent be a
-     bright fluoro pop without failing text contrast. Both are modular: themes
-     override --header-band / --header-band-ink in their cssVars. Defaults derive
-     from the accent so a new theme works with zero extra config. */
-  --header-band: color-mix(
-    in srgb,
-    var(--color-accent) 14%,
-    var(--surface-card)
+  /* --accent-strong = a deeper shade of the bright accent, used ONLY where white
+     text must sit (the header band, primary fills). The bright --color-accent
+     stays fully fluoro for pops (chips, checkboxes, dots, CTAs). This lets the
+     accent be as vivid as we like AND keeps white text legible (AA). Modular:
+     themes can override --accent-strong if a hue needs a custom deepening. */
+  --accent-strong: color-mix(in srgb, var(--color-accent) 72%, #1b1020);
+
+  /* Candy header band — FULL VIVID block + WHITE text (option C). Each card wears
+     a bold colored hat; a whisper of gradient keeps it juicy. Built on
+     --accent-strong so white stays legible on every theme. */
+  --header-band: linear-gradient(
+    135deg,
+    var(--accent-strong) 0%,
+    color-mix(in srgb, var(--accent-strong) 80%, var(--color-accent)) 100%
   );
-  --header-band-ink: var(--color-text);
-  --header-band-sub: color-mix(in srgb, var(--color-text) 60%, transparent);
+  --header-band-ink: #ffffff;
+  --header-band-sub: rgba(255, 255, 255, 0.9);
 
   /* One button system: identical height + radius across every variant. */
   --btn-height: 2.75rem; /* 44px — iOS touch target */
@@ -1855,13 +1860,12 @@ body {
 }
 
 .dashboard-card-header {
-  /* Slim PALE-TINT band — a soft wash of the accent with dark ink. Light + airy,
-     never a heavy saturated slab. A hairline accent rule underneath gives it a
-     crisp edge. The card's overflow:hidden + radius clips the corners. */
+  /* Full VIVID accent band + white title (option C). Slim. The card's
+     overflow:hidden + radius clips the band corners to the card shape. */
   background: var(--header-band);
+  color: var(--header-band-ink);
   padding: 0.7rem var(--card-padding);
-  border-bottom: 2px solid
-    color-mix(in srgb, var(--color-accent) 22%, transparent);
+  border-bottom: none;
   display: flex;
   justify-content: space-between;
   align-items: center;
