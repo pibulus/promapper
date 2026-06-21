@@ -79,24 +79,24 @@ var parsed=JSON.parse(saved);
 var name=parsed&&parsed.name;
 if(!name)return;
 var themes={
-  "PEACH":{
-    "--color-base":"linear-gradient(135deg,#ffebd4 0%,#ffd9b8 100%)",
-    "--color-base-solid":"#ffebd4",
-    "--color-base-gradient":"linear-gradient(135deg,#ffebd4 0%,#ffd9b8 100%)",
-    "--color-secondary":"rgba(255,255,255,0.6)",
-    "--color-accent":"#b84a70",
-    "--color-text":"#2c2c2c",
-    "--color-text-secondary":"#6b6b6b",
-    "--color-border":"rgba(61,57,53,0.1)",
-    "--shadow-soft":"0 4px 12px rgba(30,23,20,0.08)",
-    "--gradient-bg":"radial-gradient(circle at 20% 20%,rgba(255,138,170,0.16),transparent 45%),radial-gradient(circle at 80% 10%,rgba(255,198,114,0.14),transparent 50%),linear-gradient(125deg,#fff8f1 0%,#f8f2ff 50%,#f1fbf4 100%)"
+  "BUBBLEGUM":{
+    "--color-base":"linear-gradient(135deg,#ffe8f3 0%,#fff3ec 100%)",
+    "--color-base-solid":"#ffe8f3",
+    "--color-base-gradient":"linear-gradient(135deg,#ffe8f3 0%,#fff3ec 100%)",
+    "--color-secondary":"rgba(255,255,255,0.62)",
+    "--color-accent":"#ff4d97",
+    "--color-text":"#2b2430",
+    "--color-text-secondary":"#8a7e88",
+    "--color-border":"rgba(43,36,48,0.1)",
+    "--shadow-soft":"0 4px 12px rgba(255,77,151,0.12)",
+    "--gradient-bg":"radial-gradient(circle at 18% 18%,rgba(255,95,162,0.18),transparent 46%),radial-gradient(circle at 82% 12%,rgba(168,224,255,0.18),transparent 50%),radial-gradient(circle at 70% 85%,rgba(212,181,247,0.16),transparent 52%),linear-gradient(125deg,#fff6fb 0%,#fdf3ff 50%,#fff4ee 100%)"
   },
   "MINT":{
     "--color-base":"linear-gradient(135deg,#e8f8f5 0%,#cdeee8 100%)",
     "--color-base-solid":"#e8f8f5",
     "--color-base-gradient":"linear-gradient(135deg,#e8f8f5 0%,#cdeee8 100%)",
     "--color-secondary":"rgba(255,255,255,0.65)",
-    "--color-accent":"#2a8071",
+    "--color-accent":"#10b8a0",
     "--color-text":"#2c4a42",
     "--color-text-secondary":"#7a9690",
     "--color-border":"rgba(44,74,66,0.1)",
@@ -108,7 +108,7 @@ var themes={
     "--color-base-solid":"#efe5f7",
     "--color-base-gradient":"linear-gradient(135deg,#efe5f7 0%,#dbc9ed 100%)",
     "--color-secondary":"rgba(255,255,255,0.65)",
-    "--color-accent":"#6f4fa8",
+    "--color-accent":"#9b5de5",
     "--color-text":"#3d3a42",
     "--color-text-secondary":"#8b8390",
     "--color-border":"rgba(61,58,66,0.1)",
@@ -120,7 +120,7 @@ var themes={
     "--color-base-solid":"#fff8d6",
     "--color-base-gradient":"linear-gradient(135deg,#fff8d6 0%,#ffeea3 100%)",
     "--color-secondary":"rgba(255,255,255,0.65)",
-    "--color-accent":"#8f6b00",
+    "--color-accent":"#e0a000",
     "--color-text":"#3a3220",
     "--color-text-secondary":"#7a6e54",
     "--color-border":"rgba(58,50,32,0.1)",
@@ -132,7 +132,7 @@ var themes={
     "--color-base-solid":"#ffe6f0",
     "--color-base-gradient":"linear-gradient(135deg,#ffe6f0 0%,#ffcce0 100%)",
     "--color-secondary":"rgba(255,255,255,0.65)",
-    "--color-accent":"#a83f5e",
+    "--color-accent":"#ff5d8f",
     "--color-text":"#3d2a35",
     "--color-text-secondary":"#8b7580",
     "--color-border":"rgba(61,42,53,0.1)",

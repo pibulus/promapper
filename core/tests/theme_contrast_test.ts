@@ -1,7 +1,10 @@
 /**
- * Guard: every theme accent must keep enough contrast with white text, since
- * accent is used as a button/pill background with white labels across the UI.
- * Catches a future "prettier but unreadable" accent regression.
+ * Guard: the candy header band is a PALE TINT of the accent over the card
+ * surface, with DARK ink (the theme's text color) — so the band+ink must pass
+ * WCAG AA. (We deliberately do NOT put white/dark text directly on the vivid
+ * accent anymore; bright fluoro accents are used as pops/tints, never as a text
+ * background. That's why the old "accent vs white" rule is gone — it forced
+ * muddy accents.) Catches a future "prettier but unreadable header" regression.
  */
 
 import { assertEquals } from "./_assert.ts";
@@ -24,15 +27,46 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-Deno.test("every theme accent passes WCAG AA (4.5:1) with white text", () => {
+/** Mix two hex colors by weight (mirrors CSS color-mix in srgb). */
+function mix(a: string, b: string, aWeight: number): string {
+  const pa = a.replace("#", "");
+  const pb = b.replace("#", "");
+  const ch = (h: string, i: number) => parseInt(h.slice(i, i + 2), 16);
+  const out = [0, 2, 4].map((i) => {
+    const v = Math.round(ch(pa, i) * aWeight + ch(pb, i) * (1 - aWeight));
+    return v.toString(16).padStart(2, "0");
+  });
+  return "#" + out.join("");
+}
+
+// The default card surface (--surface-card → --soft-cream). Cool themes nudge it
+// but stay near this lightness, so it's a faithful contrast baseline.
+const CARD_SURFACE = "#fff7ef";
+
+Deno.test("every theme's header band (pale accent tint) passes AA with its dark ink", () => {
   for (const theme of proMapperThemes) {
-    const ratio = contrast("#ffffff", theme.accent);
+    // CSS: --header-band = color-mix(accent 14%, surface). Ink = theme.text.
+    const band = mix(theme.accent, CARD_SURFACE, 0.14);
+    const ratio = contrast(theme.text, band);
     assertEquals(
       ratio >= 4.5,
       true,
-      `Theme "${theme.name}" accent ${theme.accent} is ${
+      `Theme "${theme.name}" header band ${band} vs ink ${theme.text} is ${
         ratio.toFixed(2)
-      }:1 with white — below the 4.5:1 AA floor for white-on-accent labels`,
+      }:1 — below the 4.5:1 AA floor`,
+    );
+  }
+});
+
+Deno.test("every theme body text passes AA on the card surface", () => {
+  for (const theme of proMapperThemes) {
+    const ratio = contrast(theme.text, CARD_SURFACE);
+    assertEquals(
+      ratio >= 4.5,
+      true,
+      `Theme "${theme.name}" text ${theme.text} is ${
+        ratio.toFixed(2)
+      }:1 on the card surface — below AA`,
     );
   }
 });

@@ -25,24 +25,30 @@
   /* ===================================================================
      THEME SYSTEM - Dynamic runtime color variables
      ================================================================ */
-  /* Defaults (overridden by theme system) */
-  --color-base: linear-gradient(135deg, #ffebd4 0%, #ffd9b8 100%);
-  --color-base-solid: #ffebd4;
-  --color-secondary: rgba(255, 255, 255, 0.6);
-  --color-accent: #b84a70;
-  --color-text: #2c2c2c;
-  --color-text-secondary: #6b6b6b;
-  --color-border: rgba(61, 57, 53, 0.1);
+  /* Defaults = BUBBLEGUM neo-pastel (overridden by theme system + FOUC script).
+     Bright candy accent used as a POP (pale-tint headers, dots), never as a
+     text background; soft pink→cream→lilac wash behind. */
+  --color-base: linear-gradient(135deg, #ffe8f3 0%, #fff3ec 100%);
+  --color-base-solid: #ffe8f3;
+  --color-secondary: rgba(255, 255, 255, 0.62);
+  --color-accent: #ff4d97;
+  --color-text: #2b2430;
+  --color-text-secondary: #8a7e88;
+  --color-border: rgba(43, 36, 48, 0.1);
   --gradient-bg:
     radial-gradient(
-    circle at 20% 20%,
-    rgba(255, 138, 170, 0.16),
-    transparent 45%
+    circle at 18% 18%,
+    rgba(255, 95, 162, 0.18),
+    transparent 46%
   ), radial-gradient(
-    circle at 80% 10%,
-    rgba(255, 198, 114, 0.14),
+    circle at 82% 12%,
+    rgba(168, 224, 255, 0.18),
     transparent 50%
-  ), linear-gradient(125deg, #fff8f1 0%, #f8f2ff 50%, #f1fbf4 100%);
+  ), radial-gradient(
+    circle at 70% 85%,
+    rgba(212, 181, 247, 0.16),
+    transparent 52%
+  ), linear-gradient(125deg, #fff6fb 0%, #fdf3ff 50%, #fff4ee 100%);
 
   /* ===================================================================
      DESIGN TOKENS - Consistent styling across components
@@ -101,11 +107,18 @@
      by construction (edit here → propagates to every card/button/chip).
      ================================================================ */
 
-  /* Candy header band ink. White passes WCAG AA on all 5 theme accents
-     (4.75–6.25:1, enforced by core/tests/theme_contrast_test.ts), so it's a
-     flat #fff — no per-theme override needed. */
-  --header-ink: #ffffff;
-  --header-ink-soft: rgba(255, 255, 255, 0.85);
+  /* Candy header band — a SLIM, PALE TINT of the accent with DARK ink (not a
+     saturated slab). This keeps the band light + airy and lets the accent be a
+     bright fluoro pop without failing text contrast. Both are modular: themes
+     override --header-band / --header-band-ink in their cssVars. Defaults derive
+     from the accent so a new theme works with zero extra config. */
+  --header-band: color-mix(
+    in srgb,
+    var(--color-accent) 14%,
+    var(--surface-card)
+  );
+  --header-band-ink: var(--color-text);
+  --header-band-sub: color-mix(in srgb, var(--color-text) 60%, transparent);
 
   /* One button system: identical height + radius across every variant. */
   --btn-height: 2.75rem; /* 44px — iOS touch target */
@@ -1840,18 +1853,13 @@ body {
 }
 
 .dashboard-card-header {
-  /* The candy header band — THE soul. A saturated accent strip with a white
-     title, so each card wears a colored hat instead of reading like a flat
-     corporate panel. Theme accents all pass WCAG AA with white (verified +
-     test-guarded). A whisper of gradient keeps it juicy, not flat. The card's
-     overflow:hidden + radius clips the band corners automatically. */
-  background: linear-gradient(
-    135deg,
-    var(--color-accent) 0%,
-    color-mix(in srgb, var(--color-accent) 85%, white) 100%
-  );
-  padding: var(--card-padding);
-  border-bottom: none;
+  /* Slim PALE-TINT band — a soft wash of the accent with dark ink. Light + airy,
+     never a heavy saturated slab. A hairline accent rule underneath gives it a
+     crisp edge. The card's overflow:hidden + radius clips the corners. */
+  background: var(--header-band);
+  padding: 0.7rem var(--card-padding);
+  border-bottom: 2px solid
+    color-mix(in srgb, var(--color-accent) 22%, transparent);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1861,14 +1869,14 @@ body {
 .dashboard-card-header h3 {
   font-size: var(--heading-size);
   font-weight: 700;
-  color: var(--header-ink);
+  color: var(--header-band-ink);
   letter-spacing: -0.01em;
   margin: 0;
 }
 
 /* Sub-text in the header (e.g. "1 of 4 done") rides on the band too. */
 .dashboard-card-header :is(span, small, p) {
-  color: var(--header-ink-soft);
+  color: var(--header-band-sub);
 }
 
 .dashboard-card-body {

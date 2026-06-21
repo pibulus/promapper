@@ -692,22 +692,21 @@ export default function ActionItemsCard(
                           onPointerDown={(e) =>
                             canDrag && onRowPointerDown(e, item.id)}
                           onClick={() => selectedItemIndex.value = index}
-                          class={`action-item-card relative p-4 transition-all${
+                          class={`action-item-card relative transition-all${
                             item.status === "completed" ? " is-completed" : ""
                           }${isSelected ? " is-selected" : ""}${
                             isDragging ? " is-dragging" : ""
                           }${isSettling ? " is-settling" : ""}`}
                           style={{
+                            padding: "0.7rem 0.85rem",
                             borderRadius: "var(--border-radius-sm)",
-                            background: "var(--surface-cream)",
-                            border: `2px solid ${
+                            background: "var(--surface-card)",
+                            border: `1px solid ${
                               isSelected
                                 ? "var(--color-accent)"
                                 : "var(--color-border)"
                             }`,
-                            boxShadow: item.status === "completed"
-                              ? "none"
-                              : "2px 2px 0 rgba(30,23,20,0.12)",
+                            boxShadow: "none",
                             // touch-action none on draggable rows lets long-press
                             // grab take over from scrolling without the browser
                             // hijacking the gesture.
