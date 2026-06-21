@@ -5,6 +5,8 @@
 
 import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
+import { usePointerSortable } from "@utils/usePointerSortable.ts";
+import { hapticBump, hapticTap } from "@utils/haptics.ts";
 
 interface ActionItem {
   id: string;
@@ -64,6 +66,34 @@ export default function ActionItemsCard(
   // State
   const visibleItems = useSignal<ActionItem[]>(actionItems);
   const sortMode = useSignal<"manual" | "assignee" | "date">("manual");
+
+  // Pointer-based drag-to-reorder (mouse + touch + pen). Declared here, above
+  // the sortedActionItems computed that reads previewOrder, so there's no
+  // temporal-dead-zone on previewOrder. publishItems is hoisted, so the
+  // forward reference in onReorder is safe. Only pending items in manual sort
+  // are reorderable; the new order is spliced back (pending then completed).
+  const {
+    draggingId,
+    settlingId,
+    previewOrder,
+    onHandlePointerDown,
+    onRowPointerDown,
+  } = usePointerSortable({
+    orderedIds: () =>
+      visibleItems.value
+        .filter((item) => item.status === "pending")
+        .map((item) => item.id),
+    onReorder: (orderedPendingIds) => {
+      const byId = new Map(visibleItems.value.map((item) => [item.id, item]));
+      const reorderedPending = orderedPendingIds
+        .map((id) => byId.get(id))
+        .filter((item): item is ActionItem => Boolean(item));
+      const completed = visibleItems.value.filter(
+        (item) => item.status === "completed",
+      );
+      publishItems([...reorderedPending, ...completed]);
+    },
+  });
   const editingItemId = useSignal<string | null>(null);
   const editingDescription = useSignal("");
   const editingAssignee = useSignal("");
@@ -76,10 +106,6 @@ export default function ActionItemsCard(
   const showAssigneeDropdown = useSignal(false);
   const activeAssigneeDropdown = useSignal<string | null>(null);
   const confirmDeleteItemId = useSignal<string | null>(null);
-
-  // Drag-and-drop state
-  const draggedItemId = useSignal<string | null>(null);
-  const dragOverItemId = useSignal<string | null>(null);
 
   // Refs
   const dropdownTimeoutRef = useRef<number | null>(null);
@@ -213,7 +239,22 @@ export default function ActionItemsCard(
       return items;
     };
 
-    return [...sortGroup(pending), ...sortGroup(completed)];
+    // While dragging, render the pending group in the live preview order so
+    // Preact owns the DOM (the sortable hook never moves nodes by hand).
+    const preview = previewOrder.value;
+    let orderedPending = sortGroup(pending);
+    if (preview) {
+      const byId = new Map(pending.map((item) => [item.id, item]));
+      const fromPreview = preview
+        .map((id) => byId.get(id))
+        .filter((item): item is ActionItem => Boolean(item));
+      // append any pending items not in the preview (safety)
+      const seen = new Set(preview);
+      const rest = pending.filter((item) => !seen.has(item.id));
+      orderedPending = [...fromPreview, ...rest];
+    }
+
+    return [...orderedPending, ...sortGroup(completed)];
   });
 
   // Reset keyboard selection when list length changes
@@ -263,6 +304,10 @@ export default function ActionItemsCard(
   }
 
   function toggleActionItem(itemId: string) {
+    const target = visibleItems.value.find((item) => item.id === itemId);
+    // A firmer buzz when completing, a light tick when un-completing.
+    if (target?.status === "completed") hapticTap();
+    else hapticBump();
     const updatedItems = visibleItems.value.map((item) =>
       item.id === itemId
         ? {
@@ -384,74 +429,6 @@ export default function ActionItemsCard(
   }
 
   // ===================================================================
-  // DRAG AND DROP
-  // ===================================================================
-
-  function handleDragStart(e: DragEvent, itemId: string) {
-    draggedItemId.value = itemId;
-    if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
-  }
-
-  function handleDragEnd() {
-    draggedItemId.value = null;
-    dragOverItemId.value = null;
-  }
-
-  function handleDragOver(e: DragEvent, itemId: string) {
-    e.preventDefault();
-    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
-    dragOverItemId.value = itemId;
-  }
-
-  function handleDragLeave(e: DragEvent) {
-    // Only clear when truly leaving the item div, not when entering a child element.
-    // Without this check, crossing over the grip icon / checkbox causes a flicker.
-    const relatedTarget = e.relatedTarget as HTMLElement | null;
-    if (
-      !relatedTarget ||
-      !(e.currentTarget as HTMLElement).contains(relatedTarget)
-    ) {
-      dragOverItemId.value = null;
-    }
-  }
-
-  function handleDrop(e: DragEvent, dropTargetId: string) {
-    e.preventDefault();
-    if (!draggedItemId.value) return;
-
-    const draggedId = draggedItemId.value;
-    if (draggedId === dropTargetId) {
-      draggedItemId.value = null;
-      dragOverItemId.value = null;
-      return;
-    }
-
-    const draggedItem = visibleItems.value.find((item) =>
-      item.id === draggedId
-    );
-    const dropTargetItem = visibleItems.value.find((item) =>
-      item.id === dropTargetId
-    );
-
-    if (!draggedItem || !dropTargetItem) return;
-    if (
-      draggedItem.status === "completed" ||
-      dropTargetItem.status === "completed"
-    ) return;
-
-    const draggedIndex = visibleItems.value.indexOf(draggedItem);
-    const dropTargetIndex = visibleItems.value.indexOf(dropTargetItem);
-
-    const newItems = [...visibleItems.value];
-    newItems.splice(draggedIndex, 1);
-    newItems.splice(dropTargetIndex, 0, draggedItem);
-
-    publishItems(newItems);
-    draggedItemId.value = null;
-    dragOverItemId.value = null;
-  }
-
-  // ===================================================================
   // RENDER
   // ===================================================================
 
@@ -544,8 +521,8 @@ export default function ActionItemsCard(
               : (
                 <div class="space-y-3">
                   {sortedActionItems.value.map((item, index) => {
-                    const isDragging = draggedItemId.value === item.id;
-                    const isDragOver = dragOverItemId.value === item.id;
+                    const isDragging = draggingId.value === item.id;
+                    const isSettling = settlingId.value === item.id;
                     const canDrag = item.status === "pending" &&
                       sortMode.value === "manual";
                     const isSelected = selectedItemIndex.value === index;
@@ -553,32 +530,29 @@ export default function ActionItemsCard(
                     return (
                       <div
                         key={item.id}
-                        draggable={canDrag}
-                        onDragStart={(e) =>
-                          canDrag && handleDragStart(e, item.id)}
-                        onDragEnd={handleDragEnd}
-                        onDragOver={(e) =>
-                          canDrag && handleDragOver(e, item.id)}
-                        onDragLeave={(e) => canDrag && handleDragLeave(e)}
-                        onDrop={(e) => canDrag && handleDrop(e, item.id)}
+                        data-sortable-id={canDrag ? item.id : undefined}
+                        onPointerDown={(e) =>
+                          canDrag && onRowPointerDown(e, item.id)}
                         onClick={() => selectedItemIndex.value = index}
                         class={`action-item-card relative p-4 rounded-lg transition-all${
                           item.status === "completed" ? " is-completed" : ""
                         }${isSelected ? " is-selected" : ""}${
-                          isDragOver ? " is-drag-over" : ""
-                        }${isDragging ? " is-dragging" : ""}`}
+                          isDragging ? " is-dragging" : ""
+                        }${isSettling ? " is-settling" : ""}`}
                         style={{
                           background: "var(--surface-cream)",
                           border: `2px solid ${
-                            isSelected || isDragOver
+                            isSelected
                               ? "var(--color-accent)"
                               : "var(--color-border)"
                           }`,
                           boxShadow: item.status === "completed"
                             ? "none"
                             : "2px 2px 0 rgba(0,0,0,0.1)",
-                          opacity: isDragging ? "0.5" : "1",
-                          cursor: canDrag ? "move" : "default",
+                          // touch-action none on draggable rows lets long-press
+                          // grab take over from scrolling without the browser
+                          // hijacking the gesture.
+                          touchAction: canDrag ? "pan-y" : undefined,
                           outline: isSelected
                             ? `2px solid var(--color-accent)`
                             : "none",
@@ -586,17 +560,21 @@ export default function ActionItemsCard(
                         }}
                       >
                         <div class="grid grid-cols-[auto_auto_1fr] gap-3 items-start">
-                          {/* Drag Handle */}
+                          {/* Drag Handle (mouse/pen: press to grab; touch: long-press the row) */}
                           <div class="flex items-center pt-1">
                             {canDrag
                               ? (
                                 <i
-                                  class="fa fa-grip-vertical cursor-move"
+                                  class="fa fa-grip-vertical drag-handle"
                                   style={{
                                     color: "var(--color-text-secondary)",
                                     fontSize: "var(--heading-size)",
+                                    cursor: "grab",
+                                    touchAction: "none",
                                   }}
                                   title="Drag to reorder"
+                                  onPointerDown={(e) =>
+                                    onHandlePointerDown(e, item.id)}
                                 >
                                 </i>
                               )
