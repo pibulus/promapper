@@ -1,0 +1,15 @@
+{
+  "name": "promapper-partykit",
+  "private": true,
+  "description": "npm toolchain for the PartyKit live-collab worker only. The app itself is Deno/Fresh (see deno.json); these deps are NOT used by the Deno app.",
+  "scripts": {
+    "party:dev": "partykit dev",
+    "party:deploy": "partykit deploy"
+  },
+  "devDependencies": {
+    "partykit": "^0.0.111"
+  },
+  "dependencies": {
+    "partysocket": "^1.0.2"
+  }
+}
