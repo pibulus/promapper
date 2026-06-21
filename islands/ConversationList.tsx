@@ -3,21 +3,36 @@
  *
  * Shows all saved conversations with load/delete actions
  * Auto-updates when conversations change
+ *
+ * Features: starring, All/Starred filter, backup export & import
  */
 
 import { useComputed, useSignal } from "@preact/signals";
-import { useEffect } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 import {
   deleteConversation,
+  getAllConversations,
   getConversationList,
   loadConversation,
+  replaceAllConversations,
   type StoredConversation,
+  toggleConversationStarred,
 } from "../core/storage/localStorage.ts";
+import {
+  mergeBackup,
+  parseBackup,
+  serializeBackup,
+} from "../core/storage/backup.ts";
 import { conversationData } from "@signals/conversationStore.ts";
+import { showToast } from "../utils/toast.ts";
+
+type FilterMode = "all" | "starred";
 
 export default function ConversationList() {
   const conversations = useSignal<StoredConversation[]>([]);
   const showConfirmDelete = useSignal<string | null>(null);
+  const filterMode = useSignal<FilterMode>("all");
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     refreshList();
@@ -63,7 +78,71 @@ export default function ConversationList() {
     conversationData.value = null;
   }
 
+  function handleToggleStar(e: MouseEvent, id: string) {
+    e.stopPropagation();
+    toggleConversationStarred(id);
+    refreshList();
+  }
+
+  // ===================================================================
+  // BACKUP — EXPORT
+  // ===================================================================
+  function handleExport() {
+    try {
+      const json = serializeBackup(
+        getAllConversations(),
+        new Date().toISOString(),
+      );
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const dateTag = new Date().toISOString().slice(0, 10);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `promapper-backup-${dateTag}.json`;
+      anchor.style.display = "none";
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      showToast("Backup downloaded", "success");
+    } catch (err) {
+      console.error("Backup export failed:", err);
+      showToast("Export failed — check the console", "error");
+    }
+  }
+
+  // ===================================================================
+  // BACKUP — IMPORT
+  // ===================================================================
+  async function handleImportFile(e: Event) {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = parseBackup(text);
+      const merged = mergeBackup(getAllConversations(), parsed);
+      replaceAllConversations(merged);
+      refreshList();
+      const count = Object.keys(parsed).length;
+      showToast(
+        `Imported ${count} conversation${count !== 1 ? "s" : ""}`,
+        "success",
+      );
+    } catch (err) {
+      console.error("Backup import failed:", err);
+      showToast("Import failed — file may be corrupt", "error");
+    }
+    // Reset so the same file can be re-imported if needed
+    if (importInputRef.current) importInputRef.current.value = "";
+  }
+
   const activeId = useComputed(() => conversationData.value?.conversation.id);
+
+  const visibleConversations = useComputed(() =>
+    filterMode.value === "starred"
+      ? conversations.value.filter((c) => c.starred)
+      : conversations.value
+  );
 
   return (
     <div
@@ -118,9 +197,40 @@ export default function ConversationList() {
         </button>
       </div>
 
+      {/* All / Starred filter */}
+      <div
+        class="flex gap-1 px-3 pt-3 pb-2"
+        style={{ borderBottom: "1px solid rgba(0, 0, 0, 0.06)" }}
+      >
+        {(["all", "starred"] as FilterMode[]).map((mode) => (
+          <button
+            key={mode}
+            onClick={() => (filterMode.value = mode)}
+            class="flex-1 py-1 rounded-md"
+            style={{
+              fontSize: "var(--tiny-size)",
+              fontWeight: "600",
+              border: filterMode.value === mode
+                ? "1px solid #111"
+                : "1px solid rgba(0,0,0,0.1)",
+              background: filterMode.value === mode
+                ? "#111"
+                : "rgba(0,0,0,0.03)",
+              color: filterMode.value === mode
+                ? "white"
+                : "var(--color-text-secondary)",
+              transition: "all var(--transition-fast)",
+              cursor: "pointer",
+            }}
+          >
+            {mode === "all" ? "All" : "★ Starred"}
+          </button>
+        ))}
+      </div>
+
       {/* Conversation List */}
       <div class="flex-1 overflow-y-auto p-3 space-y-2">
-        {conversations.value.length === 0
+        {visibleConversations.value.length === 0
           ? (
             <p
               class="text-center py-8"
@@ -130,12 +240,13 @@ export default function ConversationList() {
                 lineHeight: "var(--line-height)",
               }}
             >
-              No saved conversations yet.<br />
-              Upload audio or text to begin.
+              {filterMode.value === "starred"
+                ? "No starred conversations yet.\nStar one to pin it here."
+                : "No saved conversations yet.\nUpload audio or text to begin."}
             </p>
           )
           : (
-            conversations.value.map((conv) => {
+            visibleConversations.value.map((conv) => {
               const isActive = activeId.value === conv.id;
               const truncatedTitle =
                 conv.conversation.title?.substring(0, 40) || "Untitled";
@@ -207,27 +318,123 @@ export default function ConversationList() {
                       </p>
                     </button>
 
-                    <button
-                      onClick={() => handleDelete(conv.id)}
-                      class="p-1"
-                      style={{
-                        color: "var(--color-danger)",
-                        fontSize: "var(--small-size)",
-                        transition: "opacity var(--transition-fast)",
-                        opacity: 0.5,
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
-                      onMouseLeave={(e) =>
-                        e.currentTarget.style.opacity = "0.5"}
-                      title="Delete conversation"
-                    >
-                      <i class="fa fa-trash"></i>
-                    </button>
+                    <div class="flex items-center gap-1">
+                      {/* Star toggle */}
+                      <button
+                        onClick={(e) => handleToggleStar(e, conv.id)}
+                        class="p-1"
+                        title={conv.starred ? "Unstar" : "Star conversation"}
+                        style={{
+                          fontSize: "var(--small-size)",
+                          color: conv.starred
+                            ? "#f59e0b"
+                            : "var(--color-text-secondary)",
+                          opacity: conv.starred ? 1 : 0.45,
+                          transition:
+                            "opacity var(--transition-fast), color var(--transition-fast)",
+                          lineHeight: 1,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.opacity = "1";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.opacity = conv.starred
+                            ? "1"
+                            : "0.45";
+                        }}
+                      >
+                        {conv.starred ? "★" : "☆"}
+                      </button>
+
+                      {/* Delete */}
+                      <button
+                        onClick={() => handleDelete(conv.id)}
+                        class="p-1"
+                        style={{
+                          color: "var(--color-danger)",
+                          fontSize: "var(--small-size)",
+                          transition: "opacity var(--transition-fast)",
+                          opacity: 0.5,
+                        }}
+                        onMouseEnter={(e) =>
+                          e.currentTarget.style.opacity = "1"}
+                        onMouseLeave={(e) =>
+                          e.currentTarget.style.opacity = "0.5"}
+                        title="Delete conversation"
+                      >
+                        <i class="fa fa-trash"></i>
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
             })
           )}
+      </div>
+
+      {/* Backup / Restore footer */}
+      <div
+        class="flex gap-2 px-3 py-3"
+        style={{ borderTop: "1px solid rgba(0, 0, 0, 0.06)" }}
+      >
+        <button
+          onClick={handleExport}
+          class="flex-1 py-1 rounded-md"
+          style={{
+            fontSize: "var(--tiny-size)",
+            fontWeight: "500",
+            border: "1px solid rgba(0,0,0,0.12)",
+            background: "rgba(232,131,156,0.08)",
+            color: "var(--color-text-secondary)",
+            cursor: "pointer",
+            transition: "all var(--transition-fast)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(232,131,156,0.18)";
+            e.currentTarget.style.color = "#111";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(232,131,156,0.08)";
+            e.currentTarget.style.color = "var(--color-text-secondary)";
+          }}
+          title="Download all conversations as a JSON backup"
+        >
+          ↓ Export
+        </button>
+
+        <button
+          onClick={() => importInputRef.current?.click()}
+          class="flex-1 py-1 rounded-md"
+          style={{
+            fontSize: "var(--tiny-size)",
+            fontWeight: "500",
+            border: "1px solid rgba(0,0,0,0.12)",
+            background: "rgba(134,197,166,0.08)",
+            color: "var(--color-text-secondary)",
+            cursor: "pointer",
+            transition: "all var(--transition-fast)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(134,197,166,0.18)";
+            e.currentTarget.style.color = "#111";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(134,197,166,0.08)";
+            e.currentTarget.style.color = "var(--color-text-secondary)";
+          }}
+          title="Import conversations from a backup file (merges, never overwrites newer)"
+        >
+          ↑ Import
+        </button>
+
+        {/* Hidden file input */}
+        <input
+          ref={importInputRef}
+          type="file"
+          accept=".json"
+          style={{ display: "none" }}
+          onChange={handleImportFile}
+        />
       </div>
 
       {/* Delete Confirmation Modal */}

@@ -2,17 +2,28 @@
  * Mobile History Menu Island - Slide-out Drawer
  *
  * Mobile-optimized conversation history with touch-friendly controls
+ *
+ * Features: starring, All/Starred filter, backup export & import
  */
 
 import { useComputed, useSignal } from "@preact/signals";
-import { useEffect } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 import {
   deleteConversation,
+  getAllConversations,
   getConversationList,
   loadConversation,
+  replaceAllConversations,
   type StoredConversation,
+  toggleConversationStarred,
 } from "../core/storage/localStorage.ts";
+import {
+  mergeBackup,
+  parseBackup,
+  serializeBackup,
+} from "../core/storage/backup.ts";
 import { conversationData } from "@signals/conversationStore.ts";
+import { showToast } from "../utils/toast.ts";
 
 // Cache date formatter outside component to avoid recreating
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -22,16 +33,27 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
 });
 
+type FilterMode = "all" | "starred";
+
 export default function MobileHistoryMenu() {
   const refreshTrigger = useSignal(0);
   const isOpen = useSignal(false);
   const showConfirmDelete = useSignal<string | null>(null);
+  const filterMode = useSignal<FilterMode>("all");
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   // Memoize conversations list - only recalculates when refreshTrigger changes
   const conversations = useComputed<StoredConversation[]>(() => {
     refreshTrigger.value; // Depend on this to trigger refresh
     return getConversationList();
   });
+
+  // Filtered view
+  const visibleConversations = useComputed<StoredConversation[]>(() =>
+    filterMode.value === "starred"
+      ? conversations.value.filter((c) => c.starred)
+      : conversations.value
+  );
 
   // Load conversations on mount
   useEffect(() => {
@@ -91,8 +113,65 @@ export default function MobileHistoryMenu() {
     isOpen.value = !isOpen.value;
   }
 
+  function handleToggleStar(e: MouseEvent, id: string) {
+    e.stopPropagation();
+    toggleConversationStarred(id);
+    refreshList();
+  }
+
+  // ===================================================================
+  // BACKUP — EXPORT
+  // ===================================================================
+  function handleExport() {
+    try {
+      const json = serializeBackup(
+        getAllConversations(),
+        new Date().toISOString(),
+      );
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const dateTag = new Date().toISOString().slice(0, 10);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `promapper-backup-${dateTag}.json`;
+      anchor.style.display = "none";
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      showToast("Backup downloaded", "success");
+    } catch (err) {
+      console.error("Backup export failed:", err);
+      showToast("Export failed — check the console", "error");
+    }
+  }
+
+  // ===================================================================
+  // BACKUP — IMPORT
+  // ===================================================================
+  async function handleImportFile(e: Event) {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = parseBackup(text);
+      const merged = mergeBackup(getAllConversations(), parsed);
+      replaceAllConversations(merged);
+      refreshList();
+      const count = Object.keys(parsed).length;
+      showToast(
+        `Imported ${count} conversation${count !== 1 ? "s" : ""}`,
+        "success",
+      );
+    } catch (err) {
+      console.error("Backup import failed:", err);
+      showToast("Import failed — file may be corrupt", "error");
+    }
+    // Reset so the same file can be re-imported if needed
+    if (importInputRef.current) importInputRef.current.value = "";
+  }
+
   const activeId = conversationData.value?.conversation.id;
-  const hasConversations = conversations.value.length > 0;
 
   return (
     <>
@@ -165,6 +244,8 @@ export default function MobileHistoryMenu() {
           WebkitBackdropFilter: "blur(20px)",
           borderLeft: "2px solid rgba(0, 0, 0, 0.1)",
           boxShadow: "-4px 0 24px rgba(0, 0, 0, 0.12)",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         {/* Header */}
@@ -177,6 +258,7 @@ export default function MobileHistoryMenu() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            flexShrink: 0,
           }}
         >
           <h2
@@ -225,6 +307,7 @@ export default function MobileHistoryMenu() {
           style={{
             padding: "1.25rem 1.5rem",
             borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+            flexShrink: 0,
           }}
         >
           <button
@@ -284,12 +367,50 @@ export default function MobileHistoryMenu() {
           </button>
         </div>
 
+        {/* All / Starred filter */}
+        <div
+          style={{
+            display: "flex",
+            gap: "0.5rem",
+            padding: "0.75rem 1.5rem",
+            borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
+            flexShrink: 0,
+          }}
+        >
+          {(["all", "starred"] as FilterMode[]).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => (filterMode.value = mode)}
+              style={{
+                flex: 1,
+                padding: "6px 0",
+                fontSize: "var(--tiny-size)",
+                fontWeight: "600",
+                borderRadius: "8px",
+                border: filterMode.value === mode
+                  ? "2px solid #1A1A1A"
+                  : "2px solid rgba(0,0,0,0.1)",
+                background: filterMode.value === mode
+                  ? "#1A1A1A"
+                  : "rgba(0,0,0,0.03)",
+                color: filterMode.value === mode
+                  ? "white"
+                  : "var(--color-text-secondary)",
+                cursor: "pointer",
+                transition: "all var(--transition-fast)",
+              }}
+            >
+              {mode === "all" ? "All" : "★ Starred"}
+            </button>
+          ))}
+        </div>
+
         {/* Conversation List */}
         <div
-          class="history-drawer__list flex-1 overflow-y-auto space-y-3 h-[calc(100vh-180px)]"
-          style={{ padding: "1.25rem 1.5rem" }}
+          class="history-drawer__list overflow-y-auto space-y-3"
+          style={{ padding: "1.25rem 1.5rem", flex: 1 }}
         >
-          {!hasConversations
+          {visibleConversations.value.length === 0
             ? (
               <div
                 style={{
@@ -305,7 +426,7 @@ export default function MobileHistoryMenu() {
                     opacity: 0.4,
                   }}
                 >
-                  ✨
+                  {filterMode.value === "starred" ? "★" : "✨"}
                 </div>
                 <p
                   style={{
@@ -314,13 +435,24 @@ export default function MobileHistoryMenu() {
                     lineHeight: "var(--line-height)",
                   }}
                 >
-                  No conversations yet.<br />
-                  Start creating some magic!
+                  {filterMode.value === "starred"
+                    ? (
+                      <>
+                        No starred conversations yet.<br />
+                        Tap ☆ on any conversation to pin it here.
+                      </>
+                    )
+                    : (
+                      <>
+                        No conversations yet.<br />
+                        Start creating some magic!
+                      </>
+                    )}
                 </p>
               </div>
             )
             : (
-              conversations.value.map((conv) => {
+              visibleConversations.value.map((conv) => {
                 const isActive = activeId === conv.id;
                 const truncatedTitle =
                   conv.conversation.title?.substring(0, 35) || "Untitled";
@@ -339,7 +471,7 @@ export default function MobileHistoryMenu() {
                         display: "flex",
                         alignItems: "start",
                         justifyContent: "space-between",
-                        gap: "0.75rem",
+                        gap: "0.5rem",
                       }}
                     >
                       <button
@@ -409,39 +541,89 @@ export default function MobileHistoryMenu() {
                         </p>
                       </button>
 
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(conv.id);
-                        }}
+                      <div
                         style={{
-                          background: "rgba(239, 68, 68, 0.1)",
-                          border: `2px solid rgba(239, 68, 68, 0.2)`,
-                          borderRadius: "var(--border-radius-sm)",
-                          padding: "8px",
-                          cursor: "pointer",
-                          transition: "all var(--transition-medium)",
-                          fontSize: "var(--heading-size)",
-                          width: "36px",
-                          height: "36px",
                           display: "flex",
+                          flexDirection: "column",
+                          gap: "0.5rem",
                           alignItems: "center",
-                          justifyContent: "center",
                         }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background =
-                            "rgba(239, 68, 68, 0.15)";
-                          e.currentTarget.style.transform = "scale(1.05)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background =
-                            "rgba(239, 68, 68, 0.1)";
-                          e.currentTarget.style.transform = "scale(1)";
-                        }}
-                        title="Delete conversation"
                       >
-                        🗑️
-                      </button>
+                        {/* Star toggle */}
+                        <button
+                          onClick={(e) => handleToggleStar(e, conv.id)}
+                          title={conv.starred ? "Unstar" : "Star conversation"}
+                          style={{
+                            background: conv.starred
+                              ? "rgba(245, 158, 11, 0.12)"
+                              : "rgba(0, 0, 0, 0.04)",
+                            border: conv.starred
+                              ? "2px solid rgba(245, 158, 11, 0.35)"
+                              : "2px solid rgba(0, 0, 0, 0.08)",
+                            borderRadius: "var(--border-radius-sm)",
+                            padding: "6px",
+                            cursor: "pointer",
+                            transition: "all var(--transition-medium)",
+                            fontSize: "var(--heading-size)",
+                            width: "36px",
+                            height: "36px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: conv.starred
+                              ? "#d97706"
+                              : "var(--color-text-secondary)",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background =
+                              "rgba(245, 158, 11, 0.18)";
+                            e.currentTarget.style.transform = "scale(1.05)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = conv.starred
+                              ? "rgba(245, 158, 11, 0.12)"
+                              : "rgba(0, 0, 0, 0.04)";
+                            e.currentTarget.style.transform = "scale(1)";
+                          }}
+                        >
+                          {conv.starred ? "★" : "☆"}
+                        </button>
+
+                        {/* Delete */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(conv.id);
+                          }}
+                          style={{
+                            background: "rgba(239, 68, 68, 0.1)",
+                            border: `2px solid rgba(239, 68, 68, 0.2)`,
+                            borderRadius: "var(--border-radius-sm)",
+                            padding: "8px",
+                            cursor: "pointer",
+                            transition: "all var(--transition-medium)",
+                            fontSize: "var(--heading-size)",
+                            width: "36px",
+                            height: "36px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background =
+                              "rgba(239, 68, 68, 0.15)";
+                            e.currentTarget.style.transform = "scale(1.05)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background =
+                              "rgba(239, 68, 68, 0.1)";
+                            e.currentTarget.style.transform = "scale(1)";
+                          }}
+                          title="Delete conversation"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -449,27 +631,89 @@ export default function MobileHistoryMenu() {
             )}
         </div>
 
-        {/* Storage Info */}
+        {/* Backup / Restore footer */}
         <div
-          class="history-drawer__footer"
           style={{
-            padding: "1rem 1.5rem",
+            padding: "0.75rem 1.5rem",
             borderTop: "1px solid rgba(0, 0, 0, 0.06)",
             background: "rgba(0, 0, 0, 0.02)",
+            display: "flex",
+            gap: "0.625rem",
+            alignItems: "center",
+            flexShrink: 0,
           }}
         >
           <p
             style={{
-              fontSize: "var(--small-size)",
+              fontSize: "var(--tiny-size)",
               color: "#8B7F77",
-              textAlign: "center",
               fontWeight: "500",
+              flex: 1,
             }}
           >
-            {conversations.value.length}{" "}
-            conversation{conversations.value.length !== 1 ? "s" : ""}{" "}
-            saved locally
+            {conversations.value.length} saved
           </p>
+
+          <button
+            onClick={handleExport}
+            style={{
+              padding: "7px 14px",
+              fontSize: "var(--tiny-size)",
+              fontWeight: "600",
+              border: "2px solid rgba(232, 131, 156, 0.3)",
+              borderRadius: "8px",
+              background: "rgba(232, 131, 156, 0.1)",
+              color: "var(--color-text-secondary)",
+              cursor: "pointer",
+              transition: "all var(--transition-fast)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(232, 131, 156, 0.2)";
+              e.currentTarget.style.color = "#111";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(232, 131, 156, 0.1)";
+              e.currentTarget.style.color = "var(--color-text-secondary)";
+            }}
+            title="Download all conversations as a JSON backup"
+          >
+            ↓ Export
+          </button>
+
+          <button
+            onClick={() => importInputRef.current?.click()}
+            style={{
+              padding: "7px 14px",
+              fontSize: "var(--tiny-size)",
+              fontWeight: "600",
+              border: "2px solid rgba(134, 197, 166, 0.3)",
+              borderRadius: "8px",
+              background: "rgba(134, 197, 166, 0.1)",
+              color: "var(--color-text-secondary)",
+              cursor: "pointer",
+              transition: "all var(--transition-fast)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(134, 197, 166, 0.2)";
+              e.currentTarget.style.color = "#111";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(134, 197, 166, 0.1)";
+              e.currentTarget.style.color = "var(--color-text-secondary)";
+            }}
+            title="Import conversations from a backup file (merges, never overwrites newer)"
+          >
+            ↑ Import
+          </button>
+
+          {/* Hidden file input */}
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".json"
+            style={{ display: "none" }}
+            onChange={handleImportFile}
+          />
         </div>
       </div>
 

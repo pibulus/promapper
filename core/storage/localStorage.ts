@@ -21,6 +21,7 @@ export interface StoredConversation extends ConversationData {
   id: string;
   createdAt: string;
   updatedAt: string;
+  starred?: boolean;
 }
 
 // ===================================================================
@@ -42,12 +43,51 @@ export function saveConversation(data: ConversationData): void {
     createdAt: conversations[conversationId]?.createdAt ||
       new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    // Preserve the star across auto-saves (data is ConversationData, no flag).
+    starred: conversations[conversationId]?.starred ?? false,
   };
 
   conversations[conversationId] = stored;
 
   localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
   localStorage.setItem(ACTIVE_ID_KEY, conversationId);
+}
+
+/**
+ * Star / unstar a conversation. Returns the new starred state.
+ */
+export function setConversationStarred(id: string, starred: boolean): void {
+  if (typeof window === "undefined") return;
+  const conversations = getAllConversations();
+  const conv = conversations[id];
+  if (!conv) return;
+  conv.starred = starred;
+  conversations[id] = conv;
+  localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+}
+
+/**
+ * Toggle a conversation's starred flag. Returns the resulting state.
+ */
+export function toggleConversationStarred(id: string): boolean {
+  if (typeof window === "undefined") return false;
+  const conversations = getAllConversations();
+  const conv = conversations[id];
+  if (!conv) return false;
+  conv.starred = !conv.starred;
+  conversations[id] = conv;
+  localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+  return conv.starred;
+}
+
+/**
+ * Replace the entire conversations map (used by backup import).
+ */
+export function replaceAllConversations(
+  conversations: Record<string, StoredConversation>,
+): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
 }
 
 /**
