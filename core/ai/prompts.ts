@@ -1,7 +1,7 @@
 /**
  * AI Prompts - The Nervous System Core
  *
- * All AI prompts extracted from geminiService.js
+ * All AI prompts in one place, provider-agnostic.
  * Framework-agnostic, reusable across any implementation
  */
 

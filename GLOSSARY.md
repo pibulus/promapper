@@ -35,8 +35,8 @@ Short reference for the main terms and files in this repo.
   conversion.
 - [routes/api/process.ts](./routes/api/process.ts): New conversation endpoint.
 - [routes/api/append.ts](./routes/api/append.ts): Append audio endpoint.
-- [routes/api/gemini.ts](./routes/api/gemini.ts): Markdown export endpoint name
-  kept for compatibility.
+- [routes/api/markdown.ts](./routes/api/markdown.ts): Provider-agnostic markdown
+  export endpoint.
 
 ## UI Layout
 

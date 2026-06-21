@@ -2,14 +2,31 @@
 
 ## What This App Is
 
-A Deno Fresh app, using Preact and Tailwind, that turns meeting recordings or
-pasted text into structured knowledge:
+A Deno Fresh app, using Preact and Tailwind, that turns messy audio or written
+material into a living project map:
 
 - transcripts with speaker detection
 - AI-generated summaries
 - action items with assignees and completion status
 - emoji topic maps with relationship edges
 - markdown exports in multiple formats
+
+It is for people and small teams, not a corporate manager dashboard. Good use
+cases include weekly project meetings, research groups, personal voice notes,
+court cases, films, interviews, workshops, and any ongoing pile of thoughts that
+needs shape without becoming heavy software.
+
+The product promise is:
+
+```text
+ongoing conversation -> project memory -> actions, summaries, maps, docs, sharing
+```
+
+Copy should be clear, warm, and a little alive. Keep it short, but not clipped
+or command-like. Do not overcorrect into cold monosyllables. Do not define the
+app by dunking on other tools, subscriptions, managers, or corporate software.
+Just say what this thing is and why it is useful. Avoid fake authority,
+productivity-coach voice, and strings of imperatives like "Talk. Paste. Append."
 
 The main AI provider is OpenRouter. Gemini remains available as a fallback by
 setting `AI_PROVIDER=gemini`.
@@ -58,7 +75,7 @@ API_AUTH_TOKEN=...
   index.tsx                     # Main app route
   api/process.ts                # New audio/text conversation
   api/append.ts                 # Append audio to existing conversation
-  api/gemini.ts                 # Legacy endpoint name for markdown export
+  api/markdown.ts               # Provider-agnostic markdown export
   api/auth.ts                   # API token session
   api/share/create.ts           # Guarded durable share creation
   api/share/[shareId].ts        # Public share lookup by ID
@@ -133,17 +150,12 @@ the existing conversation.
    inline style values instead of the token system in `static/styles.css`. Start
    with `HomeIsland`, `DashboardIsland`, `ActionItemsCard`, and the graph
    islands.
-2. **Legacy naming**: `/api/gemini` and `utils/geminiService.ts` are now
-   provider-neutral in behavior but still Gemini-named. Rename only when the
-   client call sites and docs can be changed together.
-3. **Action item deduplication**: Append merging still uses normalized string
-   equality. Semantically duplicate tasks can slip through.
-4. **Real-device audio QA**: OpenRouter audio works with generated AIFF and text
+2. **Real-device audio QA**: OpenRouter audio works with generated AIFF and text
    flows locally, but browser-recorded `audio/webm` should be verified on real
    desktop and iPhone.
-5. **Theme system clarity**: There are theme variables and local theme restore
+3. **Theme system clarity**: There are theme variables and local theme restore
    code, but system dark-mode behavior is not a settled feature.
-6. **Island count**: There are 15 islands. Some graph wrappers or selectors may
+4. **Island count**: There are 15 islands. Some graph wrappers or selectors may
    be foldable later, but do not refactor this until behavior is covered.
 
 ## When Adding Features

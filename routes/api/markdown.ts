@@ -1,8 +1,9 @@
 /**
- * AI API Route
+ * Markdown API Route
  *
- * Server-side endpoint for AI calls
- * Keeps API key secure, never exposed to client
+ * Server-side endpoint for AI markdown generation.
+ * Provider-agnostic: uses whichever AI provider is configured.
+ * Keeps API keys secure, never exposed to the client.
  */
 
 import { FreshContext } from "$fresh/server.ts";
@@ -47,7 +48,7 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
       },
     );
   } catch (error) {
-    console.error("❌ Error in AI API:", error);
+    console.error("❌ Error in markdown API:", error);
     return new Response(
       JSON.stringify({
         error: "Failed to generate markdown",

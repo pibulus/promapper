@@ -6,7 +6,7 @@ import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
 import * as $api_append from "./routes/api/append.ts";
 import * as $api_auth from "./routes/api/auth.ts";
-import * as $api_gemini from "./routes/api/gemini.ts";
+import * as $api_markdown from "./routes/api/markdown.ts";
 import * as $api_process from "./routes/api/process.ts";
 import * as $api_share_shareId_ from "./routes/api/share/[shareId].ts";
 import * as $api_share_create from "./routes/api/share/create.ts";
@@ -36,7 +36,7 @@ const manifest = {
     "./routes/_app.tsx": $_app,
     "./routes/api/append.ts": $api_append,
     "./routes/api/auth.ts": $api_auth,
-    "./routes/api/gemini.ts": $api_gemini,
+    "./routes/api/markdown.ts": $api_markdown,
     "./routes/api/process.ts": $api_process,
     "./routes/api/share/[shareId].ts": $api_share_shareId_,
     "./routes/api/share/create.ts": $api_share_create,

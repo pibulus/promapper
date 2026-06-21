@@ -1,5 +1,8 @@
 import { assertEquals } from "./_assert.ts";
-import { mergeAppendActionItems } from "../orchestration/append-merge.ts";
+import {
+  mergeAppendActionItems,
+  normalizeDescription,
+} from "../orchestration/append-merge.ts";
 import type { ActionItem } from "../types/index.ts";
 
 const timestamp = "2026-06-10T00:00:00.000Z";
@@ -76,4 +79,63 @@ Deno.test("mergeAppendActionItems skips duplicate extracted items", () => {
     "Send the recap",
     "Confirm launch date",
   ]);
+});
+
+Deno.test("mergeAppendActionItems skips semantic duplicates (punctuation + filler)", () => {
+  const merged = mergeAppendActionItems(
+    [item("existing-1", "Send the recap email")],
+    [
+      item("new-1", "send recap email."),
+      item("new-2", "Please send the recap email!"),
+      item("new-3", "Book the venue"),
+    ],
+    [],
+    timestamp,
+  );
+
+  assertEquals(merged.map((actionItem) => actionItem.description), [
+    "Send the recap email",
+    "Book the venue",
+  ]);
+});
+
+Deno.test("mergeAppendActionItems dedupes within the extracted batch", () => {
+  const merged = mergeAppendActionItems(
+    [],
+    [
+      item("new-1", "Confirm the launch date"),
+      item("new-2", "confirm launch date"),
+    ],
+    [],
+    timestamp,
+  );
+
+  assertEquals(merged.length, 1);
+  assertEquals(merged[0].description, "Confirm the launch date");
+});
+
+Deno.test("mergeAppendActionItems keeps distinct tasks that share words", () => {
+  const merged = mergeAppendActionItems(
+    [item("existing-1", "Email the client")],
+    [item("new-1", "Email the designer")],
+    [],
+    timestamp,
+  );
+
+  assertEquals(merged.length, 2);
+});
+
+Deno.test("normalizeDescription collapses noise but preserves meaning", () => {
+  assertEquals(
+    normalizeDescription("Please send the recap email!"),
+    normalizeDescription("send recap email"),
+  );
+  assertEquals(normalizeDescription("Book the venue."), "book venue");
+  // Distinct tasks must not collapse together
+  if (
+    normalizeDescription("Email the client") ===
+      normalizeDescription("Email the designer")
+  ) {
+    throw new Error("distinct descriptions normalized to the same key");
+  }
 });

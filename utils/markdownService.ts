@@ -2,23 +2,24 @@ import { ensureApiSession } from "./apiAuth.ts";
 import { enqueueApiRequest } from "./requestQueue.ts";
 
 /**
- * Gemini AI Service
+ * Markdown Service
  *
- * Client-side service that calls server API route for Gemini
- * API key stays server-side, never exposed to client
+ * Client-side service that calls the server markdown endpoint.
+ * Provider-agnostic: the server picks the active AI provider.
+ * API keys stay server-side, never exposed to the client.
  */
 
-export const geminiService = {
+export const markdownService = {
   /**
    * Generate markdown from conversation text using a custom prompt
    */
   async generateMarkdown(prompt: string, text: string): Promise<string> {
     try {
-      console.log("📝 Generating markdown with Gemini");
+      console.log("📝 Generating markdown");
 
       await ensureApiSession();
       const data = await enqueueApiRequest(async ({ signal }) => {
-        const response = await fetch("/api/gemini", {
+        const response = await fetch("/api/markdown", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ prompt, text }),
@@ -37,9 +38,7 @@ export const geminiService = {
     } catch (error) {
       console.error("❌ Error generating markdown:", error);
       throw new Error(
-        error instanceof Error
-          ? error.message
-          : "Failed to generate markdown with Gemini",
+        error instanceof Error ? error.message : "Failed to generate markdown",
       );
     }
   },

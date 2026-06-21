@@ -8,7 +8,7 @@
 import { signal } from "@preact/signals";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { markdownPrompts } from "../utils/markdownPrompts.ts";
-import { geminiService } from "../utils/geminiService.ts";
+import { markdownService } from "../utils/markdownService.ts";
 import { showToast } from "../utils/toast.ts";
 
 interface MarkdownMakerDrawerProps {
@@ -179,7 +179,7 @@ export default function MarkdownMakerDrawer(
     selectedPromptId.value = promptId;
 
     try {
-      const result = await geminiService.generateMarkdown(
+      const result = await markdownService.generateMarkdown(
         promptOption.prompt,
         transcript,
       );
@@ -210,7 +210,7 @@ export default function MarkdownMakerDrawer(
     selectedPromptId.value = null;
 
     try {
-      const result = await geminiService.generateMarkdown(
+      const result = await markdownService.generateMarkdown(
         customPrompt.value,
         transcript,
       );
