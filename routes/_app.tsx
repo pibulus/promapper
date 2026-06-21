@@ -8,14 +8,14 @@ export default function App({ Component }: PageProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
         {/* Primary Meta Tags */}
-        <title>ProMapper - Project maps from messy conversations</title>
+        <title>ProMapper - Living project maps from messy conversations</title>
         <meta
           name="title"
-          content="ProMapper - Project maps from messy conversations"
+          content="ProMapper - Living project maps from messy conversations"
         />
         <meta
           name="description"
-          content="Record, paste, or upload messy project conversations. ProMapper turns them into transcripts, summaries, action items, and clickable topic maps."
+          content="ProMapper turns voice notes, meetings, research, scenes, and written rants into project memory: transcript, summary, actions, topic map, docs, and sharing."
         />
 
         {/* Open Graph / Facebook */}
@@ -23,11 +23,11 @@ export default function App({ Component }: PageProps) {
         <meta property="og:url" content="https://promapper.app/" />
         <meta
           property="og:title"
-          content="ProMapper - Project maps from messy conversations"
+          content="ProMapper - Living project maps from messy conversations"
         />
         <meta
           property="og:description"
-          content="Turn voice notes, meetings, and project chats into transcripts, summaries, action items, and visual topic maps."
+          content="A friendly way to turn ongoing conversations and notes into transcripts, summaries, actions, topic maps, docs, and shared context."
         />
         <meta property="og:image" content="/og-image.png" />
 
@@ -39,11 +39,11 @@ export default function App({ Component }: PageProps) {
         />
         <meta
           property="twitter:title"
-          content="ProMapper - Project maps from messy conversations"
+          content="ProMapper - Living project maps from messy conversations"
         />
         <meta
           property="twitter:description"
-          content="Turn voice notes, meetings, and project chats into transcripts, summaries, action items, and visual topic maps."
+          content="A friendly way to turn ongoing conversations and notes into transcripts, summaries, actions, topic maps, docs, and shared context."
         />
         <meta property="twitter:image" content="/og-image.png" />
 

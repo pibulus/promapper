@@ -42,7 +42,7 @@ export default function HomeIsland() {
   const transcript = conversationData.value?.transcript?.text || "";
 
   const heroLines = ["See what you're", "really saying"];
-  const heroTags = ["topics", "tasks", "summary"];
+  const heroTags = ["topics", "tasks", "docs"];
 
   return (
     <div class="mapper-scene min-h-screen">
@@ -224,7 +224,8 @@ export default function HomeIsland() {
                         </h1>
                       </div>
                       <p class="mapper-hero-desc">
-                        Drop in a clip and get the shape underneath it.
+                        Drop in a thought, a meeting, a scene, or a weekly
+                        check-in.
                       </p>
                       <div class="mapper-hero-tags" aria-label="Outputs">
                         {heroTags.map((tag, index) => (
@@ -238,7 +239,7 @@ export default function HomeIsland() {
                         ))}
                       </div>
                       <p class="mapper-hero-caption">
-                        One clip. Three outputs.
+                        A friendly project map you can keep adding to.
                       </p>
                     </div>
                     <div class="mapper-card__panel">

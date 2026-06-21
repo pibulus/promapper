@@ -1,15 +1,18 @@
 # 🧠 ProMapper
 
-> Turn messy meeting recordings into organized topic maps, action items, and
-> summaries - automatically.
+> Turn messy conversations into living project maps.
 
-**ProMapper** uses AI to transform unstructured conversations (audio or text)
-into structured knowledge: transcripts with speaker detection, auto-generated
-action items, topic relationship graphs, and customizable exports.
+**ProMapper** is a friendly way to capture the shape of something while it is
+still unfolding. A voice note, a weekly check-in, a research session, a film
+scene, a court case, a messy written rant - it can become a transcript, a
+summary, action items, a topic map, and exportable markdown docs.
+
+The useful part is that a map can keep growing. Add more audio or text later and
+ProMapper folds the new material into the same project memory.
 
 ## ✨ Key Features
 
-### 🎤 Audio → Structure
+### 🎤 Capture → Shape
 
 - **Record or upload** audio files
 - **Automatic transcription** with speaker diarization
@@ -31,13 +34,16 @@ status with reasoning.
 - **Force-directed layout** for organic topic clustering
 - Helps participants circle back to interrupted topics
 
-### 📤 Flexible Export
+### 📤 Markdown Exports
 
-Transform the same conversation into multiple formats:
+Turn the same project map into different useful documents:
 
 - Blog posts
 - Technical documentation
 - Meeting summaries
+- Person-by-person action lists
+- Diarised transcripts
+- FAQs
 - Haiku poems (why not?)
 - Custom prompts
 
@@ -170,13 +176,13 @@ deno task check      # Run linting and type checking
 - **Storage**: LocalStorage, URL shares, optional Supabase share store
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 
-## 🎯 Use Cases
+## 🎯 Good Fits
 
-- **Meeting notes**: Automatic transcription and action item extraction
-- **Interview analysis**: Topic mapping and speaker tracking
-- **Podcast summaries**: Generate blog posts from audio
-- **Brainstorming sessions**: Visualize topic relationships
-- **Status updates**: AI detects completed tasks from follow-up conversations
+- **Weekly projects**: keep actions, summaries, and decisions moving over time
+- **Research groups**: turn ongoing conversations into shared context
+- **Personal notes**: get a rant, idea, or plan into a shape you can use
+- **Scenes and cases**: map who said what, what matters, and what connects
+- **Shared work**: send a project map instead of a pile of notes
 
 ## 🔐 Privacy
 
