@@ -127,10 +127,10 @@ export default function HomeIsland() {
                   <h1
                     class="truncate"
                     style={{
-                      fontSize: "var(--font-size-xl)",
-                      fontWeight: "800",
+                      fontSize: "var(--font-size-md)",
+                      fontWeight: "700",
                       color: "var(--color-text)",
-                      letterSpacing: "-0.03em",
+                      letterSpacing: "-0.02em",
                     }}
                   >
                     {conversationData.value.conversation.title}

@@ -30,20 +30,25 @@ import type { Theme, ThemeSystemConfig } from "@core/theme/types.ts";
  * pink→cream→lilac wash behind. Light, lush, playful.
  * Header band uses a pale tint with dark ink (set via --header-band* below).
  */
+// The constant warm peach→tangerine wash sits behind EVERY theme (the references
+// always have a warm bg; only the accent pop changes). Shared so it stays one
+// source of truth.
+const WARM_BG =
+  "radial-gradient(circle at 15% 12%, rgba(255,209,176,0.9), transparent 55%), radial-gradient(circle at 85% 18%, rgba(255,173,156,0.85), transparent 55%), radial-gradient(circle at 75% 88%, rgba(255,198,150,0.8), transparent 55%), linear-gradient(135deg, #ffe7d4 0%, #ffd2bd 55%, #ffe0cd 100%)";
+
 export const bubblegum: Theme = {
   name: "BUBBLEGUM",
-  vibe: "light, lush & playful",
-  base: "linear-gradient(135deg, #ffe8f3 0%, #fff3ec 100%)",
+  vibe: "warm & playful",
+  base: "linear-gradient(135deg, #ffe2cf 0%, #ffd0bd 100%)",
   secondary: "rgba(255, 255, 255, 0.62)",
   accent: "#ff2e88",
   text: "#2b2430",
   textSecondary: "#8a7e88",
   border: "rgba(43, 36, 48, 0.1)",
   cssVars: {
-    "--color-base-solid": "#ffe8f3",
+    "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(255, 77, 151, 0.12)",
-    "--gradient-bg":
-      "radial-gradient(circle at 18% 18%, rgba(255, 95, 162, 0.18), transparent 46%), radial-gradient(circle at 82% 12%, rgba(168, 224, 255, 0.18), transparent 50%), radial-gradient(circle at 70% 85%, rgba(212, 181, 247, 0.16), transparent 52%), linear-gradient(125deg, #fff6fb 0%, #fdf3ff 50%, #fff4ee 100%)",
+    "--gradient-bg": WARM_BG,
   },
 };
 
@@ -53,19 +58,16 @@ export const bubblegum: Theme = {
 export const sky: Theme = {
   name: "SKY",
   vibe: "fresh & electric",
-  base: "linear-gradient(135deg, #e3f4ff 0%, #eef9ff 100%)",
+  base: "linear-gradient(135deg, #ffe2cf 0%, #ffd0bd 100%)",
   secondary: "rgba(255, 255, 255, 0.65)",
   accent: "#0095ff",
   text: "#1f3344",
   textSecondary: "#6f8597",
   border: "rgba(31, 51, 68, 0.1)",
   cssVars: {
-    "--color-base-solid": "#e3f4ff",
+    "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(10, 166, 255, 0.12)",
-    "--surface-card": "#f3faff",
-    "--surface-card-deep": "#e8f5ff",
-    "--gradient-bg":
-      "radial-gradient(circle at 18% 18%, rgba(10, 166, 255, 0.16), transparent 46%), radial-gradient(circle at 82% 12%, rgba(120, 220, 255, 0.18), transparent 50%), radial-gradient(circle at 70% 85%, rgba(168, 247, 220, 0.14), transparent 52%), linear-gradient(125deg, #f2fbff 0%, #eef9ff 50%, #f4feff 100%)",
+    "--gradient-bg": WARM_BG,
   },
 };
 
@@ -75,19 +77,16 @@ export const sky: Theme = {
 export const grape: Theme = {
   name: "GRAPE",
   vibe: "bold & creative",
-  base: "linear-gradient(135deg, #f0ebff 0%, #f6f1ff 100%)",
+  base: "linear-gradient(135deg, #ffe2cf 0%, #ffd0bd 100%)",
   secondary: "rgba(255, 255, 255, 0.65)",
   accent: "#7c3aed",
   text: "#312a45",
   textSecondary: "#807a96",
   border: "rgba(49, 42, 69, 0.1)",
   cssVars: {
-    "--color-base-solid": "#f0ebff",
+    "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(124, 92, 255, 0.12)",
-    "--surface-card": "#f7f4ff",
-    "--surface-card-deep": "#efe9ff",
-    "--gradient-bg":
-      "radial-gradient(circle at 18% 18%, rgba(124, 92, 255, 0.16), transparent 46%), radial-gradient(circle at 82% 12%, rgba(255, 120, 200, 0.16), transparent 50%), radial-gradient(circle at 70% 85%, rgba(120, 200, 255, 0.14), transparent 52%), linear-gradient(125deg, #f7f3ff 0%, #f4f0ff 50%, #fbf4ff 100%)",
+    "--gradient-bg": WARM_BG,
   },
 };
 
@@ -97,19 +96,16 @@ export const grape: Theme = {
 export const lime: Theme = {
   name: "LIME",
   vibe: "zingy & alive",
-  base: "linear-gradient(135deg, #e6fbef 0%, #f0fdf5 100%)",
+  base: "linear-gradient(135deg, #ffe2cf 0%, #ffd0bd 100%)",
   secondary: "rgba(255, 255, 255, 0.65)",
   accent: "#0fb255",
   text: "#1f3a2b",
   textSecondary: "#6f8c7c",
   border: "rgba(31, 58, 43, 0.1)",
   cssVars: {
-    "--color-base-solid": "#e6fbef",
+    "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(16, 181, 80, 0.12)",
-    "--surface-card": "#f2fdf6",
-    "--surface-card-deep": "#e8fbef",
-    "--gradient-bg":
-      "radial-gradient(circle at 18% 18%, rgba(16, 181, 80, 0.16), transparent 46%), radial-gradient(circle at 82% 12%, rgba(255, 224, 110, 0.16), transparent 50%), radial-gradient(circle at 70% 85%, rgba(120, 220, 255, 0.12), transparent 52%), linear-gradient(125deg, #f3fef7 0%, #eefdf3 50%, #f6fef8 100%)",
+    "--gradient-bg": WARM_BG,
   },
 };
 
@@ -119,19 +115,17 @@ export const lime: Theme = {
 export const gold: Theme = {
   name: "GOLD",
   vibe: "sunny & confident",
-  base: "linear-gradient(135deg, #fff6da 0%, #fffaea 100%)",
+  base: "linear-gradient(135deg, #ffe2cf 0%, #ffd0bd 100%)",
   secondary: "rgba(255, 255, 255, 0.65)",
   accent: "#f5a300",
   text: "#3a3016",
   textSecondary: "#8a7b54",
   border: "rgba(58, 48, 22, 0.1)",
   cssVars: {
-    "--color-base-solid": "#fff6da",
+    "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(245, 179, 0, 0.14)",
-    // Gold's hue is intrinsically light; deepen the band so white text stays AA.
     "--accent-strong": "#a06a00",
-    "--gradient-bg":
-      "radial-gradient(circle at 18% 18%, rgba(255, 200, 30, 0.18), transparent 46%), radial-gradient(circle at 82% 12%, rgba(255, 130, 190, 0.14), transparent 50%), radial-gradient(circle at 70% 85%, rgba(120, 220, 255, 0.12), transparent 52%), linear-gradient(125deg, #fffdf2 0%, #fffae6 50%, #fffef4 100%)",
+    "--gradient-bg": WARM_BG,
   },
 };
 

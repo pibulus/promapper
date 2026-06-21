@@ -25,30 +25,31 @@
   /* ===================================================================
      THEME SYSTEM - Dynamic runtime color variables
      ================================================================ */
-  /* Defaults = BUBBLEGUM neo-pastel (overridden by theme system + FOUC script).
-     Bright candy accent used as a POP (pale-tint headers, dots), never as a
-     text background; soft pink→cream→lilac wash behind. */
-  --color-base: linear-gradient(135deg, #ffe8f3 0%, #fff3ec 100%);
-  --color-base-solid: #ffe8f3;
+  /* Defaults = BUBBLEGUM (overridden by theme system + FOUC script).
+     The WARM PEACH→TANGERINE GRADIENT is the color event (conversation_mapper
+     refs); the bright accent is just a POP on top. Cards sit calm/cream over it. */
+  --color-base: linear-gradient(135deg, #ffe2cf 0%, #ffd0bd 100%);
+  --color-base-solid: #ffe2cf;
   --color-secondary: rgba(255, 255, 255, 0.62);
   --color-accent: #ff2e88;
   --color-text: #2b2430;
   --color-text-secondary: #8a7e88;
   --color-border: rgba(43, 36, 48, 0.1);
+  /* Rich warm wash: peach → coral → tangerine, present (not a timid near-white). */
   --gradient-bg:
     radial-gradient(
-    circle at 18% 18%,
-    rgba(255, 95, 162, 0.18),
-    transparent 46%
+    circle at 15% 12%,
+    rgba(255, 209, 176, 0.9),
+    transparent 55%
   ), radial-gradient(
-    circle at 82% 12%,
-    rgba(168, 224, 255, 0.18),
-    transparent 50%
+    circle at 85% 18%,
+    rgba(255, 173, 156, 0.85),
+    transparent 55%
   ), radial-gradient(
-    circle at 70% 85%,
-    rgba(212, 181, 247, 0.16),
-    transparent 52%
-  ), linear-gradient(125deg, #fff6fb 0%, #fdf3ff 50%, #fff4ee 100%);
+    circle at 75% 88%,
+    rgba(255, 198, 150, 0.8),
+    transparent 55%
+  ), linear-gradient(135deg, #ffe7d4 0%, #ffd2bd 55%, #ffe0cd 100%);
 
   /* ===================================================================
      DESIGN TOKENS - Consistent styling across components
@@ -98,7 +99,7 @@
   --transition-slow: 300ms ease;
 
   /* Layout */
-  --header-height: 80px;
+  --header-height: 58px;
   --z-header: 50;
   --z-modal: 50;
   --z-drawer: 40;
@@ -109,23 +110,16 @@
      by construction (edit here → propagates to every card/button/chip).
      ================================================================ */
 
-  /* --accent-strong = a deeper shade of the bright accent, used ONLY where white
-     text must sit (the header band, primary fills). The bright --color-accent
-     stays fully fluoro for pops (chips, checkboxes, dots, CTAs). This lets the
-     accent be as vivid as we like AND keeps white text legible (AA). Modular:
-     themes can override --accent-strong if a hue needs a custom deepening. */
+  /* --accent-strong = a deeper shade of the bright accent for the rare spot that
+     needs accent-on-which-white-sits. Bright --color-accent stays the pop. */
   --accent-strong: color-mix(in srgb, var(--color-accent) 72%, #1b1020);
 
-  /* Candy header band — FULL VIVID block + WHITE text (option C). Each card wears
-     a bold colored hat; a whisper of gradient keeps it juicy. Built on
-     --accent-strong so white stays legible on every theme. */
-  --header-band: linear-gradient(
-    135deg,
-    var(--accent-strong) 0%,
-    color-mix(in srgb, var(--accent-strong) 80%, var(--color-accent)) 100%
-  );
-  --header-band-ink: #ffffff;
-  --header-band-sub: rgba(255, 255, 255, 0.9);
+  /* Card header — LIGHT. The title sits on the card surface (cream), DARK text,
+     with the accent as a small POP only (a left rule). The WARM GRADIENT
+     BACKGROUND is the color event, not the headers. Calm, classy, airy. */
+  --header-band: transparent;
+  --header-band-ink: var(--color-text);
+  --header-band-sub: color-mix(in srgb, var(--color-text) 55%, transparent);
 
   /* One button system: identical height + radius across every variant. */
   --btn-height: 2.75rem; /* 44px — iOS touch target */
@@ -1860,12 +1854,13 @@ body {
 }
 
 .dashboard-card-header {
-  /* Full VIVID accent band + white title (option C). Slim. The card's
-     overflow:hidden + radius clips the band corners to the card shape. */
+  /* LIGHT header: title on the card surface, dark text, a slim accent left-rule
+     as the only pop. Compact. Thin divider separates it from the body. */
   background: var(--header-band);
   color: var(--header-band-ink);
-  padding: 0.7rem var(--card-padding);
-  border-bottom: none;
+  padding: 0.55rem var(--card-padding);
+  border-bottom: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1873,10 +1868,11 @@ body {
 }
 
 .dashboard-card-header h3 {
-  font-size: var(--heading-size);
+  font-size: var(--small-size);
   font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
   color: var(--header-band-ink);
-  letter-spacing: -0.01em;
   margin: 0;
 }
 
