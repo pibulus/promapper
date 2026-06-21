@@ -32,6 +32,24 @@ export interface ConversationFlowResult {
 }
 
 /**
+ * Generate a title, falling back to a short derived snippet if the AI call
+ * fails. A failed title should never reject the whole conversation flow.
+ */
+async function safeGenerateTitle(
+  aiService: AIService,
+  source: string,
+): Promise<string> {
+  try {
+    const title = (await aiService.generateTitle(source)).trim();
+    if (title) return title;
+  } catch (error) {
+    console.error("Title generation failed, using fallback:", error);
+  }
+  const snippet = source.trim().replace(/\s+/g, " ").slice(0, 40);
+  return snippet ? `${snippet}${source.length > 40 ? "…" : ""}` : "Untitled";
+}
+
+/**
  * Process new audio input
  */
 export async function processAudio(
@@ -51,8 +69,12 @@ export async function processAudio(
     existingEdges,
   );
 
-  // Generate title from transcription
-  const title = await aiService.generateTitle(analysis.transcription.text);
+  // Generate title from transcription. A title failure must not sink the whole
+  // flow when transcript/topics/actions all succeeded — fall back gracefully.
+  const title = await safeGenerateTitle(
+    aiService,
+    analysis.transcription.text,
+  );
 
   // Build result
   return {
@@ -123,8 +145,8 @@ export async function processText(
     existingEdges,
   );
 
-  // Generate title
-  const title = await aiService.generateTitle(text);
+  // Generate title (graceful fallback so a title failure does not sink the flow)
+  const title = await safeGenerateTitle(aiService, text);
 
   // Build result
   return {

@@ -22,6 +22,37 @@ export function extractSpeakers(text: string): string[] {
 }
 
 // ===================================================================
+// TRANSIENT-ERROR RETRY
+// ===================================================================
+
+/**
+ * Retry transient AI failures (503 overload, 429 rate limit, network blips)
+ * with exponential backoff. Non-transient errors throw immediately. Shared by
+ * both providers and the server service layer so retry behavior is identical.
+ */
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  tries = 3,
+  baseMs = 600,
+): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < tries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const msg = String((err as Error)?.message || err);
+      const transient =
+        /\b(408|429|500|502|503|504|overload|UNAVAILABLE|RESOURCE_EXHAUSTED|ECONNRESET|ETIMEDOUT)\b/i
+          .test(msg);
+      lastErr = err;
+      if (!transient || i === tries - 1) throw err;
+      await new Promise((r) => setTimeout(r, baseMs * 2 ** i));
+    }
+  }
+  throw lastErr;
+}
+
+// ===================================================================
 // JSON CLEANUP
 // ===================================================================
 

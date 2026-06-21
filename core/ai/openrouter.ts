@@ -11,6 +11,7 @@ import {
   parseActionItemsResponse,
   parseGraphResponse,
   parseStatusUpdatesResponse,
+  withRetry,
 } from "./helpers.ts";
 import {
   buildActionItemsPrompt,
@@ -217,17 +218,25 @@ export function createOpenRouterService(
   const baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
 
   async function chat(messages: ChatMessage[]): Promise<string> {
-    const response = await fetcher(joinUrl(baseUrl, "/chat/completions"), {
-      method: "POST",
-      headers: buildHeaders(options),
-      body: JSON.stringify({
-        model: options.model,
-        messages,
-        stream: false,
-      }),
-    });
+    // Retry transient failures (429/5xx/network) with backoff. parse throws
+    // with the status code in the message, so withRetry catches it.
+    return await withRetry(async () => {
+      const response = await fetcher(joinUrl(baseUrl, "/chat/completions"), {
+        method: "POST",
+        headers: buildHeaders(options),
+        body: JSON.stringify({
+          model: options.model,
+          messages,
+          stream: false,
+          // Lower temperature for steadier structured extraction; generous
+          // ceiling so long transcripts/graphs are not truncated.
+          temperature: 0.4,
+          max_tokens: 8192,
+        }),
+      });
 
-    return await parseOpenRouterResponse(response);
+      return await parseOpenRouterResponse(response);
+    });
   }
 
   async function chatText(prompt: string): Promise<string> {

@@ -5,6 +5,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createGeminiService } from "@core/ai/gemini.ts";
 import { createOpenRouterService } from "@core/ai/openrouter.ts";
+import { withRetry } from "@core/ai/helpers.ts";
 import type { AIService } from "@core/ai/types.ts";
 
 const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
@@ -27,29 +28,6 @@ function requireEnv(name: string): string {
     throw new Error(`Missing ${name} environment variable`);
   }
   return apiKey;
-}
-
-// Retry transient Gemini failures (503 overload, 429 rate limit) with
-// exponential backoff. Non-transient errors throw immediately.
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  tries = 3,
-  baseMs = 600,
-): Promise<T> {
-  let lastErr: unknown;
-  for (let i = 0; i < tries; i++) {
-    try {
-      return await fn();
-    } catch (err) {
-      const msg = String((err as Error)?.message || err);
-      const transient = /\b(503|429|overload|UNAVAILABLE|RESOURCE_EXHAUSTED)\b/i
-        .test(msg);
-      lastErr = err;
-      if (!transient || i === tries - 1) throw err;
-      await new Promise((r) => setTimeout(r, baseMs * 2 ** i));
-    }
-  }
-  throw lastErr;
 }
 
 function buildModel(apiKey: string, modelName: string) {

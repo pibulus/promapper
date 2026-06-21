@@ -186,3 +186,26 @@ Deno.test("exportConversation delegates to aiService.generateMarkdown", async ()
   );
   assertEquals(result, "# Result");
 });
+
+// ===================================================================
+// title-generation fallback (resilience)
+// ===================================================================
+
+Deno.test("processText still succeeds when title generation throws", async () => {
+  const service = createMockAIService();
+  service.generateTitle = () => {
+    throw new Error("title model down");
+  };
+
+  const result = await processText(
+    service,
+    "Ship the new onboarding flow before Friday.",
+    "conv-fallback",
+  );
+
+  // Flow completes; title falls back to a derived snippet, not a crash.
+  assertExists(result.conversation.title);
+  assertEquals((result.conversation.title as string).length > 0, true);
+  // Everything else still came through.
+  assertEquals(result.actionItems.length, 1);
+});

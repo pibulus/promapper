@@ -7,7 +7,46 @@ import {
   parseActionItemsResponse,
   parseGraphResponse,
   parseStatusUpdatesResponse,
+  withRetry,
 } from "../ai/helpers.ts";
+
+// ===================================================================
+// withRetry
+// ===================================================================
+
+Deno.test("withRetry retries transient errors then succeeds", async () => {
+  let calls = 0;
+  const result = await withRetry(
+    () => {
+      calls++;
+      if (calls < 3) return Promise.reject(new Error("503 overload"));
+      return Promise.resolve("ok");
+    },
+    3,
+    1,
+  );
+  assertEquals(result, "ok");
+  assertEquals(calls, 3);
+});
+
+Deno.test("withRetry does not retry non-transient errors", async () => {
+  let calls = 0;
+  let threw = false;
+  try {
+    await withRetry(
+      () => {
+        calls++;
+        return Promise.reject(new Error("400 bad request"));
+      },
+      3,
+      1,
+    );
+  } catch {
+    threw = true;
+  }
+  assertEquals(threw, true);
+  assertEquals(calls, 1); // gave up immediately, no retry
+});
 
 Deno.test("cleanJsonResponse strips markdown code fences", () => {
   assertEquals(cleanJsonResponse('```json\n{"a":1}\n```'), '{"a":1}');
