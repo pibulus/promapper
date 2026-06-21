@@ -795,7 +795,19 @@ export function forceDirectedEmojimap(
       >;
       if (linkForce) {
         linkForce.links(currentEdges);
+        // Re-apply link distance so layout-preset changes actually take effect.
+        linkForce.distance(mergedConfig.linkDistance);
       }
+      // Re-apply charge + collision from config too — otherwise the organic/
+      // readable layout toggle changes the icon but not the physics.
+      const chargeForce = simulation.force("charge") as
+        | d3.ForceManyBody<NodeData>
+        | undefined;
+      if (chargeForce) chargeForce.strength(mergedConfig.chargeStrength);
+      simulation.force(
+        "collide",
+        d3.forceCollide(mergedConfig.collisionRadius),
+      );
       simulation.force("x", d3.forceX(mergedConfig.width / 2).strength(0.05));
       simulation.force("y", d3.forceY(mergedConfig.height / 2).strength(0.05));
       simulation.alpha(1).restart();

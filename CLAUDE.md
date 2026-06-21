@@ -88,7 +88,7 @@ API_AUTH_TOKEN=...
   ForceDirectedGraph.tsx        # D3 graph renderer
   EmojimapViz.tsx               # Graph overlay wrapper
   MarkdownMakerDrawer.tsx       # Export UI
-  ConversationList.tsx          # Local conversation history
+  MobileHistoryMenu.tsx         # Local conversation history (star/filter/backup)
 
 /components/                    # Shared presentational cards
 /signals/                       # Global Preact signal store

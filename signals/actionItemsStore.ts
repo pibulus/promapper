@@ -11,7 +11,11 @@
 import { conversationData } from "./conversationStore.ts";
 import type { ConversationData } from "../core/types/conversation-data.ts";
 import {
+  deleteTopic as deleteTopicOp,
+  mergeTopics as mergeTopicsOp,
+  persistTopicPositions as persistTopicPositionsOp,
   renameSpeaker as renameSpeakerOp,
+  renameTopic as renameTopicOp,
   toggleActionItemStatus as toggleActionItemStatusOp,
   updateActionItems as updateActionItemsOp,
 } from "../core/orchestration/conversation-ops.ts";
@@ -38,4 +42,34 @@ export function renameSpeaker(oldName: string, newName: string): void {
   const current = conversationData.value;
   if (!current) return;
   conversationData.value = renameSpeakerOp(current, oldName, newName);
+}
+
+// ===================================================================
+// TOPIC GRAPH
+// ===================================================================
+
+export function renameTopic(id: string, label: string): void {
+  const current = conversationData.value;
+  if (!current) return;
+  conversationData.value = renameTopicOp(current, id, label);
+}
+
+export function deleteTopic(id: string): void {
+  const current = conversationData.value;
+  if (!current) return;
+  conversationData.value = deleteTopicOp(current, id);
+}
+
+export function mergeTopics(sourceId: string, targetId: string): void {
+  const current = conversationData.value;
+  if (!current) return;
+  conversationData.value = mergeTopicsOp(current, sourceId, targetId);
+}
+
+export function persistTopicPositions(
+  positions: Record<string, { x: number; y: number }>,
+): void {
+  const current = conversationData.value;
+  if (!current) return;
+  conversationData.value = persistTopicPositionsOp(current, positions);
 }

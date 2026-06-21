@@ -24,7 +24,7 @@ import {
   mergeTopics,
   persistTopicPositions,
   renameTopic,
-} from "../core/orchestration/conversation-ops.ts";
+} from "@signals/actionItemsStore.ts";
 import * as htmlToImage from "html-to-image";
 import ContextMenu from "../components/ContextMenu.tsx";
 
@@ -88,11 +88,7 @@ export default function ForceDirectedGraph(
   ) {
     clearTimeout(_positionDebounceTimer);
     _positionDebounceTimer = setTimeout(() => {
-      if (!conversationData.value) return;
-      conversationData.value = persistTopicPositions(
-        conversationData.value,
-        positions,
-      );
+      persistTopicPositions(positions);
     }, 400) as unknown as number;
   }
 
@@ -174,11 +170,7 @@ export default function ForceDirectedGraph(
             current?.label ?? node.id,
           );
           if (newLabel && newLabel.trim()) {
-            conversationData.value = renameTopic(
-              conversationData.value,
-              node.id,
-              newLabel,
-            );
+            renameTopic(node.id, newLabel);
           }
         },
         onRightClickNode: (
@@ -192,10 +184,7 @@ export default function ForceDirectedGraph(
           );
           const label = current?.label ?? node.id;
           if (window.confirm(`Delete topic "${label}"?`)) {
-            conversationData.value = deleteTopic(
-              conversationData.value,
-              node.id,
-            );
+            deleteTopic(node.id);
             if (selectedNodeId.value === node.id) selectedNodeId.value = null;
           }
         },
@@ -214,12 +203,7 @@ export default function ForceDirectedGraph(
           contextMenuVisible.value = true;
         },
         onMergeNodes: (sourceId: string, targetId: string) => {
-          if (!conversationData.value) return;
-          conversationData.value = mergeTopics(
-            conversationData.value,
-            sourceId,
-            targetId,
-          );
+          mergeTopics(sourceId, targetId);
           // Clear selection if the merged-away node was selected
           if (selectedNodeId.value === sourceId) selectedNodeId.value = null;
         },

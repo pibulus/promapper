@@ -76,3 +76,16 @@ Deno.test("mergeBackup adds brand-new conversations", () => {
   const merged = mergeBackup({ a: conv("a", now) }, { b: conv("b", now) });
   assertEquals(Object.keys(merged).sort(), ["a", "b"]);
 });
+
+Deno.test("mergeBackup treats a garbage date as oldest, not NaN-drop", () => {
+  // A malformed (not absent) updatedAt must not become NaN and silently lose.
+  const existing = { a: conv("a", "garbage-date") };
+  const importedValid = { a: conv("a", now) };
+  // valid import (epoch > 0) beats the garbage existing (coerced to 0)
+  assertEquals(mergeBackup(existing, importedValid).a.updatedAt, now);
+
+  // and a garbage IMPORT does not beat a valid existing record
+  const existingValid = { a: conv("a", now) };
+  const importedGarbage = { a: conv("a", "nonsense") };
+  assertEquals(mergeBackup(existingValid, importedGarbage).a.updatedAt, now);
+});

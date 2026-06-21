@@ -1,11 +1,13 @@
 /**
- * TopicVisualizationsCard Component
- * Wrapper card for topic visualizations with lazy loading
+ * TopicVisualizationsCard Island
+ * Lazy-loading hydration wrapper for the topic visualizations. Lives in
+ * islands/ (not components/) because it owns browser state — an
+ * IntersectionObserver + signal — and gates the viz subtree's hydration.
  */
 
 import { useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
-import VisualizationSelector from "../islands/VisualizationSelector.tsx";
+import VisualizationSelector from "./VisualizationSelector.tsx";
 
 export default function TopicVisualizationsCard() {
   const isVisible = useSignal(false);

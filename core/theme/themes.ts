@@ -17,7 +17,7 @@
  *   --shadow-soft         standard card shadow (in cssVars)
  */
 
-import type { Theme, ThemeSystemConfig } from "@core/theme/themeEngine.ts";
+import type { Theme, ThemeSystemConfig } from "@core/theme/types.ts";
 
 // ===================================================================
 // THEME DEFINITIONS

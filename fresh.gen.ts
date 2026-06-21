@@ -16,7 +16,6 @@ import * as $shared_index from "./routes/shared/index.tsx";
 import * as $ArcDiagramViz from "./islands/ArcDiagramViz.tsx";
 import * as $AudioRecorder from "./islands/AudioRecorder.tsx";
 import * as $AudioVisualizer from "./islands/AudioVisualizer.tsx";
-import * as $ConversationList from "./islands/ConversationList.tsx";
 import * as $DashboardIsland from "./islands/DashboardIsland.tsx";
 import * as $EmojimapViz from "./islands/EmojimapViz.tsx";
 import * as $ForceDirectedGraph from "./islands/ForceDirectedGraph.tsx";
@@ -26,6 +25,7 @@ import * as $MobileHistoryMenu from "./islands/MobileHistoryMenu.tsx";
 import * as $ShareButton from "./islands/ShareButton.tsx";
 import * as $SharedConversationLoader from "./islands/SharedConversationLoader.tsx";
 import * as $ThemeSwitcher from "./islands/ThemeSwitcher.tsx";
+import * as $TopicVisualizationsCard from "./islands/TopicVisualizationsCard.tsx";
 import * as $UploadIsland from "./islands/UploadIsland.tsx";
 import * as $VisualizationSelector from "./islands/VisualizationSelector.tsx";
 import * as $vizRegistry from "./islands/vizRegistry.ts";
@@ -49,7 +49,6 @@ const manifest = {
     "./islands/ArcDiagramViz.tsx": $ArcDiagramViz,
     "./islands/AudioRecorder.tsx": $AudioRecorder,
     "./islands/AudioVisualizer.tsx": $AudioVisualizer,
-    "./islands/ConversationList.tsx": $ConversationList,
     "./islands/DashboardIsland.tsx": $DashboardIsland,
     "./islands/EmojimapViz.tsx": $EmojimapViz,
     "./islands/ForceDirectedGraph.tsx": $ForceDirectedGraph,
@@ -59,6 +58,7 @@ const manifest = {
     "./islands/ShareButton.tsx": $ShareButton,
     "./islands/SharedConversationLoader.tsx": $SharedConversationLoader,
     "./islands/ThemeSwitcher.tsx": $ThemeSwitcher,
+    "./islands/TopicVisualizationsCard.tsx": $TopicVisualizationsCard,
     "./islands/UploadIsland.tsx": $UploadIsland,
     "./islands/VisualizationSelector.tsx": $VisualizationSelector,
     "./islands/vizRegistry.ts": $vizRegistry,

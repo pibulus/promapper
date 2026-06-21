@@ -9,38 +9,8 @@
  * RandomThemeGenerator omitted intentionally — ProMapper uses curated palettes.
  */
 
-// ===================================================================
-// TYPES
-// ===================================================================
-
-export interface Theme {
-  name: string;
-  vibe: string;
-  /** 60% — main background (may be a gradient string) */
-  base: string;
-  /** 30% — cards / sections */
-  secondary: string;
-  /** 10% — CTAs / highlights */
-  accent: string;
-  /** Primary text color */
-  text: string;
-  /** Secondary / muted text (optional) */
-  textSecondary?: string;
-  /** Border color */
-  border: string;
-  /** Shadow color (optional) */
-  shadow?: string;
-  /** Extra CSS variable overrides keyed by full property name */
-  cssVars?: Record<string, string>;
-}
-
-export interface ThemeSystemConfig {
-  themes: Theme[];
-  defaultTheme?: string;
-  storageKey?: string;
-  randomEnabled?: boolean;
-  cssPrefix?: string;
-}
+import type { Theme, ThemeSystemConfig } from "./types.ts";
+export type { Theme, ThemeSystemConfig };
 
 // ===================================================================
 // THEME SYSTEM CLASS
@@ -137,19 +107,6 @@ export class ThemeSystem {
 
     // Persist selection
     this.saveTheme(theme);
-  }
-
-  /** Advance to the next theme in the list (wraps around). */
-  cycleTheme(): Theme {
-    const currentIndex = this.config.themes.findIndex(
-      (t) => t.name === this.currentTheme.name,
-    );
-    const nextIndex = (currentIndex + 1) % this.config.themes.length;
-    const nextTheme = this.config.themes[nextIndex];
-    this.currentTheme = nextTheme;
-    this.applyTheme(nextTheme);
-    this.notifyListeners(nextTheme);
-    return nextTheme;
   }
 
   /**

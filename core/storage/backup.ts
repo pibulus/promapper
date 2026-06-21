@@ -96,9 +96,16 @@ export function mergeBackup(
       merged[id] = conv;
       continue;
     }
-    const a = new Date(current.updatedAt ?? 0).getTime();
-    const b = new Date(conv.updatedAt ?? 0).getTime();
-    merged[id] = b >= a ? conv : current;
+    // Coerce invalid/garbage date strings to 0 so a malformed updatedAt can't
+    // become NaN (which would always lose the comparison and silently drop the
+    // import — the opposite of this module's never-trap-data intent).
+    merged[id] = ts(conv.updatedAt) >= ts(current.updatedAt) ? conv : current;
   }
   return merged;
+}
+
+/** Parse an ISO date to epoch ms, treating missing/invalid values as 0. */
+function ts(value: string | undefined): number {
+  const t = new Date(value ?? 0).getTime();
+  return Number.isNaN(t) ? 0 : t;
 }

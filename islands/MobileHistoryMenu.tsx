@@ -157,6 +157,13 @@ export default function MobileHistoryMenu() {
       const parsed = parseBackup(text);
       const merged = mergeBackup(getAllConversations(), parsed);
       replaceAllConversations(merged);
+      // Reconcile the open conversation: if the import brought a newer copy of
+      // it, refresh the in-memory signal so a later autosave can't clobber the
+      // freshly-imported data with the stale version still held in memory.
+      const openId = conversationData.value?.conversation.id;
+      if (openId && merged[openId]) {
+        conversationData.value = merged[openId];
+      }
       refreshList();
       const count = Object.keys(parsed).length;
       showToast(

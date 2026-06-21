@@ -9,7 +9,7 @@ import { renameSpeaker, setActionItems } from "@signals/actionItemsStore.ts";
 import TranscriptCard from "../components/TranscriptCard.tsx";
 import SummaryCard from "../components/SummaryCard.tsx";
 import ActionItemsCard from "../components/ActionItemsCard.tsx";
-import TopicVisualizationsCard from "../components/TopicVisualizationsCard.tsx";
+import TopicVisualizationsCard from "./TopicVisualizationsCard.tsx";
 
 export default function DashboardIsland() {
   if (!conversationData.value) {
