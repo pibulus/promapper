@@ -9,6 +9,7 @@
 import { FreshContext } from "$fresh/server.ts";
 import { guardRequest } from "@services/requestGuard.ts";
 import { getAIProvider, getAIService } from "@services/ai.ts";
+import { buildExportContext } from "@core/export/exportContext.ts";
 
 export const handler = async (req: Request, _ctx: FreshContext) => {
   // Only allow POST
@@ -22,7 +23,7 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
   }
 
   try {
-    const { prompt, text } = await req.json();
+    const { prompt, text, conversation } = await req.json();
 
     if (!prompt || !text) {
       return new Response(
@@ -34,9 +35,16 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
     const aiService = getAIService();
     const provider = getAIProvider();
 
+    // Feed the AI the full project shape (title/summary/actions/topic-map) when
+    // the client sends the conversation; otherwise fall back to raw text. This
+    // makes presets like Meeting Minutes / Action Plan dramatically richer.
+    const context = conversation
+      ? buildExportContext(conversation, text)
+      : text;
+
     console.log(`📝 Generating markdown with ${provider}`);
 
-    const markdown = await aiService.generateMarkdown(prompt, text);
+    const markdown = await aiService.generateMarkdown(prompt, context);
 
     console.log("✅ Markdown generation complete");
 

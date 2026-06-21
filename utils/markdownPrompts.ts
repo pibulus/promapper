@@ -98,4 +98,19 @@ If the content is purely technical or procedural, kindly respond with: "This con
 
 If the content doesn't fit a case study format, kindly respond with: "This conversation doesn't contain enough situation-specific details for a case study. Consider using the Summary or Meeting format instead."`,
   },
+  {
+    id: "technical-manual",
+    label: "Manual",
+    prompt:
+      `Transform this conversation into a practical technical manual or operating guide.
+Use clear sections, ordered steps where useful, assumptions, caveats, and any implementation details mentioned in the source material.
+
+If the conversation does not contain enough procedural or technical detail, kindly respond with: "This conversation doesn't contain enough technical detail for a manual. Consider using the Summary or Action Plan format instead."`,
+  },
+  {
+    id: "haiku",
+    label: "Haiku",
+    prompt:
+      "Distill the essence of this conversation into a haiku or a compact haiku sequence. Preserve the core idea and tone rather than forcing every detail into the poem.",
+  },
 ];

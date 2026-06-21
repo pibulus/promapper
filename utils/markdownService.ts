@@ -13,7 +13,11 @@ export const markdownService = {
   /**
    * Generate markdown from conversation text using a custom prompt
    */
-  async generateMarkdown(prompt: string, text: string): Promise<string> {
+  async generateMarkdown(
+    prompt: string,
+    text: string,
+    conversation?: unknown,
+  ): Promise<string> {
     try {
       console.log("📝 Generating markdown");
 
@@ -22,7 +26,9 @@ export const markdownService = {
         const response = await fetch("/api/markdown", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, text }),
+          // Sending the full conversation lets the server enrich the prompt
+          // with the project shape; text stays as the fallback.
+          body: JSON.stringify({ prompt, text, conversation }),
           signal,
         });
 

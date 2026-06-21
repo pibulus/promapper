@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { markdownPrompts } from "../utils/markdownPrompts.ts";
 import { markdownService } from "../utils/markdownService.ts";
 import { showToast } from "../utils/toast.ts";
+import { conversationData } from "@signals/conversationStore.ts";
 
 interface MarkdownMakerDrawerProps {
   isOpen: boolean;
@@ -32,6 +33,9 @@ const markdown = signal("");
 const loading = signal(false);
 const error = signal<string | null>(null);
 const savedOutputs = signal<SavedOutput[]>([]);
+// When a saved snapshot is loaded back for editing, saving updates it in place
+// instead of appending a new one.
+const activeDraftId = signal<string | null>(null);
 
 export default function MarkdownMakerDrawer(
   { isOpen, onClose, transcript, conversationId }: MarkdownMakerDrawerProps,
@@ -113,37 +117,62 @@ export default function MarkdownMakerDrawer(
     }
   }
 
-  // Save output to localStorage
+  // Save output to localStorage — updates the loaded snapshot in place when one
+  // is active, otherwise appends a new one.
   function saveOutput() {
     if (!markdown.value || !conversationId) return;
 
     try {
-      const newOutput: SavedOutput = {
-        id: crypto.randomUUID(),
-        conversation_id: conversationId,
-        content: markdown.value,
-        prompt: selectedPromptId.value
-          ? markdownPrompts.find((p) => p.id === selectedPromptId.value)
-            ?.label || "Custom"
-          : "Custom",
-        created_at: new Date().toISOString(),
-      };
+      const label = selectedPromptId.value
+        ? markdownPrompts.find((p) => p.id === selectedPromptId.value)?.label ||
+          "Custom"
+        : "Custom";
 
-      // Get all outputs, add new one, save back
       const stored = localStorage.getItem("markdown_outputs");
       const allOutputs: SavedOutput[] = stored ? JSON.parse(stored) : [];
-      allOutputs.push(newOutput);
-      localStorage.setItem("markdown_outputs", JSON.stringify(allOutputs));
 
-      // Update signal
+      const existingIndex = activeDraftId.value
+        ? allOutputs.findIndex((o) => o.id === activeDraftId.value)
+        : -1;
+
+      if (existingIndex >= 0) {
+        // Update in place — keep id + created_at, refresh content + prompt.
+        allOutputs[existingIndex] = {
+          ...allOutputs[existingIndex],
+          content: markdown.value,
+          prompt: label,
+        };
+      } else {
+        const newOutput: SavedOutput = {
+          id: crypto.randomUUID(),
+          conversation_id: conversationId,
+          content: markdown.value,
+          prompt: label,
+          created_at: new Date().toISOString(),
+        };
+        allOutputs.push(newOutput);
+        activeDraftId.value = newOutput.id; // subsequent saves edit this one
+      }
+
+      localStorage.setItem("markdown_outputs", JSON.stringify(allOutputs));
       savedOutputs.value = allOutputs.filter((o) =>
         o.conversation_id === conversationId
       );
-      showToast("Output saved!", "success");
+      showToast(
+        existingIndex >= 0 ? "Snapshot updated!" : "Output saved!",
+        "success",
+      );
     } catch (err) {
       console.error("Error saving output:", err);
       showToast("Failed to save output", "error");
     }
+  }
+
+  // Load a saved snapshot back into the editor for tweaking.
+  function loadDraft(output: SavedOutput) {
+    markdown.value = output.content;
+    activeDraftId.value = output.id;
+    showToast("Loaded — edit and Save to update", "info");
   }
 
   // Delete saved output
@@ -177,11 +206,13 @@ export default function MarkdownMakerDrawer(
     loading.value = true;
     error.value = null;
     selectedPromptId.value = promptId;
+    activeDraftId.value = null; // fresh generation = a new snapshot
 
     try {
       const result = await markdownService.generateMarkdown(
         promptOption.prompt,
         transcript,
+        conversationData.value ?? undefined,
       );
       markdown.value = result;
       showToast("Markdown generated!", "success");
@@ -208,11 +239,13 @@ export default function MarkdownMakerDrawer(
     loading.value = true;
     error.value = null;
     selectedPromptId.value = null;
+    activeDraftId.value = null; // fresh generation = a new snapshot
 
     try {
       const result = await markdownService.generateMarkdown(
         customPrompt.value,
         transcript,
+        conversationData.value ?? undefined,
       );
       markdown.value = result;
       showToast("Markdown generated!", "success");
@@ -396,7 +429,19 @@ export default function MarkdownMakerDrawer(
 
   return (
     <>
-      {/* Drawer with smooth Svelte-style animation */}
+      {/* Fading backdrop scrim — clearer modality + click-to-close */}
+      <div
+        onClick={onClose}
+        aria-hidden="true"
+        class="fixed inset-0 z-40 transition-opacity duration-[400ms]"
+        style={{
+          background: "rgba(30, 23, 20, 0.35)",
+          opacity: isAnimating ? "1" : "0",
+          pointerEvents: isAnimating ? "auto" : "none",
+        }}
+      />
+
+      {/* Drawer with smooth bouncy slide (our spring — keep it) */}
       <div
         ref={drawerRef}
         class={`markdown-maker-drawer fixed bottom-0 right-0 top-0 z-50 flex w-96 flex-col overflow-hidden transition-transform duration-[400ms] ${
@@ -416,7 +461,8 @@ export default function MarkdownMakerDrawer(
           <h3>Export</h3>
           <button
             onClick={onClose}
-            class="text-white hover:text-gray-200 cursor-pointer transition-colors"
+            class="cursor-pointer transition-colors"
+            style={{ color: "var(--color-text-secondary)" }}
             title="Close"
             aria-label="Close export"
           >
@@ -535,53 +581,106 @@ export default function MarkdownMakerDrawer(
                   </button>
                 </div>
               </div>
-              <div class="p-4 bg-white max-h-96 overflow-y-auto">
-                <pre class="text-sm whitespace-pre-wrap font-mono">{markdown.value}</pre>
+              <div class="p-4 max-h-96 overflow-y-auto">
+                {/* Editable — tweak the AI output before copying / saving. */}
+                <textarea
+                  value={markdown.value}
+                  onInput={(e) =>
+                    markdown.value = (e.target as HTMLTextAreaElement).value}
+                  spellcheck={false}
+                  aria-label="Generated markdown (editable)"
+                  class="w-full text-sm whitespace-pre-wrap font-mono rounded p-2 focus:outline-none"
+                  style={{
+                    minHeight: "12rem",
+                    resize: "vertical",
+                    background: "var(--surface-cream)",
+                    border: "2px solid var(--color-border)",
+                    color: "var(--color-text)",
+                  }}
+                />
               </div>
             </div>
           )}
 
-          {/* Saved Outputs */}
+          {/* Saved snapshots */}
           {savedOutputs.value.length > 0 && (
-            <div class="border-t-2 border-gray-200 pt-4 mt-4">
-              <h4 class="font-bold text-sm mb-3">💾 Saved Outputs</h4>
+            <div
+              class="pt-4 mt-4"
+              style={{ borderTop: "2px solid var(--color-border)" }}
+            >
+              <h4 class="font-bold text-sm mb-3">💾 Saved snapshots</h4>
               <div class="space-y-2">
-                {savedOutputs.value.map((output) => (
-                  <div
-                    key={output.id}
-                    class="border-2 border-gray-300 rounded-lg p-3 bg-white"
-                  >
-                    <div class="flex justify-between items-start mb-2">
-                      <div class="flex-1 min-w-0">
-                        <p class="font-semibold text-sm text-purple-600">
-                          {output.prompt}
-                        </p>
-                        <p class="text-xs text-gray-500">
-                          {new Date(output.created_at).toLocaleString()}
-                        </p>
+                {savedOutputs.value.map((output) => {
+                  const isActive = activeDraftId.value === output.id;
+                  return (
+                    <div
+                      key={output.id}
+                      class="rounded-lg p-3"
+                      style={{
+                        background: "var(--surface-cream)",
+                        border: `2px solid ${
+                          isActive
+                            ? "var(--color-accent)"
+                            : "var(--color-border)"
+                        }`,
+                      }}
+                    >
+                      <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1 min-w-0">
+                          <p
+                            class="font-semibold text-sm"
+                            style={{ color: "var(--color-accent)" }}
+                          >
+                            {output.prompt}
+                            {isActive ? " · editing" : ""}
+                          </p>
+                          <p
+                            class="text-xs"
+                            style={{ color: "var(--color-text-secondary)" }}
+                          >
+                            {new Date(output.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                        <div class="flex gap-1 ml-2">
+                          <button
+                            class="btn btn-ghost btn-xs"
+                            onClick={() => loadDraft(output)}
+                            title="Load to edit"
+                            aria-label="Load snapshot to edit"
+                          >
+                            <i class="fa fa-pen text-xs"></i>
+                          </button>
+                          <button
+                            class="btn btn-ghost btn-xs"
+                            onClick={() => copySavedOutput(output.content)}
+                            title="Copy"
+                            aria-label="Copy snapshot"
+                          >
+                            <i class="fa fa-copy text-xs"></i>
+                          </button>
+                          <button
+                            class="btn btn-ghost btn-xs"
+                            style={{ color: "var(--color-danger)" }}
+                            onClick={() => deleteOutput(output.id)}
+                            title="Delete"
+                            aria-label="Delete snapshot"
+                          >
+                            <i class="fa fa-trash text-xs"></i>
+                          </button>
+                        </div>
                       </div>
-                      <div class="flex gap-1 ml-2">
-                        <button
-                          class="btn btn-ghost btn-xs"
-                          onClick={() => copySavedOutput(output.content)}
-                          title="Copy"
-                        >
-                          <i class="fa fa-copy text-xs"></i>
-                        </button>
-                        <button
-                          class="btn btn-ghost btn-xs text-error"
-                          onClick={() => deleteOutput(output.id)}
-                          title="Delete"
-                        >
-                          <i class="fa fa-trash text-xs"></i>
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => loadDraft(output)}
+                        class="text-xs line-clamp-3 text-left w-full cursor-pointer"
+                        style={{ color: "var(--color-text-secondary)" }}
+                        title="Load to edit"
+                      >
+                        {output.content.substring(0, 150)}...
+                      </button>
                     </div>
-                    <div class="text-xs text-gray-600 line-clamp-3">
-                      {output.content.substring(0, 150)}...
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
