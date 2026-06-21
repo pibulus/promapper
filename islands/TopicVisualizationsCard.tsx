@@ -37,7 +37,7 @@ export default function TopicVisualizationsCard() {
   }, []);
 
   return (
-    <div ref={cardRef} class="w-full lg:col-span-3">
+    <div ref={cardRef} class="w-full md:col-span-2 lg:col-span-3">
       <div class="dashboard-card">
         <div class="dashboard-card-header">
           <h3>Topic Visualizations</h3>

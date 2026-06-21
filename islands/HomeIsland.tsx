@@ -81,9 +81,9 @@ export default function HomeIsland() {
                       conversationData.value = null;
                       window.history.pushState({}, "", "/");
                     }}
-                    class="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-lg hover:bg-black/5 transition-all"
+                    class="flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-lg hover:bg-black/5 transition-all"
                     style={{
-                      border: "1px solid rgba(0, 0, 0, 0.1)",
+                      border: "2px solid var(--color-border)",
                     }}
                     title="Back to home"
                   >
@@ -118,23 +118,8 @@ export default function HomeIsland() {
                   {/* Export button */}
                   <button
                     onClick={() => drawerOpen.value = !drawerOpen.value}
-                    class="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg px-3 py-2 transition-all"
-                    style={{
-                      background: "#1A1A1A",
-                      color: "white",
-                      fontSize: "var(--small-size)",
-                      fontWeight: "600",
-                      border: "none",
-                    }}
+                    class="header-export-btn inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg px-3 py-2"
                     aria-label="Export conversation"
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#2C2C2C";
-                      e.currentTarget.style.transform = "scale(1.02)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#1A1A1A";
-                      e.currentTarget.style.transform = "scale(1)";
-                    }}
                     title="Export"
                   >
                     <i class="fa fa-file-export" aria-hidden="true"></i>

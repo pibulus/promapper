@@ -73,8 +73,11 @@ export default function TranscriptCard(
             )
             : (
               <div
-                class="relative p-4 rounded-lg bg-white"
-                style={{ border: "2px solid var(--color-border)" }}
+                class="relative p-4 rounded-lg"
+                style={{
+                  background: "var(--surface-cream)",
+                  border: "2px solid var(--color-border)",
+                }}
               >
                 {/* Format transcript with speaker highlighting (XSS-safe) */}
                 <div
@@ -110,8 +113,9 @@ export default function TranscriptCard(
                           ? (
                             <span
                               key={speaker}
-                              class="inline-flex items-center gap-1 rounded p-1 bg-white"
+                              class="inline-flex items-center gap-1 rounded p-1"
                               style={{
+                                background: "var(--surface-cream)",
                                 border: "2px solid var(--color-border)",
                               }}
                             >

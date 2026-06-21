@@ -83,8 +83,11 @@ export default function SummaryCard(
               <div>
                 {/* Main summary with markdown formatting (XSS-safe) */}
                 <div
-                  class="p-4 rounded-lg bg-white"
-                  style={{ border: "2px solid var(--color-border)" }}
+                  class="p-4 rounded-lg"
+                  style={{
+                    background: "var(--surface-cream)",
+                    border: "2px solid var(--color-border)",
+                  }}
                 >
                   <div
                     style={{
