@@ -87,6 +87,7 @@ export default function HomeIsland() {
                       border: "2px solid var(--color-border)",
                     }}
                     title="Back to home"
+                    aria-label="Back to home"
                   >
                     <i
                       class="fa fa-arrow-left"

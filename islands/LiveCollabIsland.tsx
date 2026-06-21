@@ -9,7 +9,10 @@
 
 import { useEffect, useRef } from "preact/hooks";
 import { IS_BROWSER } from "$fresh/runtime.ts";
-import { conversationData } from "@signals/conversationStore.ts";
+import {
+  conversationData,
+  isViewingShared,
+} from "@signals/conversationStore.ts";
 import {
   connectedRoomId,
   partyConnected,
@@ -40,6 +43,11 @@ export default function LiveCollabIsland(
 
   useEffect(() => {
     if (!IS_BROWSER || !partyHost) return;
+    // A live room is a borrowed view, like a shared link — don't auto-save the
+    // room's conversation into THIS visitor's local history or hijack their
+    // active conversation. (The outbound broadcaster is gated separately by the
+    // loopback guard, so two-way editing still works.)
+    isViewingShared.value = true;
     startLiveSync({
       host: partyHost,
       roomId,
@@ -47,6 +55,8 @@ export default function LiveCollabIsland(
     });
     return () => {
       stopLiveSync();
+      isViewingShared.value = false;
+      conversationData.value = null;
       seenIds.current = null;
     };
   }, [roomId, partyHost]);

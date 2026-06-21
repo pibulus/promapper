@@ -112,6 +112,11 @@ export default function ChatSidebar() {
       <div
         ref={logRef}
         onScroll={onScroll}
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions"
+        aria-atomic="false"
+        aria-label="Chat messages"
         style={{ flex: "1", overflowY: "auto", padding: "0.5rem 0.75rem" }}
       >
         {messages.length === 0
@@ -130,12 +135,23 @@ export default function ChatSidebar() {
           : messages.map((m) => (
             <div key={m.id} style={{ marginBottom: "0.5rem" }}>
               <span
+                class="inline-flex items-center gap-1"
                 style={{
                   fontSize: "var(--tiny-size)",
                   fontWeight: "700",
-                  color: userColor(m.senderId),
+                  color: "var(--color-text)", // readable; color moves to the dot
                 }}
               >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    background: userColor(m.senderId),
+                    display: "inline-block",
+                  }}
+                />
                 {m.senderName}
               </span>
               <div

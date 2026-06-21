@@ -29,7 +29,7 @@
   --color-base: linear-gradient(135deg, #ffebd4 0%, #ffd9b8 100%);
   --color-base-solid: #ffebd4;
   --color-secondary: rgba(255, 255, 255, 0.6);
-  --color-accent: #e8839c;
+  --color-accent: #b84a70;
   --color-text: #2c2c2c;
   --color-text-secondary: #6b6b6b;
   --color-border: rgba(61, 57, 53, 0.1);
@@ -96,7 +96,7 @@
   --z-drawer: 40;
 
   /* Status Colors */
-  --color-danger: #ef4444;
+  --color-danger: #dc2626; /* AA with white text (was #ef4444 @ 3.76) */
   --color-danger-bg: #fee2e2;
   --color-danger-border: #fecaca;
   --color-danger-text: #b91c1c;
@@ -1718,7 +1718,11 @@ body {
   opacity: 0;
   transition: opacity var(--transition-fast), background var(--transition-fast);
 }
-.action-item-card:hover .action-item-edit-btn {
+.action-item-card:hover .action-item-edit-btn,
+/* Reveal on keyboard focus too — opacity:0 otherwise hides a focused control
+   (and its focus ring) from keyboard users (WCAG 2.4.7). */
+.action-item-edit-btn:focus-visible,
+.action-item-card:focus-within .action-item-edit-btn {
   opacity: 1;
 }
 @media (hover: none) {

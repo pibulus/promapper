@@ -2,7 +2,7 @@ import { type PageProps } from "$fresh/server.ts";
 
 export default function App({ Component }: PageProps) {
   return (
-    <html>
+    <html lang="en">
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,6 +17,9 @@ export default function App({ Component }: PageProps) {
           name="description"
           content="ProMapper turns voice notes, meetings, research, scenes, and written rants into project memory: transcript, summary, actions, topic map, docs, and sharing."
         />
+
+        {/* Canonical (matches og:url; avoids dup-URL from share query params) */}
+        <link rel="canonical" href="https://promapper.app/" />
 
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
@@ -81,7 +84,7 @@ var themes={
     "--color-base-solid":"#ffebd4",
     "--color-base-gradient":"linear-gradient(135deg,#ffebd4 0%,#ffd9b8 100%)",
     "--color-secondary":"rgba(255,255,255,0.6)",
-    "--color-accent":"#e8839c",
+    "--color-accent":"#b84a70",
     "--color-text":"#2c2c2c",
     "--color-text-secondary":"#6b6b6b",
     "--color-border":"rgba(61,57,53,0.1)",
@@ -93,7 +96,7 @@ var themes={
     "--color-base-solid":"#e8f8f5",
     "--color-base-gradient":"linear-gradient(135deg,#e8f8f5 0%,#cdeee8 100%)",
     "--color-secondary":"rgba(255,255,255,0.65)",
-    "--color-accent":"#5dbeaa",
+    "--color-accent":"#2a8071",
     "--color-text":"#2c4a42",
     "--color-text-secondary":"#7a9690",
     "--color-border":"rgba(44,74,66,0.1)",
@@ -105,7 +108,7 @@ var themes={
     "--color-base-solid":"#efe5f7",
     "--color-base-gradient":"linear-gradient(135deg,#efe5f7 0%,#dbc9ed 100%)",
     "--color-secondary":"rgba(255,255,255,0.65)",
-    "--color-accent":"#9b7ec7",
+    "--color-accent":"#6f4fa8",
     "--color-text":"#3d3a42",
     "--color-text-secondary":"#8b8390",
     "--color-border":"rgba(61,58,66,0.1)",
@@ -117,7 +120,7 @@ var themes={
     "--color-base-solid":"#fff8d6",
     "--color-base-gradient":"linear-gradient(135deg,#fff8d6 0%,#ffeea3 100%)",
     "--color-secondary":"rgba(255,255,255,0.65)",
-    "--color-accent":"#d4a01a",
+    "--color-accent":"#8f6b00",
     "--color-text":"#3a3220",
     "--color-text-secondary":"#7a6e54",
     "--color-border":"rgba(58,50,32,0.1)",
@@ -129,7 +132,7 @@ var themes={
     "--color-base-solid":"#ffe6f0",
     "--color-base-gradient":"linear-gradient(135deg,#ffe6f0 0%,#ffcce0 100%)",
     "--color-secondary":"rgba(255,255,255,0.65)",
-    "--color-accent":"#c4607a",
+    "--color-accent":"#a83f5e",
     "--color-text":"#3d2a35",
     "--color-text-secondary":"#8b7580",
     "--color-border":"rgba(61,42,53,0.1)",

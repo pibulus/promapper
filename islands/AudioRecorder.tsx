@@ -228,6 +228,14 @@ export default function AudioRecorder(
             JSON.stringify(conversationData.value.nodes),
           );
         }
+        if (conversationData.value.edges) {
+          // Feed existing edges so the topic prompt's relationship-preservation
+          // hint isn't empty on appends (the append route already parses this).
+          formData.append(
+            "existingEdges",
+            JSON.stringify(conversationData.value.edges),
+          );
+        }
       }
 
       await ensureApiSession();

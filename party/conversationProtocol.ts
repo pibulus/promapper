@@ -194,17 +194,39 @@ function sanitizeTranscript(input: unknown, fallbackText: string) {
   return { text, speakers: Array.from(new Set(speakers)) };
 }
 
+function sanitizePosition(input: unknown): { x: number; y: number } | undefined {
+  if (!isRecord(input)) return undefined;
+  const x = Number(input.x);
+  const y = Number(input.y);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return undefined;
+  // Clamp to a sane canvas range so a bad value can't fling a node off-screen.
+  const clamp = (n: number) => Math.max(-10000, Math.min(10000, n));
+  return { x: clamp(x), y: clamp(y) };
+}
+
 function sanitizeNode(input: unknown) {
   if (!isRecord(input)) return null;
   const id = normalizeString(input.id, LIMITS.MAX_ID_LENGTH);
   const label = normalizeString(input.label, LIMITS.MAX_NODE_LABEL_LENGTH);
   if (!id || !label) return null;
-  return {
+  const node: {
+    id: string;
+    label: string;
+    emoji: string;
+    color: string;
+    position?: { x: number; y: number };
+  } = {
     id,
     label,
     emoji: normalizeString(input.emoji, LIMITS.MAX_EMOJI_LENGTH) || "*",
     color: normalizeString(input.color, LIMITS.MAX_COLOR_LENGTH) || "#e8839c",
   };
+  // Preserve dragged layout positions so collaborators see each other's layout
+  // and appends don't re-scramble the graph. (Keep in sync with
+  // core/realtime/shareProtocol.ts sanitizeNode.)
+  const position = sanitizePosition(input.position);
+  if (position) node.position = position;
+  return node;
 }
 
 function sanitizeEdge(input: unknown) {

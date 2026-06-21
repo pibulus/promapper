@@ -121,8 +121,9 @@ export default class ConversationRoom implements Party.Server {
       }
       case LIVE_MESSAGE_TYPES.TYPING_START:
       case LIVE_MESSAGE_TYPES.TYPING_STOP: {
-        // Transient — relay as-is, no persistence.
-        this.relay(normalized.type, normalized.data, sender);
+        // Transient presence-only signal — drop the (uncapped) client payload;
+        // peers only need the sender + type. Keeps every relay sanitized.
+        this.relay(normalized.type, undefined, sender);
         return;
       }
     }

@@ -23,43 +23,37 @@ export function showToast(
 ): HTMLElement | null {
   if (typeof window === "undefined") return null;
 
-  const toast = document.createElement("div");
-  toast.className = "toast toast-bottom toast-end z-[9999]";
-
-  // Icon and color mapping
+  // Warm, on-brand colors per type (built inline so they survive Tailwind purge
+  // — this file is outside the content glob).
   const config = {
-    success: {
-      icon: "fa-check-circle",
-      bg: "bg-success",
-      text: "text-success-content",
-    },
-    error: {
-      icon: "fa-exclamation-circle",
-      bg: "bg-error",
-      text: "text-error-content",
-    },
-    info: {
-      icon: "fa-info-circle",
-      bg: "bg-info",
-      text: "text-info-content",
-    },
-    warning: {
-      icon: "fa-exclamation-triangle",
-      bg: "bg-warning",
-      text: "text-warning-content",
-    },
+    success: { icon: "fa-check-circle", bg: "#52A37F" },
+    error: { icon: "fa-exclamation-circle", bg: "#c4607a" },
+    info: { icon: "fa-info-circle", bg: "#5b8def" },
+    warning: { icon: "fa-exclamation-triangle", bg: "#d4a01a" },
   };
+  const { icon, bg } = config[type];
 
-  const { icon, bg, text } = config[type];
+  const toast = document.createElement("div");
+  toast.className = "toast-pop";
+  toast.setAttribute("role", type === "error" ? "alert" : "status");
+  toast.setAttribute("aria-live", type === "error" ? "assertive" : "polite");
+  toast.style.cssText =
+    `position:fixed;right:1rem;bottom:1rem;z-index:9999;max-width:min(360px,calc(100vw - 2rem));` +
+    `display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.9rem;border-radius:12px;` +
+    `background:${bg};color:#fff;font-weight:600;font-size:0.875rem;` +
+    `box-shadow:0 8px 24px rgba(30,23,20,0.18);`;
 
-  toast.innerHTML = `
-    <div class="alert ${bg} ${text} shadow-lg animate-slide-in-right">
-      <div class="flex items-center gap-2">
-        <i class="fas ${icon}"></i>
-        <span>${message}</span>
-      </div>
-    </div>`;
+  // Icon (decorative) — safe static markup.
+  const iconEl = document.createElement("i");
+  iconEl.className = `fas ${icon}`;
+  iconEl.setAttribute("aria-hidden", "true");
 
+  // Message via textContent — NEVER innerHTML. Remote-controlled strings (live
+  // collab display names) would otherwise be a stored-XSS vector.
+  const msgEl = document.createElement("span");
+  msgEl.textContent = message;
+
+  toast.append(iconEl, msgEl);
   document.body.appendChild(toast);
 
   // Auto-remove after duration

@@ -104,6 +104,17 @@ function sanitizeTranscript(input: unknown, fallbackText: string) {
   };
 }
 
+function sanitizePosition(
+  input: unknown,
+): { x: number; y: number } | undefined {
+  if (!isRecord(input)) return undefined;
+  const x = Number(input.x);
+  const y = Number(input.y);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return undefined;
+  const clamp = (n: number) => Math.max(-10000, Math.min(10000, n));
+  return { x: clamp(x), y: clamp(y) };
+}
+
 function sanitizeNode(input: unknown) {
   if (!isRecord(input)) return null;
   const id = normalizeString(input.id, 128);
@@ -113,7 +124,13 @@ function sanitizeNode(input: unknown) {
   );
   if (!id || !label) return null;
 
-  return {
+  const node: {
+    id: string;
+    label: string;
+    emoji: string;
+    color: string;
+    position?: { x: number; y: number };
+  } = {
     id,
     label,
     emoji: normalizeString(input.emoji, SHARE_ROOM_LIMITS.MAX_EMOJI_LENGTH) ||
@@ -121,6 +138,11 @@ function sanitizeNode(input: unknown) {
     color: normalizeString(input.color, SHARE_ROOM_LIMITS.MAX_COLOR_LENGTH) ||
       "#e8839c",
   };
+  // Preserve dragged layout positions across share/live round-trips.
+  // (Keep in sync with party/conversationProtocol.ts sanitizeNode.)
+  const position = sanitizePosition(input.position);
+  if (position) node.position = position;
+  return node;
 }
 
 function sanitizeEdge(input: unknown) {
