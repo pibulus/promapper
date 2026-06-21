@@ -143,19 +143,45 @@ the existing conversation.
 - OpenRouter text, markdown export, and a generated audio smoke test have worked
   locally with `google/gemini-2.5-flash-lite`
 
+## Canonical Status
+
+ProMapper is the canonical version of the conversation/project mapper saga
+(`conversation_mapper`, `conversation_mapper_fresh`, `project_mapper` are parts
+donors, not maintained). A 10-step consolidation ported the best of each: the
+smarter AI brain (quality topic prompt + cross-provider normalization), AI
+resilience (retry on both providers, title fallback), a clean theme engine
+(`core/theme/`), graph upgrades (drag-to-merge, position persistence, layout
+toggle, in-graph edit), conversation starring, backup/import, and growth
+registries. See `core/README.md` for ownership boundaries.
+
+## Growth Pattern
+
+Adding a tool should be drop-a-file + register-a-line:
+
+- Visualizations: add a component + one entry in `islands/vizRegistry.ts`.
+- Export formats: add one `{id,label,prompt}` entry in
+  `utils/markdownPrompts.ts`.
+- Conversation mutations: add a pure transform in
+  `core/orchestration/conversation-ops.ts` + a thin action in
+  `signals/actionItemsStore.ts`.
+
 ## Open Issues
 
 1. **Inline style debt**: Many islands/components still use hardcoded `px` and
-   inline style values instead of the token system in `static/styles.css`. Start
-   with `HomeIsland`, `DashboardIsland`, `ActionItemsCard`, and the graph
-   islands.
+   inline style values instead of the token system in `static/styles.css`.
 2. **Real-device audio QA**: OpenRouter audio works with generated AIFF and text
    flows locally, but browser-recorded `audio/webm` should be verified on real
-   desktop and iPhone.
-3. **Theme system clarity**: There are theme variables and local theme restore
-   code, but system dark-mode behavior is not a settled feature.
-4. **Island count**: There are 14 islands. Some graph wrappers or selectors may
-   be foldable later, but do not refactor this until behavior is covered.
+   desktop and iPhone. Interactive graph gestures (drag-to-merge, rename/delete)
+   and the history star/backup flow also want real-device QA.
+3. **Live collaboration (queued)**: PartyKit collab is NOT yet ported (it was
+   step 11 of the plan, intentionally deferred). When tackled: build the worker
+   on ziplist's room structure + project_mapper's server-push, with the
+   chat-sidebar and named-presence UX mined from the `conversation_mapper`
+   `live-collab-action-items` / `dev` branches. PartyKit's bundler does NOT
+   honor Deno import aliases — the worker + protocol file must use relative
+   imports.
+4. **Filtered action-item sharing (queued)**: share one assignee's subset with
+   filter metadata (from the `action-items-filtered-sharing` branch).
 
 ## When Adding Features
 
