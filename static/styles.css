@@ -280,6 +280,42 @@ body {
   border: var(--border-width) solid var(--color-border);
 }
 
+/* ===================================================================
+   ACTION ITEMS CARD — Warm hover utilities (replaces cold Tailwind greys/purples)
+   ================================================================ */
+
+/* Buttons in the card header (sort / add) and modal cancel */
+.action-header-btn {
+  background: var(--surface-cream);
+}
+.action-header-btn:hover {
+  background: var(--surface-cream-hover);
+}
+
+/* Assignee + due-date chip buttons */
+.action-item-chip-btn:hover {
+  background: var(--surface-cream-hover);
+}
+
+/* Dropdown option rows — item-level and modal assignee lists */
+.action-dropdown-option:hover {
+  background: var(--color-secondary);
+}
+
+/* Delete button (top-right corner of each card) */
+.action-item-delete-btn {
+  background: var(--soft-cream-dark);
+}
+.action-item-delete-btn:hover {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
+
+/* Chevron button next to assignee input in the Add modal */
+.action-chevron-btn:hover {
+  color: var(--color-text);
+}
+
 /* Header export CTA — warm soft-black, themed hover (was inline #1A1A1A + JS) */
 .header-export-btn {
   background: var(--soft-black);
@@ -1551,10 +1587,12 @@ body {
 }
 
 .action-item-card.is-completed {
+  /* Completed tint follows the theme accent over warm cream (was a fixed mint
+     wash ending in near-white). */
   background: linear-gradient(
     180deg,
-    rgba(173, 232, 219, 0.12) 0%,
-    rgba(255, 255, 255, 0.96) 100%
+    color-mix(in srgb, var(--color-accent) 10%, transparent) 0%,
+    var(--soft-cream) 100%
   );
 }
 
@@ -1580,8 +1618,8 @@ body {
   height: 1.4rem;
   border: 2px solid var(--color-border);
   border-radius: 0.35rem;
-  background: #fff;
-  color: #fff;
+  background: var(--soft-cream);
+  color: var(--soft-cream);
   cursor: pointer;
   transition:
     background 160ms ease,

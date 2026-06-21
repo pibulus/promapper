@@ -464,8 +464,9 @@ export default function ActionItemsCard(
             <div class="flex gap-2">
               <button
                 onClick={cycleSortMode}
-                class="bg-white px-2 py-1 rounded hover:bg-gray-100 cursor-pointer"
+                class="px-2 py-1 rounded cursor-pointer action-header-btn"
                 style={{
+                  background: "var(--surface-cream)",
                   fontSize: "var(--tiny-size)",
                   transition: "var(--transition-fast)",
                 }}
@@ -483,8 +484,9 @@ export default function ActionItemsCard(
               </button>
               <button
                 onClick={() => showAddModal.value = true}
-                class="bg-white px-2 py-1 rounded hover:bg-gray-100 cursor-pointer"
+                class="px-2 py-1 rounded cursor-pointer action-header-btn"
                 style={{
+                  background: "var(--surface-cream)",
                   fontSize: "var(--tiny-size)",
                   transition: "var(--transition-fast)",
                 }}
@@ -514,7 +516,12 @@ export default function ActionItemsCard(
               }}
             />
             {sortMode.value === "manual" && (
-              <p class="text-xs text-gray-500 mt-1 italic">Drag to reorder</p>
+              <p
+                class="text-xs mt-1 italic"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
+                Drag to reorder
+              </p>
             )}
           </div>
 
@@ -555,12 +562,13 @@ export default function ActionItemsCard(
                         onDragLeave={(e) => canDrag && handleDragLeave(e)}
                         onDrop={(e) => canDrag && handleDrop(e, item.id)}
                         onClick={() => selectedItemIndex.value = index}
-                        class={`action-item-card relative p-4 rounded-lg bg-white hover:bg-gray-50 transition-all${
+                        class={`action-item-card relative p-4 rounded-lg transition-all${
                           item.status === "completed" ? " is-completed" : ""
                         }${isSelected ? " is-selected" : ""}${
                           isDragOver ? " is-drag-over" : ""
                         }${isDragging ? " is-dragging" : ""}`}
                         style={{
+                          background: "var(--surface-cream)",
                           border: `2px solid ${
                             isSelected || isDragOver
                               ? "var(--color-accent)"
@@ -583,9 +591,12 @@ export default function ActionItemsCard(
                             {canDrag
                               ? (
                                 <i
-                                  class="fa fa-grip-vertical text-gray-400 hover:text-gray-600 cursor-move"
+                                  class="fa fa-grip-vertical cursor-move"
+                                  style={{
+                                    color: "var(--color-text-secondary)",
+                                    fontSize: "var(--heading-size)",
+                                  }}
                                   title="Drag to reorder"
-                                  style={{ fontSize: "var(--heading-size)" }}
                                 >
                                 </i>
                               )
@@ -659,7 +670,12 @@ export default function ActionItemsCard(
                                     }}
                                     autoFocus
                                   />
-                                  <p class="text-xs text-gray-400 italic">
+                                  <p
+                                    class="text-xs italic"
+                                    style={{
+                                      color: "var(--color-text-secondary)",
+                                    }}
+                                  >
                                     Ctrl+Enter to save · Esc to cancel
                                   </p>
                                   <div class="flex gap-2">
@@ -720,7 +736,7 @@ export default function ActionItemsCard(
                                       activeAssigneeDropdown.value === item.id
                                         ? null
                                         : item.id}
-                                  class="action-item-chip flex items-center gap-2 px-3 py-1.5 rounded text-xs hover:bg-gray-100 transition-colors"
+                                  class="action-item-chip action-item-chip-btn flex items-center gap-2 px-3 py-1.5 rounded text-xs transition-colors"
                                   style={{
                                     border: "2px solid var(--color-border)",
                                   }}
@@ -738,8 +754,9 @@ export default function ActionItemsCard(
                                 </button>
                                 {activeAssigneeDropdown.value === item.id && (
                                   <div
-                                    class="absolute z-10 mt-1 bg-white rounded shadow-lg"
+                                    class="absolute z-10 mt-1 rounded shadow-lg"
                                     style={{
+                                      background: "var(--surface-cream)",
                                       border: "2px solid var(--color-border)",
                                       minWidth: "150px",
                                     }}
@@ -749,7 +766,7 @@ export default function ActionItemsCard(
                                         updateAssignee(item.id, null);
                                         activeAssigneeDropdown.value = null;
                                       }}
-                                      class="w-full text-left px-3 py-2 text-xs hover:bg-purple-50"
+                                      class="w-full text-left px-3 py-2 text-xs action-dropdown-option"
                                       style={{
                                         borderBottom:
                                           "1px solid var(--color-border)",
@@ -764,7 +781,7 @@ export default function ActionItemsCard(
                                           updateAssignee(item.id, assignee);
                                           activeAssigneeDropdown.value = null;
                                         }}
-                                        class="w-full text-left px-3 py-2 text-xs hover:bg-purple-50"
+                                        class="w-full text-left px-3 py-2 text-xs action-dropdown-option"
                                         style={{
                                           borderBottom:
                                             "1px solid var(--color-border)",
@@ -806,7 +823,7 @@ export default function ActionItemsCard(
                                       (input as any).showPicker();
                                     }
                                   }}
-                                  class="action-item-chip flex items-center gap-2 px-3 py-1.5 rounded text-xs hover:bg-gray-100 transition-colors"
+                                  class="action-item-chip action-item-chip-btn flex items-center gap-2 px-3 py-1.5 rounded text-xs transition-colors"
                                   style={{
                                     border: "2px solid var(--color-border)",
                                   }}
@@ -832,7 +849,7 @@ export default function ActionItemsCard(
                         {/* Delete button */}
                         <button
                           onClick={() => requestDeleteItem(item.id)}
-                          class="action-item-delete absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full bg-gray-100 hover:bg-red-100 hover:text-red-600 transition-colors"
+                          class="action-item-delete action-item-delete-btn absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full transition-colors"
                           title="Delete"
                         >
                           <i class="fa fa-times text-xs"></i>
@@ -848,7 +865,10 @@ export default function ActionItemsCard(
 
       {/* Delete Confirmation Modal */}
       {confirmDeleteItemId.value && (
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div
+          class="fixed inset-0 flex items-center justify-center z-50"
+          style={{ background: "rgba(30,23,20,0.5)" }}
+        >
           <div
             class="dashboard-card max-w-sm w-full mx-4"
             style={{ padding: "var(--card-padding)" }}
@@ -908,7 +928,10 @@ export default function ActionItemsCard(
 
       {/* Add New Item Modal */}
       {showAddModal.value && (
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div
+          class="fixed inset-0 flex items-center justify-center z-50"
+          style={{ background: "rgba(30,23,20,0.5)" }}
+        >
           <div
             ref={modalRef}
             class="dashboard-card max-w-md w-full mx-4"
@@ -1020,13 +1043,20 @@ export default function ActionItemsCard(
                     type="button"
                     onClick={() =>
                       showAssigneeDropdown.value = !showAssigneeDropdown.value}
-                    class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    class="absolute right-2 top-1/2 transform -translate-y-1/2 action-chevron-btn"
+                    style={{ color: "var(--color-text-secondary)" }}
                   >
                     ▼
                   </button>
                 </div>
                 {showAssigneeDropdown.value && (
-                  <div class="absolute z-10 w-full mt-1 bg-white border-2 border-gray-300 rounded shadow-lg max-h-40 overflow-y-auto">
+                  <div
+                    class="absolute z-10 w-full mt-1 rounded shadow-lg max-h-40 overflow-y-auto"
+                    style={{
+                      background: "var(--surface-cream)",
+                      border: "2px solid var(--border-cream-medium)",
+                    }}
+                  >
                     {COMMON_ASSIGNEES.map((assignee, index) => (
                       <button
                         type="button"
@@ -1035,8 +1065,9 @@ export default function ActionItemsCard(
                           newItemAssignee.value = assignee;
                           showAssigneeDropdown.value = false;
                         }}
-                        class="w-full text-left px-3 py-2 text-sm hover:bg-purple-100 border-b border-gray-100 last:border-none"
+                        class="w-full text-left px-3 py-2 text-sm action-dropdown-option last:border-none"
                         style={{
+                          borderBottom: "1px solid var(--color-border)",
                           background: index === dropdownSelectedIndex.value
                             ? "var(--color-accent)"
                             : "transparent",
@@ -1098,7 +1129,7 @@ export default function ActionItemsCard(
                   newItemAssignee.value = "";
                   newItemDueDate.value = "";
                 }}
-                class="px-4 py-2 rounded hover:bg-gray-100"
+                class="px-4 py-2 rounded action-header-btn"
                 style={{
                   border: `2px solid var(--color-border)`,
                   fontSize: "var(--text-size)",
