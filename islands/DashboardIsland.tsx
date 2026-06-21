@@ -9,7 +9,9 @@ import { renameSpeaker, setActionItems } from "@signals/actionItemsStore.ts";
 import TranscriptCard from "../components/TranscriptCard.tsx";
 import SummaryCard from "../components/SummaryCard.tsx";
 import ActionItemsCard from "../components/ActionItemsCard.tsx";
+import ActionItemsBack from "../components/ActionItemsBack.tsx";
 import TopicVisualizationsCard from "./TopicVisualizationsCard.tsx";
+import FlipCard from "./FlipCard.tsx";
 
 export default function DashboardIsland() {
   if (!conversationData.value) {
@@ -51,11 +53,32 @@ export default function DashboardIsland() {
           conversationSource={conversation.source}
         />
 
-        {/* Card 3: Action Items */}
-        <ActionItemsCard
-          actionItems={actionItems}
-          conversationId={conversation.id ?? ""}
-          onUpdateItems={setActionItems}
+        {/* Card 3: Action Items — flips to an overview/bulk-actions back */}
+        <FlipCard
+          label="Action Items"
+          front={
+            <ActionItemsCard
+              actionItems={actionItems}
+              conversationId={conversation.id ?? ""}
+              onUpdateItems={setActionItems}
+            />
+          }
+          back={
+            <ActionItemsBack
+              items={actionItems}
+              onMarkAllDone={() =>
+                setActionItems(
+                  actionItems.map((i) => ({
+                    ...i,
+                    status: "completed" as const,
+                  })),
+                )}
+              onClearDone={() =>
+                setActionItems(
+                  actionItems.filter((i) => i.status !== "completed"),
+                )}
+            />
+          }
         />
 
         {/* Card 4: Topic Visualizations - FULL WIDTH (spans all columns) */}

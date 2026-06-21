@@ -21,6 +21,7 @@ import * as $AudioVisualizer from "./islands/AudioVisualizer.tsx";
 import * as $ChatSidebar from "./islands/ChatSidebar.tsx";
 import * as $DashboardIsland from "./islands/DashboardIsland.tsx";
 import * as $EmojimapViz from "./islands/EmojimapViz.tsx";
+import * as $FlipCard from "./islands/FlipCard.tsx";
 import * as $ForceDirectedGraph from "./islands/ForceDirectedGraph.tsx";
 import * as $GoLiveButton from "./islands/GoLiveButton.tsx";
 import * as $HomeIsland from "./islands/HomeIsland.tsx";
@@ -60,6 +61,7 @@ const manifest = {
     "./islands/ChatSidebar.tsx": $ChatSidebar,
     "./islands/DashboardIsland.tsx": $DashboardIsland,
     "./islands/EmojimapViz.tsx": $EmojimapViz,
+    "./islands/FlipCard.tsx": $FlipCard,
     "./islands/ForceDirectedGraph.tsx": $ForceDirectedGraph,
     "./islands/GoLiveButton.tsx": $GoLiveButton,
     "./islands/HomeIsland.tsx": $HomeIsland,
