@@ -2,6 +2,9 @@
   "$schema": "https://www.partykit.io/schema.json",
   "name": "promapper",
   "main": "party/conversationRoom.ts",
+  "parties": {
+    "conversation": "party/conversationRoom.ts"
+  },
   "port": 1999,
   "compatibilityDate": "2026-06-21"
 }

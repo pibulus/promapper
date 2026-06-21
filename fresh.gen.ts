@@ -6,11 +6,13 @@ import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
 import * as $api_append from "./routes/api/append.ts";
 import * as $api_auth from "./routes/api/auth.ts";
+import * as $api_live_create from "./routes/api/live/create.ts";
 import * as $api_markdown from "./routes/api/markdown.ts";
 import * as $api_process from "./routes/api/process.ts";
 import * as $api_share_shareId_ from "./routes/api/share/[shareId].ts";
 import * as $api_share_create from "./routes/api/share/create.ts";
 import * as $index from "./routes/index.tsx";
+import * as $live_roomId_ from "./routes/live/[roomId].tsx";
 import * as $shared_shareId_ from "./routes/shared/[shareId].tsx";
 import * as $shared_index from "./routes/shared/index.tsx";
 import * as $ArcDiagramViz from "./islands/ArcDiagramViz.tsx";
@@ -19,7 +21,9 @@ import * as $AudioVisualizer from "./islands/AudioVisualizer.tsx";
 import * as $DashboardIsland from "./islands/DashboardIsland.tsx";
 import * as $EmojimapViz from "./islands/EmojimapViz.tsx";
 import * as $ForceDirectedGraph from "./islands/ForceDirectedGraph.tsx";
+import * as $GoLiveButton from "./islands/GoLiveButton.tsx";
 import * as $HomeIsland from "./islands/HomeIsland.tsx";
+import * as $LiveCollabIsland from "./islands/LiveCollabIsland.tsx";
 import * as $MarkdownMakerDrawer from "./islands/MarkdownMakerDrawer.tsx";
 import * as $MobileHistoryMenu from "./islands/MobileHistoryMenu.tsx";
 import * as $ShareButton from "./islands/ShareButton.tsx";
@@ -37,11 +41,13 @@ const manifest = {
     "./routes/_app.tsx": $_app,
     "./routes/api/append.ts": $api_append,
     "./routes/api/auth.ts": $api_auth,
+    "./routes/api/live/create.ts": $api_live_create,
     "./routes/api/markdown.ts": $api_markdown,
     "./routes/api/process.ts": $api_process,
     "./routes/api/share/[shareId].ts": $api_share_shareId_,
     "./routes/api/share/create.ts": $api_share_create,
     "./routes/index.tsx": $index,
+    "./routes/live/[roomId].tsx": $live_roomId_,
     "./routes/shared/[shareId].tsx": $shared_shareId_,
     "./routes/shared/index.tsx": $shared_index,
   },
@@ -52,7 +58,9 @@ const manifest = {
     "./islands/DashboardIsland.tsx": $DashboardIsland,
     "./islands/EmojimapViz.tsx": $EmojimapViz,
     "./islands/ForceDirectedGraph.tsx": $ForceDirectedGraph,
+    "./islands/GoLiveButton.tsx": $GoLiveButton,
     "./islands/HomeIsland.tsx": $HomeIsland,
+    "./islands/LiveCollabIsland.tsx": $LiveCollabIsland,
     "./islands/MarkdownMakerDrawer.tsx": $MarkdownMakerDrawer,
     "./islands/MobileHistoryMenu.tsx": $MobileHistoryMenu,
     "./islands/ShareButton.tsx": $ShareButton,

@@ -16,6 +16,7 @@ import UploadIsland from "./UploadIsland.tsx";
 import DashboardIsland from "./DashboardIsland.tsx";
 import MobileHistoryMenu from "./MobileHistoryMenu.tsx";
 import ShareButton from "./ShareButton.tsx";
+import GoLiveButton from "./GoLiveButton.tsx";
 import MarkdownMakerDrawer from "./MarkdownMakerDrawer.tsx";
 import AudioRecorder from "./AudioRecorder.tsx";
 import ThemeSwitcher from "./ThemeSwitcher.tsx";
@@ -126,7 +127,8 @@ export default function HomeIsland() {
                     <span class="hidden sm:inline">Export</span>
                   </button>
 
-                  {/* Share button */}
+                  {/* Go Live + Share buttons */}
+                  <GoLiveButton />
                   <ShareButton />
                 </div>
               </>

@@ -28,15 +28,16 @@ function toSnapshot(result: ConversationFlowResult) {
 }
 
 /**
- * Push a result to the room. Best-effort: never throws into the request path.
+ * POST a raw conversation snapshot to a room. Returns true on success.
+ * Shared by result-push and room-creation. Never throws.
  */
-export async function pushResultToRoom(
+export async function pushSnapshotToRoom(
   roomId: string | null | undefined,
-  result: ConversationFlowResult,
-): Promise<void> {
-  if (!roomId) return;
+  snapshot: unknown,
+): Promise<boolean> {
+  if (!roomId) return false;
   const host = partyHost();
-  if (!host) return; // PartyKit not configured — single-player, skip silently.
+  if (!host) return false; // PartyKit not configured.
 
   const base = host.replace(/\/+$/, "");
   const url = `${base}/parties/conversation/${encodeURIComponent(roomId)}`;
@@ -49,12 +50,26 @@ export async function pushResultToRoom(
         "Content-Type": "application/json",
         ...(token ? { "x-partykit-token": token } : {}),
       },
-      body: JSON.stringify(toSnapshot(result)),
+      body: JSON.stringify(snapshot),
     });
     if (!res.ok) {
       console.error(`[party] push failed (${res.status}) for room ${roomId}`);
     }
+    return res.ok;
   } catch (error) {
     console.error("[party] push error:", error);
+    return false;
   }
+}
+
+/**
+ * Push an AI flow result to the room. Best-effort; never throws into the
+ * request path. No-ops when no roomId or PartyKit isn't configured.
+ */
+export async function pushResultToRoom(
+  roomId: string | null | undefined,
+  result: ConversationFlowResult,
+): Promise<void> {
+  if (!roomId) return;
+  await pushSnapshotToRoom(roomId, toSnapshot(result));
 }
