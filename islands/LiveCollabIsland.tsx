@@ -7,7 +7,7 @@
  * dashboard plus a live bar showing connection state + who's here.
  */
 
-import { useEffect } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 import { IS_BROWSER } from "$fresh/runtime.ts";
 import { conversationData } from "@signals/conversationStore.ts";
 import {
@@ -17,10 +17,14 @@ import {
 import {
   getLocalIdentity,
   remoteUsers,
+  setLocalIdentity,
   userColor,
 } from "@signals/presenceStore.ts";
 import { startLiveSync, stopLiveSync } from "@signals/liveSync.ts";
+import { sendRename } from "@signals/partyService.ts";
+import { showToast } from "@utils/toast.ts";
 import DashboardIsland from "./DashboardIsland.tsx";
+import ChatSidebar from "./ChatSidebar.tsx";
 
 interface LiveCollabIslandProps {
   roomId: string;
@@ -30,6 +34,10 @@ interface LiveCollabIslandProps {
 export default function LiveCollabIsland(
   { roomId, partyHost }: LiveCollabIslandProps,
 ) {
+  // Track seen user ids so we can toast joins/leaves without spamming on every
+  // presence heartbeat. selfId is whatever the server reports first as "us".
+  const seenIds = useRef<Set<string> | null>(null);
+
   useEffect(() => {
     if (!IS_BROWSER || !partyHost) return;
     startLiveSync({
@@ -37,12 +45,41 @@ export default function LiveCollabIsland(
       roomId,
       avatar: getLocalIdentity(),
     });
-    return () => stopLiveSync();
+    return () => {
+      stopLiveSync();
+      seenIds.current = null;
+    };
   }, [roomId, partyHost]);
 
   const connected = partyConnected.value && connectedRoomId.value === roomId;
   const users = remoteUsers.value;
   const hasData = Boolean(conversationData.value);
+
+  // Join/leave toasts from presence deltas (dedup via seenIds; skip first sync).
+  useEffect(() => {
+    if (!IS_BROWSER) return;
+    const current = new Set(users.map((u) => u.id));
+    if (seenIds.current === null) {
+      seenIds.current = current; // first presence snapshot — don't announce
+      return;
+    }
+    for (const u of users) {
+      if (!seenIds.current.has(u.id)) {
+        showToast(`${u.alias || u.avatar} joined`, "info");
+      }
+    }
+    for (const id of seenIds.current) {
+      if (!current.has(id)) showToast("Someone left", "info");
+    }
+    seenIds.current = current;
+  }, [users]);
+
+  function renameSelf() {
+    const next = globalThis.prompt("Your display name:", getLocalIdentity());
+    if (!next || !next.trim()) return;
+    setLocalIdentity(next);
+    sendRename(next.trim());
+  }
 
   return (
     <div>
@@ -90,29 +127,45 @@ export default function LiveCollabIsland(
           </span>
         </div>
 
-        {/* Collaborator avatars */}
-        <div class="flex items-center -space-x-2">
-          {users.slice(0, 6).map((u) => (
-            <span
-              key={u.id}
-              title={u.alias || u.avatar}
-              style={{
-                width: "26px",
-                height: "26px",
-                borderRadius: "50%",
-                background: userColor(u.id),
-                color: "#fff",
-                border: "2px solid var(--soft-cream)",
-                fontSize: "0.7rem",
-                fontWeight: "700",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              {(u.alias || u.avatar || "?").charAt(0).toUpperCase()}
-            </span>
-          ))}
+        <div class="flex items-center gap-2">
+          {/* Collaborator avatars */}
+          <div class="flex items-center -space-x-2">
+            {users.slice(0, 6).map((u) => (
+              <span
+                key={u.id}
+                title={u.alias || u.avatar}
+                style={{
+                  width: "26px",
+                  height: "26px",
+                  borderRadius: "50%",
+                  background: userColor(u.id),
+                  color: "#fff",
+                  border: "2px solid var(--soft-cream)",
+                  fontSize: "0.7rem",
+                  fontWeight: "700",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {(u.alias || u.avatar || "?").charAt(0).toUpperCase()}
+              </span>
+            ))}
+          </div>
+          <button
+            onClick={renameSelf}
+            class="action-header-btn"
+            style={{
+              background: "var(--surface-cream)",
+              fontSize: "var(--tiny-size)",
+              padding: "0.25rem 0.6rem",
+              borderRadius: "var(--border-radius-sm)",
+            }}
+            title="Change your display name"
+            aria-label="Change your display name"
+          >
+            ✎ Name
+          </button>
         </div>
       </header>
 
@@ -136,6 +189,9 @@ export default function LiveCollabIsland(
           </div>
         )}
       </div>
+
+      {/* In-session chat (only once connected) */}
+      {connected && <ChatSidebar />}
     </div>
   );
 }

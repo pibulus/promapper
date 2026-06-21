@@ -18,6 +18,7 @@ import * as $shared_index from "./routes/shared/index.tsx";
 import * as $ArcDiagramViz from "./islands/ArcDiagramViz.tsx";
 import * as $AudioRecorder from "./islands/AudioRecorder.tsx";
 import * as $AudioVisualizer from "./islands/AudioVisualizer.tsx";
+import * as $ChatSidebar from "./islands/ChatSidebar.tsx";
 import * as $DashboardIsland from "./islands/DashboardIsland.tsx";
 import * as $EmojimapViz from "./islands/EmojimapViz.tsx";
 import * as $ForceDirectedGraph from "./islands/ForceDirectedGraph.tsx";
@@ -55,6 +56,7 @@ const manifest = {
     "./islands/ArcDiagramViz.tsx": $ArcDiagramViz,
     "./islands/AudioRecorder.tsx": $AudioRecorder,
     "./islands/AudioVisualizer.tsx": $AudioVisualizer,
+    "./islands/ChatSidebar.tsx": $ChatSidebar,
     "./islands/DashboardIsland.tsx": $DashboardIsland,
     "./islands/EmojimapViz.tsx": $EmojimapViz,
     "./islands/ForceDirectedGraph.tsx": $ForceDirectedGraph,

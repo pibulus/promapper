@@ -16,15 +16,25 @@ import {
   applyRemoteConversation,
   conversationData,
 } from "./conversationStore.ts";
-import { partyConnected } from "./partyConnectionStore.ts";
+import {
+  type ChatMessage,
+  chatMessages,
+  partyConnected,
+  unreadChatCount,
+} from "./partyConnectionStore.ts";
 import {
   connectToRoom,
   disconnectFromRoom,
   type PartyCallbacks,
   type PartyConnectOptions,
+  sendChat,
   sendConversationUpdate,
 } from "./partyService.ts";
-import { remoteUserName } from "./presenceStore.ts";
+import {
+  getLocalIdentity,
+  type RemoteUser,
+  remoteUserName,
+} from "./presenceStore.ts";
 import type { ConversationData } from "../core/types/conversation-data.ts";
 
 let stopBroadcast: (() => void) | null = null;
@@ -40,6 +50,10 @@ export function startLiveSync(
 ): void {
   if (!IS_BROWSER) return;
 
+  // Reset chat state for the new room.
+  chatMessages.value = [];
+  unreadChatCount.value = 0;
+
   connectToRoom(options, {
     ...extra,
     onInit: (data, meta) => {
@@ -54,6 +68,16 @@ export function startLiveSync(
       applyRemoteConversation(data as ConversationData);
       lastSentJSON = JSON.stringify(data);
       extra.onConversationUpdate?.(data);
+    },
+    onChat: (text, sender: RemoteUser, at) => {
+      appendChat({
+        id: `${sender.id}-${at}`,
+        senderId: sender.id,
+        senderName: remoteUserName(sender),
+        text,
+        at,
+      });
+      extra.onChat?.(text, sender, at);
     },
   });
 
@@ -73,8 +97,22 @@ export function stopLiveSync(): void {
   stopBroadcast?.();
   stopBroadcast = null;
   lastSentJSON = "";
+  chatMessages.value = [];
+  unreadChatCount.value = 0;
   disconnectFromRoom();
 }
 
+function appendChat(message: ChatMessage): void {
+  // Cap the log so a long session can't grow unbounded.
+  chatMessages.value = [...chatMessages.value, message].slice(-200);
+}
+
+/** Send a chat message (broadcasts; the server echoes it back to us too). */
+export function sendChatMessage(text: string): void {
+  const trimmed = text.trim();
+  if (!trimmed) return;
+  sendChat(trimmed);
+}
+
 // Re-export for convenience to the UI layer.
-export { remoteUserName };
+export { getLocalIdentity, remoteUserName };
