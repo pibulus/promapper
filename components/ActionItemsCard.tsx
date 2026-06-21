@@ -519,46 +519,40 @@ export default function ActionItemsCard(
                     marginLeft: "0.5rem",
                     fontSize: "var(--tiny-size)",
                     fontWeight: "500",
-                    color: "var(--color-text-secondary)",
+                    color: "rgba(255,255,255,0.85)",
                   }}
                 >
                   {progress.value.done} of {progress.value.total} done
                 </span>
               )}
             </h3>
-            <div class="flex gap-2">
+            <div class="flex gap-1 items-center">
               <button
                 onClick={cycleSortMode}
-                class="px-2 py-1 rounded cursor-pointer action-header-btn flex items-center gap-1"
-                style={{
-                  background: "var(--surface-cream)",
-                  fontSize: "var(--tiny-size)",
-                  transition: "var(--transition-fast)",
-                }}
+                class="btn btn--ghost btn--compact"
                 aria-label={`Sort: ${sortLabel.value}. Click to change.`}
                 title={`Sort: ${sortLabel.value}`}
               >
-                <span aria-hidden="true">
-                  {sortMode.value === "manual"
-                    ? "🤚"
-                    : sortMode.value === "assignee"
-                    ? "👤"
-                    : "📅"}
-                </span>
+                <i
+                  class={`fa ${
+                    sortMode.value === "manual"
+                      ? "fa-arrow-up-wide-short"
+                      : sortMode.value === "assignee"
+                      ? "fa-user"
+                      : "fa-calendar"
+                  }`}
+                  aria-hidden="true"
+                >
+                </i>
                 <span class="hidden sm:inline">{sortLabel.value}</span>
               </button>
               <button
                 onClick={() => showAddModal.value = true}
-                class="px-2 py-1 rounded cursor-pointer action-header-btn"
-                style={{
-                  background: "var(--surface-cream)",
-                  fontSize: "var(--tiny-size)",
-                  transition: "var(--transition-fast)",
-                }}
+                class="btn btn--ghost btn--icon btn--compact"
                 aria-label="Add action item"
                 title="Add new item"
               >
-                <span aria-hidden="true">➕</span>
+                <i class="fa fa-plus" aria-hidden="true"></i>
               </button>
             </div>
           </div>

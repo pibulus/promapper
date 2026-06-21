@@ -78,27 +78,17 @@ export default function ShareButton() {
       <button
         onClick={handleShare}
         disabled={!canShare.value || isGenerating.value}
-        class="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 px-3 py-2 font-bold sm:px-4"
-        style={{
-          borderRadius: "var(--border-radius-sm)",
-          border: "2px solid var(--border-cream-medium)",
-          background: canShare.value && !isGenerating.value
-            ? "var(--soft-black)"
-            : "var(--surface-cream-hover)",
-          color: canShare.value && !isGenerating.value
-            ? "var(--soft-cream)"
-            : "var(--color-text-secondary)",
-          cursor: canShare.value && !isGenerating.value
-            ? "pointer"
-            : "not-allowed",
-          transition: "var(--transition-fast)",
-        }}
+        class="btn btn--secondary"
         title="Share conversation"
         aria-label="Share conversation"
       >
-        <span aria-hidden="true">{isGenerating.value ? "🔄" : "🔗"}</span>
+        <i
+          class={`fa ${isGenerating.value ? "fa-spinner fa-spin" : "fa-link"}`}
+          aria-hidden="true"
+        >
+        </i>
         <span class="hidden sm:inline">
-          {isGenerating.value ? "Generating…" : "Share"}
+          {isGenerating.value ? "Generating" : "Share"}
         </span>
       </button>
 
@@ -154,7 +144,7 @@ export default function ShareButton() {
               title="Copy link"
               aria-label="Copy link"
             >
-              📋
+              <i class="fa fa-copy" aria-hidden="true"></i>
             </button>
           </div>
           <p
@@ -185,7 +175,7 @@ export default function ShareButton() {
             class="text-sm font-bold"
             style={{ color: "var(--color-accent)" }}
           >
-            ✨ Copied to clipboard
+            <i class="fa fa-check" aria-hidden="true"></i> Copied to clipboard
           </p>
         </div>
       )}

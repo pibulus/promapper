@@ -46,18 +46,19 @@ export default function GoLiveButton() {
     <button
       onClick={goLive}
       disabled={loading.value}
-      class="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg px-3 py-2 cursor-pointer action-header-btn"
-      style={{
-        background: "var(--surface-cream)",
-        fontSize: "var(--small-size)",
-        fontWeight: "600",
-      }}
+      class="btn btn--secondary"
       aria-label="Start a live collaboration room"
       title="Go live — collaborate in real time"
     >
-      <span aria-hidden="true">🛰️</span>
+      <i
+        class={`fa ${
+          loading.value ? "fa-spinner fa-spin" : "fa-satellite-dish"
+        }`}
+        aria-hidden="true"
+      >
+      </i>
       <span class="hidden sm:inline">
-        {loading.value ? "Starting…" : "Go Live"}
+        {loading.value ? "Starting" : "Go Live"}
       </span>
     </button>
   );
