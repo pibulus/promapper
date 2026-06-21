@@ -7,7 +7,7 @@
 
 import { signal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
-import { conversationData } from "../signals/conversationStore.ts";
+import { conversationData } from "@signals/conversationStore.ts";
 import {
   getActiveConversationId,
   loadConversation,

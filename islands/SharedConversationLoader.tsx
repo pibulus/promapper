@@ -11,7 +11,7 @@ import { loadSharedConversation } from "../core/storage/shareService.ts";
 import {
   conversationData,
   isViewingShared,
-} from "../signals/conversationStore.ts";
+} from "@signals/conversationStore.ts";
 import DashboardIsland from "./DashboardIsland.tsx";
 
 interface Props {

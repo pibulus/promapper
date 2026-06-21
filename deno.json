@@ -50,7 +50,11 @@
     "@google/generative-ai": "npm:@google/generative-ai@0.21.0",
     "d3": "npm:d3@^7.9.0",
     "@core/": "./core/",
-    "@services/": "./services/"
+    "@services/": "./services/",
+    "@signals/": "./signals/",
+    "@utils/": "./utils/",
+    "@components/": "./components/",
+    "@islands/": "./islands/"
   },
   "compilerOptions": {
     "jsx": "react-jsx",

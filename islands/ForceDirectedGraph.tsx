@@ -7,7 +7,7 @@
 
 import { useEffect, useRef } from "preact/hooks";
 import { useComputed, useSignal } from "@preact/signals";
-import { conversationData } from "../signals/conversationStore.ts";
+import { conversationData } from "@signals/conversationStore.ts";
 import {
   EmojimapHandle,
   forceDirectedEmojimap,

@@ -13,7 +13,7 @@ import {
   loadConversation,
   type StoredConversation,
 } from "../core/storage/localStorage.ts";
-import { conversationData } from "../signals/conversationStore.ts";
+import { conversationData } from "@signals/conversationStore.ts";
 
 export default function ConversationList() {
   const conversations = useSignal<StoredConversation[]>([]);

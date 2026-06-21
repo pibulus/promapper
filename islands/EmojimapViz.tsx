@@ -6,10 +6,7 @@
  */
 
 import { useComputed } from "@preact/signals";
-import {
-  conversationData,
-  isProcessing,
-} from "../signals/conversationStore.ts";
+import { conversationData, isProcessing } from "@signals/conversationStore.ts";
 import ForceDirectedGraph from "./ForceDirectedGraph.tsx";
 
 export default function EmojimapViz() {

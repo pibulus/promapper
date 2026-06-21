@@ -5,7 +5,7 @@
  */
 
 import { useComputed, useSignal } from "@preact/signals";
-import { conversationData } from "../signals/conversationStore.ts";
+import { conversationData } from "@signals/conversationStore.ts";
 import {
   createBestShareLink,
   type ShareCreationResult,

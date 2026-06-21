@@ -8,7 +8,7 @@
 import { useEffect, useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import * as d3 from "d3";
-import { conversationData } from "../signals/conversationStore.ts";
+import { conversationData } from "@signals/conversationStore.ts";
 
 export default function ArcDiagramViz() {
   const svgContainerRef = useRef<HTMLDivElement>(null);

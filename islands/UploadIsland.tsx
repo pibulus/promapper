@@ -1,6 +1,6 @@
 import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
-import { conversationData } from "../signals/conversationStore.ts";
+import { conversationData } from "@signals/conversationStore.ts";
 import { ensureApiSession } from "../utils/apiAuth.ts";
 import { enqueueApiRequest } from "../utils/requestQueue.ts";
 import LoadingModal from "../components/LoadingModal.tsx";

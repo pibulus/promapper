@@ -12,7 +12,7 @@ import {
   loadConversation,
   type StoredConversation,
 } from "../core/storage/localStorage.ts";
-import { conversationData } from "../signals/conversationStore.ts";
+import { conversationData } from "@signals/conversationStore.ts";
 
 // Cache date formatter outside component to avoid recreating
 const dateFormatter = new Intl.DateTimeFormat("en-US", {

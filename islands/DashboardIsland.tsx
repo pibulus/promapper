@@ -4,7 +4,7 @@
  * Clean grid layout coordinating cards
  */
 
-import { conversationData } from "../signals/conversationStore.ts";
+import { conversationData } from "@signals/conversationStore.ts";
 import TranscriptCard from "../components/TranscriptCard.tsx";
 import SummaryCard from "../components/SummaryCard.tsx";
 import ActionItemsCard from "../components/ActionItemsCard.tsx";
