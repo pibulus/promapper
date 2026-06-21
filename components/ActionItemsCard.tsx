@@ -8,6 +8,7 @@ import { useEffect, useRef } from "preact/hooks";
 import { usePointerSortable } from "@utils/usePointerSortable.ts";
 import { hapticBump, hapticTap } from "@utils/haptics.ts";
 import {
+  soundBloom,
   soundCheckoff,
   soundSettle,
   soundTick,
@@ -125,6 +126,10 @@ export default function ActionItemsCard(
   const confirmDeleteItemId = useSignal<string | null>(null);
   const showClearDoneConfirm = useSignal(false);
   const quickAddText = useSignal("");
+  // Transient "just checked off" id — drives a one-shot checkbox pop. Kept
+  // separate from the persistent completed state so it never replays on
+  // re-render (scroll/filter/append); cleared after the animation.
+  const poppingId = useSignal<string | null>(null);
 
   // Refs
   const dropdownTimeoutRef = useRef<number | null>(null);
@@ -327,7 +332,19 @@ export default function ActionItemsCard(
       soundTick();
     } else {
       hapticBump();
-      soundCheckoff();
+      // Escalation: if THIS checkoff finishes the whole list, play the warmer
+      // bloom cue instead of the per-item tick — a little payoff for clearing it.
+      const wasLast = visibleItems.value.length > 1 &&
+        visibleItems.value.every((i) =>
+          i.id === itemId || i.status === "completed"
+        );
+      if (wasLast) soundBloom();
+      else soundCheckoff();
+      // One-shot pop on the moment of completion (the rewarding beat).
+      poppingId.value = itemId;
+      setTimeout(() => {
+        if (poppingId.value === itemId) poppingId.value = null;
+      }, 240);
     }
     const updatedItems = visibleItems.value.map((item) => {
       if (item.id !== itemId) return item;
@@ -549,7 +566,7 @@ export default function ActionItemsCard(
           {/* Search bar */}
           <div
             class="action-items-search"
-            style={{ padding: "0.75rem 1rem 0.25rem" }}
+            style={{ padding: "0.75rem var(--card-padding) 0.25rem" }}
           >
             <input
               type="text"
@@ -657,22 +674,12 @@ export default function ActionItemsCard(
                         {/* "Clear done" divider — shown once before the first completed item */}
                         {progress.value.done > 0 &&
                           index === firstCompletedIndex && (
-                          <div
-                            class="flex items-center justify-between"
-                            style={{
-                              paddingTop: "0.25rem",
-                              paddingBottom: "0.25rem",
-                            }}
-                          >
-                            <span
-                              style={{
-                                fontSize: "var(--tiny-size)",
-                                color: "var(--color-text-secondary)",
-                                fontWeight: "500",
-                              }}
-                            >
-                              Completed
+                          <div class="action-done-divider">
+                            <span class="action-done-rule" aria-hidden="true" />
+                            <span class="action-done-label">
+                              Done · {progress.value.done}
                             </span>
+                            <span class="action-done-rule" aria-hidden="true" />
                             <button
                               onClick={() => showClearDoneConfirm.value = true}
                               class="action-filter-pill"
@@ -681,7 +688,7 @@ export default function ActionItemsCard(
                                 color: "var(--color-text-secondary)",
                               }}
                             >
-                              Clear done ({progress.value.done})
+                              Clear
                             </button>
                           </div>
                         )}
@@ -691,12 +698,13 @@ export default function ActionItemsCard(
                           onPointerDown={(e) =>
                             canDrag && onRowPointerDown(e, item.id)}
                           onClick={() => selectedItemIndex.value = index}
-                          class={`action-item-card relative p-4 rounded-lg transition-all${
+                          class={`action-item-card relative p-4 transition-all${
                             item.status === "completed" ? " is-completed" : ""
                           }${isSelected ? " is-selected" : ""}${
                             isDragging ? " is-dragging" : ""
                           }${isSettling ? " is-settling" : ""}`}
                           style={{
+                            borderRadius: "var(--border-radius-sm)",
                             background: "var(--surface-cream)",
                             border: `2px solid ${
                               isSelected
@@ -762,6 +770,10 @@ export default function ActionItemsCard(
                                   item.status === "completed"
                                     ? " is-checked"
                                     : ""
+                                }${
+                                  poppingId.value === item.id
+                                    ? " is-popping"
+                                    : ""
                                 }`}
                                 role="checkbox"
                                 aria-checked={item.status === "completed"}
@@ -777,8 +789,12 @@ export default function ActionItemsCard(
                               </button>
                             </div>
 
-                            {/* Content */}
-                            <div class="flex flex-col gap-3">
+                            {
+                              /* Content — min-w-0 lets the 1fr grid track shrink
+                                below its intrinsic width so the description wraps
+                                instead of overflowing/clipping on narrow screens. */
+                            }
+                            <div class="flex flex-col gap-3 min-w-0">
                               {/* Description */}
                               {editingItemId.value === item.id
                                 ? (
@@ -1122,7 +1138,7 @@ export default function ActionItemsCard(
                                           class="action-filter-pill"
                                           style={{
                                             padding: "0.1rem 0.45rem",
-                                            fontSize: "0.65rem",
+                                            fontSize: "var(--tiny-size)",
                                           }}
                                         >
                                           Today
@@ -1136,7 +1152,7 @@ export default function ActionItemsCard(
                                           class="action-filter-pill"
                                           style={{
                                             padding: "0.1rem 0.45rem",
-                                            fontSize: "0.65rem",
+                                            fontSize: "var(--tiny-size)",
                                           }}
                                         >
                                           Tmrw
@@ -1145,11 +1161,10 @@ export default function ActionItemsCard(
                                           <button
                                             onClick={() =>
                                               updateDueDate(item.id, null)}
-                                            class="action-filter-pill"
+                                            class="action-filter-pill is-danger"
                                             style={{
                                               padding: "0.1rem 0.45rem",
-                                              fontSize: "0.65rem",
-                                              color: "var(--color-danger)",
+                                              fontSize: "var(--tiny-size)",
                                             }}
                                           >
                                             Clear
@@ -1376,7 +1391,7 @@ export default function ActionItemsCard(
         <h3
           id="add-item-modal-title"
           style={{
-            fontSize: "calc(var(--heading-size) * 1.2)",
+            fontSize: "var(--font-size-xl)",
             fontWeight: "var(--heading-weight)",
             color: "var(--color-text)",
             marginBottom: "1rem",
