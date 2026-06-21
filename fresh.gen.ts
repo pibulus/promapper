@@ -28,6 +28,7 @@ import * as $SharedConversationLoader from "./islands/SharedConversationLoader.t
 import * as $ThemeSwitcher from "./islands/ThemeSwitcher.tsx";
 import * as $UploadIsland from "./islands/UploadIsland.tsx";
 import * as $VisualizationSelector from "./islands/VisualizationSelector.tsx";
+import * as $vizRegistry from "./islands/vizRegistry.ts";
 import type { Manifest } from "$fresh/server.ts";
 
 const manifest = {
@@ -60,6 +61,7 @@ const manifest = {
     "./islands/ThemeSwitcher.tsx": $ThemeSwitcher,
     "./islands/UploadIsland.tsx": $UploadIsland,
     "./islands/VisualizationSelector.tsx": $VisualizationSelector,
+    "./islands/vizRegistry.ts": $vizRegistry,
   },
   baseUrl: import.meta.url,
 } satisfies Manifest;

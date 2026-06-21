@@ -1,55 +1,32 @@
 /**
  * Visualization Selector - Tab Switcher for Different Viz Types
  *
- * Allows users to switch between different visualization styles:
- * - Circular Network (EmojimapViz)
- * - Arc Diagram (ArcDiagramViz)
- * - Word Cloud (coming soon)
+ * Renders whatever is registered in vizRegistry.ts. To add a visualization,
+ * register it there — no changes needed here.
  */
 
 import { useSignal } from "@preact/signals";
-import EmojimapViz from "./EmojimapViz.tsx";
-import ArcDiagramViz from "./ArcDiagramViz.tsx";
-
-type VisualizationType = "circular" | "arc" | "wordcloud";
+import { defaultVizId, vizRegistry } from "./vizRegistry.ts";
 
 export default function VisualizationSelector() {
-  const activeViz = useSignal<VisualizationType>("circular");
+  const activeViz = useSignal<string>(defaultVizId);
 
-  const visualizations = [
-    {
-      id: "circular" as VisualizationType,
-      name: "Map",
-      component: EmojimapViz,
-    },
-    {
-      id: "arc" as VisualizationType,
-      name: "Threads",
-      component: ArcDiagramViz,
-    },
-    // {
-    //   id: "wordcloud" as VisualizationType,
-    //   name: "Cloud",
-    //   component: WordCloudViz,
-    // },
-  ];
-
-  const ActiveComponent =
-    visualizations.find((v) => v.id === activeViz.value)?.component ||
-    EmojimapViz;
+  const active = vizRegistry.find((v) => v.id === activeViz.value) ??
+    vizRegistry[0];
+  const ActiveComponent = active.component;
 
   return (
     <div class="flex flex-col h-full">
       {/* Tab Selector */}
       <div class="flex gap-2 mb-4">
-        {visualizations.map((viz) => (
+        {vizRegistry.map((viz) => (
           <button
             key={viz.id}
             onClick={() => (activeViz.value = viz.id)}
             class={`mode-tab ${activeViz.value === viz.id ? "active" : ""}`}
             aria-pressed={activeViz.value === viz.id}
           >
-            {viz.name}
+            {viz.label}
           </button>
         ))}
       </div>
