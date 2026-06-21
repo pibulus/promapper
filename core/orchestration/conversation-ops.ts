@@ -10,6 +10,8 @@
 import type { ConversationData } from "../types/conversation-data.ts";
 
 type ActionItem = ConversationData["actionItems"][number];
+type TopicNode = ConversationData["nodes"][number];
+type TopicEdge = ConversationData["edges"][number];
 
 /**
  * Replace the action item list (e.g. after reorder/edit/delete in the UI).
@@ -84,4 +86,111 @@ export function renameSpeaker(
       speakers: Array.from(new Set(nextSpeakers)),
     },
   };
+}
+
+// ===================================================================
+// TOPIC GRAPH
+// ===================================================================
+
+/**
+ * Drop self-loops and duplicate edges (same source->target) from an edge list,
+ * keeping the first occurrence. Used after a merge rewires endpoints.
+ */
+function dedupeEdges(edges: TopicEdge[]): TopicEdge[] {
+  const seen = new Set<string>();
+  const out: TopicEdge[] = [];
+  for (const edge of edges) {
+    if (edge.source_topic_id === edge.target_topic_id) continue; // self loop
+    const key = `${edge.source_topic_id}->${edge.target_topic_id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(edge);
+  }
+  return out;
+}
+
+/**
+ * Merge the source topic into the target topic (drag-to-merge). The source node
+ * is removed; every edge touching source is rewired to target; resulting
+ * self-loops and duplicate edges are dropped. promapper edge fields (id,
+ * conversation_id, created_at) are preserved on the surviving edges. No-op if
+ * either id is missing/unknown or both are the same.
+ */
+export function mergeTopics(
+  data: ConversationData,
+  sourceId: string,
+  targetId: string,
+): ConversationData {
+  if (!sourceId || !targetId || sourceId === targetId) return data;
+  const ids = new Set(data.nodes.map((n) => n.id));
+  if (!ids.has(sourceId) || !ids.has(targetId)) return data;
+
+  const nodes = data.nodes.filter((n) => n.id !== sourceId);
+  const rewired = data.edges.map((edge) => ({
+    ...edge,
+    source_topic_id: edge.source_topic_id === sourceId
+      ? targetId
+      : edge.source_topic_id,
+    target_topic_id: edge.target_topic_id === sourceId
+      ? targetId
+      : edge.target_topic_id,
+  }));
+
+  return { ...data, nodes, edges: dedupeEdges(rewired) };
+}
+
+/**
+ * Rename a topic node's label by id. No-op for empty/identical labels.
+ */
+export function renameTopic(
+  data: ConversationData,
+  id: string,
+  label: string,
+): ConversationData {
+  const trimmed = label.trim();
+  if (!id || !trimmed) return data;
+  let changed = false;
+  const nodes = data.nodes.map((node) => {
+    if (node.id === id && node.label !== trimmed) {
+      changed = true;
+      return { ...node, label: trimmed };
+    }
+    return node;
+  });
+  return changed ? { ...data, nodes } : data;
+}
+
+/**
+ * Delete a topic node by id and any edges touching it.
+ */
+export function deleteTopic(
+  data: ConversationData,
+  id: string,
+): ConversationData {
+  if (!id || !data.nodes.some((n) => n.id === id)) return data;
+  const nodes = data.nodes.filter((n) => n.id !== id);
+  const edges = data.edges.filter(
+    (e) => e.source_topic_id !== id && e.target_topic_id !== id,
+  );
+  return { ...data, nodes, edges };
+}
+
+/**
+ * Persist node positions from the graph layout back onto the nodes, so the graph
+ * does not re-scramble on reload. Positions arrive as an id -> {x,y} map.
+ */
+export function persistTopicPositions(
+  data: ConversationData,
+  positions: Record<string, { x: number; y: number }>,
+): ConversationData {
+  let changed = false;
+  const nodes = data.nodes.map((node) => {
+    const pos = positions[node.id];
+    if (pos && Number.isFinite(pos.x) && Number.isFinite(pos.y)) {
+      changed = true;
+      return { ...node, position: { x: pos.x, y: pos.y } } as TopicNode;
+    }
+    return node;
+  });
+  return changed ? { ...data, nodes } : data;
 }

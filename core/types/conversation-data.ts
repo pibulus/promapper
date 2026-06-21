@@ -22,6 +22,7 @@ export interface ConversationData {
     label: string;
     emoji: string;
     color: string;
+    position?: { x: number; y: number };
   }>;
   edges: Array<{
     id?: string;
