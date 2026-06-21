@@ -292,36 +292,10 @@ body {
 .mapper-scene {
   min-height: 100vh;
   position: relative;
-  /* Risograph-style pastel splashes over a warm, airy base */
-  background: /* Fluro pink splash - top left */
-    radial-gradient(
-      circle at 15% 10%,
-      rgba(255, 179, 217, 0.28),
-      transparent 40%
-    ),
-     /* Mint splash - upper right */radial-gradient(
-    circle at 86% 18%,
-    rgba(173, 232, 219, 0.22),
-    transparent 34%
-  ),
-     /* Fluro peach splash - bottom right */radial-gradient(
-    circle at 85% 90%,
-    rgba(255, 203, 164, 0.25),
-    transparent 45%
-  ),
-     /* Fluro lavender accent - mid left */radial-gradient(
-    circle at 5% 50%,
-    rgba(245, 200, 255, 0.18),
-    transparent 35%
-  ),
-     /* Warm gradient base: cream → pink → sky → warm white */linear-gradient(
-    135deg,
-    #fff8f1 0%,
-    #ffe9f0 30%,
-    #eef9ff 58%,
-    #ffeedc 78%,
-    #fffef7 100%
-  );
+  /* Risograph-style pastel splashes, driven by the active theme so the
+     theme switcher actually repaints the canvas. --gradient-bg is defined
+     per-theme in core/theme/themes.ts (and the FOUC script in _app.tsx). */
+  background: var(--gradient-bg);
   overflow: hidden;
   animation: mapperGradient 18s ease-in-out infinite alternate;
 }
@@ -1525,9 +1499,13 @@ body {
 }
 
 .dashboard-card-header {
-  background: var(--color-accent);
+  /* Neutral cream header with an accent stripe — readable on every theme
+     (accent-on-white text failed WCAG AA) and gives the 4 cards a calmer,
+     more cohesive top band instead of 4 saturated accent blocks. */
+  background: var(--soft-cream-dark);
   padding: var(--card-padding);
   border-bottom: var(--border-width) solid var(--color-border);
+  border-left: 4px solid var(--color-accent);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1536,7 +1514,7 @@ body {
 .dashboard-card-header h3 {
   font-size: var(--heading-size);
   font-weight: 700;
-  color: white;
+  color: var(--color-text);
   margin: 0;
 }
 
@@ -1670,18 +1648,20 @@ body {
 }
 
 .topic-map-canvas {
+  /* Theme-aware tint: follows the active --color-accent instead of a baked
+     PEACH wash, so the map matches the rest of the app on every theme. */
   background:
     radial-gradient(
       circle at 18% 15%,
-      rgba(232, 131, 156, 0.13),
+      color-mix(in srgb, var(--color-accent) 13%, transparent),
       transparent 28%
     ),
     radial-gradient(
     circle at 82% 28%,
-    rgba(124, 199, 178, 0.14),
+    color-mix(in srgb, var(--color-accent) 14%, transparent),
     transparent 30%
   ),
-    rgba(255, 255, 255, 0.68) !important;
+    rgba(255, 255, 255, 0.68);
 }
 
 .topic-map-canvas svg {

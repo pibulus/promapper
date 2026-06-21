@@ -51,8 +51,11 @@ export default function TranscriptCard(
           <h3>Transcript</h3>
           <button
             onClick={() => transcript?.text && copyToClipboard(transcript.text)}
-            class="text-white hover:text-gray-200 cursor-pointer"
-            style={{ transition: "var(--transition-fast)" }}
+            class="cursor-pointer"
+            style={{
+              color: "var(--color-text-secondary)",
+              transition: "var(--transition-fast)",
+            }}
             title="Copy transcript"
             aria-label="Copy transcript"
             disabled={!transcript?.text}

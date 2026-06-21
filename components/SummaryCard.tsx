@@ -58,8 +58,11 @@ export default function SummaryCard(
           <div class="flex items-center gap-2">
             <button
               onClick={() => summary && copyToClipboard(summary)}
-              class="text-white hover:text-gray-200 cursor-pointer"
-              style={{ transition: "var(--transition-fast)" }}
+              class="cursor-pointer"
+              style={{
+                color: "var(--color-text-secondary)",
+                transition: "var(--transition-fast)",
+              }}
               title="Copy summary"
               aria-label="Copy summary"
               disabled={!summary}
@@ -99,7 +102,8 @@ export default function SummaryCard(
                   <div
                     class="mt-4 p-4 rounded-lg"
                     style={{
-                      background: "rgba(var(--color-accent-rgb), 0.05)",
+                      background:
+                        "color-mix(in srgb, var(--color-accent) 8%, transparent)",
                       border: "2px solid var(--color-border)",
                     }}
                   >
