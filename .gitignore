@@ -47,3 +47,6 @@ key.json
 
 # Playwright MCP screenshot artifacts
 .playwright-mcp/
+
+# PartyKit local dev state
+.partykit/
