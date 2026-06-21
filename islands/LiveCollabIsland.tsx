@@ -21,9 +21,8 @@ import {
   getLocalIdentity,
   remoteUsers,
   setLocalIdentity,
-  userColor,
-  userEmoji,
 } from "@signals/presenceStore.ts";
+import { buildAvatar } from "@utils/avatar.ts";
 import { startLiveSync, stopLiveSync } from "@signals/liveSync.ts";
 import { sendRename } from "@signals/partyService.ts";
 import { showToast } from "@utils/toast.ts";
@@ -149,23 +148,21 @@ export default function LiveCollabIsland(
           {/* Collaborator avatars */}
           <div class="flex items-center -space-x-2">
             {users.slice(0, 6).map((u) => (
-              <span
+              <img
                 key={u.id}
+                src={buildAvatar(u.id)}
+                alt={u.alias || u.avatar}
                 title={u.alias || u.avatar}
+                width={28}
+                height={28}
                 style={{
-                  width: "26px",
-                  height: "26px",
+                  width: "28px",
+                  height: "28px",
                   borderRadius: "50%",
-                  background: userColor(u.id),
                   border: "2px solid var(--soft-cream)",
-                  fontSize: "0.85rem",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  background: "var(--soft-cream)",
                 }}
-              >
-                {userEmoji(u.id)}
-              </span>
+              />
             ))}
           </div>
           <button

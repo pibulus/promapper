@@ -43,6 +43,8 @@
     "$fresh/": "https://deno.land/x/fresh@1.7.3/",
     "html-to-image": "npm:html-to-image@^1.11.13",
     "partysocket": "npm:partysocket@^1.0.2",
+    "@dicebear/core": "npm:@dicebear/core@9.4.2",
+    "@dicebear/collection": "npm:@dicebear/collection@9.4.2",
     "preact": "https://esm.sh/preact@10.22.0",
     "preact/": "https://esm.sh/preact@10.22.0/",
     "@preact/signals": "https://esm.sh/*@preact/signals@1.2.2",

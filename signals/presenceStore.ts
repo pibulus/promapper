@@ -38,36 +38,6 @@ const USER_COLORS = [
   "#C47C48",
 ];
 
-// Cute, on-brand spread (animals + a few pastel-punk picks). Deterministic per
-// user so everyone sees the same avatar for the same person.
-const USER_EMOJIS = [
-  "🐨",
-  "🦆",
-  "🦎",
-  "🦘",
-  "🦔",
-  "🐹",
-  "🐱",
-  "🦊",
-  "🦁",
-  "🐼",
-  "🐙",
-  "🦦",
-  "🦥",
-  "🦉",
-  "🐧",
-  "🐸",
-  "🦑",
-  "🛸",
-  "🤖",
-  "🎨",
-  "🌈",
-  "🧙",
-  "🎸",
-  "👾",
-  "🧠",
-];
-
 /** Stable hash of a user id (same id → same number everywhere). */
 function hashUserId(userId: string): number {
   let hash = 0;
@@ -81,14 +51,6 @@ function hashUserId(userId: string): number {
 /** Stable color for a user id (same id → same color across clients). */
 export function userColor(userId: string): string {
   return USER_COLORS[hashUserId(userId) % USER_COLORS.length];
-}
-
-/**
- * Stable cute emoji for a user id. Keyed off the immutable server-assigned id
- * (NOT the editable display name), so a rename never reshuffles avatars.
- */
-export function userEmoji(userId: string): string {
-  return USER_EMOJIS[hashUserId(userId) % USER_EMOJIS.length];
 }
 
 // ===================================================================
