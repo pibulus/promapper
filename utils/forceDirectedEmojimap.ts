@@ -79,6 +79,15 @@ interface Config {
   onRightClickEdge?: (event: any, d: EdgeData) => void;
   onBackgroundClick?: (event: any) => void;
   onRightClickBackground?: (event: any) => void;
+  /** Called after a drag ends with the full id->position map for all nodes. */
+  onPositionsChange?: (
+    positions: Record<string, { x: number; y: number }>,
+  ) => void;
+  /**
+   * Called when a dragged node is released within ~45 SVG units of another
+   * node. The caller should merge sourceId into targetId.
+   */
+  onMergeNodes?: (sourceId: string, targetId: string) => void;
 }
 
 // ===================================================================
@@ -119,6 +128,8 @@ const defaultConfig: Config = {
       }),
     );
   },
+  onPositionsChange: undefined,
+  onMergeNodes: undefined,
 };
 
 // ===================================================================
@@ -249,10 +260,44 @@ function dragended(
   event: any,
   d: NodeData,
   simulation: d3.Simulation<NodeData, undefined>,
+  nodes: NodeData[],
+  config: Config,
 ) {
   if (!event.active) simulation.alphaTarget(0);
   d.fx = null;
   d.fy = null;
+
+  // Persist all node positions after a drag ends
+  if (config.onPositionsChange) {
+    const positions: Record<string, { x: number; y: number }> = {};
+    for (const n of nodes) {
+      if (n.id && Number.isFinite(n.x) && Number.isFinite(n.y)) {
+        positions[n.id] = { x: n.x as number, y: n.y as number };
+      }
+    }
+    config.onPositionsChange(positions);
+  }
+
+  // Merge if dragged node overlaps nearest neighbour within threshold
+  if (config.onMergeNodes && d.x !== undefined && d.y !== undefined) {
+    let nearestNode: NodeData | null = null;
+    let minDistance = Infinity;
+
+    for (const other of nodes) {
+      if (other.id === d.id) continue;
+      if (other.x === undefined || other.y === undefined) continue;
+      const distance = Math.hypot(d.x - other.x, d.y - other.y);
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestNode = other;
+      }
+    }
+
+    const mergeThreshold = 45; // SVG units — deliberate, not trigger-happy
+    if (nearestNode && minDistance < mergeThreshold) {
+      config.onMergeNodes(d.id, nearestNode.id);
+    }
+  }
 }
 
 /**
@@ -262,6 +307,7 @@ function createNodeGroup(
   selection: d3.Selection<SVGGElement, NodeData, SVGGElement, unknown>,
   config: Config,
   simulation: d3.Simulation<NodeData, undefined>,
+  nodes: NodeData[],
 ) {
   selection
     .attr("class", "node-group")
@@ -271,7 +317,10 @@ function createNodeGroup(
         .drag<SVGGElement, NodeData>()
         .on("start", (event, d) => dragstarted(event, d, simulation))
         .on("drag", dragged)
-        .on("end", (event, d) => dragended(event, d, simulation)),
+        .on(
+          "end",
+          (event, d) => dragended(event, d, simulation, nodes, config),
+        ),
     )
     .on("mouseover", (event, d) => {
       if (config.onMouseOverNode) config.onMouseOverNode(event, d);
@@ -412,7 +461,7 @@ function updateElements({
     .join(
       (enter) =>
         enter.append("g").call((selection) =>
-          createNodeGroup(selection, config, simulation)
+          createNodeGroup(selection, config, simulation, nodes)
         ),
       (update) => update,
       (exit) => exit.remove(),
@@ -582,11 +631,21 @@ export function forceDirectedEmojimap(
   // Create node map for linking
   const nodeMap = new Map<string, NodeData>();
 
-  // Validate nodes and build node map
+  // Validate nodes and build node map; seed saved positions when available
   nodes.forEach((n) => {
     if (!n.id) {
       console.warn("Node missing ID, skipping:", n);
       return;
+    }
+    // Restore persisted layout positions so a reloaded graph keeps its shape
+    const savedPos = (n as any).position as
+      | { x: number; y: number }
+      | undefined;
+    if (
+      savedPos && Number.isFinite(savedPos.x) && Number.isFinite(savedPos.y)
+    ) {
+      n.x = savedPos.x;
+      n.y = savedPos.y;
     }
     nodeMap.set(n.id, n);
   });

@@ -3,6 +3,13 @@
  *
  * Refactored to use modular forceDirectedEmojimap
  * Shows topics as emoji nodes with physics simulation and draggable interactions
+ *
+ * Graph gestures:
+ *   click         → select node / edge (shows detail panel)
+ *   double-click  → rename node (window.prompt)
+ *   right-click   → delete node (window.confirm)
+ *   drag-to-node  → merge when released within ~45 SVG units
+ *   layout toggle → organic (loose physics) vs readable (spread out)
  */
 
 import { useEffect, useRef } from "preact/hooks";
@@ -12,6 +19,12 @@ import {
   EmojimapHandle,
   forceDirectedEmojimap,
 } from "../utils/forceDirectedEmojimap.ts";
+import {
+  deleteTopic,
+  mergeTopics,
+  persistTopicPositions,
+  renameTopic,
+} from "../core/orchestration/conversation-ops.ts";
 import * as htmlToImage from "html-to-image";
 import ContextMenu from "../components/ContextMenu.tsx";
 
@@ -42,6 +55,46 @@ export default function ForceDirectedGraph(
   const linkDistance = useSignal(100);
   const chargeStrength = useSignal(-850);
   const collisionRadius = useSignal(70);
+
+  // Layout toggle: "organic" = current physics defaults, "readable" = spread
+  // Organic: loose clustering. Readable: stronger repulsion + longer links.
+  const layoutMode = useSignal<"organic" | "readable">("organic");
+
+  // ===================================================================
+  // FORCE LAYOUT PRESETS
+  // ===================================================================
+
+  const LAYOUT_PRESETS = {
+    organic: { linkDistance: 100, chargeStrength: -850, collisionRadius: 70 },
+    readable: { linkDistance: 180, chargeStrength: -1800, collisionRadius: 90 },
+  };
+
+  function applyLayoutPreset(mode: "organic" | "readable") {
+    const preset = LAYOUT_PRESETS[mode];
+    linkDistance.value = preset.linkDistance;
+    chargeStrength.value = preset.chargeStrength;
+    collisionRadius.value = preset.collisionRadius;
+    layoutMode.value = mode;
+  }
+
+  function toggleLayout() {
+    applyLayoutPreset(layoutMode.value === "organic" ? "readable" : "organic");
+  }
+
+  // Debounced position persistence — 400 ms so dragging doesn't thrash autosave
+  let _positionDebounceTimer: number | undefined;
+  function handlePositionsChange(
+    positions: Record<string, { x: number; y: number }>,
+  ) {
+    clearTimeout(_positionDebounceTimer);
+    _positionDebounceTimer = setTimeout(() => {
+      if (!conversationData.value) return;
+      conversationData.value = persistTopicPositions(
+        conversationData.value,
+        positions,
+      );
+    }, 400) as unknown as number;
+  }
 
   // Get topics and edges from store
   const topics = useComputed(() => conversationData.value?.nodes || []);
@@ -108,6 +161,44 @@ export default function ForceDirectedGraph(
           selectedNodeId.value = node.id;
           selectedEdgeId.value = null;
         },
+        onDoubleClickNode: (
+          _event: MouseEvent,
+          node: { id: string; label?: string },
+        ) => {
+          if (!conversationData.value) return;
+          const current = conversationData.value.nodes.find((n) =>
+            n.id === node.id
+          );
+          const newLabel = window.prompt(
+            "Rename topic:",
+            current?.label ?? node.id,
+          );
+          if (newLabel && newLabel.trim()) {
+            conversationData.value = renameTopic(
+              conversationData.value,
+              node.id,
+              newLabel,
+            );
+          }
+        },
+        onRightClickNode: (
+          event: MouseEvent,
+          node: { id: string; label?: string },
+        ) => {
+          event.preventDefault();
+          if (!conversationData.value) return;
+          const current = conversationData.value.nodes.find((n) =>
+            n.id === node.id
+          );
+          const label = current?.label ?? node.id;
+          if (window.confirm(`Delete topic "${label}"?`)) {
+            conversationData.value = deleteTopic(
+              conversationData.value,
+              node.id,
+            );
+            if (selectedNodeId.value === node.id) selectedNodeId.value = null;
+          }
+        },
         onClickEdge: (_event: MouseEvent, edge: { id?: string }) => {
           selectedEdgeId.value = edge.id || null;
           selectedNodeId.value = null;
@@ -122,6 +213,17 @@ export default function ForceDirectedGraph(
           contextMenuY.value = event.clientY;
           contextMenuVisible.value = true;
         },
+        onMergeNodes: (sourceId: string, targetId: string) => {
+          if (!conversationData.value) return;
+          conversationData.value = mergeTopics(
+            conversationData.value,
+            sourceId,
+            targetId,
+          );
+          // Clear selection if the merged-away node was selected
+          if (selectedNodeId.value === sourceId) selectedNodeId.value = null;
+        },
+        onPositionsChange: handlePositionsChange,
       },
     });
   }
@@ -537,6 +639,17 @@ export default function ForceDirectedGraph(
 
       {/* Control buttons */}
       <div class="absolute bottom-4 right-4 flex gap-2">
+        {/* Layout toggle button */}
+        <button
+          class="bg-white bg-opacity-70 hover:bg-opacity-100 shadow-lg rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold cursor-pointer"
+          onClick={toggleLayout}
+          title={layoutMode.value === "organic"
+            ? "Switch to readable layout"
+            : "Switch to organic layout"}
+        >
+          {layoutMode.value === "organic" ? "🔀" : "📊"}
+        </button>
+
         {/* PNG Export button */}
         <button
           class="bg-white bg-opacity-70 hover:bg-opacity-100 shadow-lg rounded-full w-10 h-10 flex items-center justify-center text-lg cursor-pointer"
