@@ -28,12 +28,22 @@ export function parseActionItemsResponse(
     const actionItems = JSON.parse(cleanedText);
     if (!Array.isArray(actionItems)) return [];
 
-    return actionItems.map((item: any) => ({
-      description: item.description.charAt(0).toUpperCase() +
-        item.description.slice(1),
-      assignee: item.assignee === "null" ? null : item.assignee,
-      due_date: item.due_date === "null" ? null : item.due_date,
-    }));
+    // Guard per item: a single malformed entry (missing/empty description)
+    // must not throw and discard the entire batch. Skip bad items, keep good.
+    return actionItems
+      .filter((item: any) =>
+        item && typeof item.description === "string" &&
+        item.description.trim().length > 0
+      )
+      .map((item: any) => {
+        const description = item.description.trim();
+        return {
+          description: description.charAt(0).toUpperCase() +
+            description.slice(1),
+          assignee: item.assignee === "null" ? null : item.assignee ?? null,
+          due_date: item.due_date === "null" ? null : item.due_date ?? null,
+        };
+      });
   } catch (error) {
     console.error("Error parsing action items JSON:", error);
     console.error("Raw text was:", text);

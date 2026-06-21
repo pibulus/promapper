@@ -13,6 +13,35 @@ structured data.
 
 Provider-specific SDK details stay behind the `AIService` interface.
 
+## Ownership Boundaries
+
+ProMapper is layered so each directory has one job. A future editor (human or
+LLM) can reason about a change by knowing which layer it belongs in. The rule of
+thumb: imports point _downward_ (UI → state → core), never upward.
+
+| Layer         | May import                         | Must NOT import                          | Runs where       |
+| ------------- | ---------------------------------- | ---------------------------------------- | ---------------- |
+| `core/`       | other `core/`, std types           | Preact, Fresh, browser APIs, `services/` | anywhere (pure)  |
+| `services/`   | `core/`, Deno/server APIs          | Preact, `islands/`, `components/`        | server only      |
+| `signals/`    | `core/` types, `@preact/signals`   | `services/`, server-only APIs            | browser state    |
+| `islands/`    | `signals/`, `components/`, `core/` | `services/` directly (call routes)       | hydration roots  |
+| `components/` | `core/` types, `signals/` (read)   | `islands/` (no upward imports)           | pure render      |
+| `routes/`     | anything (entry points)            | —                                        | server + hydrate |
+
+Notes:
+
+- `core/` is the framework-agnostic brain. It has zero Preact/Fresh/browser
+  imports so it stays portable and unit-testable. All AI provider specifics hide
+  behind the `AIService` interface in `core/ai/types.ts`.
+- `services/` is server-only (env vars, provider keys, audio upload). Islands
+  never import it; they call API routes, which keeps keys off the client.
+- `islands/` are the only hydration roots. A presentational file that needs
+  state or browser APIs should still live in `components/` when it is always
+  rendered _inside_ an island (Preact hydrates the whole island subtree).
+- `components/` must never import from `islands/`. If a component reaches up
+  into an island, either the island leaf should become a component, or the
+  component is actually an island.
+
 ## Structure
 
 ```text
@@ -34,11 +63,7 @@ Provider-specific SDK details stay behind the `AIService` interface.
 ├── orchestration/
 │   ├── conversation-flow.ts    # Main Audio/Text -> Data flow
 │   ├── parallel-analysis.ts    # Parallel topics/actions/status/summary
-│   └── index.ts
-├── export/
-│   ├── formats.ts
-│   ├── transformer.ts
-│   └── index.ts
+│   └── append-merge.ts         # Merge appended results + AI self-checkoff
 ├── realtime/
 │   ├── shareProtocol.ts        # Sanitized share-room contract
 │   └── shareStore.ts           # Memory/Supabase share-store adapters
@@ -144,42 +169,13 @@ Title generation
 ConversationFlowResult
 ```
 
-## Export Helpers
+## Markdown Export
 
-```typescript
-import {
-  EXPORT_FORMATS,
-  transformConversation,
-  transformWithCustomPrompt,
-} from "./core";
-
-const blogPost = await transformConversation(
-  aiService,
-  "BLOG",
-  conversationText,
-);
-
-const custom = await transformWithCustomPrompt(
-  aiService,
-  "Turn this into release notes",
-  conversationText,
-);
-```
-
-## Available Export Formats
-
-- `BLOG`
-- `TECHNICAL_MANUAL`
-- `MEETING_SUMMARY`
-- `HAIKU`
-- `BULLET_POINTS`
-- `EMAIL`
-- `PRESENTATION`
-- `TWEET_THREAD`
-- `STORY`
-- `FAQ`
-- `EXECUTIVE_SUMMARY`
-- `LESSON_PLAN`
+Markdown export prompts live in `utils/markdownPrompts.ts` and are served by the
+`/api/markdown` route via `utils/markdownService.ts`.
+`aiService.generateMarkdown` runs the chosen prompt against the active provider.
+(A future export-format registry will consolidate these — see the main
+`CLAUDE.md` plan.)
 
 ## Test Coverage
 
