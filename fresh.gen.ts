@@ -29,6 +29,7 @@ import * as $MarkdownMakerDrawer from "./islands/MarkdownMakerDrawer.tsx";
 import * as $MobileHistoryMenu from "./islands/MobileHistoryMenu.tsx";
 import * as $ShareButton from "./islands/ShareButton.tsx";
 import * as $SharedConversationLoader from "./islands/SharedConversationLoader.tsx";
+import * as $SoundToggle from "./islands/SoundToggle.tsx";
 import * as $ThemeSwitcher from "./islands/ThemeSwitcher.tsx";
 import * as $TopicVisualizationsCard from "./islands/TopicVisualizationsCard.tsx";
 import * as $UploadIsland from "./islands/UploadIsland.tsx";
@@ -67,6 +68,7 @@ const manifest = {
     "./islands/MobileHistoryMenu.tsx": $MobileHistoryMenu,
     "./islands/ShareButton.tsx": $ShareButton,
     "./islands/SharedConversationLoader.tsx": $SharedConversationLoader,
+    "./islands/SoundToggle.tsx": $SoundToggle,
     "./islands/ThemeSwitcher.tsx": $ThemeSwitcher,
     "./islands/TopicVisualizationsCard.tsx": $TopicVisualizationsCard,
     "./islands/UploadIsland.tsx": $UploadIsland,

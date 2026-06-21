@@ -20,6 +20,7 @@ import GoLiveButton from "./GoLiveButton.tsx";
 import MarkdownMakerDrawer from "./MarkdownMakerDrawer.tsx";
 import AudioRecorder from "./AudioRecorder.tsx";
 import ThemeSwitcher from "./ThemeSwitcher.tsx";
+import SoundToggle from "./SoundToggle.tsx";
 
 const drawerOpen = signal(false);
 
@@ -128,9 +129,10 @@ export default function HomeIsland() {
                     <span class="hidden sm:inline">Export</span>
                   </button>
 
-                  {/* Go Live + Share buttons */}
+                  {/* Go Live + Share + sound mute */}
                   <GoLiveButton />
                   <ShareButton />
+                  <SoundToggle />
                 </div>
               </>
             )
@@ -164,6 +166,7 @@ export default function HomeIsland() {
                 >
                   ProMapper
                 </a>
+                <SoundToggle />
                 <ThemeSwitcher />
               </>
             )}

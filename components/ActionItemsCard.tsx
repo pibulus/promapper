@@ -7,6 +7,12 @@ import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import { usePointerSortable } from "@utils/usePointerSortable.ts";
 import { hapticBump, hapticTap } from "@utils/haptics.ts";
+import {
+  soundCheckoff,
+  soundSettle,
+  soundTick,
+  soundToggle,
+} from "@utils/sound.ts";
 import Modal from "./Modal.tsx";
 
 interface ActionItem {
@@ -100,6 +106,7 @@ export default function ActionItemsCard(
         (item) => item.status === "completed",
       );
       publishItems([...reorderedPending, ...completed]);
+      soundSettle(); // warm thunk on drop (hook already fires the haptic)
     },
   });
   const editingItemId = useSignal<string | null>(null);
@@ -311,9 +318,15 @@ export default function ActionItemsCard(
 
   function toggleActionItem(itemId: string) {
     const target = visibleItems.value.find((item) => item.id === itemId);
-    // A firmer buzz when completing, a light tick when un-completing.
-    if (target?.status === "completed") hapticTap();
-    else hapticBump();
+    // Completing is the rewarding beat (warm chime + firm buzz); un-completing
+    // is a quiet tick.
+    if (target?.status === "completed") {
+      hapticTap();
+      soundTick();
+    } else {
+      hapticBump();
+      soundCheckoff();
+    }
     const updatedItems = visibleItems.value.map((item) =>
       item.id === itemId
         ? {
@@ -540,7 +553,10 @@ export default function ActionItemsCard(
             {/* Filter pills — reduce the list (sort only reorders) */}
             <div class="flex gap-2 mt-2">
               <button
-                onClick={() => (filterMine.value = !filterMine.value)}
+                onClick={() => {
+                  filterMine.value = !filterMine.value;
+                  soundToggle(filterMine.value);
+                }}
                 class="action-filter-pill"
                 aria-pressed={filterMine.value}
                 style={{
@@ -553,7 +569,10 @@ export default function ActionItemsCard(
                 Mine
               </button>
               <button
-                onClick={() => (hideDone.value = !hideDone.value)}
+                onClick={() => {
+                  hideDone.value = !hideDone.value;
+                  soundToggle(hideDone.value);
+                }}
                 class="action-filter-pill"
                 aria-pressed={hideDone.value}
                 style={{

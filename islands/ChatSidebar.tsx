@@ -14,6 +14,7 @@ import {
 } from "@signals/partyConnectionStore.ts";
 import { sendChatMessage } from "@signals/liveSync.ts";
 import { userColor } from "@signals/presenceStore.ts";
+import { soundChime } from "@utils/sound.ts";
 
 export default function ChatSidebar() {
   const open = useSignal(true);
@@ -42,6 +43,7 @@ export default function ChatSidebar() {
     const text = draft.value.trim();
     if (!text) return;
     sendChatMessage(text);
+    soundChime();
     draft.value = "";
     stickToBottom.value = true;
   }

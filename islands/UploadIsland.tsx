@@ -3,6 +3,7 @@ import { useEffect, useRef } from "preact/hooks";
 import { conversationData } from "@signals/conversationStore.ts";
 import { ensureApiSession } from "../utils/apiAuth.ts";
 import { enqueueApiRequest } from "../utils/requestQueue.ts";
+import { soundBloom } from "@utils/sound.ts";
 import LoadingModal from "../components/LoadingModal.tsx";
 import AudioVisualizer from "./AudioVisualizer.tsx";
 
@@ -196,6 +197,7 @@ export default function UploadIsland() {
         topics: result.nodes.length,
       });
       conversationData.value = result;
+      soundBloom();
       alert(
         `✅ Processed! Found ${result.actionItems.length} action items, ${result.nodes.length} topics`,
       );
@@ -243,6 +245,7 @@ export default function UploadIsland() {
         topics: result.nodes.length,
       });
       conversationData.value = result;
+      soundBloom();
       textInput.value = "";
       alert(
         `✅ Processed! Found ${result.actionItems.length} action items, ${result.nodes.length} topics`,
@@ -295,6 +298,7 @@ export default function UploadIsland() {
         return response.json();
       });
       conversationData.value = result;
+      soundBloom();
       lastUploadName.value = file.name;
       alert(
         `✅ Processed! Found ${result.actionItems.length} action items, ${result.nodes.length} topics`,

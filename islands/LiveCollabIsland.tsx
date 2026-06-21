@@ -26,6 +26,7 @@ import {
 import { startLiveSync, stopLiveSync } from "@signals/liveSync.ts";
 import { sendRename } from "@signals/partyService.ts";
 import { showToast } from "@utils/toast.ts";
+import { soundChime, soundPortal } from "@utils/sound.ts";
 import DashboardIsland from "./DashboardIsland.tsx";
 import ChatSidebar from "./ChatSidebar.tsx";
 
@@ -76,6 +77,7 @@ export default function LiveCollabIsland(
     for (const u of users) {
       if (!seenIds.current.has(u.id)) {
         showToast(`${u.alias || u.avatar} joined`, "info");
+        soundChime();
       }
     }
     for (const id of seenIds.current) {
@@ -83,6 +85,11 @@ export default function LiveCollabIsland(
     }
     seenIds.current = current;
   }, [users]);
+
+  // A warm "you're in" cue the moment the room connects.
+  useEffect(() => {
+    if (connected) soundPortal();
+  }, [connected]);
 
   function renameSelf() {
     const next = globalThis.prompt("Your display name:", getLocalIdentity());

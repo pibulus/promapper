@@ -16,6 +16,7 @@ import { conversationData } from "@signals/conversationStore.ts";
 import { ensureApiSession } from "../utils/apiAuth.ts";
 import { saveAudioBackup } from "../utils/downloadBackup.ts";
 import { enqueueApiRequest } from "../utils/requestQueue.ts";
+import { soundBloom } from "@utils/sound.ts";
 
 interface Recording {
   id: string;
@@ -257,6 +258,7 @@ export default function AudioRecorder(
 
       // Update conversation data
       conversationData.value = result;
+      soundBloom();
 
       // Add recording to list
       const newRecording: Recording = {
