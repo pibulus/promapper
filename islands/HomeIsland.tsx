@@ -95,6 +95,9 @@ export default function HomeIsland() {
             display: "flex",
             alignItems: "center",
             height: "100%",
+            // Nudge contents down a touch so they read as optically centered
+            // BELOW the warm rainbow band that bleeds through the top edge.
+            paddingTop: "3px",
           }}
         >
           {conversationData.value
@@ -186,22 +189,17 @@ export default function HomeIsland() {
                 <div class="mapper-card" data-tilt>
                   <div class="mapper-card__inner">
                     <div class="mapper-hero-copy">
-                      <div>
-                        <div class="mapper-eyebrow">
-                          Paste / record / upload
-                        </div>
-                        <h1 class="mapper-hero-title">
-                          {heroLines.map((line, lineIndex) => (
-                            <span
-                              class="mapper-hero-line"
-                              key={line}
-                              style={{ animationDelay: `${lineIndex * 140}ms` }}
-                            >
-                              {line}
-                            </span>
-                          ))}
-                        </h1>
-                      </div>
+                      <h1 class="mapper-hero-title">
+                        {heroLines.map((line, lineIndex) => (
+                          <span
+                            class="mapper-hero-line"
+                            key={line}
+                            style={{ animationDelay: `${lineIndex * 140}ms` }}
+                          >
+                            {line}
+                          </span>
+                        ))}
+                      </h1>
                       <p class="mapper-hero-desc">
                         Drop in a thought, a meeting, a scene, or a weekly
                         check-in.
