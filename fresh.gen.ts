@@ -11,6 +11,7 @@ import * as $api_markdown from "./routes/api/markdown.ts";
 import * as $api_process from "./routes/api/process.ts";
 import * as $api_share_shareId_ from "./routes/api/share/[shareId].ts";
 import * as $api_share_create from "./routes/api/share/create.ts";
+import * as $dev_nodemap from "./routes/dev/nodemap.tsx";
 import * as $index from "./routes/index.tsx";
 import * as $live_roomId_ from "./routes/live/[roomId].tsx";
 import * as $shared_shareId_ from "./routes/shared/[shareId].tsx";
@@ -28,6 +29,7 @@ import * as $HomeIsland from "./islands/HomeIsland.tsx";
 import * as $LiveCollabIsland from "./islands/LiveCollabIsland.tsx";
 import * as $MarkdownMakerDrawer from "./islands/MarkdownMakerDrawer.tsx";
 import * as $MobileHistoryMenu from "./islands/MobileHistoryMenu.tsx";
+import * as $NodemapTestIsland from "./islands/NodemapTestIsland.tsx";
 import * as $ShareButton from "./islands/ShareButton.tsx";
 import * as $SharedConversationLoader from "./islands/SharedConversationLoader.tsx";
 import * as $SoundToggle from "./islands/SoundToggle.tsx";
@@ -49,6 +51,7 @@ const manifest = {
     "./routes/api/process.ts": $api_process,
     "./routes/api/share/[shareId].ts": $api_share_shareId_,
     "./routes/api/share/create.ts": $api_share_create,
+    "./routes/dev/nodemap.tsx": $dev_nodemap,
     "./routes/index.tsx": $index,
     "./routes/live/[roomId].tsx": $live_roomId_,
     "./routes/shared/[shareId].tsx": $shared_shareId_,
@@ -68,6 +71,7 @@ const manifest = {
     "./islands/LiveCollabIsland.tsx": $LiveCollabIsland,
     "./islands/MarkdownMakerDrawer.tsx": $MarkdownMakerDrawer,
     "./islands/MobileHistoryMenu.tsx": $MobileHistoryMenu,
+    "./islands/NodemapTestIsland.tsx": $NodemapTestIsland,
     "./islands/ShareButton.tsx": $ShareButton,
     "./islands/SharedConversationLoader.tsx": $SharedConversationLoader,
     "./islands/SoundToggle.tsx": $SoundToggle,
