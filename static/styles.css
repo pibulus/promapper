@@ -3176,6 +3176,22 @@ select:focus {
   stroke: color-mix(in srgb, var(--color-accent) 45%, transparent);
 }
 
+/* ── FOCUS MODE ─────────────────────────────────────────────────────
+   Double-click a node to isolate it + its neighbors. Everything outside the
+   focus set fades back and stops catching clicks, so the cluster you care about
+   reads clearly even on a busy 20-node map. */
+.node-group.is-dimmed {
+  opacity: 0.12;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.links path.is-dimmed {
+  stroke-opacity: 0.06;
+  pointer-events: none;
+  transition: stroke-opacity 0.4s ease;
+}
+
 /* ── MERGE PREVIEW ──────────────────────────────────────────────────
    While dragging a node within merge range of another, BOTH light up so the
    user sees the merge coming and can pull away to cancel. Release = merge. */

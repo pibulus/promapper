@@ -766,6 +766,12 @@ export interface EmojimapHandle {
       selectedEdgeId?: string | null;
     },
   ) => void;
+  /**
+   * Focus mode: pass a node id to isolate it + its direct neighbors (dim
+   * everything else and zoom to fit the subset). Pass null to clear focus and
+   * zoom back out to the whole map.
+   */
+  setFocus: (focusedNodeId: string | null) => void;
   resetVisualization: () => void;
   updateLayout: () => void;
   destroy: () => void;
@@ -788,6 +794,7 @@ export function forceDirectedEmojimap(
     return {
       update: () => {},
       setSelection: () => {},
+      setFocus: () => {},
       resetVisualization: () => {},
       updateLayout: () => {},
       destroy: () => {},
@@ -1164,6 +1171,41 @@ export function forceDirectedEmojimap(
         currentEdges,
         mergedConfig,
       );
+    },
+
+    setFocus(focusedNodeId) {
+      const { nodeElements, linkElements } = renderedElements;
+
+      if (!focusedNodeId) {
+        // Clear focus: undim everything, zoom back out to the whole map.
+        nodeElements.classed("is-dimmed", false);
+        linkElements.classed("is-dimmed", false);
+        fitAllIcons(svg, zoom, node, nodes);
+        return;
+      }
+
+      // The focus set = the node + every node one edge away from it.
+      const focusSet = new Set<string>([focusedNodeId]);
+      for (const e of currentEdges) {
+        const s = getNodeId(e.source);
+        const t = getNodeId(e.target);
+        if (s === focusedNodeId) focusSet.add(t);
+        if (t === focusedNodeId) focusSet.add(s);
+      }
+
+      // Dim everything outside the focus set; keep edges that link two in-set
+      // nodes bright.
+      nodeElements.classed("is-dimmed", (n) => !focusSet.has(n.id));
+      linkElements.classed(
+        "is-dimmed",
+        (e) =>
+          !(focusSet.has(getNodeId(e.source)) &&
+            focusSet.has(getNodeId(e.target))),
+      );
+
+      // Zoom to fit just the focus subset.
+      const focusNodes = nodes.filter((n) => focusSet.has(n.id));
+      fitAllIcons(svg, zoom, node, focusNodes);
     },
 
     resetVisualization() {

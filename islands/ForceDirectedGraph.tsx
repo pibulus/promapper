@@ -52,6 +52,8 @@ export default function ForceDirectedGraph(
   const isFullscreen = useSignal(false);
   const selectedNodeId = useSignal<string | null>(null);
   const selectedEdgeId = useSignal<string | null>(null);
+  // Focus mode: when set, the graph isolates this node + its neighbors.
+  const focusedNodeId = useSignal<string | null>(null);
   const showAddNode = useSignal(false);
   const newNodeLabel = useSignal("");
   const newNodeEmoji = useSignal("");
@@ -185,7 +187,11 @@ export default function ForceDirectedGraph(
           selectedEdgeId.value = null;
         },
         onDoubleClickNode: (_event: MouseEvent, node: { id: string }) => {
-          promptRenameTopic(node.id);
+          // Focus mode: dbl-click isolates this node + neighbors; dbl-click the
+          // already-focused node to zoom back out.
+          focusedNodeId.value = focusedNodeId.value === node.id
+            ? null
+            : node.id;
         },
         onRightClickNode: (event: MouseEvent, node: { id: string }) => {
           event.preventDefault();
@@ -198,6 +204,8 @@ export default function ForceDirectedGraph(
         onBackgroundClick: () => {
           selectedNodeId.value = null;
           selectedEdgeId.value = null;
+          // Clicking empty space also exits focus mode.
+          focusedNodeId.value = null;
         },
         onRightClickBackground: (event: MouseEvent) => {
           event.preventDefault();
@@ -398,6 +406,18 @@ export default function ForceDirectedGraph(
       selectedEdgeId: selectedEdgeId.value,
     });
   }, [selectedNodeId.value, selectedEdgeId.value]);
+
+  // Focus mode: dim the rest + zoom to the focused node's neighborhood (or zoom
+  // back out when cleared). Escape exits, like a lightweight "back".
+  useEffect(() => {
+    emojimapHandleRef.current?.setFocus(focusedNodeId.value);
+    if (!focusedNodeId.value) return;
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") focusedNodeId.value = null;
+    };
+    globalThis.addEventListener("keydown", onEsc);
+    return () => globalThis.removeEventListener("keydown", onEsc);
+  }, [focusedNodeId.value]);
 
   useEffect(() => {
     if (topics.value.length === 0) return;
