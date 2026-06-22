@@ -8,8 +8,16 @@
 import * as d3 from "d3";
 import type { Config, NodeData } from "./types.ts";
 
-// Drag-to-merge proximity. SVG units — deliberate, not trigger-happy.
-export const MERGE_THRESHOLD = 45;
+// Drag-to-merge proximity. SVG units — center-to-center. The node discs are
+// r=20, so two nodes visually overlapping have centers ~40px apart; 60 gives a
+// forgiving "drop it roughly on top" target while the collision force keeps you
+// from merging neighbours you didn't mean to.
+export const MERGE_THRESHOLD = 60;
+
+// A drag must move at least this far (SVG units) before it can trigger a merge.
+// Below this it's a click/double-click, not a drag — this is what stops a
+// double-click from randomly merging a node into a settled neighbour.
+const MIN_DRAG_TO_MERGE = 12;
 
 /**
  * Find the nearest other node within merge range of the dragged node, or null.
@@ -54,11 +62,21 @@ export function paintMergePreview(
 /**
  * Drag event handlers
  */
+/** Did this drag actually move, or was it really just a click/double-click? */
+function isRealDrag(d: NodeData): boolean {
+  if (!d._dragStart || d.x === undefined || d.y === undefined) return false;
+  return Math.hypot(d.x - d._dragStart.x, d.y - d._dragStart.y) >=
+    MIN_DRAG_TO_MERGE;
+}
+
 export function dragstarted(
   event: any,
   d: NodeData,
   simulation: d3.Simulation<NodeData, undefined>,
 ) {
+  // Remember where the grab started so dragended can tell a real drag from a
+  // click (a click moves ~0px and must NOT merge).
+  d._dragStart = { x: d.x ?? event.x, y: d.y ?? event.y };
   // Snappy grab: a high alphaTarget floods the sim with energy the instant you
   // touch a node, so neighbors react immediately (no mushy lag before the graph
   // wakes up). The springy links carry that energy outward elastically.
@@ -75,8 +93,9 @@ export function dragged(
 ) {
   d.fx = event.x;
   d.fy = event.y;
-  // Live merge preview: light up whatever we'd merge into right now.
-  const target = findMergeTarget(d, nodes);
+  // Live merge preview — but only once this is a REAL drag, so a tiny jitter
+  // during a click/double-click doesn't flash a merge hint.
+  const target = isRealDrag(d) ? findMergeTarget(d, nodes) : null;
   paintMergePreview(nodeGroup, d.id, target ? target.id : null);
 }
 
@@ -92,9 +111,13 @@ export function dragended(
   d.fx = null;
   d.fy = null;
 
-  // Did we release on a merge target? (Same check the live preview used, so the
-  // commit always matches what was lit up.)
-  const mergeTarget = config.onMergeNodes ? findMergeTarget(d, nodes) : null;
+  // Only a REAL drag (the node actually moved) can merge — otherwise a click or
+  // double-click on a node that happens to sit near a neighbour would silently
+  // merge it. Released on a target after a real drag → merge.
+  const mergeTarget = config.onMergeNodes && isRealDrag(d)
+    ? findMergeTarget(d, nodes)
+    : null;
+  d._dragStart = undefined;
 
   // Clear the preview highlight regardless of outcome.
   paintMergePreview(nodeGroup, d.id, null);

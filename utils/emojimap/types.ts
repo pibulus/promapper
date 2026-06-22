@@ -19,6 +19,8 @@ export interface NodeData {
   fy?: number | null;
   vx?: number;
   vy?: number;
+  /** Transient: where the node was grabbed, to tell a real drag from a click. */
+  _dragStart?: { x: number; y: number };
 }
 
 export interface EdgeData {
