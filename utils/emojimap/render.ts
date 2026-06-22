@@ -144,16 +144,16 @@ export function createNodeGroup(
   inner
     .append("circle")
     .attr("class", "node-pad")
-    .attr("r", 20);
+    .attr("r", 23);
 
   // A clean cream disc sits on top of the glow, under the emoji. It gives each
   // emoji its own solid ground so edges don't run visibly through the glyph, and
-  // it reads as a tidy chip rather than a fuzzy blob. Sharp (no blur). Styling
-  // in .node-disc.
+  // it reads as a tidy chip rather than a fuzzy blob. r=20 fully clears the 28px
+  // emoji (which renders past center) so the glyph doesn't clip below the chip.
   inner
     .append("circle")
     .attr("class", "node-disc")
-    .attr("r", 17);
+    .attr("r", 20);
 
   // Add emoji — the hero. A soft drop-shadow (CSS) makes it pop off the canvas.
   inner
