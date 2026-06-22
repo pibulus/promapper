@@ -2970,3 +2970,113 @@ select:focus {
   border-top: 2px solid var(--color-border);
   margin: 1rem 0;
 }
+
+/* ===================================================================
+   NODE MAP — the centerpiece. Juicy, sticky, fresh.
+   Emoji topics float on a soft glowing pad (NOT a hard ring), pop with a
+   drop-shadow, and spring on hover. The force sim owns position; CSS owns
+   the feel.
+   =================================================================== */
+
+/* The soft colored pad behind each emoji. Blurred + low-opacity so it reads as
+   a warm glow puddle, not a disc. Color is the node's own (set inline by D3). */
+.node-pad {
+  opacity: 0.28;
+  filter: blur(7px);
+  transition: opacity 0.22s ease, r 0.22s ease;
+}
+
+/* The emoji glyph — the hero. Drop-shadow lifts it off the canvas. */
+.node-group .emoji {
+  filter: drop-shadow(0 2px 3px rgba(30, 23, 20, 0.25));
+  /* Native color emoji — never tint via fill. */
+  pointer-events: none;
+  user-select: none;
+}
+
+.node-group .label {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+  user-select: none;
+  paint-order: stroke;
+  stroke: var(--surface-cream, #fff7ef);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+/* Inner wrapper carries the spring. transform-box/origin so scale pivots on the
+   node center, not the SVG origin. The springy bezier gives a little overshoot
+   so growth feels bouncy, not linear. */
+.node-inner {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* The node-group fades as a whole (opacity) while .node-inner scales. */
+.node-group {
+  transition: opacity 0.26s ease;
+}
+
+/* Bloom-in start state: tiny + transparent. D3 adds .is-entering on enter and
+   drops it next frame, so CSS springs the node up to full size. */
+.node-group.is-entering {
+  opacity: 0;
+}
+
+.node-group.is-entering .node-inner {
+  transform: scale(0.2);
+}
+
+/* Leave state: shrink + fade, then D3 removes the element. */
+.node-group.is-leaving {
+  opacity: 0;
+}
+
+.node-group.is-leaving .node-inner {
+  transform: scale(0.2);
+}
+
+/* Sticky bounce on hover — the node leans toward you and the glow swells. */
+.node-group {
+  cursor: grab;
+}
+
+.node-group:hover .node-inner {
+  transform: scale(1.14);
+}
+
+.node-group:hover .node-pad {
+  opacity: 0.5;
+}
+
+.node-group:active {
+  cursor: grabbing;
+}
+
+/* Selected node: a confident accent glow + a touch larger. */
+.node-group.is-selected .node-pad {
+  opacity: 0.62;
+}
+
+.node-group.is-selected .node-inner {
+  transform: scale(1.12);
+}
+
+/* A node connected to the selection lifts gently too. */
+.node-group.is-connected .node-pad {
+  opacity: 0.42;
+}
+
+/* Edges: soft by default, confident when their endpoint is selected. The width
+   + opacity are driven inline by D3; this just adds the smooth feel. */
+.links line {
+  transition: stroke-opacity 0.22s ease, stroke-width 0.22s ease;
+  stroke-linecap: round;
+}
+
+.links line.is-connected,
+.links line.is-selected {
+  stroke-opacity: 0.95;
+}

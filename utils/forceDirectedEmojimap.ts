@@ -337,16 +337,26 @@ function createNodeGroup(
       if (config.onRightClickNode) config.onRightClickNode(event, d);
     });
 
-  selection
-    .append("circle")
-    .attr("class", "node-halo")
-    .attr("r", 26)
-    .attr("fill", "rgba(255,255,255,0.86)")
-    .attr("stroke", (d) => d.color || config.nodeColor)
-    .attr("stroke-width", 2);
+  // Inner wrapper holds all the visuals and owns SCALE (bloom-in + hover
+  // spring). The outer <g> owns TRANSLATE (the force tick moves it every
+  // frame). Splitting these means a scale animation never fights the per-frame
+  // position update — they live on different elements.
+  const inner = selection
+    .append("g")
+    .attr("class", "node-inner");
 
-  // Add emoji
-  selection
+  // Soft juicy pad behind the emoji — NOT the old hard white ring. A puddle of
+  // the node's own color gives each emoji a warm glowing cushion to sit on
+  // (juicy, sticky) instead of a bubble outline. The blur that turns this disc
+  // into a glow comes from the CSS .node-pad filter.
+  inner
+    .append("circle")
+    .attr("class", "node-pad")
+    .attr("r", 22)
+    .attr("fill", (d) => d.color || config.nodeColor);
+
+  // Add emoji — the hero. A soft drop-shadow (CSS) makes it pop off the canvas.
+  inner
     .append("text")
     .attr("class", "emoji")
     .text((d) => {
@@ -356,16 +366,15 @@ function createNodeGroup(
     })
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "middle")
-    .attr("font-size", config.emojiFontSize)
-    .attr("fill", (d) => d.color || config.nodeColor);
+    .attr("font-size", config.emojiFontSize);
 
   // Add label
-  selection
+  inner
     .append("text")
     .attr("class", "label")
     .text((d) => d.label)
     .attr("text-anchor", "middle")
-    .attr("y", 25)
+    .attr("y", 28)
     .attr("font-size", config.labelFontSize)
     .attr("fill", config.labelColor);
 
@@ -454,17 +463,44 @@ function updateElements({
     edge.id === config.selectedEdgeId
   );
 
-  // Update nodes
+  // Update nodes. Select ONLY top-level node groups by class — a bare
+  // selectAll("g") would also match the nested .node-inner wrappers and corrupt
+  // the data-join (binding node data to inner groups, stripping their content).
   const nodeElements = nodeGroup
-    .selectAll("g")
+    .selectAll<SVGGElement, NodeData>(".node-group")
     .data(nodes, (d: any) => d.id)
     .join(
-      (enter) =>
-        enter.append("g").call((selection) =>
-          createNodeGroup(selection, config, simulation, nodes)
-        ),
+      (enter) => {
+        const g = enter
+          .append("g")
+          .call((selection) =>
+            createNodeGroup(selection, config, simulation, nodes)
+          )
+          // Bloom in: start the node small + transparent with the .is-entering
+          // class, then drop the class on the next frame so the CSS spring
+          // (.node-inner transition + the springy bezier) eases it up to full
+          // size with an overshoot. This is the "living" beat when appended
+          // audio drops a new topic onto the map. We let CSS own the tween —
+          // d3 and CSS must not both animate the same transform or they fight.
+          .classed("is-entering", true);
+        // Force a reflow so the browser registers the start state, then release
+        // the class on the next frame to trigger the transition.
+        requestAnimationFrame(() => {
+          g.classed("is-entering", false);
+        });
+        return g;
+      },
       (update) => update,
-      (exit) => exit.remove(),
+      // Shrink + fade on the way out instead of vanishing — gentler than a
+      // hard remove when a topic is deleted or merged away. CSS owns the tween
+      // via .is-leaving; we remove the element after it plays.
+      (exit) => {
+        exit.classed("is-leaving", true);
+        return exit
+          .transition()
+          .duration(240)
+          .remove();
+      },
     )
     .classed("is-selected", (d) => d.id === config.selectedNodeId)
     .classed("is-connected", (d) => nodeTouchesEdge(d, selectedEdge));
@@ -674,9 +710,21 @@ export function forceDirectedEmojimap(
     })
     .filter(Boolean) as EdgeData[];
 
-  // Initialize simulation
+  // Initialize simulation.
+  //
+  // alphaMin (0.001) + alphaDecay (~0.0228, d3 default made explicit) mean the
+  // sim cools to a stop on its own after ~300 ticks and fires "end" — at which
+  // point we stop() it so it parks at zero CPU. This is the battery/idle win:
+  // a force sim left running spins forever. The drag handlers re-energize via
+  // alphaTarget when the user grabs a node, so it wakes on demand.
+  //
+  // The tick handler only MOVES existing elements (ticked) — the expensive
+  // data-join (updateElements) lives in init + update(), not per-frame, so we
+  // don't reallocate selections 60×/second.
   const simulation = d3
     .forceSimulation(nodes)
+    .alphaMin(0.001)
+    .alphaDecay(0.0228)
     .force(
       "link",
       d3
@@ -687,18 +735,18 @@ export function forceDirectedEmojimap(
     .force("charge", d3.forceManyBody().strength(mergedConfig.chargeStrength))
     .force("x", d3.forceX(mergedConfig.width / 2).strength(0.05))
     .force("y", d3.forceY(mergedConfig.height / 2).strength(0.05))
-    .force("collide", d3.forceCollide(mergedConfig.collisionRadius))
-    .on("tick", () => {
-      const elems = updateElements({
-        nodeGroup,
-        linkGroup,
-        nodes,
-        currentEdges,
-        config: mergedConfig,
-        simulation,
-      });
-      ticked(elems);
-    });
+    .force("collide", d3.forceCollide(mergedConfig.collisionRadius));
+
+  // Build the elements once now that the simulation exists (drag handlers need
+  // it). update() rebuilds this join when data changes; tick never does.
+  let renderedElements = updateElements({
+    nodeGroup,
+    linkGroup,
+    nodes,
+    currentEdges,
+    config: mergedConfig,
+    simulation,
+  });
 
   // Resize handling with debounced fit
   const debouncedFit = debounce(() => fitAllIcons(svg, zoom, node, nodes), 200);
@@ -706,6 +754,18 @@ export function forceDirectedEmojimap(
     debouncedFit();
   });
   resizeObserver.observe(node);
+
+  simulation
+    .on("tick", () => {
+      ticked(renderedElements);
+    })
+    .on("end", () => {
+      // The sim has settled. Park it at zero CPU (battery win) and frame the
+      // whole graph — after an append re-layout the nodes can drift out of
+      // view, so fit-to-view here keeps everything on screen automatically.
+      simulation.stop();
+      fitAllIcons(svg, zoom, node, nodes);
+    });
 
   // Public API
   return {
@@ -810,6 +870,20 @@ export function forceDirectedEmojimap(
       );
       simulation.force("x", d3.forceX(mergedConfig.width / 2).strength(0.05));
       simulation.force("y", d3.forceY(mergedConfig.height / 2).strength(0.05));
+
+      // Rebuild the data-join so new nodes/edges get DOM elements + drag
+      // handlers, and removed ones leave. tick() only moves these; it never
+      // rebuilds them. Keep the handle fresh so subsequent ticks render the new
+      // set.
+      renderedElements = updateElements({
+        nodeGroup,
+        linkGroup,
+        nodes,
+        currentEdges,
+        config: mergedConfig,
+        simulation,
+      });
+
       simulation.alpha(1).restart();
     },
 
