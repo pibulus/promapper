@@ -2829,3 +2829,144 @@ select:focus {
   outline: 3px solid var(--color-accent);
   outline-offset: 2px;
 }
+
+/* ===================================================================
+   MARKDOWN BODY
+   Styling for marked-rendered summaries & exports. Marked emits bare
+   semantic tags (no inline styles), so the look lives here on the token
+   system. Carries the warm pastel-punk feel the old inline styles had,
+   plus the capabilities marked unlocks: code, tables, blockquotes, links.
+   =================================================================== */
+.markdown-body {
+  color: var(--color-text);
+  font-size: var(--text-size);
+}
+
+.markdown-body > :first-child {
+  margin-top: 0;
+}
+
+.markdown-body > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body p {
+  margin: 0.75rem 0;
+}
+
+.markdown-body h1,
+.markdown-body h2 {
+  font-weight: 700;
+  color: var(--color-accent);
+  margin: 1rem 0 0.5rem;
+  line-height: 1.3;
+}
+
+.markdown-body h1 {
+  font-size: 1.25rem;
+}
+
+.markdown-body h2 {
+  font-size: 1.1rem;
+  color: var(--color-text);
+}
+
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.5rem 0 0.25rem;
+  color: var(--color-text);
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.markdown-body ul {
+  list-style: disc;
+}
+
+.markdown-body ol {
+  list-style: decimal;
+}
+
+.markdown-body li {
+  margin: 0.25rem 0;
+}
+
+.markdown-body a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown-body strong {
+  font-weight: 700;
+}
+
+.markdown-body em {
+  font-style: italic;
+}
+
+.markdown-body blockquote {
+  margin: 0.75rem 0;
+  padding: 0.25rem 0 0.25rem 1rem;
+  border-left: 3px solid var(--color-accent);
+  color: var(--color-text-secondary);
+}
+
+.markdown-body code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+.markdown-body pre {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  background: var(
+    --surface-cream,
+    color-mix(in srgb, var(--color-accent) 6%, transparent)
+  );
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.markdown-body pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.85rem;
+}
+
+.markdown-body table {
+  width: 100%;
+  margin: 0.75rem 0;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--color-border);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+
+.markdown-body th {
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  font-weight: 700;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 2px solid var(--color-border);
+  margin: 1rem 0;
+}

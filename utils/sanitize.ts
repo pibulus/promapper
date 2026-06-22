@@ -5,6 +5,8 @@
  * Prevents XSS attacks from untrusted content
  */
 
+import { Marked } from "marked";
+
 /**
  * Escape HTML entities to prevent XSS
  */
@@ -42,49 +44,72 @@ export function formatTranscriptSafe(text: string): string {
   return formatted;
 }
 
+// Only these URL schemes are allowed in rendered links/images. Anything else
+// (javascript:, data:, vbscript:, ...) is a known XSS vector and gets dropped.
+const SAFE_URL_SCHEME = /^(https?:|mailto:|tel:|#|\/|\.)/i;
+
+function safeHref(href: string | null | undefined): string | null {
+  if (!href) return null;
+  const trimmed = href.trim();
+  // Strip control chars + whitespace that can hide a `java\tscript:` scheme
+  // before the scheme check. Test the cleaned copy, return the trimmed original.
+  // deno-lint-ignore no-control-regex
+  const cleaned = trimmed.replace(/[\u0000-\u0020]/g, "");
+  return SAFE_URL_SCHEME.test(cleaned) ? trimmed : null;
+}
+
+// A dedicated Marked instance for rendering AI-generated summaries and exports.
+// GFM gives us tables, strikethrough, and autolinks; `breaks` keeps single
+// newlines as line breaks (conversational summaries lean on them).
+//
+// Two XSS guards, no DOM sanitizer (and no jsdom weight) — runs identically in
+// SSR and on the client:
+//   1. Raw HTML in the source is escaped (the `html` token override), so a
+//      literal <script>/<img onerror> comes out inert text.
+//   2. Link/image URLs are scheme-checked (`safeHref`), so a markdown link like
+//      [x](javascript:alert(1)) — which marked would otherwise render as a live
+//      href — is stripped to plain text / a dead link.
+// The markdown the AI *intends* (headers, lists, bold, code, tables, safe
+// links) still renders, because that arrives as structured tokens.
+const markedInstance = new Marked({
+  gfm: true,
+  breaks: true,
+  renderer: {
+    html(token: { text: string }): string {
+      return escapeHtml(token.text);
+    },
+    link({ href, title, tokens }): string {
+      const safe = safeHref(href);
+      const text = this.parser.parseInline(tokens);
+      if (!safe) return text; // drop the link, keep the visible text
+      const titleAttr = title ? ` title="${escapeHtml(title)}"` : "";
+      return `<a href="${
+        escapeHtml(safe)
+      }"${titleAttr} rel="noopener noreferrer nofollow" target="_blank">${text}</a>`;
+    },
+    image({ href, title, text }): string {
+      const safe = safeHref(href);
+      if (!safe) return escapeHtml(text); // drop the image, keep alt text
+      const titleAttr = title ? ` title="${escapeHtml(title)}"` : "";
+      return `<img src="${escapeHtml(safe)}" alt="${
+        escapeHtml(text)
+      }"${titleAttr} />`;
+    },
+  },
+});
+
 /**
- * Sanitize markdown-style text to safe HTML
- * Only allows specific safe transformations
+ * Render markdown-style text (AI summaries, exports) to safe HTML.
+ *
+ * Uses Marked for real markdown parsing — headers, bold/italic, ordered and
+ * unordered lists, code blocks, blockquotes, links, and GFM tables — while
+ * escaping any raw HTML embedded in the source so the output stays XSS-safe.
+ * Output is a string for dangerouslySetInnerHTML.
  */
 export function formatMarkdownSafe(text: string): string {
   if (!text) return "";
 
-  // Escape HTML first
-  let safe = escapeHtml(text);
+  const html = markedInstance.parse(text, { async: false }) as string;
 
-  // Headers (safe since content is escaped)
-  safe = safe
-    .replace(
-      /^# (.+)$/gm,
-      '<h3 style="font-size: 1.25rem; font-weight: 700; margin: 1rem 0 0.5rem; color: var(--color-accent);">$1</h3>',
-    )
-    .replace(
-      /^## (.+)$/gm,
-      '<h4 style="font-size: 1.1rem; font-weight: 600; margin: 0.75rem 0 0.5rem; color: var(--color-text);">$1</h4>',
-    )
-    .replace(
-      /^### (.+)$/gm,
-      '<h5 style="font-size: 1rem; font-weight: 600; margin: 0.5rem 0 0.25rem;">$1</h5>',
-    );
-
-  // Bold and italic
-  safe = safe
-    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*([^*]+)\*/g, "<em>$1</em>");
-
-  // Lists
-  safe = safe
-    .replace(
-      /^- (.+)$/gm,
-      '<li style="margin-left: 1.5rem; list-style: disc;">$1</li>',
-    )
-    .replace(
-      /^([0-9]+)\. (.+)$/gm,
-      '<li style="margin-left: 1.5rem; list-style: decimal;">$2</li>',
-    );
-
-  // Paragraphs
-  safe = safe.replace(/\n\n/g, '</p><p style="margin: 0.75rem 0;">');
-
-  return `<div style="line-height: 1.7;"><p style="margin: 0.75rem 0;">${safe}</p></div>`;
+  return `<div class="markdown-body" style="line-height: 1.7;">${html}</div>`;
 }
