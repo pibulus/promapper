@@ -35,14 +35,28 @@ export async function analyzeText(
   existingNodes: NodeInput[] = [],
   existingEdges: EdgeInput[] = [],
 ): Promise<AnalysisResult> {
-  // Run all AI operations in parallel
+  // Topics first so the summary can lead with what the conversation is about.
+  // Only the summary waits on topics — action items and status checks run fully
+  // parallel the whole time, so wall-clock is the slower of those vs the
+  // topics→summary chain, not the sum. If topic extraction fails it degrades to
+  // an empty graph (extractTopics already returns {nodes:[],edges:[]} on error),
+  // so the summary just falls back to a plain text summary.
+  const topicsPromise = aiService.extractTopics(
+    text,
+    existingNodes,
+    existingEdges,
+  );
+  const summaryPromise = topicsPromise.then((topics) =>
+    aiService.generateSummary(text, topics.nodes.map((n) => n.label))
+  );
+
   const [topics, actionItems, statusUpdates, summary] = await Promise.all([
-    aiService.extractTopics(text, existingNodes, existingEdges),
+    topicsPromise,
     aiService.extractActionItems(text, speakers, existingActionItems),
     existingActionItems.length > 0
       ? aiService.checkActionItemStatus(text, existingActionItems)
       : Promise.resolve([]),
-    aiService.generateSummary(text),
+    summaryPromise,
   ]);
 
   return {
@@ -68,9 +82,23 @@ export async function analyzeAudio(
   // First transcribe the audio
   const transcription = await aiService.transcribeAudio(audioInput);
 
-  // Then run parallel analysis on the transcribed text
+  // Topics first so the summary leads with the conversation's actual topics.
+  // Only the summary waits on topics; everything else stays parallel (see
+  // analyzeText for the rationale). Degrades to a plain summary if topics fail.
+  const topicsPromise = aiService.extractTopics(
+    transcription.text,
+    existingNodes,
+    existingEdges,
+  );
+  const summaryPromise = topicsPromise.then((topics) =>
+    aiService.generateSummary(
+      transcription.text,
+      topics.nodes.map((n) => n.label),
+    )
+  );
+
   const [topics, actionItems, statusUpdates, summary] = await Promise.all([
-    aiService.extractTopics(transcription.text, existingNodes, existingEdges),
+    topicsPromise,
     aiService.extractActionItems(
       audioInput,
       transcription.speakers,
@@ -79,7 +107,7 @@ export async function analyzeAudio(
     existingActionItems.length > 0
       ? aiService.checkActionItemStatus(audioInput, existingActionItems)
       : Promise.resolve([]),
-    aiService.generateSummary(transcription.text),
+    summaryPromise,
   ]);
 
   return {

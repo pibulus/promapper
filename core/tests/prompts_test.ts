@@ -181,6 +181,23 @@ Deno.test("buildSummaryPrompt includes conversation text", () => {
   assertStringIncludes(prompt, text);
 });
 
+Deno.test("buildSummaryPrompt weaves in topic labels when provided", () => {
+  const text = "Nan keeps forgetting where she buried the seed jars.";
+  const prompt = buildSummaryPrompt(text, ["seed-jars", "memory-garden"]);
+  assertStringIncludes(prompt, "seed-jars");
+  assertStringIncludes(prompt, "memory-garden");
+  assertStringIncludes(prompt, text);
+});
+
+Deno.test("buildSummaryPrompt stays plain when topic labels are empty", () => {
+  const text = "Two ghosts arguing about whose turn it is to haunt the attic.";
+  const withEmpty = buildSummaryPrompt(text, []);
+  const withNone = buildSummaryPrompt(text);
+  // No topics => identical to the no-arg form (summary never waits on topics).
+  assertEquals(withEmpty, withNone);
+  assertStringIncludes(withEmpty, text);
+});
+
 // ===================================================================
 // buildMarkdownTransformPrompt
 // ===================================================================

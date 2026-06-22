@@ -346,9 +346,12 @@ export function createOpenRouterService(
       }
     },
 
-    async generateSummary(text: string): Promise<string> {
+    async generateSummary(
+      text: string,
+      topicLabels: string[] = [],
+    ): Promise<string> {
       try {
-        return (await chatText(buildSummaryPrompt(text))).trim();
+        return (await chatText(buildSummaryPrompt(text, topicLabels))).trim();
       } catch (error) {
         console.error("Error generating summary:", error);
         throw new Error("Failed to generate summary with OpenRouter");

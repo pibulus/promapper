@@ -209,9 +209,12 @@ export function createGeminiService(model: any): AIService {
     // SUMMARY
     // ===============================================================
 
-    async generateSummary(text: string): Promise<string> {
+    async generateSummary(
+      text: string,
+      topicLabels: string[] = [],
+    ): Promise<string> {
       try {
-        const prompt = buildSummaryPrompt(text);
+        const prompt = buildSummaryPrompt(text, topicLabels);
         const result = await model.generateContent(prompt);
         const response = await result.response.text();
         return response.trim();

@@ -196,9 +196,22 @@ CONVERSATION: ${text}`;
 // SUMMARY GENERATION
 // ===================================================================
 
-export const buildSummaryPrompt = (text: string): string => {
-  return `Summarize the following conversation text. Focus on the main points and key takeaways. Return the summary in a concise and clear format.
+export const buildSummaryPrompt = (
+  text: string,
+  topicLabels: string[] = [],
+): string => {
+  // When the topic graph is already extracted, hand its labels to the summary
+  // so it leads with what the conversation was actually about. Optional by
+  // design: an empty list just yields the plain text summary, so the summary
+  // call never has to wait on topics if they aren't ready.
+  const topicHint = topicLabels.length > 0
+    ? `\nThis conversation maps to these topics: ${
+      topicLabels.join(", ")
+    }.\nLet them shape the summary, but only mention the ones that genuinely carry the conversation.\n`
+    : "";
 
+  return `Summarize the following conversation text. Focus on the main points and key takeaways. Return the summary in a concise and clear format.
+${topicHint}
 CONVERSATION TEXT:
 ${text}`;
 };

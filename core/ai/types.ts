@@ -56,6 +56,6 @@ export interface AIService {
     existingNodes?: NodeInput[],
     existingEdges?: EdgeInput[],
   ): Promise<ConversationGraph>;
-  generateSummary(text: string): Promise<string>;
+  generateSummary(text: string, topicLabels?: string[]): Promise<string>;
   generateMarkdown(formatPrompt: string, text: string): Promise<string>;
 }

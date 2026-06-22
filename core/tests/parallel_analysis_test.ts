@@ -76,6 +76,53 @@ Deno.test("analyzeText calls extractTopics, extractActionItems, generateSummary"
   assertEquals(service.calls.includes("generateSummary"), true);
 });
 
+Deno.test("analyzeText feeds extracted topic labels into the summary", async () => {
+  let summaryTopics: string[] | undefined;
+  const service = createMockAIService({
+    async extractTopics(_text, _existingNodes, _existingEdges) {
+      return {
+        nodes: [
+          {
+            id: "swamp-radio",
+            label: "swamp-radio",
+            emoji: "📻",
+            color: "#abc",
+          },
+          { id: "frog-choir", label: "frog-choir", emoji: "🐸", color: "#def" },
+        ],
+        edges: [],
+      };
+    },
+    async generateSummary(_text, topicLabels) {
+      summaryTopics = topicLabels;
+      return "A brief summary.";
+    },
+  });
+
+  await analyzeText(service, "The swamp radio station only plays frog choir.");
+
+  // The summary must receive the labels the topic graph produced.
+  assertEquals(summaryTopics, ["swamp-radio", "frog-choir"]);
+});
+
+Deno.test("analyzeText gives the summary empty labels when no topics surface", async () => {
+  let summaryTopics: string[] | undefined;
+  const service = createMockAIService({
+    async extractTopics() {
+      return { nodes: [], edges: [] };
+    },
+    async generateSummary(_text, topicLabels) {
+      summaryTopics = topicLabels;
+      return "A brief summary.";
+    },
+  });
+
+  await analyzeText(service, "Just one person mumbling about lost socks.");
+
+  // Non-blocking degrade: no topics => empty labels => plain summary.
+  assertEquals(summaryTopics, []);
+});
+
 Deno.test("analyzeText skips checkActionItemStatus when no existing items", async () => {
   const service = createMockAIService();
   await analyzeText(service, "Some text", [], []);
