@@ -38,6 +38,10 @@ interface ForceDirectedGraphProps {
   loading?: boolean;
 }
 
+// Default edge color: a warm dark ink (the --color-text base at ~58%), never
+// grey. Reads as a confident soft-black line on the cream canvas.
+const EDGE_INK = "rgba(43, 36, 48, 0.58)";
+
 export default function ForceDirectedGraph(
   { loading = false }: ForceDirectedGraphProps,
 ) {
@@ -152,12 +156,14 @@ export default function ForceDirectedGraph(
     const height = rect.height || container.offsetHeight ||
       Math.min(800, window.innerHeight * 0.6);
 
-    // Map edges to correct format
+    // Map edges to correct format. Default to a warm dark ink (never grey —
+    // Pablo's call), so connections read as confident lines, not washed-out
+    // cobwebs. A specific edge can still override via rel.color.
     const edges = relationships.value.map((rel, index) => ({
       id: getRelationshipId(rel, index),
       source: rel.source_topic_id,
       target: rel.target_topic_id,
-      color: rel.color || "#999",
+      color: rel.color || EDGE_INK,
     }));
 
     // Initialize emojimap
@@ -171,8 +177,9 @@ export default function ForceDirectedGraph(
         linkDistance: linkDistance.value,
         chargeStrength: chargeStrength.value,
         collisionRadius: collisionRadius.value,
-        linkStrokeWidth: 3.5,
-        linkOpacity: 0.58,
+        // Thinner + darker than before (was 3.5/grey). A slim warm-dark line.
+        linkStrokeWidth: 2.5,
+        linkOpacity: 0.7,
         onClickNode: (_event: MouseEvent, node: { id: string }) => {
           selectedNodeId.value = node.id;
           selectedEdgeId.value = null;
@@ -366,7 +373,7 @@ export default function ForceDirectedGraph(
         id: getRelationshipId(rel, index),
         source: rel.source_topic_id,
         target: rel.target_topic_id,
-        color: rel.color || "#999",
+        color: rel.color || EDGE_INK,
       }));
 
       emojimapHandleRef.current.update({

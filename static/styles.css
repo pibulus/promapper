@@ -3003,13 +3003,14 @@ select:focus {
    the feel.
    =================================================================== */
 
-/* The soft colored pad behind each emoji. Blurred + low-opacity so it reads as
-   a warm glow puddle, not a disc. Color is the node's own (set inline by D3).
+/* The soft pad behind each emoji. One theme-accent color for every node (not
+   the node's own), blurred + low-opacity so it reads as a gentle glow puddle.
    A slow glow-breath keeps a settled map feeling alive (resting heartbeat) even
    after the physics has stopped — it pulses opacity only, so it never fights the
    .node-inner scale transitions or re-wakes the sim. */
 .node-pad {
-  opacity: 0.28;
+  fill: var(--color-accent);
+  opacity: 0.22;
   filter: blur(7px);
   transition: opacity 0.22s ease, r 0.22s ease;
   animation: node-breath 5s ease-in-out infinite;
@@ -3018,10 +3019,10 @@ select:focus {
 @keyframes node-breath {
   0%,
   100% {
-    opacity: 0.24;
+    opacity: 0.18;
   }
   50% {
-    opacity: 0.34;
+    opacity: 0.28;
   }
 }
 
@@ -3102,7 +3103,7 @@ select:focus {
 }
 
 .node-group:hover .node-pad {
-  opacity: 0.58;
+  opacity: 0.5;
 }
 
 /* The emoji itself lifts a touch higher on hover — a deeper, softer shadow so it
@@ -3118,7 +3119,7 @@ select:focus {
 
 /* Selected node: a confident, brighter glow + a touch larger. */
 .node-group.is-selected .node-pad {
-  opacity: 0.7;
+  opacity: 0.62;
 }
 
 .node-group.is-selected .node-inner {
@@ -3131,7 +3132,7 @@ select:focus {
 
 /* A node connected to the selection lifts gently too. */
 .node-group.is-connected .node-pad {
-  opacity: 0.42;
+  opacity: 0.38;
 }
 
 /* Edges: gently-curved <path> elements (gooey, not rigid). Soft by default,

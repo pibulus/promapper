@@ -171,7 +171,19 @@ function createZoomBehavior(
 ) {
   const zoom = d3
     .zoom<SVGSVGElement, unknown>()
-    .scaleExtent([0.1, 10])
+    // Tighter range than d3's wide-open default: 0.45×–3.5× keeps the map
+    // useful — you can pull back to see the whole shape or lean in on a cluster,
+    // but never zoom out to specks or into one giant emoji.
+    .scaleExtent([0.45, 3.5])
+    // Gentler wheel: d3's default (deltaY/-500 for line/pixel deltas) makes one
+    // notch lurch ~30%. Softening to /-900 makes desktop wheel-zoom feel smooth
+    // and controlled instead of jumpy. Trackpad pinch (ctrlKey) keeps a bit more
+    // bite so it still feels responsive.
+    .wheelDelta((event) => {
+      const base = -event.deltaY *
+        (event.deltaMode === 1 ? 0.04 : event.deltaMode ? 1 : 0.0011);
+      return event.ctrlKey ? base * 2.2 : base;
+    })
     .on("zoom", (event) => {
       g.attr("transform", event.transform.toString());
     });
@@ -369,15 +381,14 @@ function createNodeGroup(
     .append("g")
     .attr("class", "node-inner");
 
-  // Soft juicy pad behind the emoji — NOT the old hard white ring. A puddle of
-  // the node's own color gives each emoji a warm glowing cushion to sit on
-  // (juicy, sticky) instead of a bubble outline. The blur that turns this disc
-  // into a glow comes from the CSS .node-pad filter.
+  // Soft juicy pad behind the emoji — a single glowing cushion in the THEME
+  // accent (not each node's own color), set via CSS `fill` so it follows the
+  // active theme. The blur that turns this disc into a glow comes from the CSS
+  // .node-pad filter. Fill/opacity live in styles.css, not inline.
   inner
     .append("circle")
     .attr("class", "node-pad")
-    .attr("r", 22)
-    .attr("fill", (d) => d.color || config.nodeColor);
+    .attr("r", 22);
 
   // Add emoji — the hero. A soft drop-shadow (CSS) makes it pop off the canvas.
   inner
