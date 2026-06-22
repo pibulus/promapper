@@ -2472,14 +2472,80 @@ body {
   filter: brightness(1.06);
 }
 
-/* Map / Threads toggle — floats on the map's top-left, above the canvas. */
-.topic-viz-tabs {
+/* Viz switcher — floats on the map's top-left, above the canvas. */
+.topic-viz-switcher {
   position: absolute;
   top: 0.85rem;
   left: 0.85rem;
-  z-index: 5;
+  z-index: 6;
+}
+
+/* The dropdown trigger + the single-viz label share a chunky on-brand chip. */
+.topic-viz-trigger,
+.topic-viz-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.7rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  background: var(--surface-white-warm, #fffef7);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.08);
+  color: var(--color-text);
+  font-size: var(--small-size);
+  font-weight: 700;
+}
+
+.topic-viz-trigger {
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+
+.topic-viz-trigger:hover,
+.topic-viz-trigger:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.topic-viz-menu {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  min-width: 11rem;
   display: flex;
-  gap: 0.4rem;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.35rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  background: var(--surface-white-warm, #fffef7);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.1);
+}
+
+.topic-viz-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--small-size);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.topic-viz-menu-item:hover {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+.topic-viz-menu-item.active {
+  color: var(--color-accent);
+  font-weight: 700;
 }
 
 .topic-map-canvas {

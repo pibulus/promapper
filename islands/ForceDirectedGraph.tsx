@@ -648,6 +648,90 @@ export default function ForceDirectedGraph(
     );
   }
 
+  // ONE control cluster, rendered in both the inline map and fullscreen, so they
+  // can never drift. The only difference is the fullscreen button (enter vs
+  // exit). Every control is FontAwesome + tooltip'd + theme-following.
+  function renderControls() {
+    return (
+      <div class="topic-map-ctrls">
+        <button
+          type="button"
+          class="topic-map-ctrl topic-map-ctrl--add"
+          onClick={() => showAddNode.value = true}
+          title="Add a topic to the map"
+          aria-label="Add a topic"
+        >
+          <i class="fa fa-plus" aria-hidden="true"></i>
+          <span class="hidden sm:inline">Topic</span>
+        </button>
+
+        <button
+          type="button"
+          class="topic-map-ctrl"
+          onClick={toggleLayout}
+          title={layoutMode.value === "organic"
+            ? "Spread the map out (readable layout)"
+            : "Cluster the map tighter (organic layout)"}
+          aria-label="Toggle layout density"
+        >
+          <i
+            class={layoutMode.value === "organic"
+              ? "fa fa-up-right-and-down-left-from-center"
+              : "fa fa-down-left-and-up-right-to-center"}
+            aria-hidden="true"
+          >
+          </i>
+        </button>
+
+        <button
+          type="button"
+          class="topic-map-ctrl"
+          onClick={fitToView}
+          title="Fit the whole map in view"
+          aria-label="Fit to view"
+        >
+          <i class="fa fa-expand" aria-hidden="true"></i>
+        </button>
+
+        <button
+          type="button"
+          class="topic-map-ctrl"
+          onClick={resetVisualization}
+          title="Re-tidy the layout (re-runs the physics)"
+          aria-label="Re-tidy the layout"
+        >
+          <i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i>
+        </button>
+
+        <button
+          type="button"
+          class="topic-map-ctrl"
+          onClick={exportAsPng}
+          title="Save the map as an image (PNG)"
+          aria-label="Export as PNG"
+        >
+          <i class="fa fa-camera" aria-hidden="true"></i>
+        </button>
+
+        <button
+          type="button"
+          class="topic-map-ctrl"
+          onClick={toggleFullscreen}
+          title={isFullscreen.value
+            ? "Exit fullscreen"
+            : "Open the map fullscreen"}
+          aria-label={isFullscreen.value ? "Exit fullscreen" : "Fullscreen"}
+        >
+          <i
+            class={isFullscreen.value ? "fa fa-compress" : "fa fa-maximize"}
+            aria-hidden="true"
+          >
+          </i>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div class="relative flex w-full flex-col">
       <div
@@ -718,81 +802,7 @@ export default function ForceDirectedGraph(
         </div>
       )}
 
-      {
-        /* Control cluster — all the map's actions live ON the map (no header
-          band). FontAwesome icons, chunky on-brand chips, every one tooltip'd.
-          Add-topic leads as the accent button; the rest are utilities. */
-      }
-      <div class="topic-map-ctrls">
-        <button
-          type="button"
-          class="topic-map-ctrl topic-map-ctrl--add"
-          onClick={() => showAddNode.value = true}
-          title="Add a topic to the map"
-          aria-label="Add a topic"
-        >
-          <i class="fa fa-plus" aria-hidden="true"></i>
-          <span class="hidden sm:inline">Topic</span>
-        </button>
-
-        <button
-          type="button"
-          class="topic-map-ctrl"
-          onClick={toggleLayout}
-          title={layoutMode.value === "organic"
-            ? "Spread the map out (readable layout)"
-            : "Cluster the map tighter (organic layout)"}
-          aria-label="Toggle layout density"
-        >
-          <i
-            class={layoutMode.value === "organic"
-              ? "fa fa-up-right-and-down-left-from-center"
-              : "fa fa-down-left-and-up-right-to-center"}
-            aria-hidden="true"
-          >
-          </i>
-        </button>
-
-        <button
-          type="button"
-          class="topic-map-ctrl"
-          onClick={fitToView}
-          title="Fit the whole map in view"
-          aria-label="Fit to view"
-        >
-          <i class="fa fa-expand" aria-hidden="true"></i>
-        </button>
-
-        <button
-          type="button"
-          class="topic-map-ctrl"
-          onClick={resetVisualization}
-          title="Re-tidy the layout (re-runs the physics)"
-          aria-label="Re-tidy the layout"
-        >
-          <i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i>
-        </button>
-
-        <button
-          type="button"
-          class="topic-map-ctrl"
-          onClick={exportAsPng}
-          title="Save the map as an image (PNG)"
-          aria-label="Export as PNG"
-        >
-          <i class="fa fa-camera" aria-hidden="true"></i>
-        </button>
-
-        <button
-          type="button"
-          class="topic-map-ctrl"
-          onClick={toggleFullscreen}
-          title="Open the map fullscreen"
-          aria-label="Toggle fullscreen"
-        >
-          <i class="fa fa-maximize" aria-hidden="true"></i>
-        </button>
-      </div>
+      {renderControls()}
 
       {/* Context menu */}
       <ContextMenu
@@ -823,32 +833,11 @@ export default function ForceDirectedGraph(
               ref={fullscreenContainerRef}
               class="topic-map-canvas topic-map-fullscreen__canvas"
             />
-            <div class="topic-map-fullscreen__controls">
-              <button
-                type="button"
-                onClick={exportAsPng}
-                title="Export as PNG"
-                aria-label="Export as PNG"
-              >
-                <i class="fa fa-camera" aria-hidden="true"></i>
-              </button>
-              <button
-                type="button"
-                onClick={resetVisualization}
-                title="Reset node positions"
-                aria-label="Reset node positions"
-              >
-                <i class="fa fa-arrows-rotate" aria-hidden="true"></i>
-              </button>
-              <button
-                type="button"
-                onClick={fitToView}
-                title="Fit all nodes to view"
-                aria-label="Fit all nodes to view"
-              >
-                <i class="fa fa-expand" aria-hidden="true"></i>
-              </button>
-            </div>
+            {
+              /* Same full control cluster as the inline map — one source of
+                truth, so they can't drift. */
+            }
+            {renderControls()}
             {renderNodeDetail()}
             {renderEdgeDetail()}
           </div>
