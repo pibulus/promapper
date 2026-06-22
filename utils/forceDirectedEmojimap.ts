@@ -760,6 +760,21 @@ export function forceDirectedEmojimap(
   // Create node map for linking
   const nodeMap = new Map<string, NodeData>();
 
+  // Living-append memory: the last known on-screen position of every node the
+  // sim has laid out, kept fresh each tick. On update() we read this to PIN
+  // existing nodes in place (so appended topics grow the map instead of
+  // teleporting it) and to seed new nodes near their parent rather than dead
+  // center. Survives the node-object churn (the island hands update() fresh
+  // clones every time), because it's keyed by stable id, not object identity.
+  const livePositions = new Map<string, { x: number; y: number }>();
+  function rememberPositions() {
+    for (const n of nodes) {
+      if (n.id && Number.isFinite(n.x) && Number.isFinite(n.y)) {
+        livePositions.set(n.id, { x: n.x as number, y: n.y as number });
+      }
+    }
+  }
+
   // Validate nodes and build node map; seed saved positions when available
   nodes.forEach((n) => {
     if (!n.id) {
@@ -860,11 +875,18 @@ export function forceDirectedEmojimap(
   simulation
     .on("tick", () => {
       ticked(renderedElements);
+      rememberPositions();
     })
     .on("end", () => {
-      // The sim has settled. Park it at zero CPU (battery win) and frame the
-      // whole graph — after an append re-layout the nodes can drift out of
-      // view, so fit-to-view here keeps everything on screen automatically.
+      // The sim has settled. Release the temporary pins we set on existing nodes
+      // during an append re-layout, so the next interaction can move them freely.
+      // (Drag already self-releases its pin in dragended, so this is a no-op for
+      // dragged nodes.) Then park at zero CPU (battery win) and frame the graph.
+      rememberPositions();
+      for (const n of nodes) {
+        n.fx = null;
+        n.fy = null;
+      }
       simulation.stop();
       fitAllIcons(svg, zoom, node, nodes);
     });
@@ -907,14 +929,92 @@ export function forceDirectedEmojimap(
         return;
       }
 
-      // Ensure nodes have initial positions
+      // LIVING APPEND — the heart of Phase 3.
+      //
+      // Existing nodes (ones the sim already laid out, remembered in
+      // livePositions) keep their spot and get briefly PINNED (fx/fy) so the new
+      // arrivals can't shove them. New nodes don't start at dead-center — they're
+      // seeded next to their PARENT (the source of their first edge) plus a little
+      // jitter, so an appended topic flies in from where it belongs and the map
+      // grows outward instead of teleporting. Pins release on settle (the "end"
+      // handler). The result: append feels like the map breathing in a new
+      // thought, not rebuilding itself.
+
+      // Map each node id -> a parent id (first edge that connects it), so a new
+      // node can be seeded near something already on screen.
+      const parentOf = new Map<string, string>();
+      for (const e of edges) {
+        const s = e.sourceTopicId || e.source_topic_id ||
+          (typeof e.source === "string" ? e.source : "");
+        const t = e.targetTopicId || e.target_topic_id ||
+          (typeof e.target === "string" ? e.target : "");
+        if (s && t) {
+          if (!parentOf.has(t)) parentOf.set(t, s);
+          if (!parentOf.has(s)) parentOf.set(s, t);
+        }
+      }
+
+      // If we already have a laid-out graph, this is an append/edit → gentle
+      // re-energize that grows the map. If not (first render, or after a clear),
+      // it's a cold layout → full energy to find a fresh arrangement.
+      const hadExistingLayout = livePositions.size > 0;
+
+      const cx = mergedConfig.width / 2;
+      const cy = mergedConfig.height / 2;
+      // Deterministic jitter (no Math.random — keeps renders reproducible). Spread
+      // new siblings around their parent by index.
+      let newNodeIndex = 0;
+      const jitter = (i: number, radius: number) => {
+        const angle = i * 2.399963; // golden angle, nicely spreads points
+        return {
+          dx: Math.cos(angle) * radius,
+          dy: Math.sin(angle) * radius,
+        };
+      };
+
       nodes.forEach((n) => {
         if (!n.id) {
           console.warn("[Emojimap] Node missing ID:", n);
           return;
         }
-        if (n.x == null) n.x = mergedConfig.width / 2;
-        if (n.y == null) n.y = mergedConfig.height / 2;
+
+        const remembered = livePositions.get(n.id);
+        if (remembered) {
+          // Existing node: restore its live position and pin it for this
+          // re-energize so appended nodes settle around it, not through it.
+          n.x = remembered.x;
+          n.y = remembered.y;
+          n.fx = remembered.x;
+          n.fy = remembered.y;
+          return;
+        }
+
+        // New node. Prefer a saved layout position (reload case)...
+        const savedPos = (n as NodeData & {
+          position?: { x: number; y: number };
+        }).position;
+        if (
+          savedPos && Number.isFinite(savedPos.x) && Number.isFinite(savedPos.y)
+        ) {
+          n.x = savedPos.x;
+          n.y = savedPos.y;
+          return;
+        }
+
+        // ...otherwise seed it next to its parent (if that parent is already
+        // placed), so it flies in from context instead of from dead-center.
+        const parentId = parentOf.get(n.id);
+        const parentPos = parentId ? livePositions.get(parentId) : undefined;
+        const { dx, dy } = jitter(newNodeIndex++, 60);
+        if (parentPos) {
+          n.x = parentPos.x + dx;
+          n.y = parentPos.y + dy;
+        } else if (n.x == null || n.y == null) {
+          // No parent on screen yet — land near center with a little spread so a
+          // batch of fresh, unconnected nodes doesn't all stack on one pixel.
+          n.x = cx + dx;
+          n.y = cy + dy;
+        }
       });
 
       // Create node map for linking
@@ -986,7 +1086,10 @@ export function forceDirectedEmojimap(
         simulation,
       });
 
-      simulation.alpha(1).restart();
+      // Gentle re-energize for an append (existing nodes are pinned, so 0.5 is
+      // enough to slot the newcomers in without flinging the settled layout);
+      // full energy only for a cold first layout.
+      simulation.alpha(hadExistingLayout ? 0.5 : 1).restart();
     },
 
     setSelection(selection) {
