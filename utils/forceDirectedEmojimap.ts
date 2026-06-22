@@ -271,6 +271,46 @@ function nodeTouchesEdge(node: NodeData, edge: EdgeData | undefined) {
     getNodeId(edge.target) === node.id;
 }
 
+// Drag-to-merge proximity. SVG units — deliberate, not trigger-happy.
+const MERGE_THRESHOLD = 45;
+
+/**
+ * Find the nearest other node within merge range of the dragged node, or null.
+ * Shared by the live drag preview and the commit-on-release, so "what lights up"
+ * and "what actually merges" can never disagree.
+ */
+function findMergeTarget(d: NodeData, nodes: NodeData[]): NodeData | null {
+  if (d.x === undefined || d.y === undefined) return null;
+  let nearest: NodeData | null = null;
+  let min = Infinity;
+  for (const other of nodes) {
+    if (other.id === d.id) continue;
+    if (other.x === undefined || other.y === undefined) continue;
+    const dist = Math.hypot(d.x - other.x, d.y - other.y);
+    if (dist < min) {
+      min = dist;
+      nearest = other;
+    }
+  }
+  return nearest && min < MERGE_THRESHOLD ? nearest : null;
+}
+
+/**
+ * Paint the live merge preview: the dragged node gets .is-merging and the
+ * in-range target gets .is-merge-target, so the user SEES a merge coming and can
+ * pull away to cancel. Cleared when out of range or on release.
+ */
+function paintMergePreview(
+  nodeGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+  draggedId: string,
+  targetId: string | null,
+) {
+  nodeGroup
+    .selectAll<SVGGElement, NodeData>(".node-group")
+    .classed("is-merging", (n) => targetId !== null && n.id === draggedId)
+    .classed("is-merge-target", (n) => n.id === targetId);
+}
+
 /**
  * Drag event handlers
  */
@@ -287,9 +327,17 @@ function dragstarted(
   d.fy = d.y;
 }
 
-function dragged(event: any, d: NodeData) {
+function dragged(
+  event: any,
+  d: NodeData,
+  nodes: NodeData[],
+  nodeGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+) {
   d.fx = event.x;
   d.fy = event.y;
+  // Live merge preview: light up whatever we'd merge into right now.
+  const target = findMergeTarget(d, nodes);
+  paintMergePreview(nodeGroup, d.id, target ? target.id : null);
 }
 
 function dragended(
@@ -298,10 +346,18 @@ function dragended(
   simulation: d3.Simulation<NodeData, undefined>,
   nodes: NodeData[],
   config: Config,
+  nodeGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
 ) {
   if (!event.active) simulation.alphaTarget(0);
   d.fx = null;
   d.fy = null;
+
+  // Did we release on a merge target? (Same check the live preview used, so the
+  // commit always matches what was lit up.)
+  const mergeTarget = config.onMergeNodes ? findMergeTarget(d, nodes) : null;
+
+  // Clear the preview highlight regardless of outcome.
+  paintMergePreview(nodeGroup, d.id, null);
 
   // Persist all node positions after a drag ends
   if (config.onPositionsChange) {
@@ -314,25 +370,9 @@ function dragended(
     config.onPositionsChange(positions);
   }
 
-  // Merge if dragged node overlaps nearest neighbour within threshold
-  if (config.onMergeNodes && d.x !== undefined && d.y !== undefined) {
-    let nearestNode: NodeData | null = null;
-    let minDistance = Infinity;
-
-    for (const other of nodes) {
-      if (other.id === d.id) continue;
-      if (other.x === undefined || other.y === undefined) continue;
-      const distance = Math.hypot(d.x - other.x, d.y - other.y);
-      if (distance < minDistance) {
-        minDistance = distance;
-        nearestNode = other;
-      }
-    }
-
-    const mergeThreshold = 45; // SVG units — deliberate, not trigger-happy
-    if (nearestNode && minDistance < mergeThreshold) {
-      config.onMergeNodes(d.id, nearestNode.id);
-    }
+  // Released in range → merge.
+  if (mergeTarget && config.onMergeNodes) {
+    config.onMergeNodes(d.id, mergeTarget.id);
   }
 }
 
@@ -344,6 +384,7 @@ function createNodeGroup(
   config: Config,
   simulation: d3.Simulation<NodeData, undefined>,
   nodes: NodeData[],
+  nodeGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
 ) {
   selection
     .attr("class", "node-group")
@@ -352,10 +393,11 @@ function createNodeGroup(
       d3
         .drag<SVGGElement, NodeData>()
         .on("start", (event, d) => dragstarted(event, d, simulation))
-        .on("drag", dragged)
+        .on("drag", (event, d) => dragged(event, d, nodes, nodeGroup))
         .on(
           "end",
-          (event, d) => dragended(event, d, simulation, nodes, config),
+          (event, d) =>
+            dragended(event, d, simulation, nodes, config, nodeGroup),
         ),
     )
     .on("mouseover", (event, d) => {
@@ -519,7 +561,7 @@ function updateElements({
         const g = enter
           .append("g")
           .call((selection) =>
-            createNodeGroup(selection, config, simulation, nodes)
+            createNodeGroup(selection, config, simulation, nodes, nodeGroup)
           )
           // Bloom in: start the node small + transparent with the .is-entering
           // class, then drop the class on the next frame so the CSS spring

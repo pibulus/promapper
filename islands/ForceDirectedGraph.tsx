@@ -184,39 +184,12 @@ export default function ForceDirectedGraph(
           selectedNodeId.value = node.id;
           selectedEdgeId.value = null;
         },
-        onDoubleClickNode: (
-          _event: MouseEvent,
-          node: { id: string; label?: string },
-        ) => {
-          if (!conversationData.value) return;
-          const current = conversationData.value.nodes.find((n) =>
-            n.id === node.id
-          );
-          const newLabel = window.prompt(
-            "Rename topic:",
-            current?.label ?? node.id,
-          );
-          if (newLabel && newLabel.trim()) {
-            renameTopic(node.id, newLabel);
-          }
+        onDoubleClickNode: (_event: MouseEvent, node: { id: string }) => {
+          promptRenameTopic(node.id);
         },
-        onRightClickNode: (
-          event: MouseEvent,
-          node: { id: string; label?: string },
-        ) => {
+        onRightClickNode: (event: MouseEvent, node: { id: string }) => {
           event.preventDefault();
-          if (!conversationData.value) return;
-          const current = conversationData.value.nodes.find((n) =>
-            n.id === node.id
-          );
-          const label = current?.label ?? node.id;
-          if (window.confirm(`Delete topic "${label}"?`)) {
-            deleteTopic(node.id);
-            if (selectedNodeId.value === node.id) selectedNodeId.value = null;
-            if (canUndo()) {
-              showUndoToast(`Deleted "${label}"`, undoLastMutation);
-            }
-          }
+          confirmDeleteTopic(node.id);
         },
         onClickEdge: (_event: MouseEvent, edge: { id?: string }) => {
           selectedEdgeId.value = edge.id || null;
@@ -240,8 +213,11 @@ export default function ForceDirectedGraph(
           const targetLabel = nodes.find((n) => n.id === targetId)?.label ??
             "topic";
           mergeTopics(sourceId, targetId);
-          // Clear selection if the merged-away node was selected
-          if (selectedNodeId.value === sourceId) selectedNodeId.value = null;
+          // Select the surviving topic so its detail panel (with Rename) is
+          // right there — merge = "these are the same thing," and the kept
+          // label often wants a quick tidy-up after folding two into one.
+          selectedNodeId.value = targetId;
+          selectedEdgeId.value = null;
           if (canUndo()) {
             showUndoToast(
               `Merged "${sourceLabel}" into "${targetLabel}"`,
@@ -347,6 +323,23 @@ export default function ForceDirectedGraph(
     newNodeLabel.value = "";
     newNodeEmoji.value = "";
     showAddNode.value = false;
+  }
+
+  // Shared rename/delete so the gesture shortcuts (dbl-click / right-click) and
+  // the detail-panel buttons run the exact same path.
+  function promptRenameTopic(id: string) {
+    const current = conversationData.value?.nodes.find((n) => n.id === id);
+    const newLabel = window.prompt("Rename topic:", current?.label ?? id);
+    if (newLabel && newLabel.trim()) renameTopic(id, newLabel);
+  }
+
+  function confirmDeleteTopic(id: string) {
+    const current = conversationData.value?.nodes.find((n) => n.id === id);
+    const label = current?.label ?? id;
+    if (!window.confirm(`Delete topic "${label}"?`)) return;
+    deleteTopic(id);
+    if (selectedNodeId.value === id) selectedNodeId.value = null;
+    if (canUndo()) showUndoToast(`Deleted "${label}"`, undoLastMutation);
   }
 
   // ===================================================================
@@ -526,6 +519,24 @@ export default function ForceDirectedGraph(
                 connectedEdges.length === 1 ? "" : "s"
               } so far.`}
           </p>
+        </div>
+        <div class="topic-node-detail__actions">
+          <button
+            type="button"
+            class="topic-node-action"
+            onClick={() => promptRenameTopic(selectedNode.id)}
+          >
+            <i class="fa fa-pen" aria-hidden="true"></i>
+            <span>Rename</span>
+          </button>
+          <button
+            type="button"
+            class="topic-node-action topic-node-action--recede"
+            onClick={() => confirmDeleteTopic(selectedNode.id)}
+          >
+            <i class="fa fa-trash-can" aria-hidden="true"></i>
+            <span>Delete</span>
+          </button>
         </div>
         {connectedTopics.length > 0 && (
           <div class="topic-node-detail__links">

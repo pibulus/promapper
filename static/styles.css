@@ -2511,6 +2511,56 @@ body {
   line-height: 1.35;
 }
 
+/* Action row in the node detail panel — Rename / Delete, discoverable instead
+   of buried in dbl-click / right-click. */
+.topic-node-detail__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.topic-node-action {
+  flex: 1;
+  min-height: 2.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  background: var(--surface-white-warm, #fffef7);
+  color: var(--color-text);
+  font-size: var(--small-size);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.topic-node-action:hover {
+  border-color: var(--color-accent);
+  background: color-mix(
+    in srgb,
+    var(--color-accent) 10%,
+    var(--surface-white-warm, #fffef7)
+  );
+}
+
+/* Delete recedes (desaturated/dim) rather than alarming red — destructive =
+   recession in this app's visual language, never red. */
+.topic-node-action--recede {
+  color: var(--color-text-secondary);
+}
+
+.topic-node-action--recede:hover {
+  border-color: var(--color-text-secondary);
+  background: color-mix(
+    in srgb,
+    var(--color-text-secondary) 12%,
+    var(--surface-white-warm, #fffef7)
+  );
+  color: var(--color-text);
+}
+
 .topic-node-detail__links {
   grid-column: 1 / -1;
   display: flex;
@@ -3124,6 +3174,51 @@ select:focus {
 /* A node connected to the selection picks up a soft accent ring too. */
 .node-group.is-connected .node-disc {
   stroke: color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+
+/* ── MERGE PREVIEW ──────────────────────────────────────────────────
+   While dragging a node within merge range of another, BOTH light up so the
+   user sees the merge coming and can pull away to cancel. Release = merge. */
+
+/* The drop target swells with a confident accent ring + a gentle pulse —
+   "drop here to fold them together." */
+.node-group.is-merge-target .node-pad {
+  opacity: 0.55;
+  animation: merge-pulse 0.9s ease-in-out infinite;
+}
+
+.node-group.is-merge-target .node-disc {
+  stroke: var(--color-accent);
+  stroke-width: 2.5;
+}
+
+.node-group.is-merge-target .node-inner {
+  transform: scale(1.16);
+}
+
+@keyframes merge-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* The dragged node leans in + goes a touch translucent, with a dashed ring —
+   it's "about to join" the target. */
+.node-group.is-merging {
+  opacity: 0.85;
+}
+
+.node-group.is-merging .node-inner {
+  transform: scale(0.92);
+}
+
+.node-group.is-merging .node-disc {
+  stroke: var(--color-accent);
+  stroke-dasharray: 3 3;
 }
 
 /* Edges: gently-curved <path> elements (gooey, not rigid). Soft by default,
