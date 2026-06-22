@@ -2349,11 +2349,13 @@ body {
 }
 
 .topic-visualizations-shell {
-  min-height: 500px;
+  /* The map canvas sets its own height (clamped); the shell just hugs it instead
+     of forcing a tall column that leaves acres of empty space. */
+  min-height: 0;
 }
 
 .topic-visualizations-placeholder {
-  min-height: 500px;
+  min-height: 360px;
 }
 
 .topic-map-stats {

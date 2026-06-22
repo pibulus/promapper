@@ -44,13 +44,13 @@ export default function TopicVisualizationsCard() {
         </div>
         <div
           class="topic-visualizations-shell"
-          style={{ padding: "var(--card-padding)", minHeight: "500px" }}
+          style={{ padding: "var(--card-padding)" }}
         >
           {isVisible.value ? <VisualizationSelector /> : (
             // Loading placeholder
             <div
               class="topic-visualizations-placeholder flex items-center justify-center"
-              style={{ minHeight: "500px" }}
+              style={{ minHeight: "360px" }}
             >
               <div
                 style={{

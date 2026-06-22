@@ -649,7 +649,7 @@ export default function ForceDirectedGraph(
   }
 
   return (
-    <div class="relative flex h-full w-full flex-col">
+    <div class="relative flex w-full flex-col">
       <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div class="topic-map-stats" aria-label="Topic map stats">
           <span>{topics.value.length} topics</span>
@@ -667,8 +667,8 @@ export default function ForceDirectedGraph(
 
       <div
         ref={svgContainerRef}
-        class="topic-map-canvas mx-auto w-full flex-1 overflow-hidden rounded-lg border border-gray-300 bg-gray-100"
-        style="min-height: 400px; height: 100%;"
+        class="topic-map-canvas mx-auto w-full overflow-hidden rounded-lg border border-gray-300 bg-gray-100"
+        style="height: clamp(360px, 56vh, 560px);"
       />
 
       {renderNodeDetail()}

@@ -413,7 +413,12 @@ export function fitAllIcons(
     containerHeight / (boxHeight + 2 * padding),
   );
 
-  const scale = baseScale * fillFactor;
+  // Cap the fit zoom: a sparse graph (a few nodes close together) has a tiny
+  // bounding box, so fitting-to-fill would blow the nodes up huge. 1.3 keeps
+  // them a comfortable, readable size instead of cartoonishly large, while a
+  // dense graph still zooms out to fit (scale < 1).
+  const MAX_FIT_SCALE = 1.3;
+  const scale = Math.min(baseScale * fillFactor, MAX_FIT_SCALE);
   const translateX = containerWidth / 2 - scale * ((minX + maxX) / 2);
   const translateY = containerHeight / 2 - scale * ((minY + maxY) / 2);
 
