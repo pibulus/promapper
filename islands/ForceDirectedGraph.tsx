@@ -38,9 +38,9 @@ interface ForceDirectedGraphProps {
   loading?: boolean;
 }
 
-// Default edge color: a warm dark ink (the --color-text base at ~58%), never
-// grey. Reads as a confident soft-black line on the cream canvas.
-const EDGE_INK = "rgba(43, 36, 48, 0.58)";
+// Default edge color: warm soft-black at high opacity, never grey. Reads as a
+// confident dark line on the cream canvas — connections you can actually see.
+const EDGE_INK = "rgba(30, 23, 20, 0.8)";
 
 export default function ForceDirectedGraph(
   { loading = false }: ForceDirectedGraphProps,

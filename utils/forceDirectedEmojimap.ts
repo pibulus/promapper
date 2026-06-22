@@ -381,14 +381,22 @@ function createNodeGroup(
     .append("g")
     .attr("class", "node-inner");
 
-  // Soft juicy pad behind the emoji — a single glowing cushion in the THEME
-  // accent (not each node's own color), set via CSS `fill` so it follows the
-  // active theme. The blur that turns this disc into a glow comes from the CSS
-  // .node-pad filter. Fill/opacity live in styles.css, not inline.
+  // A faint theme-accent glow sits furthest back — a quiet hint of color, not a
+  // loud halo. Fill/opacity/blur all live in styles.css (.node-pad) so it
+  // follows the active theme.
   inner
     .append("circle")
     .attr("class", "node-pad")
-    .attr("r", 22);
+    .attr("r", 20);
+
+  // A clean cream disc sits on top of the glow, under the emoji. It gives each
+  // emoji its own solid ground so edges don't run visibly through the glyph, and
+  // it reads as a tidy chip rather than a fuzzy blob. Sharp (no blur). Styling
+  // in .node-disc.
+  inner
+    .append("circle")
+    .attr("class", "node-disc")
+    .attr("r", 17);
 
   // Add emoji — the hero. A soft drop-shadow (CSS) makes it pop off the canvas.
   inner

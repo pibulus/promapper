@@ -3003,42 +3003,25 @@ select:focus {
    the feel.
    =================================================================== */
 
-/* The soft pad behind each emoji. One theme-accent color for every node (not
-   the node's own), blurred + low-opacity so it reads as a gentle glow puddle.
-   A slow glow-breath keeps a settled map feeling alive (resting heartbeat) even
-   after the physics has stopped — it pulses opacity only, so it never fights the
-   .node-inner scale transitions or re-wakes the sim. */
+/* A faint theme-accent glow furthest back — just a quiet wash of color around
+   the emoji chip, NOT a loud halo. Low opacity + soft blur. No breathing: the
+   pulse read as the whole map drifting/restless, so it's gone — a settled map
+   stays still. Hover/select brighten it as a clear, deliberate response. */
 .node-pad {
   fill: var(--color-accent);
-  opacity: 0.22;
-  filter: blur(7px);
+  opacity: 0.14;
+  filter: blur(5px);
   transition: opacity 0.22s ease, r 0.22s ease;
-  animation: node-breath 5s ease-in-out infinite;
 }
 
-@keyframes node-breath {
-  0%,
-  100% {
-    opacity: 0.18;
-  }
-  50% {
-    opacity: 0.28;
-  }
-}
-
-/* Hover/select/connected pin the pad to a brighter steady glow — the breath
-   yields to the explicit interaction state so touching a node reads as a clear
-   lift, not a flicker. */
-.node-group:hover .node-pad,
-.node-group.is-selected .node-pad,
-.node-group.is-connected .node-pad {
-  animation: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .node-pad {
-    animation: none;
-  }
+/* The clean cream chip the emoji sits on. Solid (so edges don't show through the
+   glyph), with a hair of the theme accent in its soft ring. This is the tidy
+   "ground" that replaces the old fuzzy-blob look. */
+.node-disc {
+  fill: var(--surface-white-warm, #fffef7);
+  stroke: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  stroke-width: 1.25;
+  transition: stroke 0.22s ease;
 }
 
 /* The emoji glyph — the hero. Drop-shadow lifts it off the canvas. */
@@ -3103,12 +3086,15 @@ select:focus {
 }
 
 .node-group:hover .node-pad {
-  opacity: 0.5;
+  opacity: 0.32;
 }
 
-/* The emoji itself lifts a touch higher on hover — a deeper, softer shadow so it
-   reads as physically rising toward you. The pad glow swelling + this lift
-   together make the node feel like it leans into your cursor. */
+/* On hover the chip's ring picks up more of the theme accent + the emoji lifts
+   with a deeper shadow — a clear, deliberate "leaning toward you" beat. */
+.node-group:hover .node-disc {
+  stroke: color-mix(in srgb, var(--color-accent) 55%, transparent);
+}
+
 .node-group:hover .emoji {
   filter: drop-shadow(0 4px 6px rgba(30, 23, 20, 0.32));
 }
@@ -3117,9 +3103,14 @@ select:focus {
   cursor: grabbing;
 }
 
-/* Selected node: a confident, brighter glow + a touch larger. */
+/* Selected node: a confident accent ring + a touch larger. */
 .node-group.is-selected .node-pad {
-  opacity: 0.62;
+  opacity: 0.42;
+}
+
+.node-group.is-selected .node-disc {
+  stroke: var(--color-accent);
+  stroke-width: 2;
 }
 
 .node-group.is-selected .node-inner {
@@ -3130,9 +3121,9 @@ select:focus {
   filter: drop-shadow(0 4px 7px rgba(30, 23, 20, 0.34));
 }
 
-/* A node connected to the selection lifts gently too. */
-.node-group.is-connected .node-pad {
-  opacity: 0.38;
+/* A node connected to the selection picks up a soft accent ring too. */
+.node-group.is-connected .node-disc {
+  stroke: color-mix(in srgb, var(--color-accent) 45%, transparent);
 }
 
 /* Edges: gently-curved <path> elements (gooey, not rigid). Soft by default,
