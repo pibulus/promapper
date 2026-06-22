@@ -246,7 +246,10 @@ function dragstarted(
   d: NodeData,
   simulation: d3.Simulation<NodeData, undefined>,
 ) {
-  if (!event.active) simulation.alphaTarget(0.3).restart();
+  // Snappy grab: a high alphaTarget floods the sim with energy the instant you
+  // touch a node, so neighbors react immediately (no mushy lag before the graph
+  // wakes up). The springy links carry that energy outward elastically.
+  if (!event.active) simulation.alphaTarget(0.5).restart();
   d.fx = d.x;
   d.fy = d.y;
 }
@@ -399,14 +402,16 @@ function updateElements({
   config: Config;
   simulation: d3.Simulation<NodeData, undefined>;
 }) {
-  // Update links
+  // Update links — curved <path> elements, not straight <line>, for the gooey
+  // elastic feel. fill:none so only the stroke shows.
   const linkElements = linkGroup
-    .selectAll("line")
+    .selectAll<SVGPathElement, EdgeData>("path")
     .data(currentEdges, (d: any) => d.id)
     .join(
       (enter) =>
         enter
-          .append("line")
+          .append("path")
+          .attr("fill", "none")
           .attr("stroke", (d: any) => d.color || config.linkColor)
           .attr("stroke-width", config.linkStrokeWidth)
           .attr("stroke-opacity", config.linkOpacity)
@@ -509,32 +514,45 @@ function updateElements({
 }
 
 /**
+ * Build a gently-bowed quadratic-curve path between two node positions. The
+ * control point sits at the midpoint, pushed perpendicular to the line by a
+ * fraction of its length — so every edge curves the same gentle amount
+ * regardless of length, giving the whole map an elastic, "surface-tension"
+ * feel instead of rigid wires. This is the core of the gooey look.
+ */
+function edgePath(d: any): string {
+  const sx = d.source && d.source.x !== undefined ? d.source.x : 0;
+  const sy = d.source && d.source.y !== undefined ? d.source.y : 0;
+  const tx = d.target && d.target.x !== undefined ? d.target.x : 0;
+  const ty = d.target && d.target.y !== undefined ? d.target.y : 0;
+
+  const mx = (sx + tx) / 2;
+  const my = (sy + ty) / 2;
+  const dx = tx - sx;
+  const dy = ty - sy;
+  // Perpendicular offset = ~14% of length, capped so long edges don't balloon.
+  const len = Math.hypot(dx, dy) || 1;
+  const bow = Math.min(len * 0.14, 40);
+  // Unit perpendicular (rotate the direction vector 90°).
+  const px = -dy / len;
+  const py = dx / len;
+  const cx = mx + px * bow;
+  const cy = my + py * bow;
+
+  return `M${sx},${sy} Q${cx},${cy} ${tx},${ty}`;
+}
+
+/**
  * Tick callback for simulation that updates link and node positions
  */
 function ticked({
   linkElements,
   nodeElements,
 }: {
-  linkElements: d3.Selection<SVGLineElement, EdgeData, SVGGElement, unknown>;
+  linkElements: d3.Selection<SVGPathElement, EdgeData, SVGGElement, unknown>;
   nodeElements: d3.Selection<SVGGElement, NodeData, SVGGElement, unknown>;
 }) {
-  linkElements
-    .attr(
-      "x1",
-      (d: any) => (d.source && d.source.x !== undefined ? d.source.x : 0),
-    )
-    .attr(
-      "y1",
-      (d: any) => (d.source && d.source.y !== undefined ? d.source.y : 0),
-    )
-    .attr(
-      "x2",
-      (d: any) => (d.target && d.target.x !== undefined ? d.target.x : 0),
-    )
-    .attr(
-      "y2",
-      (d: any) => (d.target && d.target.y !== undefined ? d.target.y : 0),
-    );
+  linkElements.attr("d", (d) => edgePath(d));
 
   nodeElements.attr("transform", (d) => {
     if (d && d.x !== undefined && d.y !== undefined) {
@@ -725,12 +743,21 @@ export function forceDirectedEmojimap(
     .forceSimulation(nodes)
     .alphaMin(0.001)
     .alphaDecay(0.0228)
+    // velocityDecay is friction: lower = more glide/goo. 0.35 (vs the 0.4
+    // default) lets nodes coast a touch longer into place so motion feels
+    // viscous + elastic rather than abruptly damped — the "gooey" in
+    // gooey-but-snappy. The snappy comes from the drag alphaTarget bump.
+    .velocityDecay(0.35)
     .force(
       "link",
       d3
         .forceLink<NodeData, EdgeData>(currentEdges)
         .id((d) => d.id)
-        .distance(mergedConfig.linkDistance),
+        .distance(mergedConfig.linkDistance)
+        // Springier links: a higher strength makes connected nodes pull on each
+        // other elastically, so dragging one tugs its neighbors (the "elastic
+        // lag" trailing feel).
+        .strength(0.6),
     )
     .force("charge", d3.forceManyBody().strength(mergedConfig.chargeStrength))
     .force("x", d3.forceX(mergedConfig.width / 2).strength(0.05))

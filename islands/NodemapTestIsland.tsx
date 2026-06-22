@@ -169,6 +169,95 @@ function makeSeed(nodes: SeedNode[], edges: SeedEdge[]): ConversationData {
   };
 }
 
+// A 20-node single-subject web — tests whether dense maps stay readable or mush.
+const BIG_EMOJI = [
+  "🪐",
+  "🛰️",
+  "☄️",
+  "🌌",
+  "🔭",
+  "👽",
+  "🚀",
+  "🛸",
+  "🌠",
+  "🪨",
+  "🧑‍🚀",
+  "📡",
+  "🌙",
+  "⭐",
+  "🌞",
+  "🪂",
+  "🧬",
+  "⚗️",
+  "🦠",
+  "🔬",
+];
+function makeBigSeed(): ConversationData {
+  const nodes: SeedNode[] = BIG_EMOJI.map((emoji, i) => ({
+    id: `big-${i}`,
+    label: `topic ${i + 1}`,
+    emoji,
+    color: POPS[i % POPS.length],
+  }));
+  // Connect into a loose web: each node links to a couple of earlier ones.
+  const edges: SeedEdge[] = [];
+  for (let i = 1; i < nodes.length; i++) {
+    edges.push({
+      id: `bm-${i}a`,
+      source_topic_id: nodes[i].id,
+      target_topic_id: nodes[Math.floor(i / 2)].id,
+      color: "#999",
+    });
+    if (i > 3 && i % 3 === 0) {
+      edges.push({
+        id: `bm-${i}b`,
+        source_topic_id: nodes[i].id,
+        target_topic_id: nodes[i - 3].id,
+        color: "#999",
+      });
+    }
+  }
+  return makeSeed(nodes, edges);
+}
+
+// Two disconnected clusters — tests whether disparate subjects drift apart into
+// readable blobs instead of tangling. No edge bridges the two groups.
+function makeTwoClusterSeed(): ConversationData {
+  const work: SeedNode[] = [
+    { id: "w1", label: "deadline", emoji: "⏰", color: POPS[1] },
+    { id: "w2", label: "the client", emoji: "🧛", color: POPS[1] },
+    { id: "w3", label: "invoice", emoji: "🧾", color: POPS[1] },
+    { id: "w4", label: "burnout", emoji: "🫠", color: POPS[1] },
+    { id: "w5", label: "the pivot", emoji: "🔄", color: POPS[1] },
+  ];
+  const garden: SeedNode[] = [
+    { id: "g1", label: "tomatoes", emoji: "🍅", color: POPS[2] },
+    { id: "g2", label: "snails", emoji: "🐌", color: POPS[2] },
+    { id: "g3", label: "compost", emoji: "🪱", color: POPS[2] },
+    { id: "g4", label: "the shed", emoji: "🏚️", color: POPS[2] },
+    { id: "g5", label: "frost", emoji: "❄️", color: POPS[2] },
+  ];
+  const link = (a: string, b: string, i: number): SeedEdge => ({
+    id: `tc-${i}`,
+    source_topic_id: a,
+    target_topic_id: b,
+    color: "#999",
+  });
+  const edges: SeedEdge[] = [
+    link("w1", "w2", 0),
+    link("w2", "w3", 1),
+    link("w3", "w4", 2),
+    link("w4", "w5", 3),
+    link("w5", "w1", 4),
+    link("g1", "g2", 5),
+    link("g2", "g3", 6),
+    link("g3", "g4", 7),
+    link("g4", "g5", 8),
+    link("g5", "g1", 9),
+  ];
+  return makeSeed([...work, ...garden], edges);
+}
+
 export default function NodemapTestIsland() {
   const appendStep = useSignal(0);
 
@@ -218,6 +307,24 @@ export default function NodemapTestIsland() {
       >
         <button class="btn btn--primary btn--compact" onClick={seed}>
           Seed graph
+        </button>
+        <button
+          class="btn btn--secondary btn--compact"
+          onClick={() => {
+            conversationData.value = makeBigSeed();
+            appendStep.value = 0;
+          }}
+        >
+          20 nodes
+        </button>
+        <button
+          class="btn btn--secondary btn--compact"
+          onClick={() => {
+            conversationData.value = makeTwoClusterSeed();
+            appendStep.value = 0;
+          }}
+        >
+          Two clusters
         </button>
         <button
           class="btn btn--secondary btn--compact"

@@ -2414,13 +2414,13 @@ body {
   touch-action: none;
 }
 
-.topic-map-canvas .links line {
+.topic-map-canvas .links path {
   transition: stroke-opacity 160ms ease, stroke-width 160ms ease;
 }
 
-.topic-map-canvas .links line.is-hovered,
-.topic-map-canvas .links line.is-selected,
-.topic-map-canvas .links line.is-connected {
+.topic-map-canvas .links path.is-hovered,
+.topic-map-canvas .links path.is-selected,
+.topic-map-canvas .links path.is-connected {
   filter: drop-shadow(0 0 5px rgba(232, 131, 156, 0.42));
 }
 
@@ -3069,14 +3069,15 @@ select:focus {
   opacity: 0.42;
 }
 
-/* Edges: soft by default, confident when their endpoint is selected. The width
-   + opacity are driven inline by D3; this just adds the smooth feel. */
-.links line {
+/* Edges: gently-curved <path> elements (gooey, not rigid). Soft by default,
+   confident when their endpoint is selected. Width + opacity are driven inline
+   by D3; this adds the smooth feel + round caps so the curves read as elastic. */
+.links path {
   transition: stroke-opacity 0.22s ease, stroke-width 0.22s ease;
   stroke-linecap: round;
 }
 
-.links line.is-connected,
-.links line.is-selected {
+.links path.is-connected,
+.links path.is-selected {
   stroke-opacity: 0.95;
 }
