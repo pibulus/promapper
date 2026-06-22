@@ -15,6 +15,18 @@ export interface UploadedAudioFile {
   fileName: string | null;
 }
 
+/**
+ * Smallest audio upload we treat as a real recording. A glitched/empty capture
+ * (permission race, instant tap, backgrounded mobile tab) produces a valid File
+ * of only a few hundred bytes of container header; anything with actual audio is
+ * comfortably over 1KB. Routes reject below this with a clear message instead of
+ * forwarding a doomed request to the provider.
+ */
+export const MIN_AUDIO_SIZE = 1024;
+
+/** Maximum audio upload accepted, to prevent abuse. */
+export const MAX_AUDIO_SIZE = 50 * 1024 * 1024;
+
 const MAX_DELETE_RETRIES = Number(
   Deno.env.get("GEMINI_DELETE_RETRIES") ?? "3",
 );
@@ -107,7 +119,13 @@ async function createOpenRouterAudioPart(
   return { part, fileName: null };
 }
 
-function inferOpenRouterAudioFormat(
+/**
+ * Map a browser-supplied mime type (and optional filename) to the audio format
+ * OpenRouter expects. Mime-first, extension-fallback, defaults to webm. Exported
+ * for tests — this is the iOS-correctness surface (Safari records audio/mp4, and
+ * MediaRecorder mime types can carry a `;codecs=` suffix that must be stripped).
+ */
+export function inferOpenRouterAudioFormat(
   mimeType: string,
   fileName = "",
 ): OpenRouterAudioFormat {

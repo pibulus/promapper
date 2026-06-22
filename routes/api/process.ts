@@ -12,7 +12,12 @@ import {
 } from "@core/orchestration/conversation-flow.ts";
 import { guardRequest } from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
-import { deleteUploadedFile, uploadAudioFile } from "@services/audio.ts";
+import {
+  deleteUploadedFile,
+  MAX_AUDIO_SIZE,
+  MIN_AUDIO_SIZE,
+  uploadAudioFile,
+} from "@services/audio.ts";
 import { pushResultToRoom } from "@services/partyUpdates.ts";
 
 export const handler: Handlers = {
@@ -43,9 +48,21 @@ export const handler: Handlers = {
           );
         }
 
-        // Validate file size (50MB max to prevent abuse)
-        const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-        if (audioFile.size > MAX_FILE_SIZE) {
+        // Reject empty/near-empty recordings before they hit the provider — a
+        // glitched mobile capture yields a valid-but-tiny File that would
+        // otherwise become a cryptic transcription failure (see append route).
+        if (audioFile.size < MIN_AUDIO_SIZE) {
+          return new Response(
+            JSON.stringify({
+              error:
+                "That recording came through empty — we didn't catch any audio. Give it another go.",
+            }),
+            { status: 422, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        // Validate file size (max to prevent abuse)
+        if (audioFile.size > MAX_AUDIO_SIZE) {
           return new Response(
             JSON.stringify({
               error: `File too large. Maximum size is 50MB (received ${
