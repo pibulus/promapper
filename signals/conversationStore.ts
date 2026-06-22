@@ -8,6 +8,7 @@
 import { effect, signal } from "@preact/signals";
 import { debouncedSave } from "../core/storage/localStorage.ts";
 import type { ConversationData } from "../core/types/conversation-data.ts";
+import { showToast } from "../utils/toast.ts";
 
 export type { ConversationData };
 
@@ -99,7 +100,13 @@ if (typeof window !== "undefined") {
 
     // Only auto-save if we have data AND we're not viewing a shared conversation
     if (data && !isViewingShared.value) {
-      debouncedSave(data);
+      debouncedSave(data, 500, () => {
+        showToast(
+          "Storage is full — your latest change didn't save. Export a backup to free space.",
+          "error",
+          6000,
+        );
+      });
     }
   });
 }

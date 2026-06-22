@@ -1314,8 +1314,18 @@ body {
   transform: translateX(-2px);
 }
 
+/* Tap feedback — hover states are dead on touch, so give a quick press-in on
+   :active so a tap visibly registers on mobile. */
+.history-item:active,
+.history-drawer__item:active {
+  transform: scale(0.98);
+}
+
 .history-item.active {
-  border: 3px solid rgba(232, 131, 156, 0.5);
+  /* Stronger active marker than the old faint border: a confident accent
+     left-rule so the open conversation is obvious at a glance. */
+  border: 2px solid rgba(232, 131, 156, 0.45);
+  border-left: 5px solid var(--color-accent);
   background: rgba(232, 131, 156, 0.08);
 }
 

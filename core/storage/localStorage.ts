@@ -29,13 +29,25 @@ export interface StoredConversation extends ConversationData {
 // ===================================================================
 
 /**
- * Save a conversation to localStorage
+ * Save a conversation. Returns false if the write failed (e.g. localStorage is
+ * full) so the caller can warn the user instead of silently losing their work.
+ *
+ * Both keys are written under one guard: if the big conversations write throws
+ * (quota), we don't touch the active-id key and we don't leave a half-written
+ * map (setItem either fully succeeds or fully no-ops on a single key, and we
+ * write conversations first, active-id second — so a quota failure leaves the
+ * PREVIOUS conversations map intact, not a corrupted one).
  */
-export function saveConversation(data: ConversationData): void {
-  if (typeof window === "undefined") return;
+export function saveConversation(data: ConversationData): boolean {
+  if (typeof window === "undefined") return false;
 
   const conversations = getAllConversations();
   const conversationId = data.conversation.id;
+  // Guard against a missing id polluting the map under a falsy key.
+  if (!conversationId) {
+    console.warn("saveConversation: conversation has no id, skipping");
+    return false;
+  }
 
   const stored: StoredConversation = {
     ...data,
@@ -49,8 +61,17 @@ export function saveConversation(data: ConversationData): void {
 
   conversations[conversationId] = stored;
 
-  localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
-  localStorage.setItem(ACTIVE_ID_KEY, conversationId);
+  try {
+    localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+    localStorage.setItem(ACTIVE_ID_KEY, conversationId);
+    return true;
+  } catch (err) {
+    // Almost always QuotaExceededError. The conversations map in localStorage is
+    // unchanged (the failed write is atomic per key), so no corruption — but the
+    // user's latest change is NOT saved. Surface it; don't fail silently.
+    console.error("saveConversation failed (storage full?):", err);
+    return false;
+  }
 }
 
 /**
@@ -91,13 +112,41 @@ export function replaceAllConversations(
 }
 
 /**
+ * Backfill arrays/objects that downstream code (conversation-ops, the graph)
+ * assumes are always present. A record from an older schema or a hand-edited
+ * backup might omit them; without this, `.nodes.map()` / `.edges.filter()` /
+ * `.actionItems.map()` throw a TypeError on load. Belt-and-suspenders against
+ * the deliberately-permissive import path.
+ */
+export function normalizeStored(
+  record: StoredConversation,
+): StoredConversation {
+  return {
+    ...record,
+    conversation: record.conversation ?? {
+      id: record.id,
+      source: "text",
+      transcript: "",
+    },
+    transcript: record.transcript ?? { text: "", speakers: [] },
+    nodes: Array.isArray(record.nodes) ? record.nodes : [],
+    edges: Array.isArray(record.edges) ? record.edges : [],
+    actionItems: Array.isArray(record.actionItems) ? record.actionItems : [],
+    statusUpdates: Array.isArray(record.statusUpdates)
+      ? record.statusUpdates
+      : [],
+  };
+}
+
+/**
  * Load a specific conversation by ID
  */
 export function loadConversation(id: string): StoredConversation | null {
   if (typeof window === "undefined") return null;
 
   const conversations = getAllConversations();
-  return conversations[id] || null;
+  const record = conversations[id];
+  return record ? normalizeStored(record) : null;
 }
 
 /**
@@ -200,13 +249,32 @@ let saveTimeout: number | null = null;
 /**
  * Debounced save - prevents too frequent writes
  */
-export function debouncedSave(data: ConversationData, delay = 500): void {
+// So the "storage full" warning fires once, not on every keystroke while full.
+let warnedStorageFull = false;
+
+/**
+ * Debounced save. `onSaveFailed` (if given) is called the first time a save
+ * fails (e.g. quota), and not again until a save succeeds — so the caller (the
+ * signals layer) can warn the user once without importing UI into this
+ * framework-neutral storage module.
+ */
+export function debouncedSave(
+  data: ConversationData,
+  delay = 500,
+  onSaveFailed?: () => void,
+): void {
   if (saveTimeout) {
     clearTimeout(saveTimeout);
   }
 
   saveTimeout = setTimeout(() => {
-    saveConversation(data);
+    const ok = saveConversation(data);
+    if (!ok && !warnedStorageFull) {
+      warnedStorageFull = true;
+      onSaveFailed?.();
+    } else if (ok) {
+      warnedStorageFull = false; // recovered → allow the warning again later
+    }
     saveTimeout = null;
   }, delay);
 }

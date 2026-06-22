@@ -182,9 +182,32 @@ export default function MobileHistoryMenu() {
   async function handleImportFile(e: Event) {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
+    // Size guard: a backup is text/JSON, never huge. Decoding a fat-fingered
+    // 200MB video on the main thread would freeze the tab. accept=".json" is
+    // trivially bypassed, so guard here.
+    const MAX_IMPORT = 10 * 1024 * 1024; // 10MB
+    if (file.size > MAX_IMPORT) {
+      showToast(
+        "That file's too big to be a backup (max 10MB).",
+        "error",
+      );
+      if (importInputRef.current) importInputRef.current.value = "";
+      return;
+    }
     try {
       const text = await file.text();
       const parsed = parseBackup(text);
+      const count = Object.keys(parsed).length;
+      // A non-empty file that yields zero conversations isn't a success — it's
+      // the wrong file (different app, or not a backup). Don't show green.
+      if (count === 0) {
+        showToast(
+          "No conversations found — is this a ProMapper backup?",
+          "error",
+        );
+        if (importInputRef.current) importInputRef.current.value = "";
+        return;
+      }
       const merged = mergeBackup(getAllConversations(), parsed);
       replaceAllConversations(merged);
       // Reconcile the open conversation: if the import brought a newer copy of
@@ -195,7 +218,6 @@ export default function MobileHistoryMenu() {
         conversationData.value = merged[openId];
       }
       refreshList();
-      const count = Object.keys(parsed).length;
       showToast(
         `Imported ${count} conversation${count !== 1 ? "s" : ""}`,
         "success",
@@ -491,8 +513,10 @@ export default function MobileHistoryMenu() {
             : (
               visibleConversations.value.map((conv) => {
                 const isActive = activeId === conv.id;
-                const truncatedTitle =
-                  conv.conversation.title?.substring(0, 35) || "Untitled";
+                const fullTitle = conv.conversation.title || "Untitled";
+                const truncatedTitle = fullTitle.length > 35
+                  ? `${fullTitle.substring(0, 35)}…`
+                  : fullTitle;
                 // Use cached date formatter for better performance
                 const dateStr = dateFormatter.format(new Date(conv.updatedAt));
 
@@ -523,6 +547,7 @@ export default function MobileHistoryMenu() {
                         }}
                       >
                         <h3
+                          title={fullTitle}
                           style={{
                             fontWeight: "700",
                             color: "var(--color-text)",
@@ -851,8 +876,8 @@ export default function MobileHistoryMenu() {
                 lineHeight: "var(--line-height)",
               }}
             >
-              This will permanently delete this conversation and all its data.
-              This action cannot be undone.
+              This removes the conversation and all its data. You'll have a few
+              seconds to undo if you change your mind.
             </p>
             <div style={{ display: "flex", gap: "0.75rem" }}>
               <button
