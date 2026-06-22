@@ -627,7 +627,9 @@ export default function ActionItemsCard(
                 visibleItems.value.length === 0
                   ? (
                     <div class="empty-state">
-                      <div class="empty-state-icon">📋</div>
+                      <div class="empty-state-icon">
+                        <i class="fa fa-list-check" aria-hidden="true"></i>
+                      </div>
                       <div class="empty-state-text">It's quiet here.</div>
                       <button
                         onClick={() => showAddModal.value = true}
@@ -643,7 +645,9 @@ export default function ActionItemsCard(
                   )
                   : (
                     <div class="empty-state">
-                      <div class="empty-state-icon">✓</div>
+                      <div class="empty-state-icon">
+                        <i class="fa fa-circle-check" aria-hidden="true"></i>
+                      </div>
                       <div class="empty-state-text">All done</div>
                     </div>
                   )

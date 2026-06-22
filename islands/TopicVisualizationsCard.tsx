@@ -42,10 +42,7 @@ export default function TopicVisualizationsCard() {
         <div class="dashboard-card-header">
           <h3>Topic Visualizations</h3>
         </div>
-        <div
-          class="topic-visualizations-shell"
-          style={{ padding: "var(--card-padding)" }}
-        >
+        <div class="topic-visualizations-shell">
           {isVisible.value ? <VisualizationSelector /> : (
             // Loading placeholder
             <div

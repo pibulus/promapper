@@ -30,6 +30,7 @@ import * as $LiveCollabIsland from "./islands/LiveCollabIsland.tsx";
 import * as $MarkdownMakerDrawer from "./islands/MarkdownMakerDrawer.tsx";
 import * as $MobileHistoryMenu from "./islands/MobileHistoryMenu.tsx";
 import * as $NodemapTestIsland from "./islands/NodemapTestIsland.tsx";
+import * as $ReaderModal from "./islands/ReaderModal.tsx";
 import * as $ShareButton from "./islands/ShareButton.tsx";
 import * as $SharedConversationLoader from "./islands/SharedConversationLoader.tsx";
 import * as $SoundToggle from "./islands/SoundToggle.tsx";
@@ -72,6 +73,7 @@ const manifest = {
     "./islands/MarkdownMakerDrawer.tsx": $MarkdownMakerDrawer,
     "./islands/MobileHistoryMenu.tsx": $MobileHistoryMenu,
     "./islands/NodemapTestIsland.tsx": $NodemapTestIsland,
+    "./islands/ReaderModal.tsx": $ReaderModal,
     "./islands/ShareButton.tsx": $ShareButton,
     "./islands/SharedConversationLoader.tsx": $SharedConversationLoader,
     "./islands/SoundToggle.tsx": $SoundToggle,

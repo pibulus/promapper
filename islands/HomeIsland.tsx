@@ -216,7 +216,7 @@ export default function HomeIsland() {
         {!conversationData.value && <MobileHistoryMenu />}
 
         {/* Content Area - Full width, centered */}
-        <main class="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8">
+        <main class="app-scroll flex-1 overflow-y-auto px-4 pb-12 pt-4 sm:px-6 lg:px-8">
           <div class="max-w-7xl mx-auto grid gap-4 sm:gap-6">
             {/* Hero Section - Only show when NO data */}
             {!conversationData.value && (

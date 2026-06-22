@@ -1369,42 +1369,26 @@ body {
   }
 }
 
-/* Scroll progress */
-
-@supports (animation-timeline: scroll()) {
-  .scroll-progress {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(
-      90deg,
-      rgba(255, 92, 141, 0.9),
-      rgba(0, 214, 196, 0.8),
-      rgba(255, 196, 0, 0.9)
-    );
-    transform-origin: left;
-    animation: progressGrow linear both;
-    animation-timeline: scroll(root);
-    animation-range: 0% 100%;
-    z-index: 60;
-  }
-
-  @keyframes progressGrow {
-    from {
-      transform: scaleX(0);
-    }
-    to {
-      transform: scaleX(1);
-    }
-  }
-}
-
-@supports not (animation-timeline: scroll()) {
-  .scroll-progress {
-    display: none;
-  }
+/* Rainbow top-rule — a persistent decorative hairline across the very top of
+   every page (was a scroll-progress bar that vanished when a page didn't
+   scroll, e.g. the dashboard; now it's always there). */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    #ff5c8d,
+    #ff62d7,
+    #7659ff,
+    #00d6c4,
+    #32cd32,
+    #ffc400
+  );
+  z-index: 60;
+  pointer-events: none;
 }
 
 /* Skeleton shimmer */
@@ -1900,8 +1884,164 @@ body {
 
 .dashboard-card-body {
   padding: var(--card-padding);
-  max-height: 24rem;
+  max-height: 30rem;
   overflow-y: auto;
+}
+
+/* App-wide on-brand scrollbar — slim, rounded, theme-accent thumb on a quiet
+   track. Applies to the whole document + the main scroll area + the reader, so
+   nowhere shows the default chunky grey bar. */
+html,
+.app-scroll,
+.reader-panel__body {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-accent) 45%, transparent)
+    transparent;
+}
+
+html::-webkit-scrollbar,
+.app-scroll::-webkit-scrollbar,
+.reader-panel__body::-webkit-scrollbar {
+  width: 10px;
+}
+
+html::-webkit-scrollbar-track,
+.app-scroll::-webkit-scrollbar-track,
+.reader-panel__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb,
+.app-scroll::-webkit-scrollbar-thumb,
+.reader-panel__body::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+.app-scroll::-webkit-scrollbar-thumb:hover,
+.reader-panel__body::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-accent) 62%, transparent);
+  background-clip: padding-box;
+}
+
+/* Slimmer variant for the small in-card scroll boxes (transcript/summary). */
+.card-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-accent) 45%, transparent)
+    transparent;
+}
+
+.card-scroll::-webkit-scrollbar {
+  width: 7px;
+}
+
+.card-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  border-radius: 999px;
+}
+
+.card-scroll::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-accent) 60%, transparent);
+}
+
+/* The expand + copy buttons in a card header. */
+.card-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--color-text-secondary);
+}
+
+.card-header-actions button {
+  transition: color var(--transition-fast);
+}
+
+.card-header-actions button:hover:not(:disabled) {
+  color: var(--color-accent);
+}
+
+.card-header-actions button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ── READER MODAL ───────────────────────────────────────────────────
+   Roomy fullscreen reader for long transcript/summary content. */
+.reader-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 4vw, 3rem);
+  background: rgba(30, 23, 20, 0.42);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.reader-panel {
+  width: min(56rem, 100%);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--soft-black);
+  border-radius: var(--border-radius-lg);
+  background: var(--surface-white-warm, #fffef7);
+  box-shadow: var(--shadow-slab);
+  overflow: hidden;
+}
+
+.reader-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.7rem var(--card-padding);
+  border-bottom: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
+}
+
+.reader-panel__header h3 {
+  margin: 0;
+  font-size: var(--heading-size);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.reader-panel__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.reader-panel__close:hover {
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.reader-panel__body {
+  padding: var(--card-padding) calc(var(--card-padding) * 1.4);
+  overflow-y: auto;
+  line-height: 1.7;
+  color: var(--color-text);
+}
+
+.reader-panel__body.is-mono {
+  font-family: var(--font-mono);
+  font-size: var(--small-size);
+  white-space: pre-wrap;
 }
 
 .action-item-card {
@@ -2356,9 +2496,18 @@ body {
 }
 
 .topic-visualizations-shell {
-  /* The map canvas sets its own height (clamped); the shell just hugs it instead
-     of forcing a tall column that leaves acres of empty space. */
+  /* The map canvas sets its own height (clamped); the shell just hugs it and
+     adds NO padding, so the canvas bleeds to the card's inner edges. */
   min-height: 0;
+  padding: 0;
+}
+
+/* Full-bleed map: no border/rounding of its own — the card's chunky border +
+   overflow:hidden frame and clip it, so the canvas fills the whole area below
+   the header edge-to-edge. */
+.topic-map-canvas--bleed {
+  border: none;
+  border-radius: 0;
 }
 
 .topic-visualizations-placeholder {

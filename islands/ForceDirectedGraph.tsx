@@ -734,9 +734,14 @@ export default function ForceDirectedGraph(
 
   return (
     <div class="relative flex w-full flex-col">
+      {
+        /* Full-bleed: the canvas fills the whole area below the card header with
+          no margin/border of its own — the card's chunky border frames it. Only
+          the bottom corners round, to sit flush under the header. */
+      }
       <div
         ref={svgContainerRef}
-        class="topic-map-canvas mx-auto w-full overflow-hidden rounded-lg border border-gray-300 bg-gray-100"
+        class="topic-map-canvas topic-map-canvas--bleed w-full overflow-hidden"
         style="height: clamp(360px, 56vh, 560px);"
       />
 

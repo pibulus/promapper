@@ -5,6 +5,7 @@
 
 import { copyToClipboard } from "../utils/toast.ts";
 import { formatMarkdownSafe } from "../utils/sanitize.ts";
+import { openReader } from "../signals/readerStore.ts";
 
 interface SummaryCardProps {
   summary: string | null;
@@ -55,14 +56,23 @@ export default function SummaryCard(
       <div class="dashboard-card">
         <div class="dashboard-card-header">
           <h3>Summary</h3>
-          <div class="flex items-center gap-2">
+          <div class="card-header-actions">
+            <button
+              onClick={() =>
+                summary && openReader({
+                  title: "Summary",
+                  html: formatMarkdownSafe(summary),
+                })}
+              class="cursor-pointer"
+              title="Open summary full-screen"
+              aria-label="Expand summary"
+              disabled={!summary}
+            >
+              <i class="fa fa-up-right-and-down-left-from-center text-sm"></i>
+            </button>
             <button
               onClick={() => summary && copyToClipboard(summary)}
               class="cursor-pointer"
-              style={{
-                color: "var(--color-text-secondary)",
-                transition: "var(--transition-fast)",
-              }}
               title="Copy summary"
               aria-label="Copy summary"
               disabled={!summary}
@@ -71,43 +81,39 @@ export default function SummaryCard(
             </button>
           </div>
         </div>
-        <div class="dashboard-card-body">
+        <div class="dashboard-card-body card-scroll">
           {!summary || summary === "No summary generated"
             ? (
               <div class="empty-state">
-                <div class="empty-state-icon">📋</div>
+                <div class="empty-state-icon">
+                  <i class="fa fa-clipboard-list" aria-hidden="true"></i>
+                </div>
                 <div class="empty-state-text">Waiting here</div>
               </div>
             )
             : (
               <div>
-                {/* Main summary with markdown formatting (XSS-safe) */}
+                {/* Main summary (XSS-safe) — sits directly on the card surface. */}
                 <div
-                  class="p-4 rounded-lg"
                   style={{
-                    background: "var(--surface-cream)",
-                    border: "2px solid var(--color-border)",
+                    fontSize: "var(--text-size)",
+                    color: "var(--color-text)",
                   }}
-                >
-                  <div
-                    style={{
-                      fontSize: "var(--text-size)",
-                      color: "var(--color-text)",
-                    }}
-                    dangerouslySetInnerHTML={{
-                      __html: formatMarkdownSafe(summary),
-                    }}
-                  />
-                </div>
+                  dangerouslySetInnerHTML={{
+                    __html: formatMarkdownSafe(summary),
+                  }}
+                />
 
-                {/* Key Points Section */}
+                {
+                  /* Key Points — a soft accent-tinted callout (the tint alone
+                    sets it apart now; no heavy border box). */
+                }
                 {extractKeyPoints(summary).length > 0 && (
                   <div
-                    class="mt-4 p-4 rounded-lg"
+                    class="mt-4 p-3 rounded-lg"
                     style={{
                       background:
-                        "color-mix(in srgb, var(--color-accent) 8%, transparent)",
-                      border: "2px solid var(--color-border)",
+                        "color-mix(in srgb, var(--color-accent) 7%, transparent)",
                     }}
                   >
                     <h4
@@ -155,16 +161,21 @@ export default function SummaryCard(
 
                 {/* Metadata */}
                 <div
-                  class="mt-4 pt-3 flex items-center gap-4"
+                  class="mt-4 pt-3 flex items-center gap-3"
                   style={{
-                    borderTop: `2px solid var(--color-border)`,
+                    borderTop: `1px solid var(--color-border)`,
                     fontSize: "var(--tiny-size)",
                     color: "var(--color-text-secondary)",
                   }}
                 >
-                  <span>📊 {nodes.length} topics</span>
-                  <span>•</span>
-                  <span>📝 {conversationSource}</span>
+                  <span class="inline-flex items-center gap-1.5">
+                    <i class="fa fa-diagram-project" aria-hidden="true"></i>
+                    {nodes.length} topics
+                  </span>
+                  <span class="inline-flex items-center gap-1.5">
+                    <i class="fa fa-file-lines" aria-hidden="true"></i>
+                    {conversationSource}
+                  </span>
                 </div>
               </div>
             )}

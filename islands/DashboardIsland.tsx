@@ -12,6 +12,7 @@ import ActionItemsCard from "../components/ActionItemsCard.tsx";
 import ActionItemsBack from "../components/ActionItemsBack.tsx";
 import TopicVisualizationsCard from "./TopicVisualizationsCard.tsx";
 import FlipCard from "./FlipCard.tsx";
+import ReaderModal from "./ReaderModal.tsx";
 
 export default function DashboardIsland() {
   if (!conversationData.value) {
@@ -84,6 +85,12 @@ export default function DashboardIsland() {
         {/* Card 4: Topic Visualizations - FULL WIDTH (spans all columns) */}
         <TopicVisualizationsCard />
       </div>
+
+      {
+        /* Roomy reader for long transcript/summary content — opened from a card's
+          expand button, keeps the grid itself compact + equal-height. */
+      }
+      <ReaderModal />
     </div>
   );
 }

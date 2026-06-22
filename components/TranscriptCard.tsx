@@ -6,6 +6,7 @@
 import { copyToClipboard } from "../utils/toast.ts";
 import { formatTranscriptSafe } from "../utils/sanitize.ts";
 import { useSignal } from "@preact/signals";
+import { openReader } from "../signals/readerStore.ts";
 
 interface TranscriptCardProps {
   transcript: {
@@ -49,37 +50,46 @@ export default function TranscriptCard(
       <div class="dashboard-card">
         <div class="dashboard-card-header">
           <h3>Transcript</h3>
-          <button
-            onClick={() => transcript?.text && copyToClipboard(transcript.text)}
-            class="cursor-pointer"
-            style={{
-              color: "var(--color-text-secondary)",
-              transition: "var(--transition-fast)",
-            }}
-            title="Copy transcript"
-            aria-label="Copy transcript"
-            disabled={!transcript?.text}
-          >
-            <i class="fa fa-copy text-sm"></i>
-          </button>
+          <div class="card-header-actions">
+            <button
+              onClick={() =>
+                transcript?.text && openReader({
+                  title: "Transcript",
+                  html: formatTranscriptSafe(transcript.text),
+                  mono: true,
+                })}
+              class="cursor-pointer"
+              title="Open transcript full-screen"
+              aria-label="Expand transcript"
+              disabled={!transcript?.text}
+            >
+              <i class="fa fa-up-right-and-down-left-from-center text-sm"></i>
+            </button>
+            <button
+              onClick={() =>
+                transcript?.text && copyToClipboard(transcript.text)}
+              class="cursor-pointer"
+              title="Copy transcript"
+              aria-label="Copy transcript"
+              disabled={!transcript?.text}
+            >
+              <i class="fa fa-copy text-sm"></i>
+            </button>
+          </div>
         </div>
-        <div class="dashboard-card-body">
+        <div class="dashboard-card-body card-scroll">
           {!transcript?.text || transcript.text.trim() === ""
             ? (
               <div class="empty-state">
-                <div class="empty-state-icon">📄</div>
+                <div class="empty-state-icon">
+                  <i class="fa fa-file-lines" aria-hidden="true"></i>
+                </div>
                 <div class="empty-state-text">Quiet here</div>
               </div>
             )
             : (
-              <div
-                class="relative p-4 rounded-lg"
-                style={{
-                  background: "var(--surface-cream)",
-                  border: "2px solid var(--color-border)",
-                }}
-              >
-                {/* Format transcript with speaker highlighting (XSS-safe) */}
+              <div class="relative">
+                {/* Format transcript with speaker highlighting (XSS-safe). */}
                 <div
                   class="whitespace-pre-wrap leading-relaxed"
                   style={{
