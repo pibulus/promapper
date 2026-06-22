@@ -354,9 +354,9 @@ export default function MobileHistoryMenu() {
               padding: "14px 20px",
               fontSize: "var(--heading-size)",
               fontWeight: "700",
-              border: "2px solid #1A1A1A",
+              border: "2px solid var(--soft-black)",
               borderRadius: "12px",
-              background: "#1A1A1A",
+              background: "var(--soft-black)",
               color: "white",
               cursor: "pointer",
               transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
@@ -423,12 +423,12 @@ export default function MobileHistoryMenu() {
                 padding: "6px 0",
                 fontSize: "var(--tiny-size)",
                 fontWeight: "600",
-                borderRadius: "8px",
+                borderRadius: "var(--border-radius-sm)",
                 border: filterMode.value === mode
-                  ? "2px solid #1A1A1A"
+                  ? "2px solid var(--soft-black)"
                   : "2px solid rgba(0,0,0,0.1)",
                 background: filterMode.value === mode
-                  ? "#1A1A1A"
+                  ? "var(--soft-black)"
                   : "rgba(0,0,0,0.03)",
                 color: filterMode.value === mode
                   ? "white"
@@ -569,7 +569,7 @@ export default function MobileHistoryMenu() {
                         <p
                           style={{
                             fontSize: "var(--tiny-size)",
-                            color: "#8B7F77",
+                            color: "var(--color-text-secondary)",
                             marginTop: "0.5rem",
                             fontWeight: "500",
                           }}
@@ -690,7 +690,7 @@ export default function MobileHistoryMenu() {
                 justifyContent: "space-between",
                 alignItems: "baseline",
                 fontSize: "var(--tiny-size)",
-                color: "#8B7F77",
+                color: "var(--color-text-secondary)",
                 fontWeight: "500",
               }}
             >
@@ -710,7 +710,7 @@ export default function MobileHistoryMenu() {
             <div
               style={{
                 height: "5px",
-                borderRadius: "999px",
+                borderRadius: "var(--btn-radius-pill)",
                 background: "rgba(0, 0, 0, 0.06)",
                 overflow: "hidden",
               }}
@@ -726,9 +726,9 @@ export default function MobileHistoryMenu() {
                   width: `${
                     Math.min(100, Math.max(2, storage.value.percentage))
                   }%`,
-                  borderRadius: "999px",
+                  borderRadius: "var(--btn-radius-pill)",
                   background: storage.value.percentage >= 80
-                    ? "color-mix(in srgb, var(--color-accent) 45%, #8B7F77)"
+                    ? "color-mix(in srgb, var(--color-accent) 45%, var(--color-text-secondary))"
                     : "var(--color-accent)",
                   opacity: storage.value.percentage >= 80 ? 0.85 : 1,
                   transition: "width var(--transition-fast)",
@@ -752,7 +752,7 @@ export default function MobileHistoryMenu() {
                 fontSize: "var(--tiny-size)",
                 fontWeight: "600",
                 border: "2px solid rgba(232, 131, 156, 0.3)",
-                borderRadius: "8px",
+                borderRadius: "var(--border-radius-sm)",
                 background: "rgba(232, 131, 156, 0.1)",
                 color: "var(--color-text-secondary)",
                 cursor: "pointer",
@@ -760,7 +760,7 @@ export default function MobileHistoryMenu() {
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "rgba(232, 131, 156, 0.2)";
-                e.currentTarget.style.color = "#111";
+                e.currentTarget.style.color = "var(--soft-black)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "rgba(232, 131, 156, 0.1)";
@@ -778,7 +778,7 @@ export default function MobileHistoryMenu() {
                 fontSize: "var(--tiny-size)",
                 fontWeight: "600",
                 border: "2px solid rgba(134, 197, 166, 0.3)",
-                borderRadius: "8px",
+                borderRadius: "var(--border-radius-sm)",
                 background: "rgba(134, 197, 166, 0.1)",
                 color: "var(--color-text-secondary)",
                 cursor: "pointer",
@@ -786,7 +786,7 @@ export default function MobileHistoryMenu() {
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "rgba(134, 197, 166, 0.2)";
-                e.currentTarget.style.color = "#111";
+                e.currentTarget.style.color = "var(--soft-black)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "rgba(134, 197, 166, 0.1)";
