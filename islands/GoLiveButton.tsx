@@ -46,9 +46,9 @@ export default function GoLiveButton() {
     <button
       onClick={goLive}
       disabled={loading.value}
-      class="btn btn--secondary btn--compact"
+      class="header-icon-btn"
+      data-tip={loading.value ? "Starting…" : "Go live"}
       aria-label="Start a live collaboration room"
-      title="Go live — collaborate in real time"
     >
       <i
         class={`fa ${
@@ -57,9 +57,6 @@ export default function GoLiveButton() {
         aria-hidden="true"
       >
       </i>
-      <span class="hidden sm:inline">
-        {loading.value ? "Starting" : "Go Live"}
-      </span>
     </button>
   );
 }

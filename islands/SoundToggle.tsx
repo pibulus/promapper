@@ -18,19 +18,17 @@ export default function SoundToggle() {
   return (
     <button
       onClick={toggle}
-      class="action-header-btn"
-      style={{
-        background: "var(--surface-cream)",
-        padding: "0.4rem 0.6rem",
-        borderRadius: "var(--border-radius-sm)",
-        fontSize: "var(--small-size)",
-        lineHeight: "1",
-      }}
+      class="header-icon-btn"
+      data-tip={muted.value ? "Sound off" : "Sound on"}
+      data-tip-align="right"
       aria-pressed={!muted.value}
       aria-label={muted.value ? "Unmute sound" : "Mute sound"}
-      title={muted.value ? "Sound off" : "Sound on"}
     >
-      <span aria-hidden="true">{muted.value ? "🔇" : "🔊"}</span>
+      <i
+        class={`fa ${muted.value ? "fa-volume-xmark" : "fa-volume-high"}`}
+        aria-hidden="true"
+      >
+      </i>
     </button>
   );
 }

@@ -547,6 +547,204 @@ body {
 }
 
 /* ===================================================================
+   APP HEADER — ONE bar, everything inline + vertically centered.
+   Wordmark (= home) · project title · icon-only actions. No word-buttons,
+   nothing riding high. The warm gradient bg is the color event; the bar is a
+   quiet frosted strip with a hairline rule.
+   ================================================================ */
+.app-header__brand {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--font-size-md); /* 16px — small + confident */
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--color-text);
+  text-decoration: none;
+  line-height: 1;
+  padding: 0.3rem 0.1rem;
+  border-radius: var(--border-radius-sm);
+  transition: color var(--transition-fast), transform var(--transition-fast);
+  white-space: nowrap;
+}
+.app-header__brand:hover {
+  color: var(--color-accent);
+}
+/* The accent dot in the wordmark — a tiny pop of the active theme. */
+.app-header__brand-dot {
+  color: var(--color-accent);
+}
+
+/* Thin divider between wordmark and project title. */
+.app-header__divider {
+  width: 1px;
+  height: 1.1rem;
+  background: var(--color-border);
+  opacity: 0.6;
+  margin: 0 0.1rem;
+  flex-shrink: 0;
+}
+
+/* Project title — sits beside the brand, truncates, recedes vs the wordmark. */
+.app-header__title {
+  font-size: var(--small-size);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: -0.01em;
+  line-height: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Header action cluster — one inline row, consistent gap, centered. */
+.app-header__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Header icon button — small, square, quiet. Hover lifts a warm tint, NOT a
+   border zoo. Same size for every control so the cluster reads as one row. */
+.header-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+.header-icon-btn:hover {
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  color: var(--color-accent);
+}
+.header-icon-btn:active {
+  transform: translateY(1px);
+}
+.header-icon-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.header-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+/* Keep a 44px touch target under the small visual (iOS ergonomics). */
+.header-icon-btn::after {
+  content: "";
+  position: absolute;
+  inset: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+/* Recording state — warm rose wash + accent icon (never alarm red). */
+.header-icon-btn.is-recording {
+  background: var(--accent-rose-wash);
+  color: var(--color-accent);
+  width: auto;
+  padding: 0 0.6rem;
+  gap: 0.4rem;
+}
+/* Tiny count badge (e.g. recordings) — accent dot, top-right. */
+.header-icon-btn__badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 1rem;
+  height: 1rem;
+  padding: 0 0.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: #fff;
+  line-height: 1;
+}
+
+/* ===================================================================
+   TOOLTIP — small, on-theme, replaces ugly native title= bubbles.
+   Wrap a control in [data-tip="…"]; the label DROPS BELOW on hover/focus
+   (below, so it never clips off the top of the sticky header bar).
+   Warm ink chip, theme-following, no system grey.
+   ================================================================ */
+[data-tip] {
+  position: relative;
+}
+[data-tip]::before,
+[data-tip]::after {
+  position: absolute;
+  left: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  z-index: var(--z-modal);
+}
+/* The label chip — drops below the control. */
+[data-tip]::before {
+  content: attr(data-tip);
+  top: calc(100% + 8px);
+  transform: translate(-50%, -4px);
+  padding: 0.3rem 0.55rem;
+  border-radius: var(--border-radius-sm);
+  background: var(--soft-black);
+  color: var(--soft-cream);
+  font-size: var(--tiny-size);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+}
+/* The little pointer — points up toward the control. */
+[data-tip]::after {
+  content: "";
+  top: calc(100% + 3px);
+  transform: translate(-50%, -4px);
+  border: 5px solid transparent;
+  border-bottom-color: var(--soft-black);
+}
+[data-tip]:hover::before,
+[data-tip]:hover::after,
+[data-tip]:focus-visible::before,
+[data-tip]:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+/* Tooltips anchored at the right edge of the bar flip their alignment so they
+   don't spill off-screen. */
+[data-tip][data-tip-align="right"]::before,
+[data-tip][data-tip-align="right"]::after {
+  left: auto;
+  right: 0;
+  transform: translate(0, -4px);
+}
+[data-tip][data-tip-align="right"]::after {
+  right: 8px;
+}
+[data-tip][data-tip-align="right"]:hover::before,
+[data-tip][data-tip-align="right"]:hover::after,
+[data-tip][data-tip-align="right"]:focus-visible::before,
+[data-tip][data-tip-align="right"]:focus-visible::after {
+  transform: translate(0, 0);
+}
+
+/* ===================================================================
    CANVAS BACKGROUND + MODULE SYSTEM
    ================================================================ */
 

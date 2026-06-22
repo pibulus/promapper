@@ -78,8 +78,9 @@ export default function ShareButton() {
       <button
         onClick={handleShare}
         disabled={!canShare.value || isGenerating.value}
-        class="btn btn--secondary btn--compact"
-        title="Share conversation"
+        class="header-icon-btn"
+        data-tip={isGenerating.value ? "Generating…" : "Share"}
+        data-tip-align="right"
         aria-label="Share conversation"
       >
         <i
@@ -87,9 +88,6 @@ export default function ShareButton() {
           aria-hidden="true"
         >
         </i>
-        <span class="hidden sm:inline">
-          {isGenerating.value ? "Generating" : "Share"}
-        </span>
       </button>
 
       {

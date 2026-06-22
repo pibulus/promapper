@@ -453,16 +453,8 @@ export default function AudioRecorder(
       {/* Compact button in header */}
       <button
         onClick={() => isExpanded.value = !isExpanded.value}
-        class={`btn btn--secondary btn--compact relative${
-          isRecording.value ? "" : " btn--icon"
-        }`}
-        style={{
-          color: "var(--color-accent)",
-          ...(isRecording.value
-            ? { background: "var(--accent-rose-wash)" }
-            : {}),
-        }}
-        title={isRecording.value ? "Recording…" : "Audio recordings"}
+        class={`header-icon-btn${isRecording.value ? " is-recording" : ""}`}
+        data-tip={isRecording.value ? "Recording…" : "Recordings"}
         aria-label={isRecording.value ? "Recording" : "Audio recordings"}
       >
         <i
@@ -473,18 +465,15 @@ export default function AudioRecorder(
         >
         </i>
         {isRecording.value && (
-          <span style={{ fontFamily: "var(--font-mono)" }} class="text-sm">
+          <span
+            style={{ fontFamily: "var(--font-mono)" }}
+            class="text-xs font-semibold"
+          >
             {formatTime(timeRemaining.value)}
           </span>
         )}
         {recordings.value.length > 0 && !isRecording.value && (
-          <span
-            class="absolute -top-1 -right-1 text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center"
-            style={{
-              background: "var(--color-accent)",
-              color: "#fff",
-            }}
-          >
+          <span class="header-icon-btn__badge">
             {recordings.value.length}
           </span>
         )}

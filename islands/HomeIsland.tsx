@@ -70,7 +70,6 @@ export default function HomeIsland() {
   const transcript = conversationData.value?.transcript?.text || "";
 
   const heroLines = ["See what you're", "really saying"];
-  const heroTags = ["topics", "tasks", "docs"];
 
   return (
     <div class="mapper-scene min-h-screen">
@@ -100,55 +99,41 @@ export default function HomeIsland() {
         >
           {conversationData.value
             ? (
-              // Conversation header - clean and slim
+              // Conversation header — wordmark (= home) · project title · actions.
               <>
-                <div class="flex items-center gap-3 flex-1 min-w-0">
-                  <button
-                    onClick={() => {
+                <div class="flex items-center gap-2 flex-1 min-w-0">
+                  {/* ProMapper stays for branding; clicking it returns home. */}
+                  <a
+                    href="/"
+                    class="app-header__brand"
+                    data-tip="Back to home"
+                    aria-label="ProMapper — back to home"
+                    onClick={(e) => {
+                      e.preventDefault();
                       conversationData.value = null;
                       window.history.pushState({}, "", "/");
                     }}
-                    class="flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-lg hover:bg-black/5 transition-all"
-                    style={{
-                      border: "2px solid var(--color-border)",
-                    }}
-                    title="Back to home"
-                    aria-label="Back to home"
                   >
-                    <i
-                      class="fa fa-arrow-left"
-                      style={{
-                        fontSize: "var(--small-size)",
-                        color: "var(--color-text)",
-                      }}
-                    >
-                    </i>
-                  </button>
-                  <h1
-                    class="truncate"
-                    style={{
-                      fontSize: "var(--font-size-md)",
-                      fontWeight: "700",
-                      color: "var(--color-text)",
-                      letterSpacing: "-0.02em",
-                    }}
-                  >
+                    ProMapper<span class="app-header__brand-dot">.</span>
+                  </a>
+                  <span class="app-header__divider" aria-hidden="true"></span>
+                  <h1 class="app-header__title">
                     {conversationData.value.conversation.title}
                   </h1>
                 </div>
-                <div class="flex items-center gap-2">
-                  {/* Audio Recorder - NEW! */}
+                <div class="app-header__actions">
+                  {/* Audio Recorder */}
                   <AudioRecorder
                     conversationId={conversationData.value.conversation.id ||
                       ""}
                   />
 
-                  {/* Export button — icon only */}
+                  {/* Export — icon only */}
                   <button
                     onClick={() => drawerOpen.value = !drawerOpen.value}
-                    class="btn btn--secondary btn--compact btn--icon"
+                    class="header-icon-btn"
+                    data-tip="Export"
                     aria-label="Export conversation"
-                    title="Export"
                   >
                     <i class="fa fa-file-export" aria-hidden="true"></i>
                   </button>
@@ -161,37 +146,14 @@ export default function HomeIsland() {
               </>
             )
             : (
-              // Default header - app name and primary actions
+              // Default header — wordmark + quiet actions.
               <>
-                <a
-                  href="/"
-                  style={{
-                    fontSize: "var(--font-size-xl)",
-                    fontWeight: "800",
-                    color: "var(--color-text)",
-                    letterSpacing: "-0.03em",
-                    flex: 1,
-                    textDecoration: "none",
-                    padding: "8px 12px",
-                    borderRadius: "var(--border-radius-sm)",
-                    transition: "all var(--transition-medium)",
-                    display: "inline-block",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background =
-                      "rgba(var(--color-accent), 0.08)";
-                    e.currentTarget.style.transform = "translateX(2px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.transform = "translateX(0)";
-                  }}
-                >
-                  ProMapper
+                <a href="/" class="app-header__brand flex-1">
+                  ProMapper<span class="app-header__brand-dot">.</span>
                 </a>
-                <SoundToggle />
-                <ThemeSwitcher />
+                <div class="app-header__actions">
+                  <ThemeSwitcher />
+                </div>
               </>
             )}
         </div>
@@ -244,17 +206,6 @@ export default function HomeIsland() {
                         Drop in a thought, a meeting, a scene, or a weekly
                         check-in.
                       </p>
-                      <div class="mapper-hero-tags" aria-label="Outputs">
-                        {heroTags.map((tag, index) => (
-                          <span
-                            class="mapper-hero-tag"
-                            key={tag}
-                            data-tone={index}
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
                       <p class="mapper-hero-caption">
                         A friendly project map you can keep adding to.
                       </p>

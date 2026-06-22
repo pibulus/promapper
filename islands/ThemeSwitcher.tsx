@@ -80,19 +80,14 @@ export default function ThemeSwitcher() {
         onClick={() => {
           showPicker.value = !showPicker.value;
         }}
-        class="px-3 py-2 rounded-lg text-sm font-semibold transition-all hover:brightness-110 active:scale-95"
-        style={{
-          backgroundColor: "var(--color-accent)",
-          color: "white",
-          border: "2px solid var(--color-border)",
-          boxShadow: "var(--shadow-soft)",
-        }}
-        title={`Theme: ${currentTheme.value.name} — ${currentTheme.value.vibe}`}
+        class="header-icon-btn"
+        data-tip={`Theme: ${currentTheme.value.name}`}
+        data-tip-align="right"
         aria-haspopup="true"
         aria-expanded={showPicker.value}
+        aria-label={`Change theme (current: ${currentTheme.value.name})`}
       >
-        <span class="mr-1.5" aria-hidden="true">🎨</span>
-        {currentTheme.value.name}
+        <i class="fa fa-palette" aria-hidden="true"></i>
       </button>
 
       {
