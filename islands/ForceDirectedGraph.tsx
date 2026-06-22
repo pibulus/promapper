@@ -97,8 +97,22 @@ export default function ForceDirectedGraph(
     }, 400) as unknown as number;
   }
 
-  // Get topics and edges from store
-  const topics = useComputed(() => conversationData.value?.nodes || []);
+  // Get topics and edges from store.
+  //
+  // CLONE the nodes before they ever reach D3. D3's force sim writes x/y/vx/vy/
+  // fx/fy directly onto the objects it's given — if those were the store's own
+  // node objects, that transient physics state would leak into autosave, share
+  // payloads, and live-sync (a node could even be saved permanently pinned via
+  // a stray fx/fy). Cloning keeps the store pristine. We seed x/y from any saved
+  // `position` so a reload (or any later update) restores the hand-laid layout
+  // instead of re-scattering from center.
+  const topics = useComputed(() =>
+    (conversationData.value?.nodes || []).map((n) => ({
+      ...n,
+      x: n.position?.x,
+      y: n.position?.y,
+    }))
+  );
   const relationships = useComputed(() => conversationData.value?.edges || []);
 
   function getRelationshipId(
@@ -372,9 +386,17 @@ export default function ForceDirectedGraph(
     linkDistance.value,
     chargeStrength.value,
     collisionRadius.value,
-    selectedNodeId.value,
-    selectedEdgeId.value,
   ]);
+
+  // Selection is a CHEAP highlight repaint — never a physics restart. Keeping it
+  // out of the update() effect above means a plain tap-to-select no longer
+  // reheats and reshuffles the whole graph (the most common gesture).
+  useEffect(() => {
+    emojimapHandleRef.current?.setSelection({
+      selectedNodeId: selectedNodeId.value,
+      selectedEdgeId: selectedEdgeId.value,
+    });
+  }, [selectedNodeId.value, selectedEdgeId.value]);
 
   useEffect(() => {
     if (topics.value.length === 0) return;

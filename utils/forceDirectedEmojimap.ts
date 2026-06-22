@@ -197,6 +197,10 @@ function mapEdges(edges: EdgeData[] = []): EdgeData[] {
     return [];
   }
 
+  // Track source->target pairs so a duplicate edge can't stack doubled link
+  // forces (which pull two nodes unnaturally tight).
+  const seenPairs = new Set<string>();
+
   return edges.map((edge, i) => {
     if (!edge) {
       console.warn("Null or undefined edge in mapEdges at index", i);
@@ -212,6 +216,23 @@ function mapEdges(edges: EdgeData[] = []): EdgeData[] {
       console.warn("Edge missing source or target ID:", edge);
       return null;
     }
+
+    // Drop self-loops: a link from a node to itself makes the link force fight
+    // forever (distance can never be satisfied), so the sim never settles and
+    // the node jitters in place burning CPU/battery. The AI will eventually
+    // emit a self-referential edge — guard the render path, not just merge.
+    if (sourceId === targetId) {
+      return null;
+    }
+
+    // Drop duplicate connections (same pair, either direction).
+    const pairKey = sourceId < targetId
+      ? `${sourceId}|${targetId}`
+      : `${targetId}|${sourceId}`;
+    if (seenPairs.has(pairKey)) {
+      return null;
+    }
+    seenPairs.add(pairKey);
 
     return {
       ...edge,
@@ -510,7 +531,50 @@ function updateElements({
     .classed("is-selected", (d) => d.id === config.selectedNodeId)
     .classed("is-connected", (d) => nodeTouchesEdge(d, selectedEdge));
 
+  applySelection(linkElements, nodeElements, currentEdges, config);
+
   return { linkElements, nodeElements };
+}
+
+/**
+ * Re-apply selection/highlight classes + edge stroke emphasis to existing
+ * elements. This is the CHEAP path: it touches DOM attributes only and never
+ * rebuilds the data-join or restarts the simulation — so a plain
+ * tap-to-select can't make the whole graph reheat and reshuffle.
+ */
+function applySelection(
+  linkElements: d3.Selection<SVGPathElement, EdgeData, SVGGElement, unknown>,
+  nodeElements: d3.Selection<SVGGElement, NodeData, SVGGElement, unknown>,
+  currentEdges: EdgeData[],
+  config: Config,
+) {
+  linkElements
+    .classed("is-selected", (d) => d.id === config.selectedEdgeId)
+    .classed("is-connected", (d) => edgeTouchesNode(d, config.selectedNodeId))
+    .attr(
+      "stroke-width",
+      (d) =>
+        d.id === config.selectedEdgeId ||
+          edgeTouchesNode(d, config.selectedNodeId)
+          ? config.linkStrokeWidth + 2
+          : config.linkStrokeWidth,
+    )
+    .attr(
+      "stroke-opacity",
+      (d) =>
+        d.id === config.selectedEdgeId ||
+          edgeTouchesNode(d, config.selectedNodeId)
+          ? Math.min(1, config.linkOpacity + 0.35)
+          : config.linkOpacity,
+    );
+
+  const selectedEdge = currentEdges.find((edge) =>
+    edge.id === config.selectedEdgeId
+  );
+
+  nodeElements
+    .classed("is-selected", (d) => d.id === config.selectedNodeId)
+    .classed("is-connected", (d) => nodeTouchesEdge(d, selectedEdge));
 }
 
 /**
@@ -631,6 +695,16 @@ export interface EmojimapHandle {
       config?: Partial<Config>;
     },
   ) => void;
+  /**
+   * Cheap selection-only update — re-highlights without restarting physics.
+   * Use this on tap-to-select; use update() only for real data/layout changes.
+   */
+  setSelection: (
+    selection: {
+      selectedNodeId?: string | null;
+      selectedEdgeId?: string | null;
+    },
+  ) => void;
   resetVisualization: () => void;
   updateLayout: () => void;
   destroy: () => void;
@@ -652,6 +726,7 @@ export function forceDirectedEmojimap(
     console.error("No DOM node provided to forceDirectedEmojimap");
     return {
       update: () => {},
+      setSelection: () => {},
       resetVisualization: () => {},
       updateLayout: () => {},
       destroy: () => {},
@@ -912,6 +987,19 @@ export function forceDirectedEmojimap(
       });
 
       simulation.alpha(1).restart();
+    },
+
+    setSelection(selection) {
+      // Update only the selection fields, then repaint highlight classes on the
+      // existing elements. No data-join, no alpha restart — the graph stays put.
+      mergedConfig.selectedNodeId = selection.selectedNodeId ?? null;
+      mergedConfig.selectedEdgeId = selection.selectedEdgeId ?? null;
+      applySelection(
+        renderedElements.linkElements,
+        renderedElements.nodeElements,
+        currentEdges,
+        mergedConfig,
+      );
     },
 
     resetVisualization() {
