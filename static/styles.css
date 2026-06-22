@@ -901,29 +901,11 @@ body {
   padding-bottom: 0.6rem;
 }
 
-.mapper-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-  padding: 0.45rem 0.8rem;
-  border-radius: 999px;
-  border: 2px solid rgba(30, 23, 20, 0.12);
-  background: rgba(255, 255, 255, 0.58);
-  box-shadow: 0 3px 10px rgba(30, 23, 20, 0.06);
-  font-size: 0.74rem;
-  font-weight: 800;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--soft-brown); /* use soft-brown for secondary text */
-  opacity: 0.9;
-  margin-bottom: 0.3rem;
-}
-
 .mapper-hero-title {
-  font-size: clamp(2.2rem, 4.2vw, 3.5rem);
+  font-size: clamp(2.6rem, 5vw, 4.25rem);
   font-weight: 900;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
   color: var(--soft-black); /* use shared soft black, not random dark */
   margin: 0;
   padding-bottom: 0.2rem;
@@ -961,46 +943,11 @@ body {
   opacity: 0.84;
 }
 
-.mapper-hero-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-  margin-top: 0.1rem;
-}
-
 .mapper-hero-caption {
   font-size: 0.88rem;
   line-height: 1.5;
   color: var(--soft-brown); /* use soft-brown for tertiary text */
   opacity: 0.8;
-}
-
-.mapper-hero-tag {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2rem;
-  padding: 0.2rem 0.75rem;
-  border-radius: 999px;
-  border: 1.5px solid rgba(30, 23, 20, 0.12);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: lowercase;
-  color: var(--soft-black);
-  box-shadow: 0 3px 10px rgba(30, 23, 20, 0.06);
-}
-
-.mapper-hero-tag[data-tone="0"] {
-  background: rgba(255, 179, 217, 0.55);
-}
-
-.mapper-hero-tag[data-tone="1"] {
-  background: rgba(173, 232, 219, 0.55);
-}
-
-.mapper-hero-tag[data-tone="2"] {
-  background: rgba(255, 224, 171, 0.55);
 }
 
 .mapper-card__panel {
@@ -1688,15 +1635,8 @@ body {
     padding-bottom: 0;
   }
 
-  .mapper-eyebrow {
-    padding: 0.38rem 0.66rem;
-    font-size: 0.66rem;
-    letter-spacing: 0.18em;
-    margin-bottom: 0;
-  }
-
   .mapper-hero-title {
-    font-size: clamp(1.8rem, 8vw, 2.35rem);
+    font-size: clamp(2.1rem, 9vw, 2.8rem);
     line-height: 1.02;
     padding-bottom: 0;
   }
@@ -1705,17 +1645,6 @@ body {
     font-size: 0.93rem;
     line-height: 1.42;
     max-width: 18rem;
-  }
-
-  .mapper-hero-tags {
-    gap: 0.4rem;
-  }
-
-  .mapper-hero-tag {
-    min-height: 1.7rem;
-    padding: 0.16rem 0.62rem;
-    font-size: 0.68rem;
-    letter-spacing: 0.06em;
   }
 
   .mapper-hero-caption {
