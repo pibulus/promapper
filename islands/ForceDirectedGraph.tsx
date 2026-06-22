@@ -29,6 +29,7 @@ import {
   persistTopicPositions,
   renameTopic,
 } from "@signals/actionItemsStore.ts";
+import { MAX_LABEL_LENGTH } from "@core/orchestration/conversation-ops.ts";
 import { showUndoToast } from "@utils/toast.ts";
 import * as htmlToImage from "html-to-image";
 import ContextMenu from "../components/ContextMenu.tsx";
@@ -170,7 +171,7 @@ export default function ForceDirectedGraph(
         linkDistance: linkDistance.value,
         chargeStrength: chargeStrength.value,
         collisionRadius: collisionRadius.value,
-        linkStrokeWidth: 3,
+        linkStrokeWidth: 3.5,
         linkOpacity: 0.58,
         onClickNode: (_event: MouseEvent, node: { id: string }) => {
           selectedNodeId.value = node.id;
@@ -319,7 +320,7 @@ export default function ForceDirectedGraph(
   }
 
   function addManualNode() {
-    const label = newNodeLabel.value.trim();
+    const label = newNodeLabel.value.trim().slice(0, MAX_LABEL_LENGTH);
     if (!label || !conversationData.value) return;
 
     const emoji = newNodeEmoji.value.trim() || "✨";
@@ -436,8 +437,11 @@ export default function ForceDirectedGraph(
   if (topics.value.length === 0) {
     return (
       <div class="empty-state" style="min-height: 400px;">
-        <div class="empty-state-icon">🕸️</div>
-        <div class="empty-state-text">No topics yet</div>
+        <div class="empty-state-icon">🌱</div>
+        <div class="empty-state-text">
+          Nothing on the map yet — say or paste a few thoughts and the topics
+          start showing up here.
+        </div>
       </div>
     );
   }
@@ -510,10 +514,10 @@ export default function ForceDirectedGraph(
           <h4>{selectedNode.label}</h4>
           <p>
             {connectedEdges.length === 0
-              ? "Standalone topic. It can still be useful as a marker."
-              : `${connectedEdges.length} connection${
+              ? "Flying solo for now — it'll link up as the conversation grows."
+              : `Connected to ${connectedEdges.length} other topic${
                 connectedEdges.length === 1 ? "" : "s"
-              } in this conversation.`}
+              } so far.`}
           </p>
         </div>
         {connectedTopics.length > 0 && (
@@ -628,7 +632,10 @@ export default function ForceDirectedGraph(
                 onInput={(event) =>
                   newNodeEmoji.value = (event.target as HTMLInputElement).value}
                 placeholder="✨"
-                maxLength={4}
+                // 16 not 4 — maxLength counts UTF-16 units, and a single ZWJ
+                // emoji (👨‍👩‍👧‍👦, flags) is up to ~11 units. 4 truncated them into
+                // mojibake. The renderer keeps just the first glyph anyway.
+                maxLength={16}
               />
             </label>
             <label>
@@ -641,6 +648,7 @@ export default function ForceDirectedGraph(
                   if (event.key === "Enter") addManualNode();
                 }}
                 placeholder="New thread"
+                maxLength={MAX_LABEL_LENGTH}
                 autoFocus
               />
             </label>

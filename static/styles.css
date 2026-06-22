@@ -2351,9 +2351,11 @@ body {
   flex-wrap: wrap;
   gap: 0.45rem;
   font-size: var(--tiny-size);
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  /* Eased off ALL-CAPS 800-weight (KPI-badge energy) to a soft 650 — reads like
+     a friend noting the count, not a dashboard metric, matching the round/soft
+     rest of the map. */
+  font-weight: 650;
+  letter-spacing: 0.01em;
   color: var(--color-text);
 }
 
@@ -2752,14 +2754,37 @@ body {
 
 .empty-state-icon {
   font-size: 2.5rem;
-  opacity: 0.3;
+  /* Was 0.3 — too faint, read as broken/abandoned. 0.55 + a slow breath says
+     "waiting to grow," not "dead." */
+  opacity: 0.55;
   margin-bottom: 0.75rem;
+  animation: empty-breath 4.5s ease-in-out infinite;
+}
+
+@keyframes empty-breath {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 0.62;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .empty-state-icon {
+    animation: none;
+  }
 }
 
 .empty-state-text {
   font-size: var(--text-size);
   font-weight: 500;
   color: var(--color-text-secondary);
+  max-width: 22rem;
+  line-height: 1.5;
 }
 
 /* ===================================================================
@@ -2979,11 +3004,40 @@ select:focus {
    =================================================================== */
 
 /* The soft colored pad behind each emoji. Blurred + low-opacity so it reads as
-   a warm glow puddle, not a disc. Color is the node's own (set inline by D3). */
+   a warm glow puddle, not a disc. Color is the node's own (set inline by D3).
+   A slow glow-breath keeps a settled map feeling alive (resting heartbeat) even
+   after the physics has stopped — it pulses opacity only, so it never fights the
+   .node-inner scale transitions or re-wakes the sim. */
 .node-pad {
   opacity: 0.28;
   filter: blur(7px);
   transition: opacity 0.22s ease, r 0.22s ease;
+  animation: node-breath 5s ease-in-out infinite;
+}
+
+@keyframes node-breath {
+  0%,
+  100% {
+    opacity: 0.24;
+  }
+  50% {
+    opacity: 0.34;
+  }
+}
+
+/* Hover/select/connected pin the pad to a brighter steady glow — the breath
+   yields to the explicit interaction state so touching a node reads as a clear
+   lift, not a flicker. */
+.node-group:hover .node-pad,
+.node-group.is-selected .node-pad,
+.node-group.is-connected .node-pad {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-pad {
+    animation: none;
+  }
 }
 
 /* The emoji glyph — the hero. Drop-shadow lifts it off the canvas. */
@@ -3048,20 +3102,31 @@ select:focus {
 }
 
 .node-group:hover .node-pad {
-  opacity: 0.5;
+  opacity: 0.58;
+}
+
+/* The emoji itself lifts a touch higher on hover — a deeper, softer shadow so it
+   reads as physically rising toward you. The pad glow swelling + this lift
+   together make the node feel like it leans into your cursor. */
+.node-group:hover .emoji {
+  filter: drop-shadow(0 4px 6px rgba(30, 23, 20, 0.32));
 }
 
 .node-group:active {
   cursor: grabbing;
 }
 
-/* Selected node: a confident accent glow + a touch larger. */
+/* Selected node: a confident, brighter glow + a touch larger. */
 .node-group.is-selected .node-pad {
-  opacity: 0.62;
+  opacity: 0.7;
 }
 
 .node-group.is-selected .node-inner {
   transform: scale(1.12);
+}
+
+.node-group.is-selected .emoji {
+  filter: drop-shadow(0 4px 7px rgba(30, 23, 20, 0.34));
 }
 
 /* A node connected to the selection lifts gently too. */

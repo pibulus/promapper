@@ -149,14 +149,23 @@ export function mergeTopics(
 }
 
 /**
+ * Longest a topic label may be. A node label is rendered as centered SVG text
+ * with no wrapping/clipping, so an unbounded label (a pasted paragraph, a
+ * fat-fingered rename) spills off the canvas and breaks the fit-to-view math.
+ * Cap it at the data layer so every caller (rename prompt, add-form, AI) is safe.
+ */
+export const MAX_LABEL_LENGTH = 60;
+
+/**
  * Rename a topic node's label by id. No-op for empty/identical labels.
+ * Clamps to MAX_LABEL_LENGTH so a runaway label can't overflow the graph.
  */
 export function renameTopic(
   data: ConversationData,
   id: string,
   label: string,
 ): ConversationData {
-  const trimmed = label.trim();
+  const trimmed = label.trim().slice(0, MAX_LABEL_LENGTH);
   if (!id || !trimmed) return data;
   let changed = false;
   const nodes = data.nodes.map((node) => {

@@ -1,6 +1,7 @@
 import { assertEquals } from "./_assert.ts";
 import {
   deleteTopic,
+  MAX_LABEL_LENGTH,
   mergeTopics,
   persistTopicPositions,
   renameSpeaker,
@@ -191,6 +192,18 @@ Deno.test("renameTopic updates label by id, no-op when unchanged/empty", () => {
   assertEquals(next.nodes.find((n) => n.id === "budget")?.label, "Q4 Budget");
   assertEquals(renameTopic(data, "budget", "  "), data);
   assertEquals(renameTopic(data, "budget", "Budget"), data);
+});
+
+Deno.test("renameTopic clamps a runaway label to MAX_LABEL_LENGTH", () => {
+  const data = graphData();
+  // A whole rambling sentence pasted as a label would otherwise spill off the
+  // canvas and break fit-to-view.
+  const rant =
+    "the snails have unionised and are demanding better lettuce by friday or else";
+  const next = renameTopic(data, "budget", rant);
+  const label = next.nodes.find((n) => n.id === "budget")?.label ?? "";
+  assertEquals(label.length, MAX_LABEL_LENGTH);
+  assertEquals(label, rant.slice(0, MAX_LABEL_LENGTH));
 });
 
 Deno.test("deleteTopic removes node and its edges", () => {
