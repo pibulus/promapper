@@ -16,25 +16,29 @@ export default function VisualizationSelector() {
   const ActiveComponent = active.component;
 
   return (
-    <div class="flex flex-col h-full">
-      {/* Tab Selector */}
-      <div class="flex gap-2 mb-4">
-        {vizRegistry.map((viz) => (
-          <button
-            key={viz.id}
-            onClick={() => (activeViz.value = viz.id)}
-            class={`mode-tab ${activeViz.value === viz.id ? "active" : ""}`}
-            aria-pressed={activeViz.value === viz.id}
-          >
-            {viz.label}
-          </button>
-        ))}
-      </div>
+    <div class="relative h-full">
+      {
+        /* Map / Threads toggle — overlaid on the map's top-left so it doesn't
+          need its own header band. */
+      }
+      {vizRegistry.length > 1 && (
+        <div class="topic-viz-tabs">
+          {vizRegistry.map((viz) => (
+            <button
+              key={viz.id}
+              onClick={() => (activeViz.value = viz.id)}
+              class={`mode-tab mode-tab--compact ${
+                activeViz.value === viz.id ? "active" : ""
+              }`}
+              aria-pressed={activeViz.value === viz.id}
+            >
+              {viz.label}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {/* Visualization Container */}
-      <div class="flex-1 min-h-0">
-        <ActiveComponent />
-      </div>
+      <ActiveComponent />
     </div>
   );
 }

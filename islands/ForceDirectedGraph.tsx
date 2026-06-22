@@ -650,21 +650,6 @@ export default function ForceDirectedGraph(
 
   return (
     <div class="relative flex w-full flex-col">
-      <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div class="topic-map-stats" aria-label="Topic map stats">
-          <span>{topics.value.length} topics</span>
-          <span>{relationships.value.length} links</span>
-        </div>
-        <button
-          type="button"
-          class="topic-map-add-button"
-          onClick={() => showAddNode.value = true}
-        >
-          <span aria-hidden="true">＋</span>
-          <span>Add topic</span>
-        </button>
-      </div>
-
       <div
         ref={svgContainerRef}
         class="topic-map-canvas mx-auto w-full overflow-hidden rounded-lg border border-gray-300 bg-gray-100"
@@ -733,21 +718,36 @@ export default function ForceDirectedGraph(
         </div>
       )}
 
-      {/* Control buttons — FontAwesome (no emoji in chrome), chunky on-brand */}
+      {
+        /* Control cluster — all the map's actions live ON the map (no header
+          band). FontAwesome icons, chunky on-brand chips, every one tooltip'd.
+          Add-topic leads as the accent button; the rest are utilities. */
+      }
       <div class="topic-map-ctrls">
+        <button
+          type="button"
+          class="topic-map-ctrl topic-map-ctrl--add"
+          onClick={() => showAddNode.value = true}
+          title="Add a topic to the map"
+          aria-label="Add a topic"
+        >
+          <i class="fa fa-plus" aria-hidden="true"></i>
+          <span class="hidden sm:inline">Topic</span>
+        </button>
+
         <button
           type="button"
           class="topic-map-ctrl"
           onClick={toggleLayout}
           title={layoutMode.value === "organic"
-            ? "Switch to readable layout"
-            : "Switch to organic layout"}
-          aria-label="Toggle layout"
+            ? "Spread the map out (readable layout)"
+            : "Cluster the map tighter (organic layout)"}
+          aria-label="Toggle layout density"
         >
           <i
             class={layoutMode.value === "organic"
-              ? "fa fa-shuffle"
-              : "fa fa-bars-staggered"}
+              ? "fa fa-up-right-and-down-left-from-center"
+              : "fa fa-down-left-and-up-right-to-center"}
             aria-hidden="true"
           >
           </i>
@@ -756,8 +756,28 @@ export default function ForceDirectedGraph(
         <button
           type="button"
           class="topic-map-ctrl"
+          onClick={fitToView}
+          title="Fit the whole map in view"
+          aria-label="Fit to view"
+        >
+          <i class="fa fa-expand" aria-hidden="true"></i>
+        </button>
+
+        <button
+          type="button"
+          class="topic-map-ctrl"
+          onClick={resetVisualization}
+          title="Re-tidy the layout (re-runs the physics)"
+          aria-label="Re-tidy the layout"
+        >
+          <i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i>
+        </button>
+
+        <button
+          type="button"
+          class="topic-map-ctrl"
           onClick={exportAsPng}
-          title="Export as PNG"
+          title="Save the map as an image (PNG)"
           aria-label="Export as PNG"
         >
           <i class="fa fa-camera" aria-hidden="true"></i>
@@ -766,35 +786,11 @@ export default function ForceDirectedGraph(
         <button
           type="button"
           class="topic-map-ctrl"
-          onClick={resetVisualization}
-          title="Reset node positions"
-          aria-label="Reset node positions"
-        >
-          <i class="fa fa-arrows-rotate" aria-hidden="true"></i>
-        </button>
-
-        <button
-          type="button"
-          class="topic-map-ctrl"
-          onClick={fitToView}
-          title="Fit all nodes to view"
-          aria-label="Fit all nodes to view"
-        >
-          <i class="fa fa-expand" aria-hidden="true"></i>
-        </button>
-
-        <button
-          type="button"
-          class="topic-map-ctrl"
           onClick={toggleFullscreen}
-          title="Toggle fullscreen view"
-          aria-label="Toggle fullscreen view"
+          title="Open the map fullscreen"
+          aria-label="Toggle fullscreen"
         >
-          <i
-            class="fa fa-up-right-and-down-left-from-center"
-            aria-hidden="true"
-          >
-          </i>
+          <i class="fa fa-maximize" aria-hidden="true"></i>
         </button>
       </div>
 
