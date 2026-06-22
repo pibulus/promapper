@@ -12,6 +12,7 @@ import {
   deleteConversation,
   getAllConversations,
   getConversationList,
+  getStorageStats,
   loadConversation,
   replaceAllConversations,
   restoreConversation,
@@ -34,6 +35,14 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
 });
 
+// Compact human size for the storage meter (e.g. "734 KB", "1.2 MB").
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${Math.round(kb)} KB`;
+  return `${(kb / 1024).toFixed(1)} MB`;
+}
+
 type FilterMode = "all" | "starred";
 
 export default function MobileHistoryMenu() {
@@ -55,6 +64,14 @@ export default function MobileHistoryMenu() {
       ? conversations.value.filter((c) => c.starred)
       : conversations.value
   );
+
+  // Local-storage usage, recomputed whenever the saved set changes. Surfacing
+  // this makes the 5MB localStorage ceiling observable — the signal that tells
+  // us (later) whether an IndexedDB migration is actually warranted.
+  const storage = useComputed(() => {
+    refreshTrigger.value; // re-read after any save/delete/import
+    return getStorageStats();
+  });
 
   // Load conversations on mount
   useEffect(() => {
@@ -658,82 +675,137 @@ export default function MobileHistoryMenu() {
             borderTop: "1px solid rgba(0, 0, 0, 0.06)",
             background: "rgba(0, 0, 0, 0.02)",
             display: "flex",
+            flexDirection: "column",
             gap: "0.625rem",
-            alignItems: "center",
             flexShrink: 0,
           }}
         >
-          <p
+          {/* Storage meter — makes the local-space ceiling visible */}
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                fontSize: "var(--tiny-size)",
+                color: "#8B7F77",
+                fontWeight: "500",
+              }}
+            >
+              <span>
+                {conversations.value.length} saved
+              </span>
+              <span title="Conversations are stored in this browser's local storage (about 5MB). Export a backup to keep them safe.">
+                {formatBytes(storage.value.used)} ·{" "}
+                {Math.round(storage.value.percentage)}%
+              </span>
+            </div>
+            {
+              /* Track + fill. Fill uses the theme accent; as it nears full it
+                recedes (desaturates/dims) rather than turning red — per the
+                visual contract, warning = recession, never alarm. */
+            }
+            <div
+              style={{
+                height: "5px",
+                borderRadius: "999px",
+                background: "rgba(0, 0, 0, 0.06)",
+                overflow: "hidden",
+              }}
+              role="progressbar"
+              aria-valuenow={Math.round(storage.value.percentage)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Local storage used"
+            >
+              <div
+                style={{
+                  height: "100%",
+                  width: `${
+                    Math.min(100, Math.max(2, storage.value.percentage))
+                  }%`,
+                  borderRadius: "999px",
+                  background: storage.value.percentage >= 80
+                    ? "color-mix(in srgb, var(--color-accent) 45%, #8B7F77)"
+                    : "var(--color-accent)",
+                  opacity: storage.value.percentage >= 80 ? 0.85 : 1,
+                  transition: "width var(--transition-fast)",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Backup actions */}
+          <div
             style={{
-              fontSize: "var(--tiny-size)",
-              color: "#8B7F77",
-              fontWeight: "500",
-              flex: 1,
+              display: "flex",
+              gap: "0.625rem",
+              alignItems: "center",
             }}
           >
-            {conversations.value.length} saved
-          </p>
+            <button
+              onClick={handleExport}
+              style={{
+                padding: "7px 14px",
+                fontSize: "var(--tiny-size)",
+                fontWeight: "600",
+                border: "2px solid rgba(232, 131, 156, 0.3)",
+                borderRadius: "8px",
+                background: "rgba(232, 131, 156, 0.1)",
+                color: "var(--color-text-secondary)",
+                cursor: "pointer",
+                transition: "all var(--transition-fast)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(232, 131, 156, 0.2)";
+                e.currentTarget.style.color = "#111";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(232, 131, 156, 0.1)";
+                e.currentTarget.style.color = "var(--color-text-secondary)";
+              }}
+              title="Download all conversations as a JSON backup"
+            >
+              ↓ Export
+            </button>
 
-          <button
-            onClick={handleExport}
-            style={{
-              padding: "7px 14px",
-              fontSize: "var(--tiny-size)",
-              fontWeight: "600",
-              border: "2px solid rgba(232, 131, 156, 0.3)",
-              borderRadius: "8px",
-              background: "rgba(232, 131, 156, 0.1)",
-              color: "var(--color-text-secondary)",
-              cursor: "pointer",
-              transition: "all var(--transition-fast)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(232, 131, 156, 0.2)";
-              e.currentTarget.style.color = "#111";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(232, 131, 156, 0.1)";
-              e.currentTarget.style.color = "var(--color-text-secondary)";
-            }}
-            title="Download all conversations as a JSON backup"
-          >
-            ↓ Export
-          </button>
+            <button
+              onClick={() => importInputRef.current?.click()}
+              style={{
+                padding: "7px 14px",
+                fontSize: "var(--tiny-size)",
+                fontWeight: "600",
+                border: "2px solid rgba(134, 197, 166, 0.3)",
+                borderRadius: "8px",
+                background: "rgba(134, 197, 166, 0.1)",
+                color: "var(--color-text-secondary)",
+                cursor: "pointer",
+                transition: "all var(--transition-fast)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(134, 197, 166, 0.2)";
+                e.currentTarget.style.color = "#111";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(134, 197, 166, 0.1)";
+                e.currentTarget.style.color = "var(--color-text-secondary)";
+              }}
+              title="Import conversations from a backup file (merges, never overwrites newer)"
+            >
+              ↑ Import
+            </button>
 
-          <button
-            onClick={() => importInputRef.current?.click()}
-            style={{
-              padding: "7px 14px",
-              fontSize: "var(--tiny-size)",
-              fontWeight: "600",
-              border: "2px solid rgba(134, 197, 166, 0.3)",
-              borderRadius: "8px",
-              background: "rgba(134, 197, 166, 0.1)",
-              color: "var(--color-text-secondary)",
-              cursor: "pointer",
-              transition: "all var(--transition-fast)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(134, 197, 166, 0.2)";
-              e.currentTarget.style.color = "#111";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(134, 197, 166, 0.1)";
-              e.currentTarget.style.color = "var(--color-text-secondary)";
-            }}
-            title="Import conversations from a backup file (merges, never overwrites newer)"
-          >
-            ↑ Import
-          </button>
-
-          {/* Hidden file input */}
-          <input
-            ref={importInputRef}
-            type="file"
-            accept=".json"
-            style={{ display: "none" }}
-            onChange={handleImportFile}
-          />
+            {/* Hidden file input */}
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".json"
+              style={{ display: "none" }}
+              onChange={handleImportFile}
+            />
+          </div>
         </div>
       </div>
 
