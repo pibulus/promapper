@@ -61,6 +61,14 @@ export default function App({ Component }: PageProps) {
         {/* Theme Color */}
         <meta name="theme-color" content="#FFE5EC" />
 
+        {/* Icons — FontAwesome (the whole app uses `fa fa-*` icons in chrome). */}
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+          crossOrigin="anonymous"
+          referrerpolicy="no-referrer"
+        />
+
         {/* Styles */}
         <link rel="stylesheet" href="/styles.css" />
 

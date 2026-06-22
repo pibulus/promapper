@@ -5,10 +5,10 @@
  * Shows topics as emoji nodes with physics simulation and draggable interactions
  *
  * Graph gestures:
- *   click         → select node / edge (shows detail panel)
- *   double-click  → rename node (window.prompt)
+ *   click         → select node / edge (detail panel: rename/delete/unlink)
+ *   double-click  → focus mode (isolate node + neighbors, dim the rest)
  *   right-click   → delete node (window.confirm)
- *   drag-to-node  → merge when released within ~45 SVG units
+ *   drag-to-node  → merge when released within ~45 SVG units (live preview)
  *   layout toggle → organic (loose physics) vs readable (spread out)
  */
 
@@ -24,6 +24,7 @@ import {
   forceDirectedEmojimap,
 } from "../utils/forceDirectedEmojimap.ts";
 import {
+  deleteEdge,
   deleteTopic,
   mergeTopics,
   persistTopicPositions,
@@ -470,17 +471,17 @@ export default function ForceDirectedGraph(
   const contextMenuItems = [
     {
       label: "Reset Positions",
-      icon: "🔄",
+      icon: "fa-arrows-rotate",
       onClick: resetVisualization,
     },
     {
       label: "Fit to View",
-      icon: "📐",
+      icon: "fa-expand",
       onClick: fitToView,
     },
     {
       label: "Export as PNG",
-      icon: "📸",
+      icon: "fa-camera",
       onClick: exportAsPng,
     },
   ];
@@ -605,6 +606,29 @@ export default function ForceDirectedGraph(
               : "This line links two topics the AI saw as connected in the conversation."}
           </p>
         </div>
+        {edgeSource && edgeTarget && (
+          <div class="topic-node-detail__actions">
+            <button
+              type="button"
+              class="topic-node-action topic-node-action--recede"
+              onClick={() => {
+                const srcLabel = edgeSource.label || "topic";
+                const tgtLabel = edgeTarget.label || "topic";
+                deleteEdge(edgeSource.id, edgeTarget.id);
+                selectedEdgeId.value = null;
+                if (canUndo()) {
+                  showUndoToast(
+                    `Unlinked "${srcLabel}" and "${tgtLabel}"`,
+                    undoLastMutation,
+                  );
+                }
+              }}
+            >
+              <i class="fa fa-link-slash" aria-hidden="true"></i>
+              <span>Remove connection</span>
+            </button>
+          </div>
+        )}
         <div class="topic-node-detail__links">
           {[edgeSource, edgeTarget].filter(Boolean).map((topic: any) => (
             <button
@@ -709,53 +733,68 @@ export default function ForceDirectedGraph(
         </div>
       )}
 
-      {/* Control buttons */}
-      <div class="absolute bottom-4 right-4 flex gap-2">
-        {/* Layout toggle button */}
+      {/* Control buttons — FontAwesome (no emoji in chrome), chunky on-brand */}
+      <div class="topic-map-ctrls">
         <button
-          class="bg-white bg-opacity-70 hover:bg-opacity-100 shadow-lg rounded-full w-10 h-10 flex items-center justify-center text-sm font-bold cursor-pointer"
+          type="button"
+          class="topic-map-ctrl"
           onClick={toggleLayout}
           title={layoutMode.value === "organic"
             ? "Switch to readable layout"
             : "Switch to organic layout"}
+          aria-label="Toggle layout"
         >
-          {layoutMode.value === "organic" ? "🔀" : "📊"}
+          <i
+            class={layoutMode.value === "organic"
+              ? "fa fa-shuffle"
+              : "fa fa-bars-staggered"}
+            aria-hidden="true"
+          >
+          </i>
         </button>
 
-        {/* PNG Export button */}
         <button
-          class="bg-white bg-opacity-70 hover:bg-opacity-100 shadow-lg rounded-full w-10 h-10 flex items-center justify-center text-lg cursor-pointer"
+          type="button"
+          class="topic-map-ctrl"
           onClick={exportAsPng}
           title="Export as PNG"
+          aria-label="Export as PNG"
         >
-          📸
+          <i class="fa fa-camera" aria-hidden="true"></i>
         </button>
 
-        {/* Reset button */}
         <button
-          class="bg-white bg-opacity-70 hover:bg-opacity-100 shadow-lg rounded-full w-10 h-10 flex items-center justify-center text-lg cursor-pointer"
+          type="button"
+          class="topic-map-ctrl"
           onClick={resetVisualization}
           title="Reset node positions"
+          aria-label="Reset node positions"
         >
-          🔄
+          <i class="fa fa-arrows-rotate" aria-hidden="true"></i>
         </button>
 
-        {/* Fit to view button */}
         <button
-          class="bg-white bg-opacity-70 hover:bg-opacity-100 shadow-lg rounded-full w-10 h-10 flex items-center justify-center text-lg cursor-pointer"
+          type="button"
+          class="topic-map-ctrl"
           onClick={fitToView}
           title="Fit all nodes to view"
+          aria-label="Fit all nodes to view"
         >
-          📐
+          <i class="fa fa-expand" aria-hidden="true"></i>
         </button>
 
-        {/* Fullscreen button */}
         <button
-          class="bg-white bg-opacity-70 hover:bg-opacity-100 shadow-lg rounded-full w-10 h-10 flex items-center justify-center text-lg cursor-pointer"
+          type="button"
+          class="topic-map-ctrl"
           onClick={toggleFullscreen}
           title="Toggle fullscreen view"
+          aria-label="Toggle fullscreen view"
         >
-          ⛶
+          <i
+            class="fa fa-up-right-and-down-left-from-center"
+            aria-hidden="true"
+          >
+          </i>
         </button>
       </div>
 
@@ -793,22 +832,25 @@ export default function ForceDirectedGraph(
                 type="button"
                 onClick={exportAsPng}
                 title="Export as PNG"
+                aria-label="Export as PNG"
               >
-                📸
+                <i class="fa fa-camera" aria-hidden="true"></i>
               </button>
               <button
                 type="button"
                 onClick={resetVisualization}
                 title="Reset node positions"
+                aria-label="Reset node positions"
               >
-                🔄
+                <i class="fa fa-arrows-rotate" aria-hidden="true"></i>
               </button>
               <button
                 type="button"
                 onClick={fitToView}
                 title="Fit all nodes to view"
+                aria-label="Fit all nodes to view"
               >
-                📐
+                <i class="fa fa-expand" aria-hidden="true"></i>
               </button>
             </div>
             {renderNodeDetail()}

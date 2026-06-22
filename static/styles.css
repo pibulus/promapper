@@ -2395,6 +2395,46 @@ body {
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.1);
 }
 
+/* Bottom-right control cluster — FontAwesome icon buttons, on-brand chunky
+   chips (cream, 2px border, hard shadow) to match the add-topic button instead
+   of the old plain white-70% floating circles. */
+.topic-map-ctrls {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.topic-map-ctrl {
+  width: 2.4rem;
+  height: 2.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  background: var(--surface-white-warm, #fffef7);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.08);
+  color: var(--color-text);
+  font-size: var(--small-size);
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.topic-map-ctrl:hover,
+.topic-map-ctrl:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
 .topic-map-canvas {
   /* Theme-aware tint: follows the active --color-accent instead of a baked
      PEACH wash, so the map matches the rest of the app on every theme. */

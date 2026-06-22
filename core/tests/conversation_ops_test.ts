@@ -1,5 +1,6 @@
 import { assertEquals } from "./_assert.ts";
 import {
+  deleteEdge,
   deleteTopic,
   MAX_LABEL_LENGTH,
   mergeTopics,
@@ -212,6 +213,22 @@ Deno.test("deleteTopic removes node and its edges", () => {
   assertEquals(next.nodes.map((n) => n.id), ["budget", "risk"]);
   // both edges touched timeline -> both gone
   assertEquals(next.edges.length, 0);
+});
+
+Deno.test("deleteEdge severs one connection, keeps both topics", () => {
+  const data = graphData();
+  // Remove the budget<->timeline link; both nodes stay, only that edge goes.
+  const next = deleteEdge(data, "budget", "timeline");
+  assertEquals(next.nodes.length, data.nodes.length); // topics untouched
+  assertEquals(next.edges.map((e) => e.id), ["e2"]); // only timeline<->risk left
+});
+
+Deno.test("deleteEdge is order-independent and a no-op for unknown pairs", () => {
+  const data = graphData();
+  // Reversed order still matches the same edge.
+  assertEquals(deleteEdge(data, "timeline", "budget").edges.length, 1);
+  // A pair with no edge between them leaves the graph unchanged.
+  assertEquals(deleteEdge(data, "budget", "risk"), data);
 });
 
 Deno.test("persistTopicPositions writes finite positions, ignores bad ones", () => {

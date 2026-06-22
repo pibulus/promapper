@@ -11,6 +11,7 @@
 import { conversationData, withUndo } from "@signals/conversationStore.ts";
 import type { ConversationData } from "../core/types/conversation-data.ts";
 import {
+  deleteEdge as deleteEdgeOp,
   deleteTopic as deleteTopicOp,
   mergeTopics as mergeTopicsOp,
   persistTopicPositions as persistTopicPositionsOp,
@@ -71,6 +72,14 @@ export function mergeTopics(sourceId: string, targetId: string): void {
   // Drag-to-merge silently destroys a node — the most likely accidental loss.
   withUndo(() => {
     conversationData.value = mergeTopicsOp(current, sourceId, targetId);
+  });
+}
+
+export function deleteEdge(sourceId: string, targetId: string): void {
+  const current = conversationData.value;
+  if (!current) return;
+  withUndo(() => {
+    conversationData.value = deleteEdgeOp(current, sourceId, targetId);
   });
 }
 

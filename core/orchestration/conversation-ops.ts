@@ -194,6 +194,26 @@ export function deleteTopic(
 }
 
 /**
+ * Remove a single connection (edge) between two topics, leaving both topics in
+ * place. Matches the edge by its source/target pair (order-independent), so it
+ * works whether or not the edge carries an explicit id — and because mapEdges
+ * dedupes pairs, a pair identifies at most one edge. Used to sever a spurious
+ * link the AI drew. No-op if no such edge exists.
+ */
+export function deleteEdge(
+  data: ConversationData,
+  sourceId: string,
+  targetId: string,
+): ConversationData {
+  if (!sourceId || !targetId) return data;
+  const matches = (e: ConversationData["edges"][number]) =>
+    (e.source_topic_id === sourceId && e.target_topic_id === targetId) ||
+    (e.source_topic_id === targetId && e.target_topic_id === sourceId);
+  if (!data.edges.some(matches)) return data;
+  return { ...data, edges: data.edges.filter((e) => !matches(e)) };
+}
+
+/**
  * Persist node positions from the graph layout back onto the nodes, so the graph
  * does not re-scramble on reload. Positions arrive as an id -> {x,y} map.
  */

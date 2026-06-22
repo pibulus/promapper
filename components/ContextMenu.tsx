@@ -67,7 +67,7 @@ export default function ContextMenu(
             onClose();
           }}
         >
-          {item.icon && <span class="text-lg">{item.icon}</span>}
+          {item.icon && <i class={`fa ${item.icon}`} aria-hidden="true"></i>}
           <span>{item.label}</span>
         </button>
       ))}
