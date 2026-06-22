@@ -155,6 +155,8 @@ export default function ShareButton() {
               ? "Portable link includes the shared data"
               : share.value.mode === "server-share"
               ? "Stored server-side, expires in 30 days"
+              : share.value.serverFailed
+              ? "Couldn't reach the share server — this link only works in this browser for now. Try again later for a portable one."
               : "Too large for a portable URL — this link only works in this browser"}
           </p>
         </div>

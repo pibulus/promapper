@@ -524,16 +524,26 @@ export default function MarkdownMakerDrawer(
             disabled={loading.value || !customPrompt.value.trim() ||
               !transcript.trim()}
           >
-            {loading.value && selectedPromptId.value === null
-              ? <span class="loading loading-spinner loading-sm"></span>
-              : null}
             Generate Custom
           </button>
 
-          {/* Loading Indicator for Preset Buttons */}
-          {loading.value && selectedPromptId.value !== null && (
-            <div class="flex justify-center mb-4">
-              <span class="loading loading-spinner loading-lg text-soft-purple">
+          {
+            /* One clear loading state — names the format being generated, so you
+              always know which run (preset or custom) is in flight. */
+          }
+          {loading.value && (
+            <div
+              class="flex items-center justify-center gap-2 mb-4 py-2 text-sm font-bold"
+              style={{ color: "var(--color-accent)" }}
+            >
+              <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
+              <span>
+                Generating {selectedPromptId.value
+                  ? `“${
+                    markdownPrompts.find((p) => p.id === selectedPromptId.value)
+                      ?.label || "export"
+                  }”`
+                  : "your custom export"}…
               </span>
             </div>
           )}

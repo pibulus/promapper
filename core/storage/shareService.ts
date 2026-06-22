@@ -30,6 +30,12 @@ export interface ShareCreationResult {
   mode: "public-url" | "server-share" | "local-only";
   expiresAt?: string;
   warning?: string;
+  /**
+   * True when we fell back to a local-only link because the SERVER share failed
+   * (not because the data was simply too big for a portable URL). Lets the UI
+   * tell the user "the server's down" vs the benign "too large to share by URL".
+   */
+  serverFailed?: boolean;
 }
 
 // ===================================================================
@@ -281,6 +287,7 @@ export async function createBestShareLink(
     const localResult = createLocalShareLink(data, expiresInDays);
     return {
       ...localResult,
+      serverFailed: true,
       warning: error instanceof Error
         ? `${localResult.warning} Server share failed: ${error.message}`
         : localResult.warning,
