@@ -39,6 +39,14 @@ export interface OpenRouterAudioPart {
 export type AudioPart = GeminiAudioPart | OpenRouterAudioPart;
 export type AudioInput = Blob | AudioPart;
 
+/**
+ * Optional sink the orchestration passes in to learn when an AI response was
+ * unparseable. The call still degrades to an empty result (never throws); this
+ * just lets a "the AI response was garbled" warning reach the user instead of a
+ * silent no-op that looks like success.
+ */
+export type ParseErrorSink = (what: string) => void;
+
 export interface AIService {
   transcribeAudio(audioInput: AudioInput): Promise<TranscriptionResult>;
   generateTitle(transcript: string): Promise<string>;
@@ -46,15 +54,18 @@ export interface AIService {
     input: string | AudioInput,
     speakers?: string[],
     existingActionItems?: ActionItem[],
+    onParseError?: ParseErrorSink,
   ): Promise<ActionItemInput[]>;
   checkActionItemStatus(
     input: string | AudioInput,
     existingActionItems: ActionItem[],
+    onParseError?: ParseErrorSink,
   ): Promise<ActionItemStatusUpdate[]>;
   extractTopics(
     text: string,
     existingNodes?: NodeInput[],
     existingEdges?: EdgeInput[],
+    onParseError?: ParseErrorSink,
   ): Promise<ConversationGraph>;
   generateSummary(text: string, topicLabels?: string[]): Promise<string>;
   generateMarkdown(formatPrompt: string, text: string): Promise<string>;

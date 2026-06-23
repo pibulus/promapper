@@ -177,3 +177,42 @@ Deno.test("parseStatusUpdatesResponse filters to known ids", () => {
   assertEquals(updates.length, 1);
   assertEquals(updates[0].id, "a1");
 });
+
+// ===================================================================
+// Parse-error sink (audit #8 degradation surface) — failures must SIGNAL,
+// not just silently return empty.
+// ===================================================================
+
+Deno.test("parseActionItemsResponse fires onParseError on garbled JSON", () => {
+  let signalled = "";
+  const items = parseActionItemsResponse("not json at all", (what) => {
+    signalled = what;
+  });
+  assertEquals(items, []);
+  assertEquals(signalled, "action items");
+});
+
+Deno.test("parseActionItemsResponse does NOT fire onParseError on valid input", () => {
+  let fired = false;
+  parseActionItemsResponse('[{"description":"feed the cat"}]', () => {
+    fired = true;
+  });
+  assertEquals(fired, false);
+});
+
+Deno.test("parseGraphResponse fires onParseError on garbled JSON", () => {
+  let signalled = "";
+  const graph = parseGraphResponse("totally broken {", (what) => {
+    signalled = what;
+  });
+  assertEquals(graph, { nodes: [], edges: [] });
+  assertEquals(signalled, "topic map");
+});
+
+Deno.test("parseStatusUpdatesResponse fires onParseError on garbled JSON", () => {
+  let signalled = "";
+  parseStatusUpdatesResponse("{not an array", new Set(["a1"]), (what) => {
+    signalled = what;
+  });
+  assertEquals(signalled, "self-checkoff updates");
+});

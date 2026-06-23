@@ -27,6 +27,7 @@ import type {
   AudioInput,
   OpenRouterAudioFormat,
   OpenRouterAudioPart,
+  ParseErrorSink,
 } from "./types.ts";
 
 const DEFAULT_BASE_URL = "https://openrouter.ai/api/v1";
@@ -286,6 +287,7 @@ export function createOpenRouterService(
       input: string | AudioInput,
       speakers: string[] = [],
       existingActionItems: ActionItem[] = [],
+      onParseError?: ParseErrorSink,
     ) {
       try {
         const prompt = buildActionItemsPrompt(
@@ -296,7 +298,7 @@ export function createOpenRouterService(
         const text = typeof input === "string"
           ? await chatText(prompt)
           : await chatAudio(prompt, input);
-        return parseActionItemsResponse(text);
+        return parseActionItemsResponse(text, onParseError);
       } catch (error) {
         console.error("Error extracting action items:", error);
         return [];
@@ -306,6 +308,7 @@ export function createOpenRouterService(
     async checkActionItemStatus(
       input: string | AudioInput,
       existingActionItems: ActionItem[],
+      onParseError?: ParseErrorSink,
     ) {
       try {
         if (!existingActionItems || existingActionItems.length === 0) {
@@ -320,7 +323,7 @@ export function createOpenRouterService(
         // Validate against real IDs + enum so a hallucinated id/status can't
         // silently flip the wrong task.
         const existingIds = new Set(existingActionItems.map((item) => item.id));
-        return parseStatusUpdatesResponse(text, existingIds);
+        return parseStatusUpdatesResponse(text, existingIds, onParseError);
       } catch (error) {
         console.error("Error checking action item status:", error);
         return [];
@@ -331,6 +334,7 @@ export function createOpenRouterService(
       text: string,
       existingNodes: NodeInput[] = [],
       existingEdges: EdgeInput[] = [],
+      onParseError?: ParseErrorSink,
     ) {
       if (!text) return { nodes: [], edges: [] };
 
@@ -339,6 +343,7 @@ export function createOpenRouterService(
           await chatText(
             buildTopicExtractionPrompt(text, existingNodes, existingEdges),
           ),
+          onParseError,
         );
       } catch (error) {
         console.error("Error extracting topics:", error);

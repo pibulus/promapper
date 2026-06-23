@@ -105,11 +105,25 @@ export function normalizeActionItemInput(
   };
 }
 
-export function parseActionItemsResponse(text: string): ActionItemInput[] {
+/**
+ * Optional sink for parse failures. When the AI returns unparseable JSON we still
+ * degrade to an empty result (never throw), but calling this lets the caller
+ * surface a user-visible "the AI response was garbled" signal instead of a silent
+ * no-op that looks like success. See orchestration's warnings[] plumbing.
+ */
+export type ParseErrorSink = (what: string) => void;
+
+export function parseActionItemsResponse(
+  text: string,
+  onParseError?: ParseErrorSink,
+): ActionItemInput[] {
   const cleanedText = cleanJsonResponse(text);
   try {
     const actionItems = JSON.parse(cleanedText);
-    if (!Array.isArray(actionItems)) return [];
+    if (!Array.isArray(actionItems)) {
+      onParseError?.("action items");
+      return [];
+    }
     // Per-item normalization: a single malformed entry is skipped, not fatal.
     return actionItems
       .map(normalizeActionItemInput)
@@ -117,6 +131,7 @@ export function parseActionItemsResponse(text: string): ActionItemInput[] {
   } catch (error) {
     console.error("Error parsing action items JSON:", error);
     console.error("Raw text was:", text);
+    onParseError?.("action items");
     return [];
   }
 }
@@ -149,18 +164,23 @@ export function normalizeStatusUpdate(
 export function parseStatusUpdatesResponse(
   text: string,
   existingIds: Set<string>,
+  onParseError?: ParseErrorSink,
 ): ActionItemStatusUpdate[] {
   const cleanedText = cleanJsonResponse(text);
   if (cleanedText.trim() === "[]") return [];
   try {
     const updates = JSON.parse(cleanedText);
-    if (!Array.isArray(updates)) return [];
+    if (!Array.isArray(updates)) {
+      onParseError?.("self-checkoff updates");
+      return [];
+    }
     return updates
       .map((update) => normalizeStatusUpdate(update, existingIds))
       .filter((update): update is ActionItemStatusUpdate => update !== null);
   } catch (error) {
     console.error("Error parsing action item status JSON:", error);
     console.error("Raw text was:", text);
+    onParseError?.("self-checkoff updates");
     return [];
   }
 }
@@ -334,7 +354,10 @@ export function normalizeTopicGraph(data: unknown): ConversationGraph {
 /**
  * Parse + normalize a topic-graph response string.
  */
-export function parseGraphResponse(text: string): ConversationGraph {
+export function parseGraphResponse(
+  text: string,
+  onParseError?: ParseErrorSink,
+): ConversationGraph {
   let jsonString = cleanJsonResponse(text);
   jsonString = jsonString.replace(/^.*?({.*}).*?$/s, "$1");
 
@@ -343,6 +366,7 @@ export function parseGraphResponse(text: string): ConversationGraph {
     return normalizeTopicGraph(data);
   } catch (error) {
     console.error("Error parsing JSON response", error, jsonString);
+    onParseError?.("topic map");
     return { nodes: [], edges: [] };
   }
 }

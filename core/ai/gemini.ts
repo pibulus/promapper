@@ -30,7 +30,12 @@ import {
   buildTopicExtractionPrompt,
   TRANSCRIPTION_PROMPT,
 } from "./prompts.ts";
-import type { AIService, AudioInput, GeminiAudioPart } from "./types.ts";
+import type {
+  AIService,
+  AudioInput,
+  GeminiAudioPart,
+  ParseErrorSink,
+} from "./types.ts";
 
 // ===================================================================
 // UTILITIES
@@ -127,6 +132,7 @@ export function createGeminiService(model: GeminiModel): AIService {
       input: string | AudioInput,
       speakers: string[] = [],
       existingActionItems: ActionItem[] = [],
+      onParseError?: ParseErrorSink,
     ): Promise<ActionItemInput[]> {
       try {
         const prompt = buildActionItemsPrompt(
@@ -143,7 +149,7 @@ export function createGeminiService(model: GeminiModel): AIService {
           result = await model.generateContent(prompt);
         }
 
-        return parseActionItemsResponse(result.response.text());
+        return parseActionItemsResponse(result.response.text(), onParseError);
       } catch (error) {
         console.error("Error extracting action items:", error);
         return [];
@@ -157,6 +163,7 @@ export function createGeminiService(model: GeminiModel): AIService {
     async checkActionItemStatus(
       input: string | AudioInput,
       existingActionItems: ActionItem[],
+      onParseError?: ParseErrorSink,
     ): Promise<ActionItemStatusUpdate[]> {
       try {
         if (!existingActionItems || existingActionItems.length === 0) {
@@ -178,7 +185,7 @@ export function createGeminiService(model: GeminiModel): AIService {
         // Validate against real IDs + enum so a hallucinated id/status can't
         // silently flip the wrong task.
         const existingIds = new Set(existingActionItems.map((item) => item.id));
-        return parseStatusUpdatesResponse(text, existingIds);
+        return parseStatusUpdatesResponse(text, existingIds, onParseError);
       } catch (error) {
         console.error("Error checking action item status:", error);
         return [];
@@ -193,6 +200,7 @@ export function createGeminiService(model: GeminiModel): AIService {
       text: string,
       existingNodes: NodeInput[] = [],
       existingEdges: EdgeInput[] = [],
+      onParseError?: ParseErrorSink,
     ): Promise<ConversationGraph> {
       if (!text) return { nodes: [], edges: [] };
 
@@ -204,7 +212,7 @@ export function createGeminiService(model: GeminiModel): AIService {
         );
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        return parseGraphResponse(response.text());
+        return parseGraphResponse(response.text(), onParseError);
       } catch (error) {
         console.error("Error extracting topics:", error);
         return { nodes: [], edges: [] };
