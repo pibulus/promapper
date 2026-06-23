@@ -166,6 +166,29 @@ Deno.test("analyzeText returns empty statusUpdates when no existing items", asyn
   assertEquals(result.statusUpdates, []);
 });
 
+Deno.test("analyzeText degrades summary when generateSummary throws, still returns results", async () => {
+  let summaryCalled = false;
+  const service = createMockAIService({
+    async generateSummary(_text, _topicLabels): Promise<string> {
+      summaryCalled = true;
+      throw new Error("summary model overloaded");
+    },
+  });
+  const result = await analyzeText(service, "Nan: the moths have unionised.");
+
+  assertEquals(summaryCalled, true);
+  // Must still return topic nodes and action items even though summary failed.
+  assertEquals(Array.isArray(result.topics.nodes), true);
+  assertEquals(Array.isArray(result.actionItems), true);
+  assertEquals(typeof result.summary, "string");
+  assertEquals(result.summary.length > 0, true);
+  assertEquals(result.warnings.length, 1);
+  assertEquals(
+    result.warnings[0].includes("Summary generation failed"),
+    true,
+  );
+});
+
 // ===================================================================
 // analyzeAudio
 // ===================================================================
@@ -213,4 +236,25 @@ Deno.test("analyzeAudio calls status check with existing items", async () => {
   await analyzeAudio(service, mockAudioPart, existing);
 
   assertEquals(service.calls.includes("checkActionItemStatus"), true);
+});
+
+Deno.test("analyzeAudio preserves transcription when generateSummary throws", async () => {
+  const service = createMockAIService({
+    async generateSummary(_text, _topicLabels): Promise<string> {
+      throw new Error("summary service down");
+    },
+  });
+  const result = await analyzeAudio(service, mockAudioPart);
+
+  // Transcription must survive even though summary failed.
+  assertEquals(result.transcription.text, "Speaker1: hello world");
+  assertEquals(result.transcription.speakers, ["Speaker1"]);
+  assertEquals(Array.isArray(result.actionItems), true);
+  assertEquals(typeof result.summary, "string");
+  assertEquals(result.summary.length > 0, true);
+  assertEquals(result.warnings.length, 1);
+  assertEquals(
+    result.warnings[0].includes("Summary generation failed"),
+    true,
+  );
 });

@@ -205,6 +205,11 @@ export default function UploadIsland() {
         topics: result.nodes.length,
       });
       conversationData.value = result;
+      if (result.warnings?.length) {
+        for (const warning of result.warnings) {
+          showToast(warning, "warning");
+        }
+      }
       soundBloom();
       showToast(
         `Processed! Found ${result.actionItems.length} action items, ${result.nodes.length} topics`,
@@ -255,6 +260,11 @@ export default function UploadIsland() {
         topics: result.nodes.length,
       });
       conversationData.value = result;
+      if (result.warnings?.length) {
+        for (const warning of result.warnings) {
+          showToast(warning, "warning");
+        }
+      }
       soundBloom();
       textInput.value = "";
       showToast(
@@ -310,6 +320,11 @@ export default function UploadIsland() {
         return response.json();
       });
       conversationData.value = result;
+      if (result.warnings?.length) {
+        for (const warning of result.warnings) {
+          showToast(warning, "warning");
+        }
+      }
       soundBloom();
       lastUploadName.value = file.name;
       showToast(

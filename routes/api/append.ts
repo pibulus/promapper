@@ -138,10 +138,12 @@ export const handler: Handlers = {
         result.conversation.transcript = combinedTranscript;
       }
 
-      // Append summaries if we have existing summary
+      // Append summaries: keep the original base summary and only the LATEST
+      // update block, so the summary doesn't grow unbounded across recordings.
       if (existingSummary && result.summary) {
-        result.summary =
-          `${existingSummary}\n\n**Update from latest recording:**\n${result.summary}`;
+        const updateMarker = "**Update from latest recording:**";
+        const base = existingSummary.split(updateMarker)[0].trim();
+        result.summary = `${base}\n\n${updateMarker}\n${result.summary}`;
       }
 
       // Process status updates from AI analysis

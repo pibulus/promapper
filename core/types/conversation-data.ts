@@ -35,4 +35,6 @@ export interface ConversationData {
   actionItems: ActionItem[];
   statusUpdates: ActionItemStatusUpdate[];
   summary?: string;
+  /** Transient: non-empty when an AI step degraded — shown once, not persisted. */
+  warnings?: string[];
 }

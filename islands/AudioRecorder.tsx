@@ -47,6 +47,7 @@ export default function AudioRecorder(
   const playingRecordingId = useSignal<string | null>(null);
   const lastBackupNotice = useSignal<string | null>(null);
   const lastRecordingBlobRef = useRef<Blob | null>(null);
+  const retryRecordingReady = useSignal(false);
 
   // Audio recording refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -121,6 +122,7 @@ export default function AudioRecorder(
       isRecording.value = true;
       recordingTime.value = 0;
       showTimeWarning.value = false;
+      retryRecordingReady.value = false;
 
       // Start timer
       recordingTimerRef.current = setInterval(() => {
@@ -170,6 +172,7 @@ export default function AudioRecorder(
         const mimeType = mediaRecorder.mimeType || "audio/webm";
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
         lastRecordingBlobRef.current = audioBlob;
+        retryRecordingReady.value = true;
         const shouldSaveBackup = recordingTime.value >= MIN_BACKUP_DURATION;
         try {
           if (shouldSaveBackup) {
@@ -260,8 +263,15 @@ export default function AudioRecorder(
       });
       console.log("✅ Audio appended successfully:", result);
 
+      if (result.warnings?.length) {
+        for (const warning of result.warnings) {
+          showToast(warning, "warning");
+        }
+      }
+
       // Update conversation data
       conversationData.value = result;
+      retryRecordingReady.value = false;
       soundBloom();
 
       // Add recording to list
@@ -690,15 +700,17 @@ export default function AudioRecorder(
             <span aria-hidden="true">💾</span>
             <span>{lastBackupNotice.value}</span>
           </div>
-          {lastRecordingBlobRef.current && (
-            <button
-              class="rounded-full border border-[#7a4b1f]/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#7a4b1f] transition hover:border-[#7a4b1f] hover:text-[#4d2b0f]"
-              onClick={retryLastRecording}
-              disabled={isProcessing.value}
-            >
-              Retry Last Recording
-            </button>
-          )}
+        </div>
+      )}
+      {retryRecordingReady.value && (
+        <div class="mt-2">
+          <button
+            class="rounded-full border border-[#7a4b1f]/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#7a4b1f] transition hover:border-[#7a4b1f] hover:text-[#4d2b0f]"
+            onClick={retryLastRecording}
+            disabled={isProcessing.value}
+          >
+            Retry Last Recording
+          </button>
         </div>
       )}
     </div>

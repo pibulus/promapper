@@ -17,11 +17,16 @@ import type {
   NodeInput,
 } from "../types/index.ts";
 
+const summary_fallback =
+  "(summary unavailable — the AI couldn't generate it this round, but your transcript is preserved)";
+
 export interface AnalysisResult {
   topics: ConversationGraph;
   actionItems: ActionItemInput[];
   statusUpdates: ActionItemStatusUpdate[];
   summary: string;
+  /** Non-empty when an AI step degraded — always safe to show the user. */
+  warnings: string[];
 }
 
 /**
@@ -48,7 +53,10 @@ export async function analyzeText(
   );
   const summaryPromise = topicsPromise.then((topics) =>
     aiService.generateSummary(text, topics.nodes.map((n) => n.label))
-  );
+  ).catch((error) => {
+    console.error("Summary generation failed, using fallback:", error);
+    return summary_fallback;
+  });
 
   const [topics, actionItems, statusUpdates, summary] = await Promise.all([
     topicsPromise,
@@ -59,11 +67,17 @@ export async function analyzeText(
     summaryPromise,
   ]);
 
+  const warnings: string[] = [];
+  if (summary === summary_fallback) {
+    warnings.push("Summary generation failed — your transcript is preserved.");
+  }
+
   return {
     topics,
     actionItems,
     statusUpdates,
     summary,
+    warnings,
   };
 }
 
@@ -95,7 +109,10 @@ export async function analyzeAudio(
       transcription.text,
       topics.nodes.map((n) => n.label),
     )
-  );
+  ).catch((error) => {
+    console.error("Summary generation failed, using fallback:", error);
+    return summary_fallback;
+  });
 
   const [topics, actionItems, statusUpdates, summary] = await Promise.all([
     topicsPromise,
@@ -116,5 +133,8 @@ export async function analyzeAudio(
     actionItems,
     statusUpdates,
     summary,
+    warnings: summary === summary_fallback
+      ? ["Summary generation failed — your transcript is preserved."]
+      : [],
   };
 }

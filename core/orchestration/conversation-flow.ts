@@ -29,6 +29,8 @@ export interface ConversationFlowResult {
     status: "completed" | "pending";
     reason: string;
   }>;
+  /** Non-empty when an AI step degraded — always safe to show the user. */
+  warnings: string[];
 }
 
 /**
@@ -120,6 +122,7 @@ export async function processAudio(
     })),
     summary: analysis.summary,
     statusUpdates: analysis.statusUpdates,
+    warnings: analysis.warnings,
   };
 }
 
@@ -192,5 +195,6 @@ export async function processText(
     })),
     summary: analysis.summary,
     statusUpdates: analysis.statusUpdates,
+    warnings: analysis.warnings,
   };
 }
