@@ -1,9 +1,8 @@
 /**
- * Go Live Button
+ * Start Meeting Button
  *
- * Creates a live-collab room from the current conversation and navigates to it.
- * Hidden when there's no conversation. Quietly hides if live collab isn't
- * configured (the API returns 503).
+ * Creates a live meeting room from the current conversation and navigates to it.
+ * Host can record live audio — transcription + analysis push to all viewers.
  */
 
 import { useSignal } from "@preact/signals";
@@ -16,7 +15,7 @@ export default function GoLiveButton() {
 
   if (!conversationData.value) return null;
 
-  async function goLive() {
+  async function startMeeting() {
     if (loading.value) return;
     loading.value = true;
     try {
@@ -29,14 +28,14 @@ export default function GoLiveButton() {
       if (!res.ok) {
         const msg = res.status === 503
           ? "Live collaboration isn't set up yet."
-          : "Couldn't start a live room.";
+          : "Couldn't start a meeting room.";
         showToast(msg, "error");
         return;
       }
       const { roomId } = await res.json();
       globalThis.location.href = `/live/${roomId}`;
     } catch (_e) {
-      showToast("Couldn't start a live room.", "error");
+      showToast("Couldn't start a meeting room.", "error");
     } finally {
       loading.value = false;
     }
@@ -44,16 +43,15 @@ export default function GoLiveButton() {
 
   return (
     <button
-      onClick={goLive}
+      onClick={startMeeting}
       disabled={loading.value}
       class="header-icon-btn"
-      data-tip={loading.value ? "Starting…" : "Go live"}
-      aria-label="Start a live collaboration room"
+      data-tip={loading.value ? "Starting…" : "Start meeting"}
+      data-tip-align="right"
+      aria-label="Start a live meeting room"
     >
       <i
-        class={`fa ${
-          loading.value ? "fa-spinner fa-spin" : "fa-satellite-dish"
-        }`}
+        class={`fa ${loading.value ? "fa-spinner fa-spin" : "fa-users"}`}
         aria-hidden="true"
       >
       </i>

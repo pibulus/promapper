@@ -6,6 +6,7 @@ import * as $_404 from "./routes/_404.tsx";
 import * as $_app from "./routes/_app.tsx";
 import * as $api_append from "./routes/api/append.ts";
 import * as $api_auth from "./routes/api/auth.ts";
+import * as $api_live_chunk from "./routes/api/live/chunk.ts";
 import * as $api_live_create from "./routes/api/live/create.ts";
 import * as $api_markdown from "./routes/api/markdown.ts";
 import * as $api_process from "./routes/api/process.ts";
@@ -48,6 +49,7 @@ const manifest = {
     "./routes/_app.tsx": $_app,
     "./routes/api/append.ts": $api_append,
     "./routes/api/auth.ts": $api_auth,
+    "./routes/api/live/chunk.ts": $api_live_chunk,
     "./routes/api/live/create.ts": $api_live_create,
     "./routes/api/markdown.ts": $api_markdown,
     "./routes/api/process.ts": $api_process,

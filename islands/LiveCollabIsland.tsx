@@ -1,10 +1,10 @@
 /**
  * Live Collaboration Island
  *
- * Hydration root for a /live/[roomId] room. On mount it joins the room and
- * starts two-way sync (remote updates flow into conversationData via the
- * loopback-guarded liveSync); on unmount it disconnects. Renders the normal
- * dashboard plus a live bar showing connection state + who's here.
+ * Meeting room root for /live/[roomId]. On mount it joins the PartyKit
+ * room and enables the host to record live audio — chunks are transcribed
+ * in near-real-time and results push to all viewers. Renders the dashboard
+ * plus a live transcript stream and recording controls.
  */
 
 import { useEffect, useRef } from "preact/hooks";
@@ -27,7 +27,8 @@ import { buildAvatar } from "@utils/avatar.ts";
 import { startLiveSync, stopLiveSync } from "@signals/liveSync.ts";
 import { sendRename } from "@signals/partyService.ts";
 import { showToast } from "@utils/toast.ts";
-import { soundChime, soundPortal } from "@utils/sound.ts";
+import { soundBloom, soundChime, soundPortal } from "@utils/sound.ts";
+import { ensureApiSession } from "@utils/apiAuth.ts";
 import DashboardIsland from "./DashboardIsland.tsx";
 import ChatSidebar from "./ChatSidebar.tsx";
 import Modal from "../components/Modal.tsx";
@@ -37,23 +38,30 @@ interface LiveCollabIslandProps {
   partyHost: string;
 }
 
+const CHUNK_INTERVAL_MS = 15_000;
+
 export default function LiveCollabIsland(
   { roomId, partyHost }: LiveCollabIslandProps,
 ) {
-  // Track seen user ids so we can toast joins/leaves without spamming on every
-  // presence heartbeat. selfId is whatever the server reports first as "us".
   const seenIds = useRef<Set<string> | null>(null);
-
-  // Display name modal
   const showNameModal = useSignal(false);
   const nameModalValue = useSignal("");
 
+  // Recording state
+  const isRecording = useSignal(false);
+  const recordingTime = useSignal(0);
+  const isProcessing = useSignal(false);
+  const liveTranscript = useSignal<string[]>([]);
+
+  // MediaRecorder refs
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<number | null>(null);
+  const chunkTimerRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (!IS_BROWSER || !partyHost) return;
-    // A live room is a borrowed view, like a shared link — don't auto-save the
-    // room's conversation into THIS visitor's local history or hijack their
-    // active conversation. (The outbound broadcaster is gated separately by the
-    // loopback guard, so two-way editing still works.)
     isViewingShared.value = true;
     startLiveSync({
       host: partyHost,
@@ -65,6 +73,7 @@ export default function LiveCollabIsland(
       isViewingShared.value = false;
       conversationData.value = null;
       seenIds.current = null;
+      stopRecording();
     };
   }, [roomId, partyHost]);
 
@@ -72,12 +81,11 @@ export default function LiveCollabIsland(
   const users = remoteUsers.value;
   const hasData = Boolean(conversationData.value);
 
-  // Join/leave toasts from presence deltas (dedup via seenIds; skip first sync).
   useEffect(() => {
     if (!IS_BROWSER) return;
     const current = new Set(users.map((u) => u.id));
     if (seenIds.current === null) {
-      seenIds.current = current; // first presence snapshot — don't announce
+      seenIds.current = current;
       return;
     }
     for (const u of users) {
@@ -92,7 +100,6 @@ export default function LiveCollabIsland(
     seenIds.current = current;
   }, [users]);
 
-  // A warm "you're in" cue the moment the room connects.
   useEffect(() => {
     if (connected) soundPortal();
   }, [connected]);
@@ -100,6 +107,121 @@ export default function LiveCollabIsland(
   function renameSelf() {
     nameModalValue.value = getLocalIdentity();
     showNameModal.value = true;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // RECORDING
+  // ═══════════════════════════════════════════════════════════════
+
+  function formatTime(seconds: number): string {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  }
+
+  async function startRecording() {
+    if (!IS_BROWSER) return;
+    try {
+      await ensureApiSession();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { sampleRate: 16000, channelCount: 1 },
+      });
+      streamRef.current = stream;
+
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : "audio/mp4";
+
+      const recorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = recorder;
+      chunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      recorder.start(1000); // collect data every 1s
+      isRecording.value = true;
+      recordingTime.value = 0;
+
+      timerRef.current = setInterval(() => {
+        recordingTime.value++;
+      }, 1000) as unknown as number;
+
+      // Send accumulated chunks every CHUNK_INTERVAL_MS
+      chunkTimerRef.current = setInterval(() => {
+        sendChunk();
+      }, CHUNK_INTERVAL_MS) as unknown as number;
+
+      showToast("Recording — live transcript starting…", "info");
+    } catch (err) {
+      console.error("Failed to start recording:", err);
+      showToast("Couldn't access microphone. Check permissions.", "error");
+    }
+  }
+
+  async function sendChunk() {
+    const chunks = chunksRef.current.splice(0);
+    if (chunks.length === 0) return;
+
+    isProcessing.value = true;
+    try {
+      const blob = new Blob(chunks, {
+        type: mediaRecorderRef.current?.mimeType || "audio/webm",
+      });
+      const form = new FormData();
+      form.append("audio", blob, "chunk.webm");
+
+      const res = await fetch("/api/live/chunk", {
+        method: "POST",
+        body: form,
+      });
+
+      if (res.ok) {
+        const { text } = await res.json();
+        liveTranscript.value = [...liveTranscript.value, text].slice(-20);
+      }
+    } catch (err) {
+      console.error("Chunk send failed:", err);
+    } finally {
+      isProcessing.value = false;
+    }
+  }
+
+  async function stopRecording() {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (chunkTimerRef.current) {
+      clearInterval(chunkTimerRef.current);
+      chunkTimerRef.current = null;
+    }
+
+    if (
+      mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive"
+    ) {
+      await new Promise<void>((resolve) => {
+        mediaRecorderRef.current!.onstop = () => resolve();
+        mediaRecorderRef.current!.stop();
+      });
+    }
+
+    // Send any remaining chunks
+    await sendChunk();
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+
+    mediaRecorderRef.current = null;
+    isRecording.value = false;
+    recordingTime.value = 0;
+
+    if (liveTranscript.value.length > 0) {
+      soundBloom();
+    }
   }
 
   return (
@@ -146,6 +268,30 @@ export default function LiveCollabIsland(
         </div>
 
         <div class="flex items-center gap-2">
+          {/* Recording controls */}
+          <button
+            onClick={isRecording.value ? stopRecording : startRecording}
+            disabled={isProcessing.value && isRecording.value}
+            class={`header-icon-btn${isRecording.value ? " is-recording" : ""}`}
+            data-tip={isRecording.value ? "Stop recording" : "Record meeting"}
+            aria-label={isRecording.value ? "Stop recording" : "Record meeting"}
+          >
+            <i
+              class={`fa ${isRecording.value ? "fa-stop" : "fa-microphone"}`}
+              aria-hidden="true"
+            />
+            {isRecording.value && (
+              <span
+                style={{
+                  fontSize: "var(--tiny-size)",
+                  fontFamily: "var(--font-mono)",
+                }}
+              >
+                {formatTime(recordingTime.value)}
+              </span>
+            )}
+          </button>
+
           {/* Collaborator avatars */}
           <div class="flex items-center -space-x-2">
             {users.slice(0, 6).map((u) => (
@@ -160,6 +306,7 @@ export default function LiveCollabIsland(
               />
             ))}
           </div>
+
           <button
             onClick={renameSelf}
             class="action-header-btn live-rename-btn"
@@ -170,6 +317,46 @@ export default function LiveCollabIsland(
           </button>
         </div>
       </header>
+
+      {/* Live transcript stream */}
+      {isRecording.value && liveTranscript.value.length > 0 && (
+        <div
+          style={{
+            padding: "var(--card-padding)",
+            borderBottom: "2px solid var(--color-border)",
+            background: "var(--surface-cream-dark)",
+            maxHeight: "200px",
+            overflowY: "auto",
+          }}
+        >
+          <p
+            style={{
+              fontSize: "var(--tiny-size)",
+              fontWeight: 700,
+              color: "var(--color-accent)",
+              marginBottom: "0.5rem",
+            }}
+          >
+            ● Live transcript
+          </p>
+          {liveTranscript.value.map((chunk, i) => (
+            <p
+              key={i}
+              style={{
+                fontSize: "var(--small-size)",
+                color: "var(--color-text)",
+                marginBottom: "0.5rem",
+                lineHeight: 1.5,
+                padding: "0.25rem 0.5rem",
+                borderLeft: "3px solid var(--color-accent)",
+                opacity: i < liveTranscript.value.length - 1 ? 0.6 : 1,
+              }}
+            >
+              {chunk}
+            </p>
+          ))}
+        </div>
+      )}
 
       {/* Dashboard (or waiting state) */}
       <div style={{ padding: "var(--card-padding)" }}>
@@ -182,7 +369,7 @@ export default function LiveCollabIsland(
                 Waiting for the conversation…
               </p>
               <p style={{ fontSize: "var(--small-size)" }} class="mt-1">
-                When someone records or adds notes, it appears here live.
+                Start recording to build the project map live.
               </p>
             </div>
           )}
@@ -201,12 +388,8 @@ export default function LiveCollabIsland(
           <div class="modal-stack">
             <h3
               id="display-name-modal-title"
-              style={{
-                margin: 0,
-                fontSize: "var(--heading-size)",
-                fontWeight: 700,
-                color: "var(--color-text)",
-              }}
+              class="modal-heading"
+              style={{ marginBottom: 0 }}
             >
               Your display name
             </h3>
@@ -218,7 +401,7 @@ export default function LiveCollabIsland(
                 lineHeight: 1.5,
               }}
             >
-              This is how others see you in the live room.
+              This is how others see you in the room.
             </p>
             <input
               value={nameModalValue.value}
