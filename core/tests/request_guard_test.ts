@@ -13,7 +13,9 @@ Deno.env.set("API_RATE_LIMIT", "3");
 Deno.env.set("API_RATE_WINDOW_MS", "60000");
 Deno.env.delete("API_AUTH_TOKEN"); // auth disabled for these origin/rate tests
 
-const { guardRequest } = await import("../../services/requestGuard.ts");
+const { guardRequest, shouldBlockUnconfiguredAuth } = await import(
+  "../../services/requestGuard.ts"
+);
 
 function reqFrom(origin: string | null, ip = "1.1.1.1"): Request {
   const headers = new Headers({ "x-forwarded-for": ip });
@@ -53,4 +55,18 @@ Deno.test("guardRequest rate-limits after the configured max", async () => {
   // sanity: blocked body carries a retry hint
   const body = await blocked?.json();
   assertEquals(typeof body.retry_after_ms, "number");
+});
+
+// ===================================================================
+// Fail-closed-in-prod policy when API_AUTH_TOKEN is unset (audit #7 2.1)
+// ===================================================================
+
+Deno.test("unconfigured auth: OPEN locally, BLOCKED when deployed", () => {
+  // hasToken=false, deployed=false -> open (intended dev flow)
+  assertEquals(shouldBlockUnconfiguredAuth(false, false), false);
+  // hasToken=false, deployed=true  -> BLOCK (don't ship an open API)
+  assertEquals(shouldBlockUnconfiguredAuth(false, true), true);
+  // hasToken=true is always fine regardless of environment
+  assertEquals(shouldBlockUnconfiguredAuth(true, true), false);
+  assertEquals(shouldBlockUnconfiguredAuth(true, false), false);
 });

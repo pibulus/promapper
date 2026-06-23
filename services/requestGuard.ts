@@ -21,6 +21,22 @@ const rateMap = new Map<string, { count: number; windowStart: number }>();
 const authToken = Deno.env.get("API_AUTH_TOKEN")?.trim() ?? null;
 const SESSION_COOKIE_NAME = "cm_session";
 
+// Deno Deploy always sets DENO_DEPLOYMENT_ID in production; it's absent locally.
+const isDeployed = Boolean(Deno.env.get("DENO_DEPLOYMENT_ID"));
+
+/**
+ * Pure policy for the "no auth token configured" case. Open locally (the
+ * intended dev flow), but FAIL CLOSED when deployed — a deployer who forgets to
+ * set API_AUTH_TOKEN must not silently ship every /api/* route (and the AI bill)
+ * open to the internet. Returns true if the request must be BLOCKED.
+ */
+export function shouldBlockUnconfiguredAuth(
+  hasToken: boolean,
+  deployed: boolean,
+): boolean {
+  return !hasToken && deployed;
+}
+
 export function guardRequest(req: Request): Response | null {
   const authBlock = enforceAuth(req);
   if (authBlock) return authBlock;
@@ -99,6 +115,12 @@ function enforceRateLimit(req: Request): Response | null {
 
 function enforceAuth(req: Request): Response | null {
   if (!authToken) {
+    if (shouldBlockUnconfiguredAuth(Boolean(authToken), isDeployed)) {
+      return jsonResponse(
+        { error: "Service unavailable: server auth is not configured." },
+        503,
+      );
+    }
     return null;
   }
 
