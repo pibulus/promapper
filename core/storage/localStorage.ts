@@ -17,6 +17,22 @@ const LEGACY_ACTIVE_ID_KEY = "conversation_mapper_active_id";
 // recoverable instead of being silently overwritten by the next autosave.
 const CORRUPT_BACKUP_KEY = "project_mapper_conversations__corrupt_backup";
 
+/**
+ * Wrap localStorage.setItem so a quota/security failure doesn't throw out of a
+ * star/delete/restore call (which would leave the UI showing a change that never
+ * persisted). Returns whether the write succeeded so callers can warn if needed.
+ * saveConversation has its own richer handling; this is for the smaller writes.
+ */
+function safeSetItem(key: string, value: string): boolean {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (err) {
+    console.error(`localStorage write failed for ${key}:`, err);
+    return false;
+  }
+}
+
 // ===================================================================
 // TYPES
 // ===================================================================
@@ -99,7 +115,7 @@ export function setConversationStarred(id: string, starred: boolean): void {
   if (!conv) return;
   conv.starred = starred;
   conversations[id] = conv;
-  localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+  safeSetItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
 }
 
 /**
@@ -112,7 +128,7 @@ export function toggleConversationStarred(id: string): boolean {
   if (!conv) return false;
   conv.starred = !conv.starred;
   conversations[id] = conv;
-  localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+  safeSetItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
   return conv.starred;
 }
 
@@ -123,7 +139,7 @@ export function replaceAllConversations(
   conversations: Record<string, StoredConversation>,
 ): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+  safeSetItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
 }
 
 /**
@@ -249,7 +265,7 @@ export function deleteConversation(id: string): void {
   const conversations = getAllConversations();
   delete conversations[id];
 
-  localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+  safeSetItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
 
   // Clear active ID if it was this conversation
   const activeId = getActiveConversationId();
@@ -268,7 +284,7 @@ export function restoreConversation(stored: StoredConversation): void {
   if (typeof window === "undefined" || !stored?.id) return;
   const conversations = getAllConversations();
   conversations[stored.id] = stored;
-  localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+  safeSetItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
 }
 
 /**

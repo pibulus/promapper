@@ -87,6 +87,10 @@ export default function AudioRecorder(
 
   // Start recording
   async function startRecording() {
+    // Guard re-entry: a double-tap (or tapping Record while the previous
+    // recording's onstop is still processing) would otherwise spin up a second
+    // overlapping MediaRecorder session. One recording at a time.
+    if (isRecording.value || isProcessing.value) return;
     try {
       // Request microphone permission
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -552,8 +556,10 @@ export default function AudioRecorder(
             <button
               onClick={() => isExpanded.value = false}
               class="text-white hover:text-gray-200"
+              title="Close"
+              aria-label="Close recorder"
             >
-              <i class="fa fa-times"></i>
+              <i class="fa fa-times" aria-hidden="true"></i>
             </button>
           </div>
 
@@ -684,6 +690,10 @@ export default function AudioRecorder(
                             title={playingRecordingId.value === recording.id
                               ? "Pause"
                               : "Play"}
+                            aria-label={playingRecordingId.value ===
+                                recording.id
+                              ? "Pause recording"
+                              : "Play recording"}
                           >
                             <i
                               class={`fa ${
@@ -691,6 +701,7 @@ export default function AudioRecorder(
                                   ? "fa-pause animate-pulse"
                                   : "fa-play"
                               } text-sm`}
+                              aria-hidden="true"
                             >
                             </i>
                           </button>
@@ -698,8 +709,13 @@ export default function AudioRecorder(
                             onClick={() => downloadRecording(recording)}
                             class="w-8 h-8 flex items-center justify-center rounded hover:bg-white/50 transition-colors"
                             title="Download"
+                            aria-label="Download recording"
                           >
-                            <i class="fa fa-download text-sm"></i>
+                            <i
+                              class="fa fa-download text-sm"
+                              aria-hidden="true"
+                            >
+                            </i>
                           </button>
                         </div>
                       </div>

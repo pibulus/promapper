@@ -517,10 +517,14 @@ export default function MarkdownMakerDrawer(
 
           {/* Custom Prompt Input */}
           <div class="mb-4">
-            <label class="block text-sm font-semibold mb-2">
+            <label
+              class="block text-sm font-semibold mb-2"
+              htmlFor="custom-prompt-input"
+            >
               Custom Prompt
             </label>
             <textarea
+              id="custom-prompt-input"
               class="w-full h-24 border-2 border-gray-300 rounded px-3 py-2 text-sm focus:border-soft-purple focus:outline-none"
               placeholder="Type your own custom prompt here..."
               value={customPrompt.value}
@@ -577,29 +581,33 @@ export default function MarkdownMakerDrawer(
                     class="text-white hover:text-gray-200 cursor-pointer transition-colors"
                     onClick={copyToClipboard}
                     title="Copy to clipboard"
+                    aria-label="Copy to clipboard"
                   >
-                    <i class="fa fa-copy"></i>
+                    <i class="fa fa-copy" aria-hidden="true"></i>
                   </button>
                   <button
                     class="text-white hover:text-gray-200 cursor-pointer transition-colors"
                     onClick={downloadMarkdown}
                     title="Download as .md file"
+                    aria-label="Download as Markdown file"
                   >
-                    <i class="fa fa-download"></i>
+                    <i class="fa fa-download" aria-hidden="true"></i>
                   </button>
                   <button
                     class="text-white hover:text-gray-200 cursor-pointer transition-colors"
                     onClick={downloadPDF}
                     title="Download as PDF"
+                    aria-label="Download as PDF"
                   >
-                    <i class="fa fa-file-pdf"></i>
+                    <i class="fa fa-file-pdf" aria-hidden="true"></i>
                   </button>
                   <button
                     class="text-white hover:text-gray-200 cursor-pointer transition-colors"
                     onClick={saveOutput}
                     title="Save to localStorage"
+                    aria-label="Save export"
                   >
-                    <i class="fa fa-save"></i>
+                    <i class="fa fa-save" aria-hidden="true"></i>
                   </button>
                 </div>
               </div>

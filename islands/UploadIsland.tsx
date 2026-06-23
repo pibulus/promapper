@@ -171,6 +171,7 @@ export default function UploadIsland() {
   }
 
   async function processRecordedAudio(audioBlob: Blob) {
+    if (isProcessing.value) return; // guard double-submit
     console.log("🎤 Starting audio processing...", {
       size: audioBlob.size,
       type: audioBlob.type,
@@ -228,7 +229,9 @@ export default function UploadIsland() {
   }
 
   async function handleTextSubmit() {
-    if (!hasText.value) return;
+    // Guard re-entry: a double-click would otherwise fire a second request
+    // (often empty after the first clears the input → "No text provided").
+    if (!hasText.value || isProcessing.value) return;
 
     console.log("📝 Starting text processing...", {
       length: textInput.value.length,
@@ -298,6 +301,7 @@ export default function UploadIsland() {
   };
 
   async function processAudioFile(file: File) {
+    if (isProcessing.value) return; // guard double-submit
     isProcessing.value = true;
 
     try {
