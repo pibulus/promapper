@@ -29,6 +29,10 @@ export const applyingRemoteUpdate = { current: false };
  */
 export function applyRemoteConversation(data: ConversationData): void {
   applyingRemoteUpdate.current = true;
+  // A pending undo snapshot predates this remote update, so restoring it would
+  // roll back PAST the collaborator's change and silently discard it. A remote
+  // update is a new baseline — drop the stale undo target.
+  undoSnapshot = null;
   try {
     conversationData.value = data;
   } finally {

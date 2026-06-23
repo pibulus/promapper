@@ -327,17 +327,29 @@ export default function MarkdownMakerDrawer(
           "Export"
         : "Custom Export";
 
-      // Convert markdown line breaks to HTML
+      // Escape HTML before injecting into the print popup. The markdown is AI-
+      // generated, so a crafted conversation/prompt could otherwise smuggle a
+      // <script> that executes in the popup's origin. (The main preview is safe —
+      // it renders inside a <textarea>; only this print path interpolates HTML.)
+      const escapeHtml = (s: string) =>
+        s
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+
+      // Convert markdown line breaks to HTML (text escaped first).
       const htmlContent = markdown.value
         .split("\n\n")
-        .map((para) => `<p>${para.replace(/\n/g, "<br>")}</p>`)
+        .map((para) => `<p>${escapeHtml(para).replace(/\n/g, "<br>")}</p>`)
         .join("");
 
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
           <head>
-            <title>${promptLabel}</title>
+            <title>${escapeHtml(promptLabel)}</title>
             <style>
               @media print {
                 @page {
@@ -399,7 +411,7 @@ export default function MarkdownMakerDrawer(
           </head>
           <body>
             <div class="header">
-              <h1>${promptLabel}</h1>
+              <h1>${escapeHtml(promptLabel)}</h1>
               <p style="color: #6b7280; font-size: 11pt;">Generated on ${
         new Date().toLocaleDateString()
       }</p>
