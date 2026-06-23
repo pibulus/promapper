@@ -55,11 +55,28 @@ transcription uses a dedicated model by default:
 
 | Task                | Default Model                      | Why                                                                                                                               |
 | ------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Audio transcription | `mistralai/voxtral-small-24b-2507` | Built for audio, $0.0001/audio-token, native `input_audio` modality — way cheaper than routing through a general multimodal model |
-| Everything else     | `google/gemini-2.5-flash-lite`     | Fast, cheap, good structured extraction                                                                                           |
+| Audio transcription | `mistralai/voxtral-small-24b-2507` | Built for audio, $0.10/$0.30 per 1M tokens + $100/M audio-seconds (~$0.06 for a 10-min recording). Native `input_audio` modality. |
+| Everything else     | `google/gemini-3.1-flash-lite`     | May 2026 Gemini 3.x model — $0.25/$1.50 per 1M. Replaces the July 2025 2.5 Flash Lite. Fast, cheap, good structured extraction.   |
 
 Override the transcription model with `OPENROUTER_TRANSCRIPTION_MODEL` (set to
-empty to fall back to `OPENROUTER_MODEL` for everything).
+empty to fall back to `OPENROUTER_MODEL` for everything). For a **free**
+transcription alternative: `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`.
+
+**Alternative models (set via env vars):**
+
+| Env Var                          | Budget default                        | Quality option                                 |
+| -------------------------------- | ------------------------------------- | ---------------------------------------------- |
+| `OPENROUTER_MODEL`               | `gemini-3.1-flash-lite` ($0.25/$1.50) | `~google/gemini-flash-latest` ($1.50/$9.00)    |
+| `OPENROUTER_TRANSCRIPTION_MODEL` | Voxtral Small (best dedicated audio)  | Voxtral Small + nemotron free option           |
+| For structured JSON extraction   | —                                     | `~anthropic/claude-haiku-latest` ($1/$5, 200K) |
+
+**Gemini 3.x is current (as of June 2026):**
+
+- `gemini-3.1-flash-lite` (May 7, 2026) — replaces 2.5 Flash Lite
+- `gemini-3.5-flash` (May 19, 2026) — replaces 2.5 Flash
+- `~google/gemini-flash-latest` — rolling alias, auto-points to newest Flash
+- `~google/gemini-pro-latest` — rolling alias, auto-points to newest Pro
+- `~anthropic/claude-haiku-latest` — rolling alias, auto-points to newest Haiku
 
 **Gemini fallback** — set `AI_PROVIDER=gemini` to use Google's API directly with
 `gemini-2.5-flash`. No per-task model split (Gemini doesn't route through
@@ -67,21 +84,18 @@ OpenRouter).
 
 **Offline path (prototype, not merged)** — Dennis built an offline version that
 downloads whisper for transcription and distilbert for action-item extraction.
-This lives in a separate branch (`conversation_mapper` lineage) and was never
-merged into ProMapper. The pattern would be:
+This lives in a separate branch (`conversation_mapper` lineage). The pattern:
 
-1. Check if a local whisper binary / wasm module is available
-2. If offline: transcribe locally, then run extraction on the text (which can
-   still use a cloud model or a local distilbert)
+1. Check for local whisper binary / wasm module
+2. If offline: transcribe locally, run extraction on text (cloud or local model)
 3. If online: use the cloud path above
 
-Whisper.cpp WebAssembly or a `whisper` Python subprocess are both viable. The
-talktype app already has working offline whisper transcription as a reference
-implementation. Re-surfacing this would need:
-
-- A local model check in `services/ai.ts` before falling through to the cloud
-- A new `OfflineAIService` or a wrapper that pipes whisper output into the
-  existing text-analysis path
+Whisper.cpp WebAssembly or Python subprocess are viable. TalkType has working
+offline whisper as a reference. DistilBERT (2019) is a classifier — for 2026
+offline extraction, consider a small local LLM (Llama 3.2 1B, Phi-3-mini)
+instead. A new `OfflineAIService` wrapper in `services/ai.ts` would check for
+local models before falling through to the cloud. Then fall through to the cloud
+path.
 
 ## Architecture Map
 

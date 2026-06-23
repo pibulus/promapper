@@ -9,9 +9,12 @@ import { withRetry } from "@core/ai/helpers.ts";
 import type { AIService } from "@core/ai/types.ts";
 
 const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
-const DEFAULT_OPENROUTER_MODEL = "google/gemini-2.5-flash-lite";
+const DEFAULT_OPENROUTER_MODEL = "google/gemini-3.1-flash-lite";
 const DEFAULT_OPENROUTER_TRANSCRIPTION_MODEL =
   "mistralai/voxtral-small-24b-2507";
+// Budget/free transcription alternative (nemotron-3-nano-omni is free).
+// Set OPENROUTER_TRANSCRIPTION_MODEL to this for zero-cost audio transcription.
+// "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
 const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 export type AIProvider = "gemini" | "openrouter";
