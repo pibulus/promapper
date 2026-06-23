@@ -26,6 +26,7 @@ import MarkdownMakerDrawer from "./MarkdownMakerDrawer.tsx";
 import AudioRecorder from "./AudioRecorder.tsx";
 import ThemeSwitcher from "./ThemeSwitcher.tsx";
 import SoundToggle from "./SoundToggle.tsx";
+import AuthModalIsland from "./AuthModalIsland.tsx";
 
 const drawerOpen = signal(false);
 
@@ -223,6 +224,9 @@ export default function HomeIsland() {
           </div>
         </main>
       </div>
+
+      {/* Auth modal — triggered by requestAuthToken() from anywhere */}
+      <AuthModalIsland />
     </div>
   );
 }

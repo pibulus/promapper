@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useRef } from "preact/hooks";
+import { useSignal } from "@preact/signals";
 import { IS_BROWSER } from "$fresh/runtime.ts";
 import {
   conversationData,
@@ -29,6 +30,7 @@ import { showToast } from "@utils/toast.ts";
 import { soundChime, soundPortal } from "@utils/sound.ts";
 import DashboardIsland from "./DashboardIsland.tsx";
 import ChatSidebar from "./ChatSidebar.tsx";
+import Modal from "../components/Modal.tsx";
 
 interface LiveCollabIslandProps {
   roomId: string;
@@ -41,6 +43,10 @@ export default function LiveCollabIsland(
   // Track seen user ids so we can toast joins/leaves without spamming on every
   // presence heartbeat. selfId is whatever the server reports first as "us".
   const seenIds = useRef<Set<string> | null>(null);
+
+  // Display name modal
+  const showNameModal = useSignal(false);
+  const nameModalValue = useSignal("");
 
   useEffect(() => {
     if (!IS_BROWSER || !partyHost) return;
@@ -92,10 +98,8 @@ export default function LiveCollabIsland(
   }, [connected]);
 
   function renameSelf() {
-    const next = globalThis.prompt("Your display name:", getLocalIdentity());
-    if (!next || !next.trim()) return;
-    setLocalIdentity(next);
-    sendRename(next.trim());
+    nameModalValue.value = getLocalIdentity();
+    showNameModal.value = true;
   }
 
   return (
@@ -202,6 +206,95 @@ export default function LiveCollabIsland(
 
       {/* In-session chat (only once connected) */}
       {connected && <ChatSidebar />}
+
+      {/* Display name modal */}
+      {showNameModal.value && (
+        <Modal
+          open
+          onClose={() => showNameModal.value = false}
+          titleId="display-name-modal-title"
+        >
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+          >
+            <h3
+              id="display-name-modal-title"
+              style={{
+                margin: 0,
+                fontSize: "var(--heading-size)",
+                fontWeight: 700,
+                color: "var(--color-text)",
+              }}
+            >
+              Your display name
+            </h3>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "var(--small-size)",
+                color: "var(--color-text-secondary)",
+                lineHeight: 1.5,
+              }}
+            >
+              This is how others see you in the live room.
+            </p>
+            <input
+              value={nameModalValue.value}
+              onInput={(e) =>
+                nameModalValue.value = (e.target as HTMLInputElement).value}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const next = nameModalValue.value.trim();
+                  if (next) {
+                    setLocalIdentity(next);
+                    sendRename(next);
+                  }
+                  showNameModal.value = false;
+                }
+              }}
+              placeholder="Your name"
+              autoFocus
+              style={{
+                minHeight: "2.75rem",
+                border: "2px solid var(--color-border)",
+                borderRadius: "8px",
+                background: "var(--surface-cream)",
+                padding: "0.55rem 0.7rem",
+                fontSize: "var(--text-size)",
+                color: "var(--color-text)",
+                width: "100%",
+                boxSizing: "border-box",
+              }}
+            />
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                class="btn btn--secondary"
+                style={{ flex: 1 }}
+                onClick={() => showNameModal.value = false}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                class="btn btn--primary"
+                style={{ flex: 1 }}
+                onClick={() => {
+                  const next = nameModalValue.value.trim();
+                  if (next) {
+                    setLocalIdentity(next);
+                    sendRename(next);
+                  }
+                  showNameModal.value = false;
+                }}
+                disabled={!nameModalValue.value.trim()}
+                type="button"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

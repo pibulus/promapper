@@ -1,3 +1,5 @@
+import { requestAuthToken } from "@signals/authModal.ts";
+
 let inFlightSession: Promise<void> | null = null;
 
 export async function ensureApiSession(): Promise<void> {
@@ -28,7 +30,7 @@ export async function logoutSession(): Promise<void> {
 async function promptForToken(): Promise<void> {
   if (typeof window === "undefined") return;
 
-  const token = window.prompt("Enter your API auth token:")?.trim();
+  const token = await requestAuthToken();
   if (!token) {
     throw new Error("API auth token is required to continue.");
   }

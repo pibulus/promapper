@@ -35,6 +35,7 @@ import { MAX_LABEL_LENGTH } from "@core/orchestration/conversation-ops.ts";
 import { showToast, showUndoToast } from "@utils/toast.ts";
 import * as htmlToImage from "html-to-image";
 import ContextMenu from "../components/ContextMenu.tsx";
+import Modal from "../components/Modal.tsx";
 
 interface ForceDirectedGraphProps {
   loading?: boolean;
@@ -65,6 +66,13 @@ export default function ForceDirectedGraph(
   const contextMenuVisible = useSignal(false);
   const contextMenuX = useSignal(0);
   const contextMenuY = useSignal(0);
+
+  // Rename modal state
+  const renameModalNodeId = useSignal<string | null>(null);
+  const renameModalValue = useSignal("");
+
+  // Delete confirm modal state
+  const deleteModalNodeId = useSignal<string | null>(null);
 
   // Simulation parameters
   const linkDistance = useSignal(100);
@@ -330,17 +338,12 @@ export default function ForceDirectedGraph(
   // the detail-panel buttons run the exact same path.
   function promptRenameTopic(id: string) {
     const current = conversationData.value?.nodes.find((n) => n.id === id);
-    const newLabel = window.prompt("Rename topic:", current?.label ?? id);
-    if (newLabel && newLabel.trim()) renameTopic(id, newLabel);
+    renameModalValue.value = current?.label ?? "";
+    renameModalNodeId.value = id;
   }
 
   function confirmDeleteTopic(id: string) {
-    const current = conversationData.value?.nodes.find((n) => n.id === id);
-    const label = current?.label ?? id;
-    if (!window.confirm(`Delete topic "${label}"?`)) return;
-    deleteTopic(id);
-    if (selectedNodeId.value === id) selectedNodeId.value = null;
-    if (canUndo()) showUndoToast(`Deleted "${label}"`, undoLastMutation);
+    deleteModalNodeId.value = id;
   }
 
   // ===================================================================
@@ -798,6 +801,167 @@ export default function ForceDirectedGraph(
             </div>
           </div>
         </div>
+      )}
+
+      {/* Rename topic modal */}
+      {renameModalNodeId.value !== null && (
+        <Modal
+          open
+          onClose={() => renameModalNodeId.value = null}
+          titleId="rename-topic-modal-title"
+        >
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+          >
+            <h3
+              id="rename-topic-modal-title"
+              style={{
+                margin: 0,
+                fontSize: "var(--heading-size)",
+                fontWeight: 700,
+                color: "var(--color-text)",
+              }}
+            >
+              Rename topic
+            </h3>
+            <input
+              value={renameModalValue.value}
+              onInput={(e) =>
+                renameModalValue.value = (e.target as HTMLInputElement).value}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const id = renameModalNodeId.value;
+                  const val = renameModalValue.value.trim();
+                  if (id && val) renameTopic(id, val);
+                  renameModalNodeId.value = null;
+                  renameModalValue.value = "";
+                }
+              }}
+              placeholder="New name"
+              maxLength={MAX_LABEL_LENGTH}
+              autoFocus
+              style={{
+                minHeight: "2.75rem",
+                border: "2px solid var(--color-border)",
+                borderRadius: "8px",
+                background: "var(--surface-cream)",
+                padding: "0.55rem 0.7rem",
+                fontSize: "var(--text-size)",
+                color: "var(--color-text)",
+                width: "100%",
+                boxSizing: "border-box",
+              }}
+            />
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                class="btn btn--secondary"
+                style={{ flex: 1 }}
+                onClick={() => {
+                  renameModalNodeId.value = null;
+                  renameModalValue.value = "";
+                }}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                class="btn btn--primary"
+                style={{ flex: 1 }}
+                onClick={() => {
+                  const id = renameModalNodeId.value;
+                  const val = renameModalValue.value.trim();
+                  if (id && val) renameTopic(id, val);
+                  renameModalNodeId.value = null;
+                  renameModalValue.value = "";
+                }}
+                disabled={!renameModalValue.value.trim()}
+                type="button"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Delete confirm modal */}
+      {deleteModalNodeId.value !== null && (
+        <Modal
+          open
+          onClose={() => deleteModalNodeId.value = null}
+          titleId="delete-topic-modal-title"
+        >
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+          >
+            <h3
+              id="delete-topic-modal-title"
+              style={{
+                margin: 0,
+                fontSize: "var(--heading-size)",
+                fontWeight: 700,
+                color: "var(--color-text)",
+              }}
+            >
+              Delete topic?
+            </h3>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "var(--small-size)",
+                color: "var(--color-text-secondary)",
+                lineHeight: 1.5,
+              }}
+            >
+              "{conversationData.value?.nodes.find((n) =>
+                n.id === deleteModalNodeId.value
+              )?.label ?? "this topic"}" will be removed from the map, along
+              with its connections. You can undo this right after.
+            </p>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                class="btn btn--secondary"
+                style={{ flex: 1 }}
+                onClick={() => deleteModalNodeId.value = null}
+                type="button"
+              >
+                Keep it
+              </button>
+              <button
+                class="btn btn--primary"
+                style={{
+                  flex: 1,
+                  background: "transparent",
+                  color: "var(--color-text-secondary)",
+                  borderColor: "var(--border-cream)",
+                  fontWeight: 600,
+                }}
+                onClick={() => {
+                  const id = deleteModalNodeId.value;
+                  if (!id) return;
+                  const current = conversationData.value?.nodes.find((n) =>
+                    n.id === id
+                  );
+                  const label = current?.label ?? id;
+                  deleteTopic(id);
+                  if (selectedNodeId.value === id) {
+                    selectedNodeId.value = null;
+                  }
+                  if (canUndo()) {
+                    showUndoToast(
+                      `Deleted "${label}"`,
+                      undoLastMutation,
+                    );
+                  }
+                  deleteModalNodeId.value = null;
+                }}
+                type="button"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {renderControls()}
