@@ -3296,6 +3296,28 @@ select:focus {
   transform: translateY(-1px);
 }
 
+/* KEYBOARD focus needs a genuinely visible ring (the soft glow above is ~10%
+   pink — invisible on pink). :focus-visible only fires on keyboard nav, so mouse
+   clicks keep the pretty glow while tabbing gets a clear WCAG-passing indicator. */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Buttons/controls that zeroed their outline without a visible keyboard
+   alternative get the same on-brand ring (mouse :focus state is unaffected). */
+.mapper-clip-btn:focus-visible,
+.action-item-checkbox-button:focus-visible,
+.action-item-edit-btn:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 /* ===================================================================
    MOBILE & ACCESSIBILITY IMPROVEMENTS
    ================================================================ */
