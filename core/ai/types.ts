@@ -8,14 +8,6 @@ import type {
   TranscriptionResult,
 } from "../types/index.ts";
 
-export type GeminiAudioPart =
-  | {
-    inlineData: { data: string; mimeType: string };
-  }
-  | {
-    fileData: { fileUri: string; mimeType: string };
-  };
-
 export type OpenRouterAudioFormat =
   | "wav"
   | "mp3"
@@ -36,7 +28,7 @@ export interface OpenRouterAudioPart {
   };
 }
 
-export type AudioPart = GeminiAudioPart | OpenRouterAudioPart;
+export type AudioPart = OpenRouterAudioPart;
 export type AudioInput = Blob | AudioPart;
 
 /**

@@ -13,7 +13,6 @@ import {
 import { guardRequest } from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
 import {
-  deleteUploadedFile,
   MAX_AUDIO_SIZE,
   MIN_AUDIO_SIZE,
   uploadAudioFile,
@@ -78,13 +77,8 @@ export const handler: Handlers = {
           );
         }
 
-        const { part: audioPart, fileName } = await uploadAudioFile(audioFile);
-        let result;
-        try {
-          result = await processAudio(aiService, audioPart, conversationId);
-        } finally {
-          await deleteUploadedFile(fileName);
-        }
+        const { part: audioPart } = await uploadAudioFile(audioFile);
+        const result = await processAudio(aiService, audioPart, conversationId);
 
         // If this came from a live room, push the result to all collaborators.
         await pushResultToRoom(formData.get("roomId") as string | null, result);

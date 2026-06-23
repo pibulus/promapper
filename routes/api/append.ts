@@ -21,7 +21,6 @@ import type { ActionItem, Edge, Node } from "@core/types/index.ts";
 import { guardRequest } from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
 import {
-  deleteUploadedFile,
   MAX_AUDIO_SIZE,
   MIN_AUDIO_SIZE,
   uploadAudioFile,
@@ -113,28 +112,22 @@ export const handler: Handlers = {
         existingEdgesJson,
         conversationId,
       );
-      const { part: audioPart, fileName } = await uploadAudioFile(audioFile);
+      const { part: audioPart } = await uploadAudioFile(audioFile);
 
-      // Process audio through nervous system with existing action items and nodes
       console.log(`📎 Appending audio to conversation ${conversationId}`);
       console.log(
         `📋 Found ${existingActionItems.length} existing action items`,
       );
       console.log(`🕸️ Found ${existingNodes.length} existing topics`);
 
-      let result: ConversationFlowResult;
-      try {
-        result = await processAudio(
-          aiService,
-          audioPart,
-          conversationId,
-          existingActionItems,
-          existingNodes,
-          existingEdges,
-        );
-      } finally {
-        await deleteUploadedFile(fileName);
-      }
+      const result: ConversationFlowResult = await processAudio(
+        aiService,
+        audioPart,
+        conversationId,
+        existingActionItems,
+        existingNodes,
+        existingEdges,
+      );
 
       // Merge transcripts if we have existing content
       if (existingTranscript) {

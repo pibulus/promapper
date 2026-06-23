@@ -50,8 +50,9 @@ function createMockAIService(): AIService {
 }
 
 const mockAudioPart: AudioPart = {
-  inlineData: {
+  inputAudio: {
     data: "YXVkaW8=",
+    format: "webm",
     mimeType: "audio/webm",
   },
 };

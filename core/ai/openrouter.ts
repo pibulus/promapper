@@ -43,6 +43,10 @@ export interface OpenRouterServiceOptions {
   fetcher?: Fetcher;
   /** Optional model override for audio transcription only. Falls back to model. */
   transcriptionModel?: string;
+  /** Optional model override for summary generation (prose quality). */
+  summaryModel?: string;
+  /** Optional model override for topic extraction (relationship mapping). */
+  topicModel?: string;
 }
 
 interface ChatMessage {
@@ -57,26 +61,6 @@ function isOpenRouterAudioPart(
     typeof input === "object" &&
     input !== null &&
     "inputAudio" in input
-  );
-}
-
-function hasInlineData(input: AudioInput): input is {
-  inlineData: { data: string; mimeType: string };
-} {
-  return (
-    typeof input === "object" &&
-    input !== null &&
-    "inlineData" in input
-  );
-}
-
-function hasFileData(input: AudioInput): input is {
-  fileData: { fileUri: string; mimeType: string };
-} {
-  return (
-    typeof input === "object" &&
-    input !== null &&
-    "fileData" in input
   );
 }
 
@@ -98,7 +82,6 @@ function inferAudioFormat(mimeType: string): OpenRouterAudioFormat {
     "audio/x-m4a": "m4a",
     "audio/webm": "webm",
   };
-
   return byMime[normalized] ?? "webm";
 }
 
@@ -109,26 +92,10 @@ async function toOpenRouterAudioPart(
     return input;
   }
 
-  if (hasInlineData(input)) {
-    return {
-      inputAudio: {
-        data: input.inlineData.data,
-        format: inferAudioFormat(input.inlineData.mimeType),
-        mimeType: input.inlineData.mimeType,
-      },
-    };
-  }
-
-  if (hasFileData(input)) {
-    throw new Error(
-      "OpenRouter audio requests require inline base64 data, not Gemini file URIs",
-    );
-  }
-
-  const mimeType = input.type || "audio/webm";
+  const mimeType = (input as Blob).type || "audio/webm";
   return {
     inputAudio: {
-      data: encodeBase64(new Uint8Array(await input.arrayBuffer())),
+      data: encodeBase64(new Uint8Array(await (input as Blob).arrayBuffer())),
       format: inferAudioFormat(mimeType),
       mimeType,
     },
@@ -241,8 +208,11 @@ export function createOpenRouterService(
     });
   }
 
-  async function chatText(prompt: string): Promise<string> {
-    return await chat([{ role: "user", content: prompt }]);
+  async function chatText(
+    prompt: string,
+    modelHint?: string,
+  ): Promise<string> {
+    return await chat([{ role: "user", content: prompt }], modelHint);
   }
 
   async function chatAudio(
@@ -345,6 +315,7 @@ export function createOpenRouterService(
         return parseGraphResponse(
           await chatText(
             buildTopicExtractionPrompt(text, existingNodes, existingEdges),
+            options.topicModel,
           ),
           onParseError,
         );
@@ -359,7 +330,10 @@ export function createOpenRouterService(
       topicLabels: string[] = [],
     ): Promise<string> {
       try {
-        return (await chatText(buildSummaryPrompt(text, topicLabels))).trim();
+        return (await chatText(
+          buildSummaryPrompt(text, topicLabels),
+          options.summaryModel,
+        )).trim();
       } catch (error) {
         console.error("Error generating summary:", error);
         throw new Error("Failed to generate summary with OpenRouter");
