@@ -53,14 +53,16 @@ provider (OpenRouter or Gemini) is selected server-side at startup via env.
 **Per-task model selection (OpenRouter only)** — since June 2026, audio
 transcription uses a dedicated model by default:
 
-| Task                | Default Model                      | Why                                                                                                                               |
-| ------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Audio transcription | `mistralai/voxtral-small-24b-2507` | Built for audio, $0.10/$0.30 per 1M tokens + $100/M audio-seconds (~$0.06 for a 10-min recording). Native `input_audio` modality. |
-| Everything else     | `google/gemini-3.1-flash-lite`     | May 2026 Gemini 3.x model — $0.25/$1.50 per 1M. Replaces the July 2025 2.5 Flash Lite. Fast, cheap, good structured extraction.   |
+| Task                | Default Model                  | Why                                                                                                                                                                                      |
+| ------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Audio transcription | `~google/gemini-flash-latest`  | Gemini 3.x has **native diarisation** — "identifies who's talking" is baked into the model, not prompt-driven. 1M context handles hour+ multi-person meetings. Understands voice nuance. |
+| Everything else     | `google/gemini-3.1-flash-lite` | May 2026 Gemini 3.x model — $0.25/$1.50 per 1M. Fast, cheap, good structured extraction.                                                                                                 |
 
 Override the transcription model with `OPENROUTER_TRANSCRIPTION_MODEL` (set to
-empty to fall back to `OPENROUTER_MODEL` for everything). For a **free**
-transcription alternative: `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free`.
+empty to fall back to `OPENROUTER_MODEL` for everything). For a cheaper
+transcription alternative (no guaranteed diarisation):
+`mistralai/voxtral-small-24b-2507` ($0.10/$0.30 + $100/M audio-seconds, 32K
+context).
 
 **Alternative models (set via env vars):**
 

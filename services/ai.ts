@@ -6,8 +6,7 @@ import { createOpenRouterService } from "@core/ai/openrouter.ts";
 import type { AIService } from "@core/ai/types.ts";
 
 const DEFAULT_OPENROUTER_MODEL = "google/gemini-3.1-flash-lite";
-const DEFAULT_OPENROUTER_TRANSCRIPTION_MODEL =
-  "mistralai/voxtral-small-24b-2507";
+const DEFAULT_OPENROUTER_TRANSCRIPTION_MODEL = "~google/gemini-flash-latest";
 const DEFAULT_OPENROUTER_SUMMARY_MODEL = "~anthropic/claude-haiku-latest";
 const DEFAULT_OPENROUTER_TOPIC_MODEL = "~anthropic/claude-haiku-latest";
 const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
