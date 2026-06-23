@@ -45,6 +45,44 @@ OPENROUTER_MODEL=google/gemini-2.5-flash-lite
 API_AUTH_TOKEN=...
 ```
 
+## AI Model Architecture
+
+All AI calls go through the `AIService` boundary (`core/ai/types.ts`). The
+provider (OpenRouter or Gemini) is selected server-side at startup via env.
+
+**Per-task model selection (OpenRouter only)** — since June 2026, audio
+transcription uses a dedicated model by default:
+
+| Task                | Default Model                      | Why                                                                                                                               |
+| ------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Audio transcription | `mistralai/voxtral-small-24b-2507` | Built for audio, $0.0001/audio-token, native `input_audio` modality — way cheaper than routing through a general multimodal model |
+| Everything else     | `google/gemini-2.5-flash-lite`     | Fast, cheap, good structured extraction                                                                                           |
+
+Override the transcription model with `OPENROUTER_TRANSCRIPTION_MODEL` (set to
+empty to fall back to `OPENROUTER_MODEL` for everything).
+
+**Gemini fallback** — set `AI_PROVIDER=gemini` to use Google's API directly with
+`gemini-2.5-flash`. No per-task model split (Gemini doesn't route through
+OpenRouter).
+
+**Offline path (prototype, not merged)** — Dennis built an offline version that
+downloads whisper for transcription and distilbert for action-item extraction.
+This lives in a separate branch (`conversation_mapper` lineage) and was never
+merged into ProMapper. The pattern would be:
+
+1. Check if a local whisper binary / wasm module is available
+2. If offline: transcribe locally, then run extraction on the text (which can
+   still use a cloud model or a local distilbert)
+3. If online: use the cloud path above
+
+Whisper.cpp WebAssembly or a `whisper` Python subprocess are both viable. The
+talktype app already has working offline whisper transcription as a reference
+implementation. Re-surfacing this would need:
+
+- A local model check in `services/ai.ts` before falling through to the cloud
+- A new `OfflineAIService` or a wrapper that pipes whisper output into the
+  existing text-analysis path
+
 ## Architecture Map
 
 ```text

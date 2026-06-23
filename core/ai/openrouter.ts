@@ -41,6 +41,8 @@ export interface OpenRouterServiceOptions {
   siteUrl?: string;
   siteName?: string;
   fetcher?: Fetcher;
+  /** Optional model override for audio transcription only. Falls back to model. */
+  transcriptionModel?: string;
 }
 
 interface ChatMessage {
@@ -218,19 +220,18 @@ export function createOpenRouterService(
   const fetcher = options.fetcher ?? fetch;
   const baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
 
-  async function chat(messages: ChatMessage[]): Promise<string> {
-    // Retry transient failures (429/5xx/network) with backoff. parse throws
-    // with the status code in the message, so withRetry catches it.
+  async function chat(
+    messages: ChatMessage[],
+    modelHint?: string,
+  ): Promise<string> {
     return await withRetry(async () => {
       const response = await fetcher(joinUrl(baseUrl, "/chat/completions"), {
         method: "POST",
         headers: buildHeaders(options),
         body: JSON.stringify({
-          model: options.model,
+          model: modelHint ?? options.model,
           messages,
           stream: false,
-          // Lower temperature for steadier structured extraction; generous
-          // ceiling so long transcripts/graphs are not truncated.
           temperature: 0.4,
           max_tokens: 8192,
         }),
@@ -247,6 +248,7 @@ export function createOpenRouterService(
   async function chatAudio(
     prompt: string,
     audioInput: AudioInput,
+    modelHint?: string,
   ): Promise<string> {
     const audioPart = await toOpenRouterAudioPart(audioInput);
     return await chat([
@@ -254,7 +256,7 @@ export function createOpenRouterService(
         role: "user",
         content: buildAudioContent(prompt, audioPart),
       },
-    ]);
+    ], modelHint);
   }
 
   return {
@@ -263,6 +265,7 @@ export function createOpenRouterService(
         const transcriptText = await chatAudio(
           TRANSCRIPTION_PROMPT,
           audioInput,
+          options.transcriptionModel,
         );
         return {
           text: transcriptText,
