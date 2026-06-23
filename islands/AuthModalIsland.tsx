@@ -38,7 +38,7 @@ export default function AuthModalIsland() {
       onClose={dismiss}
       titleId="auth-modal-title"
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <div class="modal-stack">
         <h3
           id="auth-modal-title"
           style={{
@@ -79,7 +79,7 @@ export default function AuthModalIsland() {
             boxSizing: "border-box",
           }}
         />
-        <div style={{ display: "flex", gap: "0.5rem" }}>
+        <div class="modal-actions">
           <button
             class="btn btn--secondary"
             style={{ flex: 1 }}

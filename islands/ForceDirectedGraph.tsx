@@ -810,9 +810,7 @@ export default function ForceDirectedGraph(
           onClose={() => renameModalNodeId.value = null}
           titleId="rename-topic-modal-title"
         >
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-          >
+          <div class="modal-stack">
             <h3
               id="rename-topic-modal-title"
               style={{
@@ -852,7 +850,7 @@ export default function ForceDirectedGraph(
                 boxSizing: "border-box",
               }}
             />
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div class="modal-actions">
               <button
                 class="btn btn--secondary"
                 style={{ flex: 1 }}
@@ -891,9 +889,7 @@ export default function ForceDirectedGraph(
           onClose={() => deleteModalNodeId.value = null}
           titleId="delete-topic-modal-title"
         >
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-          >
+          <div class="modal-stack">
             <h3
               id="delete-topic-modal-title"
               style={{
@@ -918,7 +914,7 @@ export default function ForceDirectedGraph(
               )?.label ?? "this topic"}" will be removed from the map, along
               with its connections. You can undo this right after.
             </p>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div class="modal-actions">
               <button
                 class="btn btn--secondary"
                 style={{ flex: 1 }}

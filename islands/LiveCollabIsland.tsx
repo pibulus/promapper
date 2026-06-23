@@ -195,9 +195,7 @@ export default function LiveCollabIsland(
           onClose={() => showNameModal.value = false}
           titleId="display-name-modal-title"
         >
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-          >
+          <div class="modal-stack">
             <h3
               id="display-name-modal-title"
               style={{
@@ -247,7 +245,7 @@ export default function LiveCollabIsland(
                 boxSizing: "border-box",
               }}
             />
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div class="modal-actions">
               <button
                 class="btn btn--secondary"
                 style={{ flex: 1 }}
