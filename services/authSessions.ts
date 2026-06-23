@@ -4,6 +4,14 @@ const SESSION_TTL_MS = Number(
 
 const sessions = new Map<string, number>();
 
+// Amortized sweep: validateSession runs on every guarded request (frequent),
+// but cleanupExpired only ran on createSession (login — rare). Under
+// validation-heavy traffic, expired sessions for ids never re-presented would
+// otherwise linger. Sweep every Nth validation so the cost is amortized to ~O(1)
+// per call. Deterministic counter (no Math.random — banned in this runtime).
+const SWEEP_EVERY = 100;
+let validateCount = 0;
+
 export function createSession(): string {
   cleanupExpired();
   const id = crypto.randomUUID();
@@ -12,6 +20,7 @@ export function createSession(): string {
 }
 
 export function validateSession(id: string | undefined | null): boolean {
+  if (++validateCount % SWEEP_EVERY === 0) cleanupExpired();
   if (!id) return false;
   const expiry = sessions.get(id);
   if (!expiry) return false;
