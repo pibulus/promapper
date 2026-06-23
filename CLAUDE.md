@@ -267,3 +267,70 @@ expire 24h after last activity.
 6. Presentational UI goes in `components/`.
 7. Update `signals/conversationStore.ts` when result shape changes.
 8. Add or update focused tests in `core/tests/` for core behavior.
+
+## Next Session — June 24, 2026 Handoff
+
+### What was built this session
+
+**AI model overhaul:**
+- Dropped direct Gemini provider (476 lines deleted). OpenRouter-only now via one API key.
+- Per-task model selection: transcription uses `~google/gemini-flash-latest` (native diarisation, 1M context), topics + summary use `~anthropic/claude-haiku-latest` ($1/$5 per 1M for quality), everything else uses `gemini-3.1-flash-lite` ($0.25/$1.50 for cost).
+- All three use rolling `~` aliases so models auto-update.
+- Voxtral Small documented as cheaper transcription alternative (no guaranteed diarisation).
+
+**Audit hardening:**
+- Replaced 4 native `prompt()`/`confirm()` dialogs with accessible `Modal` components (API auth, topic rename, topic delete, display name).
+- Cross-tab storage sync: `window.addEventListener("storage")` warns when another tab edits the active conversation, offers Reload action.
+- A11y: `aria-expanded` on collapsibles, `.sr-only` utility class, keyboard shortcuts overlay (`?` key).
+- 15 new tests (215 total) for auth modal signals, toast actions, and storage detection logic.
+
+**Inline style debt reduction (~43%):**
+- Added ~20 reusable CSS classes to `static/styles.css` (.modal-stack, .modal-actions, .chat-*, .history-*, .live-*, .share-*, .action-*).
+- Biggest wins: ActionItemsCard (55→29), MobileHistoryMenu (40→26), ChatSidebar (14→2).
+
+**Product features:**
+- Keyboard shortcuts cheat sheet (`?` key anywhere).
+- History drawer: search by title + date grouping (Today/Yesterday/This Week/Older).
+- Share polish: copy toast, expiry countdown.
+- Bulk actions: "Complete all" + "Clear N done" buttons.
+- **Meeting rooms (Phase 1):** host records mic → audio chunks sent every 15s to `POST /api/live/chunk` → transcript streams live → PartyKit syncs to viewers. Frontend: recording button with timer + live transcript panel in `LiveCollabIsland.tsx`.
+
+### What's next (Phase 2)
+
+**1. free4chat WebRTC voice relay** — https://github.com/i365dev/free4chat
+- MIT license, Cloudflare RealtimeKit (WebRTC), 1.1k stars. Serverless voice chat.
+- No sign-up, rooms auto-close after 2h, built-in screen sharing + file transfer.
+- Integration plan: fork and extract the RealtimeKit Worker (~200 LOC), strip the Next.js UI, embed as a voice panel alongside ProMapper's live dashboard.
+- Cloudflare free tier covers 10GB WebRTC/month (~100+ meeting-hours free).
+- File: create `workers/voice-relay/` in repo with the forked Worker code.
+- ProMapper side: add a voice-room connection hook in `LiveCollabIsland` to capture mixed WebRTC audio for transcription.
+
+**2. Pricing tiers (freemium):**
+- Free tier: 5 conversations, Flash Lite only, solo, no export.
+- $9/mo: unlimited, smart models (Claude for topics/summary, Gemini 3.5 for transcription), live meeting rooms, export formats, share links.
+- Implementation: add tier gating in `services/requestGuard.ts` or a new middleware. Check user plan via `API_AUTH_TOKEN` or Stripe webhook.
+
+**3. Short-append optimisation:**
+- On appends where the new transcript is < 30s, skip topic extraction + summary generation (just append transcript + check action item status). Saves ~2x on repeat analyses.
+
+**4. Offline path (lower priority):**
+- Dennis's whisper + distilbert prototype lives on `conversation_mapper` lineage branch.
+- Could resurrect as an optional local fallback for users who want privacy or offline use.
+
+### Key files changed this session
+- `services/ai.ts` — OpenRouter-only, per-task model env vars
+- `core/ai/openrouter.ts` — transcriptionModel, summaryModel, topicModel overrides
+- `core/ai/types.ts` — removed GeminiAudioPart, simplified
+- `services/audio.ts` — stripped Gemini upload, inline OpenRouter only
+- `routes/api/live/chunk.ts` — NEW: streaming chunk transcription endpoint
+- `islands/LiveCollabIsland.tsx` — recording controls, live transcript
+- `islands/GoLiveButton.tsx` — "Start Meeting" button
+- `signals/conversationStore.ts` — cross-tab storage sync listener
+- `signals/authModal.ts` — NEW: Promise-based auth token prompt
+- `islands/AuthModalIsland.tsx` — NEW: modal for API auth
+- `utils/toast.ts` — showActionToast()
+- `components/ShortcutsModal.tsx` — NEW: ? key cheat sheet
+- `static/styles.css` — ~20 new CSS classes
+- `core/tests/client_utils_test.ts` — NEW: 15 tests
+- `CLAUDE.md` — updated model architecture docs
+- (deleted) `core/ai/gemini.ts`, `core/tests/gemini_test.ts`
