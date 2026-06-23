@@ -587,6 +587,43 @@ export default function ActionItemsCard(
                 Hide done
               </button>
             </div>
+
+            {/* Bulk actions — shown when there are items */}
+            {progress.value.total > 0 && (
+              <div class="flex gap-2 mt-1.5">
+                {!hideDone.value &&
+                  progress.value.total > progress.value.done && (
+                  <button
+                    onClick={() => {
+                      const updated = visibleItems.value.map((item) =>
+                        item.status === "pending"
+                          ? {
+                            ...item,
+                            status: "completed" as const,
+                            updated_at: new Date().toISOString(),
+                          }
+                          : item
+                      );
+                      publishItems(updated);
+                      soundBloom();
+                    }}
+                    class="text-xs font-semibold"
+                    style={{ color: "var(--color-accent)" }}
+                  >
+                    Complete all
+                  </button>
+                )}
+                {!hideDone.value && progress.value.done > 0 && (
+                  <button
+                    onClick={() => showClearDoneConfirm.value = true}
+                    class="text-xs font-semibold"
+                    style={{ color: "var(--color-text-secondary)" }}
+                  >
+                    Clear {progress.value.done} done
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* List */}
