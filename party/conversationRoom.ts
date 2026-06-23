@@ -104,6 +104,9 @@ export default class ConversationRoom implements Party.Server {
           this.field(normalized.data, "text"),
         );
         if (!text) return;
+        // Chat is real activity — extend the room TTL so a room kept alive only
+        // by conversation (no edits) doesn't expire out from under active peers.
+        await this.saveMetadata(touchRoomMetadata(state.metadata ?? {}));
         this.relay(
           LIVE_MESSAGE_TYPES.CHAT,
           { text, at: Date.now() },
@@ -116,6 +119,8 @@ export default class ConversationRoom implements Party.Server {
         const alias = sanitizeAlias(this.field(normalized.data, "alias"));
         const current = sender.state as ConnectionState | null;
         sender.setState({ ...(current ?? { avatar: "Guest", joinedAt: Date.now() }), alias });
+        // A rename is also a sign of life — keep the room from expiring.
+        await this.saveMetadata(touchRoomMetadata(state.metadata ?? {}));
         this.broadcastPresence();
         return;
       }

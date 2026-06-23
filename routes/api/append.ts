@@ -238,8 +238,13 @@ function sanitizeActionItem(
   if (!raw || typeof raw !== "object") return null;
   const record = raw as Record<string, unknown>;
 
+  // Cap length to match the protocol/share sanitizers (which cap at 500). A
+  // crafted existingActionItems FormData field could otherwise inject multi-KB
+  // descriptions. Peers are already protected (sanitizeConversationData caps on
+  // every relay); this is initiator-side hygiene for consistency.
+  const MAX_DESCRIPTION = 500;
   const description = typeof record.description === "string"
-    ? record.description.trim()
+    ? record.description.trim().slice(0, MAX_DESCRIPTION)
     : "";
   const id = typeof record.id === "string" ? record.id.trim() : "";
 
@@ -276,7 +281,10 @@ function sanitizeActionItem(
   if (
     typeof record.checked_reason === "string" && record.checked_reason.trim()
   ) {
-    item.checked_reason = record.checked_reason.trim();
+    item.checked_reason = record.checked_reason.trim().slice(
+      0,
+      MAX_DESCRIPTION,
+    );
   }
 
   return item;

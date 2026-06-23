@@ -34,6 +34,15 @@ export function guardRequest(req: Request): Response | null {
   return null;
 }
 
+/**
+ * Guard for intentionally PUBLIC endpoints (e.g. share lookup): rate-limit only,
+ * NO auth or origin check, so anyone with the link can still read the share —
+ * but a single known shareId can't be hammered without bound.
+ */
+export function guardPublicRequest(req: Request): Response | null {
+  return enforceRateLimit(req);
+}
+
 function enforceOrigin(req: Request): Response | null {
   if (allowedOrigins.length === 0) {
     return null;
@@ -62,12 +71,15 @@ function enforceRateLimit(req: Request): Response | null {
 
   const key = getClientToken(req);
   const now = Date.now();
-  const entry = rateMap.get(key) ?? { count: 0, windowStart: now };
 
-  if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
-    entry.count = 0;
-    entry.windowStart = now;
+  // Opportunistic sweep: a stale entry for ANY key (not just this one) is
+  // already semantically count-0, so dropping it changes no live client's rate
+  // decision — it only stops the map growing without bound as IPs rotate.
+  for (const [k, e] of rateMap) {
+    if (now - e.windowStart > RATE_LIMIT_WINDOW_MS) rateMap.delete(k);
   }
+
+  const entry = rateMap.get(key) ?? { count: 0, windowStart: now };
 
   entry.count += 1;
   rateMap.set(key, entry);

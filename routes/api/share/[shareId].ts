@@ -1,8 +1,14 @@
 import { Handlers } from "$fresh/server.ts";
 import { getShareStore } from "@core/realtime/shareStore.ts";
+import { guardPublicRequest } from "@services/requestGuard.ts";
 
 export const handler: Handlers = {
-  async GET(_req, ctx) {
+  async GET(req, ctx) {
+    // Shares are public (no auth/origin), but rate-limit so a known shareId
+    // can't be hammered without bound.
+    const rateBlock = guardPublicRequest(req);
+    if (rateBlock) return rateBlock;
+
     try {
       const shareId = ctx.params.shareId;
       const record = await getShareStore().get(shareId);

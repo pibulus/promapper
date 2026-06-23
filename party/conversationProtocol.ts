@@ -251,7 +251,18 @@ function sanitizeActionItem(input: unknown, conversationId: string) {
   );
   if (!id || !description) return null;
   const now = new Date().toISOString();
-  return {
+  const item: {
+    id: string;
+    conversation_id: string;
+    description: string;
+    assignee: string | null;
+    due_date: string | null;
+    status: "completed" | "pending";
+    created_at: string;
+    updated_at: string;
+    ai_checked?: boolean;
+    checked_reason?: string;
+  } = {
     id,
     conversation_id: normalizeString(input.conversation_id, LIMITS.MAX_ID_LENGTH) ||
       conversationId,
@@ -263,6 +274,19 @@ function sanitizeActionItem(input: unknown, conversationId: string) {
     created_at: normalizeTimestamp(input.created_at, now),
     updated_at: normalizeTimestamp(input.updated_at, now),
   };
+
+  // Preserve the AI self-checkoff annotations through the broadcast — these are
+  // the app's headline feature. Without them, only the client that made the
+  // append API call sees which items the AI checked off and why; every other
+  // peer in the live room loses that attribution.
+  if (input.ai_checked === true) item.ai_checked = true;
+  const reason = normalizeOptionalString(
+    input.checked_reason,
+    LIMITS.MAX_ACTION_DESCRIPTION_LENGTH,
+  );
+  if (reason) item.checked_reason = reason;
+
+  return item;
 }
 
 /** Validated conversation snapshot, or null if there's no usable transcript. */

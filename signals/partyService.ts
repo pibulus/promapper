@@ -69,23 +69,34 @@ export function connectToRoom(
   const query: Record<string, string> = { avatar: options.avatar };
   if (options.alias) query.alias = options.alias;
 
-  socket = new PartySocket({
+  const thisSocket = new PartySocket({
     host: options.host,
     party: "conversation", // matches party/conversationRoom.ts (file: conversationRoom)
     room: options.roomId,
     query,
   });
+  socket = thisSocket;
 
-  socket.addEventListener("open", () => {
+  // Every handler bails if the module-level `socket` has since been replaced by
+  // a reconnect. Without this, an OLD socket's async "close" (fired after
+  // disconnectFromRoom on a reconnect) would set partyConnected=false AFTER the
+  // NEW socket already opened — silently killing this client's outbound
+  // broadcasts (liveSync guards on partyConnected). Comparing against the
+  // captured instance, not event.target, is what makes the guard actually work:
+  // a closing socket still reports itself as event.target.
+  thisSocket.addEventListener("open", () => {
+    if (socket !== thisSocket) return;
     partyConnected.value = true;
     connectedRoomId.value = options.roomId;
   });
 
-  socket.addEventListener("close", () => {
+  thisSocket.addEventListener("close", () => {
+    if (socket !== thisSocket) return;
     partyConnected.value = false;
   });
 
-  socket.addEventListener("message", (event) => {
+  thisSocket.addEventListener("message", (event) => {
+    if (socket !== thisSocket) return;
     const msg = parse(event.data);
     if (!msg) return;
     const sender = (msg.sender ?? null) as RemoteUser | null;
