@@ -6,7 +6,10 @@
  */
 
 import { effect, signal } from "@preact/signals";
-import { debouncedSave } from "../core/storage/localStorage.ts";
+import {
+  cancelPendingSave,
+  debouncedSave,
+} from "../core/storage/localStorage.ts";
 import type { ConversationData } from "../core/types/conversation-data.ts";
 import { showToast } from "../utils/toast.ts";
 
@@ -111,6 +114,12 @@ if (typeof window !== "undefined") {
           6000,
         );
       });
+    } else {
+      // Data went null (delete) or we're now viewing a shared conversation.
+      // Cancel any save already scheduled with the OLD data — otherwise it fires
+      // ~500ms later and resurrects the deleted conversation (or leaks shared
+      // data into the owner's localStorage). Audit #8 findings 3.1/3.2.
+      cancelPendingSave();
     }
   });
 }

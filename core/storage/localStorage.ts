@@ -352,6 +352,19 @@ export function debouncedSave(
 }
 
 /**
+ * Cancel a pending debounced save. Critical when conversationData transitions to
+ * null (delete) or to a shared/foreign conversation: without this, a save
+ * already scheduled with the OLD data fires ~500ms later and re-inserts the
+ * just-deleted conversation (or writes shared data into the owner's store).
+ */
+export function cancelPendingSave(): void {
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
+    saveTimeout = null;
+  }
+}
+
+/**
  * Get storage usage stats
  */
 export function getStorageStats(): {
