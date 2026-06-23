@@ -4041,6 +4041,41 @@ a:focus-visible {
 }
 
 /* ===================================================================
+   SHARE POPOVER — floating share-link panel
+   ================================================================ */
+
+.share-popover {
+  border-radius: var(--border-radius);
+  border: 2px solid var(--border-cream-medium);
+  background: var(--surface-cream);
+  box-shadow: var(--shadow-md);
+}
+
+/* Local-only shares get a warm amber status tint. */
+.share-popover.is-local {
+  background: var(--status-amber);
+}
+
+/* Share URL read-only input. */
+.share-url-input {
+  border-radius: var(--border-radius-sm);
+  border: 2px solid var(--border-cream);
+  background: var(--surface-white-warm);
+  color: var(--color-text);
+}
+
+/* Copy button in share popover. */
+.share-copy-btn {
+  border-radius: var(--border-radius-sm);
+  border: none;
+  background: var(--color-accent);
+  color: #fff;
+}
+.share-copy-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* ===================================================================
    LIVE COLLAB — header status bar & avatar list
    ================================================================ */
 
