@@ -19,6 +19,11 @@ import {
   uploadAudioFile,
 } from "@services/audio.ts";
 import { pushResultToRoom } from "@services/partyUpdates.ts";
+import { SHARE_ROOM_LIMITS } from "@core/realtime/shareProtocol.ts";
+
+// Max accepted text length, reusing the existing transcript ceiling so anything
+// processable is also shareable (one source of truth, no second magic number).
+const MAX_TEXT_LENGTH = SHARE_ROOM_LIMITS.MAX_TRANSCRIPT_LENGTH;
 
 export const handler: Handlers = {
   async POST(req) {
@@ -100,6 +105,19 @@ export const handler: Handlers = {
         return new Response(
           JSON.stringify({ error: "No text provided" }),
           { status: 400, headers: { "Content-Type": "application/json" } },
+        );
+      }
+
+      // Cap input length before allocating/forwarding to the AI. Aligns with the
+      // existing transcript ceiling (SHARE_ROOM_LIMITS.MAX_TRANSCRIPT_LENGTH):
+      // anything we accept for processing must also be shareable.
+      if (typeof text === "string" && text.length > MAX_TEXT_LENGTH) {
+        return new Response(
+          JSON.stringify({
+            error:
+              `That's a lot of text — keep it under ${MAX_TEXT_LENGTH.toLocaleString()} characters.`,
+          }),
+          { status: 413, headers: { "Content-Type": "application/json" } },
         );
       }
 

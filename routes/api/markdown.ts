@@ -10,6 +10,12 @@ import { FreshContext } from "$fresh/server.ts";
 import { guardRequest } from "@services/requestGuard.ts";
 import { getAIProvider, getAIService } from "@services/ai.ts";
 import { buildExportContext } from "@core/export/exportContext.ts";
+import { SHARE_ROOM_LIMITS } from "@core/realtime/shareProtocol.ts";
+
+// Cap the format-instruction prompt (enough for detailed presets, not enough for
+// novel-length injection) and reuse the shared transcript ceiling for the body.
+const MAX_PROMPT_LENGTH = 5_000;
+const MAX_TEXT_LENGTH = SHARE_ROOM_LIMITS.MAX_TRANSCRIPT_LENGTH;
 
 export const handler = async (req: Request, _ctx: FreshContext) => {
   // Only allow POST
@@ -29,6 +35,16 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
       return new Response(
         JSON.stringify({ error: "Missing prompt or text" }),
         { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    if (
+      (typeof prompt === "string" && prompt.length > MAX_PROMPT_LENGTH) ||
+      (typeof text === "string" && text.length > MAX_TEXT_LENGTH)
+    ) {
+      return new Response(
+        JSON.stringify({ error: "Prompt or text is too large." }),
+        { status: 413, headers: { "Content-Type": "application/json" } },
       );
     }
 
