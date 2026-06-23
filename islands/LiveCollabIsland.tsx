@@ -134,6 +134,9 @@ export default function LiveCollabIsland(
                 background: connected ? "#52A37F" : "var(--color-border)",
               }}
             />
+            <span class="sr-only">
+              {connected ? "Connected" : partyHost ? "Connecting" : "Offline"}
+            </span>
             {connected
               ? `Live · ${users.length} here`
               : partyHost

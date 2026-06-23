@@ -498,6 +498,7 @@ export default function AudioRecorder(
         class={`header-icon-btn${isRecording.value ? " is-recording" : ""}`}
         data-tip={isRecording.value ? "Recording…" : "Recordings"}
         aria-label={isRecording.value ? "Recording" : "Audio recordings"}
+        aria-expanded={isExpanded.value}
       >
         <i
           class={isRecording.value

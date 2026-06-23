@@ -55,6 +55,7 @@ export default function ChatSidebar() {
         onClick={() => (open.value = true)}
         class="action-header-btn chat-fab"
         aria-label="Open chat"
+        aria-expanded={false}
       >
         💬 Chat{unread > 0 ? ` · ${unread}` : ""}
       </button>
@@ -69,6 +70,7 @@ export default function ChatSidebar() {
           onClick={() => (open.value = false)}
           class="chat-minimize-btn"
           aria-label="Minimize chat"
+          aria-expanded
         >
           ▾
         </button>
