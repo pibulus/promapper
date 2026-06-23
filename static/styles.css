@@ -3802,3 +3802,197 @@ a:focus-visible {
 .links path.is-selected {
   stroke-opacity: 0.95;
 }
+
+/* ===================================================================
+   HISTORY DRAWER — slide-out conversation list
+   ================================================================ */
+
+/* Trigger button (floating, bottom-right). */
+.history-drawer-trigger {
+  background: rgba(255, 252, 248, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-radius: var(--border-radius);
+  padding: 14px 18px;
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: var(--text-size);
+  color: var(--color-text);
+  gap: 8px;
+}
+.history-drawer-trigger:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Backdrop behind the slide-out drawer. */
+.history-drawer-backdrop {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Drawer shell — glass panel sliding out from the right. */
+.history-drawer-panel {
+  background: rgba(255, 252, 248, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-left: 2px solid rgba(0, 0, 0, 0.1);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Drawer header with warm-rose accent band. */
+.history-drawer-header {
+  background: var(--accent-rose-wash);
+  border-bottom: 2px solid var(--accent-rose-wash);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* "Your Conversations" heading. */
+.history-drawer-title {
+  font-weight: 700;
+  font-size: var(--font-size-lg);
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+}
+
+/* Close (✕) button. */
+.history-drawer-close {
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--border-radius-sm);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-medium);
+  color: var(--color-text);
+  font-size: var(--heading-size);
+  font-weight: 600;
+}
+.history-drawer-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  transform: scale(1.05);
+}
+
+/* "New Conversation" slab button. */
+.history-drawer-new-btn {
+  width: 100%;
+  padding: 14px 20px;
+  font-size: var(--heading-size);
+  font-weight: 700;
+  border: 2px solid var(--soft-black);
+  border-radius: 12px;
+  background: var(--soft-black);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* All / Starred filter row. */
+.history-filter-row {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+
+/* Filter toggle button (All / Starred). Base state = inactive. */
+.history-filter-btn {
+  flex: 1;
+  padding: 6px 0;
+  font-size: var(--tiny-size);
+  font-weight: 600;
+  border-radius: var(--border-radius-sm);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.history-filter-btn.is-active {
+  border-color: var(--soft-black);
+  background: var(--soft-black);
+  color: white;
+}
+
+/* Conversation item title. */
+.history-item-heading {
+  font-weight: 700;
+  color: var(--color-text);
+  font-size: var(--text-size);
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+/* Metadata badge (topic count / items count). */
+.history-item-badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+/* Date line under title. */
+.history-item-date {
+  font-size: var(--tiny-size);
+  color: var(--color-text-secondary);
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
+/* Item action button (star / delete) base. */
+.history-action-btn {
+  border-radius: var(--border-radius-sm);
+  padding: 6px;
+  cursor: pointer;
+  transition: all var(--transition-medium);
+  font-size: var(--heading-size);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Star toggle. */
+.history-star-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  color: var(--color-text-secondary);
+}
+.history-star-btn.is-starred {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #d97706;
+}
+.history-star-btn:hover {
+  background: rgba(245, 158, 11, 0.18);
+  transform: scale(1.05);
+}
+
+/* Delete button — warm-rose recession, no alarm red. */
+.history-delete-btn {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  border: 2px solid color-mix(in srgb, var(--color-accent) 22%, transparent);
+  color: var(--color-text-secondary);
+}
+.history-delete-btn:hover {
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  transform: scale(1.05);
+}

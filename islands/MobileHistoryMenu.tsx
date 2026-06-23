@@ -238,28 +238,6 @@ export default function MobileHistoryMenu() {
       <button
         onClick={toggleMenu}
         class="history-drawer-trigger fixed bottom-6 right-6 flex items-center justify-center z-40 transition-all"
-        style={{
-          background: "rgba(255, 252, 248, 0.85)",
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          border: "2px solid rgba(0, 0, 0, 0.15)",
-          borderRadius: "var(--border-radius)",
-          padding: "14px 18px",
-          boxShadow: "4px 4px 0 0 rgba(0, 0, 0, 0.1)",
-          cursor: "pointer",
-          fontWeight: "700",
-          fontSize: "var(--text-size)",
-          color: "var(--color-text)",
-          gap: "8px",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "translate(-2px, -2px)";
-          e.currentTarget.style.boxShadow = "6px 6px 0 0 rgba(0, 0, 0, 0.1)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "translate(0, 0)";
-          e.currentTarget.style.boxShadow = "4px 4px 0 0 rgba(0, 0, 0, 0.1)";
-        }}
         aria-label="Open conversation history"
         title="View saved conversations"
       >
@@ -282,79 +260,23 @@ export default function MobileHistoryMenu() {
       {/* Backdrop */}
       {isOpen.value && (
         <div
-          class="fixed inset-0 z-30"
-          style={{
-            background: "rgba(0, 0, 0, 0.4)",
-            backdropFilter: "blur(4px)",
-            WebkitBackdropFilter: "blur(4px)",
-          }}
+          class="fixed inset-0 z-30 history-drawer-backdrop"
           onClick={() => (isOpen.value = false)}
         />
       )}
 
       {/* Slide-out Drawer */}
       <div
-        class={`history-drawer fixed inset-y-0 right-0 w-96 max-w-[85vw] z-40 ${
+        class={`history-drawer history-drawer-panel fixed inset-y-0 right-0 w-96 max-w-[85vw] z-40 ${
           isOpen.value ? "is-open" : "is-closed"
         }`}
-        style={{
-          background: "rgba(255, 252, 248, 0.95)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          borderLeft: "2px solid rgba(0, 0, 0, 0.1)",
-          boxShadow: "-4px 0 24px rgba(0, 0, 0, 0.12)",
-          display: "flex",
-          flexDirection: "column",
-        }}
       >
         {/* Header */}
-        <div
-          class="history-drawer__header"
-          style={{
-            background: "rgba(232, 131, 156, 0.15)",
-            borderBottom: "2px solid rgba(232, 131, 156, 0.3)",
-            padding: "1.25rem 1.5rem",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexShrink: 0,
-          }}
-        >
-          <h2
-            style={{
-              fontWeight: "700",
-              fontSize: "var(--font-size-lg)",
-              color: "var(--color-text)",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            Your Conversations
-          </h2>
+        <div class="history-drawer-header">
+          <h2 class="history-drawer-title">Your Conversations</h2>
           <button
             onClick={() => (isOpen.value = false)}
-            style={{
-              background: "rgba(0, 0, 0, 0.05)",
-              border: "2px solid rgba(0, 0, 0, 0.1)",
-              borderRadius: "var(--border-radius-sm)",
-              width: "44px",
-              height: "44px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              transition: "all var(--transition-medium)",
-              color: "var(--color-text)",
-              fontSize: "var(--heading-size)",
-              fontWeight: "600",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(0, 0, 0, 0.1)";
-              e.currentTarget.style.transform = "scale(1.05)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(0, 0, 0, 0.05)";
-              e.currentTarget.style.transform = "scale(1)";
-            }}
+            class="history-drawer-close"
           >
             ✕
           </button>
@@ -371,23 +293,7 @@ export default function MobileHistoryMenu() {
         >
           <button
             onClick={handleNew}
-            style={{
-              width: "100%",
-              padding: "14px 20px",
-              fontSize: "var(--heading-size)",
-              fontWeight: "700",
-              border: "2px solid var(--soft-black)",
-              borderRadius: "12px",
-              background: "var(--soft-black)",
-              color: "white",
-              cursor: "pointer",
-              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-              boxShadow: "4px 4px 0 0 rgba(0, 0, 0, 0.12)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-            }}
+            class="history-drawer-new-btn"
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = "translate(-2px, -2px)";
               e.currentTarget.style.boxShadow =
@@ -427,37 +333,14 @@ export default function MobileHistoryMenu() {
         </div>
 
         {/* All / Starred filter */}
-        <div
-          style={{
-            display: "flex",
-            gap: "0.5rem",
-            padding: "0.75rem 1.5rem",
-            borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
-            flexShrink: 0,
-          }}
-        >
+        <div class="history-filter-row">
           {(["all", "starred"] as FilterMode[]).map((mode) => (
             <button
               key={mode}
               onClick={() => (filterMode.value = mode)}
-              style={{
-                flex: 1,
-                padding: "6px 0",
-                fontSize: "var(--tiny-size)",
-                fontWeight: "600",
-                borderRadius: "var(--border-radius-sm)",
-                border: filterMode.value === mode
-                  ? "2px solid var(--soft-black)"
-                  : "2px solid rgba(0,0,0,0.1)",
-                background: filterMode.value === mode
-                  ? "var(--soft-black)"
-                  : "rgba(0,0,0,0.03)",
-                color: filterMode.value === mode
-                  ? "white"
-                  : "var(--color-text-secondary)",
-                cursor: "pointer",
-                transition: "all var(--transition-fast)",
-              }}
+              class={`history-filter-btn${
+                filterMode.value === mode ? " is-active" : ""
+              }`}
             >
               {mode === "all" ? "All" : "★ Starred"}
             </button>
@@ -537,68 +420,38 @@ export default function MobileHistoryMenu() {
                     >
                       <button
                         onClick={() => handleLoad(conv.id)}
-                        style={{
-                          flex: 1,
-                          textAlign: "left",
-                          background: "transparent",
-                          border: "none",
-                          cursor: "pointer",
-                          padding: 0,
-                        }}
+                        class="flex-1 text-left bg-transparent border-none cursor-pointer p-0"
                       >
                         <h3
                           title={fullTitle}
-                          style={{
-                            fontWeight: "700",
-                            color: "var(--color-text)",
-                            fontSize: "var(--text-size)",
-                            marginBottom: "0.5rem",
-                            lineHeight: "1.3",
-                          }}
+                          class="history-item-heading"
                         >
                           {truncatedTitle}
                         </h3>
                         <div
-                          style={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                            marginTop: "0.5rem",
-                            fontSize: "var(--tiny-size)",
-                          }}
+                          class="flex flex-wrap items-center gap-2 mt-2"
+                          style={{ fontSize: "var(--tiny-size)" }}
                         >
                           <span
+                            class="history-item-badge"
                             style={{
                               background: "rgba(59, 130, 246, 0.12)",
                               color: "#2563EB",
-                              padding: "4px 8px",
-                              borderRadius: "6px",
-                              fontWeight: "600",
                             }}
                           >
                             {conv.nodes.length} topics
                           </span>
                           <span
+                            class="history-item-badge"
                             style={{
                               background: "rgba(34, 197, 94, 0.12)",
                               color: "#16A34A",
-                              padding: "4px 8px",
-                              borderRadius: "6px",
-                              fontWeight: "600",
                             }}
                           >
                             {conv.actionItems.length} items
                           </span>
                         </div>
-                        <p
-                          style={{
-                            fontSize: "var(--tiny-size)",
-                            color: "var(--color-text-secondary)",
-                            marginTop: "0.5rem",
-                            fontWeight: "500",
-                          }}
-                        >
+                        <p class="history-item-date">
                           {dateStr}
                         </p>
                       </button>
@@ -615,38 +468,9 @@ export default function MobileHistoryMenu() {
                         <button
                           onClick={(e) => handleToggleStar(e, conv.id)}
                           title={conv.starred ? "Unstar" : "Star conversation"}
-                          style={{
-                            background: conv.starred
-                              ? "rgba(245, 158, 11, 0.12)"
-                              : "rgba(0, 0, 0, 0.04)",
-                            border: conv.starred
-                              ? "2px solid rgba(245, 158, 11, 0.35)"
-                              : "2px solid rgba(0, 0, 0, 0.08)",
-                            borderRadius: "var(--border-radius-sm)",
-                            padding: "6px",
-                            cursor: "pointer",
-                            transition: "all var(--transition-medium)",
-                            fontSize: "var(--heading-size)",
-                            width: "36px",
-                            height: "36px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: conv.starred
-                              ? "#d97706"
-                              : "var(--color-text-secondary)",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background =
-                              "rgba(245, 158, 11, 0.18)";
-                            e.currentTarget.style.transform = "scale(1.05)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = conv.starred
-                              ? "rgba(245, 158, 11, 0.12)"
-                              : "rgba(0, 0, 0, 0.04)";
-                            e.currentTarget.style.transform = "scale(1)";
-                          }}
+                          class={`history-action-btn history-star-btn${
+                            conv.starred ? " is-starred" : ""
+                          }`}
                         >
                           {conv.starred ? "★" : "☆"}
                         </button>
@@ -657,30 +481,7 @@ export default function MobileHistoryMenu() {
                             e.stopPropagation();
                             handleDelete(conv.id);
                           }}
-                          style={{
-                            background: "rgba(239, 68, 68, 0.1)",
-                            border: `2px solid rgba(239, 68, 68, 0.2)`,
-                            borderRadius: "var(--border-radius-sm)",
-                            padding: "8px",
-                            cursor: "pointer",
-                            transition: "all var(--transition-medium)",
-                            fontSize: "var(--heading-size)",
-                            width: "36px",
-                            height: "36px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background =
-                              "rgba(239, 68, 68, 0.15)";
-                            e.currentTarget.style.transform = "scale(1.05)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background =
-                              "rgba(239, 68, 68, 0.1)";
-                            e.currentTarget.style.transform = "scale(1)";
-                          }}
+                          class="history-action-btn history-delete-btn"
                           title="Delete conversation"
                         >
                           🗑️
