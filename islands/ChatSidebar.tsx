@@ -53,19 +53,7 @@ export default function ChatSidebar() {
     return (
       <button
         onClick={() => (open.value = true)}
-        class="action-header-btn"
-        style={{
-          position: "fixed",
-          right: "1rem",
-          bottom: "1rem",
-          zIndex: "var(--z-drawer)",
-          padding: "0.6rem 0.9rem",
-          borderRadius: "999px",
-          background: "var(--color-accent)",
-          color: "#fff",
-          fontWeight: "700",
-          boxShadow: "var(--shadow-lg)",
-        }}
+        class="action-header-btn chat-fab"
         aria-label="Open chat"
       >
         💬 Chat{unread > 0 ? ` · ${unread}` : ""}
@@ -74,38 +62,13 @@ export default function ChatSidebar() {
   }
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        right: "1rem",
-        bottom: "1rem",
-        zIndex: "var(--z-drawer)",
-        width: "min(320px, calc(100vw - 2rem))",
-        height: "min(420px, 60vh)",
-        display: "flex",
-        flexDirection: "column",
-        background: "var(--surface-cream)",
-        border: "2px solid var(--color-border)",
-        borderRadius: "var(--border-radius)",
-        boxShadow: "var(--shadow-xl)",
-        overflow: "hidden",
-      }}
-    >
-      <div
-        class="flex items-center justify-between"
-        style={{
-          padding: "0.5rem 0.75rem",
-          borderBottom: "1px solid var(--color-border)",
-          background: "var(--soft-cream-dark)",
-        }}
-      >
-        <span style={{ fontWeight: "700", fontSize: "var(--small-size)" }}>
-          💬 Room chat
-        </span>
+    <div class="chat-panel">
+      <div class="flex items-center justify-between chat-header">
+        <span class="chat-header-title">💬 Room chat</span>
         <button
           onClick={() => (open.value = false)}
+          class="chat-minimize-btn"
           aria-label="Minimize chat"
-          style={{ cursor: "pointer", color: "var(--color-text-secondary)" }}
         >
           ▾
         </button>
@@ -119,63 +82,28 @@ export default function ChatSidebar() {
         aria-relevant="additions"
         aria-atomic="false"
         aria-label="Chat messages"
-        style={{ flex: "1", overflowY: "auto", padding: "0.5rem 0.75rem" }}
+        class="chat-log"
       >
         {messages.length === 0
-          ? (
-            <p
-              style={{
-                fontSize: "var(--tiny-size)",
-                color: "var(--color-text-secondary)",
-                textAlign: "center",
-                marginTop: "1rem",
-              }}
-            >
-              Say hi 👋
-            </p>
-          )
+          ? <p class="chat-empty">Say hi 👋</p>
           : messages.map((m) => (
             <div key={m.id} style={{ marginBottom: "0.5rem" }}>
-              <span
-                class="inline-flex items-center gap-1"
-                style={{
-                  fontSize: "var(--tiny-size)",
-                  fontWeight: "700",
-                  color: "var(--color-text)", // readable; color moves to the dot
-                }}
-              >
+              <span class="inline-flex items-center gap-1 chat-sender-name">
                 <span
                   aria-hidden="true"
-                  style={{
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "50%",
-                    background: userColor(m.senderId),
-                    display: "inline-block",
-                  }}
+                  class="chat-sender-dot"
+                  style={{ background: userColor(m.senderId) }}
                 />
                 {m.senderName}
               </span>
-              <div
-                style={{
-                  fontSize: "var(--small-size)",
-                  color: "var(--color-text)",
-                  wordBreak: "break-word",
-                }}
-              >
+              <div class="chat-message-body">
                 {m.text}
               </div>
             </div>
           ))}
       </div>
 
-      <div
-        class="flex gap-2"
-        style={{
-          padding: "0.5rem 0.75rem",
-          borderTop: "1px solid var(--color-border)",
-        }}
-      >
+      <div class="flex gap-2 chat-input-row">
         <input
           value={draft.value}
           onInput={(e) => (draft.value = (e.target as HTMLInputElement).value)}
@@ -187,23 +115,11 @@ export default function ChatSidebar() {
           }}
           placeholder="Message…"
           aria-label="Chat message"
-          class="flex-1 rounded px-2 py-1 focus:outline-none"
-          style={{
-            fontSize: "var(--small-size)",
-            border: "2px solid var(--color-border)",
-            background: "var(--soft-cream)",
-          }}
+          class="flex-1 rounded px-2 py-1 focus:outline-none chat-message-input"
         />
         <button
           onClick={submit}
-          class="action-header-btn"
-          style={{
-            background: "var(--color-accent)",
-            color: "#fff",
-            padding: "0 0.75rem",
-            borderRadius: "var(--border-radius-sm)",
-            fontWeight: "700",
-          }}
+          class="action-header-btn chat-send-btn"
           aria-label="Send message"
         >
           ↑

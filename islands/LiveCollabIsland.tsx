@@ -129,12 +129,9 @@ export default function LiveCollabIsland(
           >
             <span
               aria-hidden="true"
+              class="live-status-dot"
               style={{
-                width: "8px",
-                height: "8px",
-                borderRadius: "50%",
                 background: connected ? "#52A37F" : "var(--color-border)",
-                display: "inline-block",
               }}
             />
             {connected
@@ -156,25 +153,13 @@ export default function LiveCollabIsland(
                 title={u.alias || u.avatar}
                 width={28}
                 height={28}
-                style={{
-                  width: "28px",
-                  height: "28px",
-                  borderRadius: "50%",
-                  border: "2px solid var(--soft-cream)",
-                  background: "var(--soft-cream)",
-                }}
+                class="live-avatar"
               />
             ))}
           </div>
           <button
             onClick={renameSelf}
-            class="action-header-btn"
-            style={{
-              background: "var(--surface-cream)",
-              fontSize: "var(--tiny-size)",
-              padding: "0.25rem 0.6rem",
-              borderRadius: "var(--border-radius-sm)",
-            }}
+            class="action-header-btn live-rename-btn"
             title="Change your display name"
             aria-label="Change your display name"
           >
@@ -185,23 +170,19 @@ export default function LiveCollabIsland(
 
       {/* Dashboard (or waiting state) */}
       <div style={{ padding: "var(--card-padding)" }}>
-        {hasData ? <DashboardIsland /> : (
-          <div
-            class="max-w-md mx-auto text-center"
-            style={{
-              padding: "3rem 1rem",
-              color: "var(--color-text-secondary)",
-            }}
-          >
-            <div style={{ fontSize: "2rem" }} class="mb-2">🛰️</div>
-            <p style={{ fontWeight: "600", color: "var(--color-text)" }}>
-              Waiting for the conversation…
-            </p>
-            <p style={{ fontSize: "var(--small-size)" }} class="mt-1">
-              When someone records or adds notes, it appears here live.
-            </p>
-          </div>
-        )}
+        {hasData
+          ? <DashboardIsland />
+          : (
+            <div class="max-w-md mx-auto text-center live-waiting">
+              <div style={{ fontSize: "2rem" }} class="mb-2">🛰️</div>
+              <p style={{ fontWeight: "600", color: "var(--color-text)" }}>
+                Waiting for the conversation…
+              </p>
+              <p style={{ fontSize: "var(--small-size)" }} class="mt-1">
+                When someone records or adds notes, it appears here live.
+              </p>
+            </div>
+          )}
       </div>
 
       {/* In-session chat (only once connected) */}
