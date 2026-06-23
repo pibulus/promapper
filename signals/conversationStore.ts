@@ -8,10 +8,13 @@
 import { effect, signal } from "@preact/signals";
 import {
   cancelPendingSave,
+  CONVERSATIONS_KEY,
   debouncedSave,
+  getActiveConversationId,
+  loadConversation,
 } from "../core/storage/localStorage.ts";
 import type { ConversationData } from "../core/types/conversation-data.ts";
-import { showToast } from "../utils/toast.ts";
+import { showActionToast, showToast } from "../utils/toast.ts";
 
 export type { ConversationData };
 
@@ -120,6 +123,43 @@ if (typeof window !== "undefined") {
       // ~500ms later and resurrects the deleted conversation (or leaks shared
       // data into the owner's localStorage). Audit #8 findings 3.1/3.2.
       cancelPendingSave();
+    }
+  });
+
+  // Cross-tab sync: when another tab writes to the conversations store, check
+  // if the currently-open conversation was changed. If so, show a toast with a
+  // Reload action — do NOT silently overwrite (the user may have in-progress
+  // edits). Only fires for the active conversation; ignores shared views.
+  window.addEventListener("storage", (e) => {
+    if (e.key !== CONVERSATIONS_KEY) return;
+    if (isViewingShared.value) return;
+
+    const activeId = getActiveConversationId();
+    const current = conversationData.value;
+    if (!activeId || !current) return;
+    if (!e.newValue) return;
+
+    try {
+      const prev = e.oldValue ? JSON.parse(e.oldValue)[activeId] : null;
+      const next = JSON.parse(e.newValue)[activeId];
+
+      // Conversation not in the new store — another tab deleted it, ignore.
+      if (!next) return;
+      // No prior version or same timestamp — nothing changed for us.
+      if (!prev || prev.updatedAt === next.updatedAt) return;
+
+      // Different timestamp → another tab modified this conversation.
+      showActionToast(
+        "This conversation was edited in another tab.",
+        "Reload",
+        () => {
+          const fresh = loadConversation(activeId);
+          if (fresh) conversationData.value = fresh;
+        },
+        8000,
+      );
+    } catch {
+      // JSON parse failed — not our data, ignore.
     }
   });
 }

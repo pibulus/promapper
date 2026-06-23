@@ -9,7 +9,7 @@ import type { ConversationData } from "../types/conversation-data.ts";
 import { ts } from "./dates.ts";
 
 // Storage keys
-const CONVERSATIONS_KEY = "project_mapper_conversations";
+export const CONVERSATIONS_KEY = "project_mapper_conversations";
 const ACTIVE_ID_KEY = "project_mapper_active_id";
 const LEGACY_CONVERSATIONS_KEY = "conversation_mapper_conversations";
 const LEGACY_ACTIVE_ID_KEY = "conversation_mapper_active_id";

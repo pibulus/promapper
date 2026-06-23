@@ -100,6 +100,60 @@ export function showUndoToast(
   return { dismiss: close };
 }
 
+/**
+ * Shows a toast with a clickable action button. Generic version of
+ * showUndoToast — use for any toast that needs a user-triggered action
+ * (e.g. "Reload" after a cross-tab edit). Same anti-XSS guarantee:
+ * label is set via textContent, never innerHTML.
+ */
+export function showActionToast(
+  message: string,
+  actionLabel: string,
+  onAction: () => void,
+  duration: number = 8000,
+): { dismiss: () => void } {
+  if (typeof window === "undefined") return { dismiss: () => {} };
+
+  const { icon, bg } = {
+    icon: "fa-info-circle",
+    bg: "#5b8def", // info blue
+  };
+  const toast = buildToastShell(message, icon, bg, "info");
+
+  let timer = 0;
+  const close = () => {
+    if (timer) clearTimeout(timer);
+    timer = 0;
+    dismissToast(toast);
+  };
+
+  const actionBtn = document.createElement("button");
+  actionBtn.type = "button";
+  actionBtn.textContent = actionLabel;
+  actionBtn.style.cssText =
+    `margin-left:auto;flex-shrink:0;cursor:pointer;border:none;` +
+    `background:rgba(255,255,255,0.22);color:#fff;font-weight:700;` +
+    `font-size:0.8rem;padding:0.25rem 0.7rem;border-radius:8px;`;
+  actionBtn.addEventListener("click", () => {
+    try {
+      onAction();
+    } catch (err) {
+      console.error("Action toast handler failed:", err);
+    }
+    close();
+  });
+
+  toast.appendChild(actionBtn);
+  document.body.appendChild(toast);
+
+  timer = setTimeout(() => {
+    timer = 0;
+    dismissToast(toast);
+  }, duration);
+
+  return { dismiss: close };
+}
+
 /** Build the shared toast div (pill, icon, message). No timers attached. */
 function buildToastShell(
   message: string,
