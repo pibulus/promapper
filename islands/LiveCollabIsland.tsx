@@ -102,14 +102,11 @@ export default function LiveCollabIsland(
     <div>
       {/* Live bar */}
       <header
+        class="app-header-glass flex items-center justify-between gap-3"
         style={{
-          background: "rgba(255, 250, 245, 0.92)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
           borderBottom: "2px solid var(--color-border)",
           padding: "0.75rem var(--card-padding)",
         }}
-        class="flex items-center justify-between gap-3"
       >
         <div class="flex items-center gap-2 min-w-0">
           <a

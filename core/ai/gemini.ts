@@ -70,10 +70,16 @@ async function toAudioPart(input: AudioInput): Promise<GeminiAudioPart> {
   });
 }
 
+interface GeminiModel {
+  generateContent: (
+    contents: unknown,
+  ) => Promise<{ response: { text: () => string } }>;
+}
+
 /**
  * Create Gemini AI Service
  */
-export function createGeminiService(model: any): AIService {
+export function createGeminiService(model: GeminiModel): AIService {
   return {
     // ===============================================================
     // TRANSCRIPTION

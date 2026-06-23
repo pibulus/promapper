@@ -7,7 +7,17 @@
  */
 
 import { Head } from "$fresh/runtime.ts";
+import { Handlers } from "$fresh/server.ts";
 import NodemapTestIsland from "../../islands/NodemapTestIsland.tsx";
+
+export const handler: Handlers = {
+  GET(_req, ctx) {
+    if (Deno.env.get("DENO_ENV") !== "development") {
+      return ctx.renderNotFound();
+    }
+    return ctx.render();
+  },
+};
 
 export default function NodemapTestPage() {
   return (

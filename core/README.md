@@ -59,7 +59,6 @@ Notes:
 │   ├── edge.ts
 │   ├── node.ts
 │   ├── transcript.ts
-│   └── index.ts
 ├── orchestration/
 │   ├── conversation-flow.ts    # Main Audio/Text -> Data flow
 │   ├── parallel-analysis.ts    # Parallel topics/actions/status/summary
@@ -67,7 +66,11 @@ Notes:
 ├── realtime/
 │   ├── shareProtocol.ts        # Sanitized share-room contract
 │   └── shareStore.ts           # Memory/Supabase share-store adapters
-└── index.ts                    # Public exports
+├── storage/
+│   ├── localStorage.ts
+│   ├── backup.ts
+│   ├── shareService.ts
+│   └── dates.ts
 ```
 
 ## Provider Setup
@@ -75,7 +78,7 @@ Notes:
 OpenRouter is the primary provider:
 
 ```typescript
-import { createOpenRouterService } from "./core";
+import { createOpenRouterService } from "./ai/openrouter.ts";
 
 const aiService = createOpenRouterService({
   apiKey: openRouterApiKey,
@@ -87,7 +90,7 @@ Gemini can still be used directly:
 
 ```typescript
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { createGeminiService } from "./core";
+import { createGeminiService } from "./ai/gemini.ts";
 
 const genAI = new GoogleGenerativeAI(geminiApiKey);
 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
@@ -100,7 +103,7 @@ from environment variables.
 ## Processing Text
 
 ```typescript
-import { processText } from "./core";
+import { processText } from "./orchestration/conversation-flow.ts";
 
 const result = await processText(
   aiService,
@@ -118,7 +121,7 @@ Server routes should create a provider-specific `AudioPart` first. In this app,
 that is handled by `services/audio.ts`.
 
 ```typescript
-import { processAudio } from "./core";
+import { processAudio } from "./orchestration/conversation-flow.ts";
 import { uploadAudioFile } from "../services/audio.ts";
 
 const { part: audioPart, fileName } = await uploadAudioFile(file);

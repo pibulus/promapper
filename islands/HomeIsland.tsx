@@ -75,10 +75,8 @@ export default function HomeIsland() {
     <div class="mapper-scene min-h-screen">
       {/* Top Bar - Brand presence */}
       <header
+        class="app-header-glass"
         style={{
-          background: "rgba(255, 250, 245, 0.92)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
           borderBottom: "2px solid rgba(0, 0, 0, 0.08)",
           boxShadow: "0 2px 12px rgba(0, 0, 0, 0.04)",
           height: "var(--header-height)",

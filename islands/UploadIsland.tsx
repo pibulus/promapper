@@ -80,6 +80,12 @@ export default function UploadIsland() {
       };
 
       try {
+        if (
+          audioContextRef.current && audioContextRef.current.state !== "closed"
+        ) {
+          audioContextRef.current.close();
+          audioContextRef.current = null;
+        }
         const AudioContext = (window as any).AudioContext ||
           (window as any).webkitAudioContext;
         const audioContext = new AudioContext();

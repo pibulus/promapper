@@ -35,11 +35,13 @@ export function setActionItems(actionItems: ActionItem[]): void {
 export function toggleActionItem(id: string): void {
   const current = conversationData.value;
   if (!current) return;
-  conversationData.value = toggleActionItemStatusOp(
-    current,
-    id,
-    new Date().toISOString(),
-  );
+  withUndo(() => {
+    conversationData.value = toggleActionItemStatusOp(
+      current,
+      id,
+      new Date().toISOString(),
+    );
+  });
 }
 
 export function renameSpeaker(oldName: string, newName: string): void {

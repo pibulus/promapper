@@ -48,6 +48,7 @@ export default function ForceDirectedGraph(
 ) {
   const svgContainerRef = useRef<HTMLDivElement>(null);
   const fullscreenContainerRef = useRef<HTMLDivElement | null>(null);
+  const positionDebounceTimerRef = useRef<number | undefined>(undefined);
   const emojimapHandleRef = useRef<EmojimapHandle | null>(null);
 
   const isFullscreen = useSignal(false);
@@ -95,12 +96,11 @@ export default function ForceDirectedGraph(
   }
 
   // Debounced position persistence — 400 ms so dragging doesn't thrash autosave
-  let _positionDebounceTimer: number | undefined;
   function handlePositionsChange(
     positions: Record<string, { x: number; y: number }>,
   ) {
-    clearTimeout(_positionDebounceTimer);
-    _positionDebounceTimer = setTimeout(() => {
+    clearTimeout(positionDebounceTimerRef.current);
+    positionDebounceTimerRef.current = setTimeout(() => {
       persistTopicPositions(positions);
     }, 400) as unknown as number;
   }

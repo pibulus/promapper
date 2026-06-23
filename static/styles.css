@@ -246,6 +246,13 @@
     transform var(--transition-fast);
 }
 
+html,
+body {
+  /* Warm solid base under everything so no dark browser bg ever peeks through
+     below the scene (kills the grey strip at the page bottom). Theme-aware. */
+  background: var(--color-base-solid);
+}
+
 body {
   font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
@@ -552,6 +559,11 @@ body {
    nothing riding high. The warm gradient bg is the color event; the bar is a
    quiet frosted strip with a hairline rule.
    ================================================================ */
+.app-header-glass {
+  background: rgba(255, 250, 245, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
 .app-header__brand {
   display: inline-flex;
   align-items: center;
@@ -904,7 +916,7 @@ body {
 .mapper-hero-title {
   font-size: clamp(2.6rem, 5vw, 4.25rem);
   font-weight: 900;
-  line-height: 1.02;
+  line-height: 1.08;
   letter-spacing: -0.035em;
   color: var(--soft-black); /* use shared soft black, not random dark */
   margin: 0;
@@ -917,7 +929,12 @@ body {
 
 .mapper-hero-line {
   display: block;
+  /* The slide-up entrance needs overflow:hidden, but that clips descenders
+     (g/y tails). Pad the bottom inside the clip box to give tails room, then
+     pull the next line back up so the visual rhythm stays tight. */
   overflow: hidden;
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
   opacity: 0;
   transform: translateY(16px);
   animation: mapperLineIn 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;

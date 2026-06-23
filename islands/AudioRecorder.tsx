@@ -425,6 +425,9 @@ export default function AudioRecorder(
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
 
+      // Prevent async onstop from firing on an unmounted component
+      if (mediaRecorderRef.current) mediaRecorderRef.current.onstop = null;
+
       // Cleanup audio playback
       if (audioElementRef.current) {
         audioElementRef.current.pause();
