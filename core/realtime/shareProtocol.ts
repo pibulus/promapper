@@ -171,7 +171,18 @@ function sanitizeActionItem(input: unknown, conversationId: string) {
     ? "completed"
     : "pending";
 
-  return {
+  const item: {
+    id: string;
+    conversation_id: string;
+    description: string;
+    assignee: string | null;
+    due_date: string | null;
+    status: "completed" | "pending";
+    created_at: string;
+    updated_at: string;
+    ai_checked?: boolean;
+    checked_reason?: string;
+  } = {
     id,
     conversation_id: normalizeString(input.conversation_id, 128) ||
       conversationId,
@@ -185,6 +196,18 @@ function sanitizeActionItem(input: unknown, conversationId: string) {
     created_at: normalizeTimestamp(input.created_at, now),
     updated_at: normalizeTimestamp(input.updated_at, now),
   };
+
+  // Preserve the AI self-checkoff annotations in shared conversations — the same
+  // headline-feature reasoning as the PartyKit sanitizer. Without these, a shared
+  // map loses which items the AI marked done and why.
+  if (input.ai_checked === true) item.ai_checked = true;
+  const reason = normalizeOptionalString(
+    input.checked_reason,
+    SHARE_ROOM_LIMITS.MAX_ACTION_DESCRIPTION_LENGTH,
+  );
+  if (reason) item.checked_reason = reason;
+
+  return item;
 }
 
 export function generateShareRoomId(): string {

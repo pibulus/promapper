@@ -90,6 +90,14 @@ function normalizeSharedData(data: any): ConversationData | null {
       speakers: [],
     };
 
+  // Cap array sizes on the URL/localStorage decode path. The server share API
+  // (/api/share) sanitizes via sanitizeShareConversation, but this client-side
+  // URL-decompression path bypassed it — a crafted (even small) shared URL could
+  // otherwise stuff in unbounded nodes/edges/items. Limits mirror the server's
+  // SHARE_ROOM_LIMITS (nodes 300, edges 800, items 300).
+  const arr = (v: unknown, n: number): unknown[] =>
+    Array.isArray(v) ? v.slice(0, n) : [];
+
   return {
     conversation: {
       id: String(data.conversation?.id ?? `shared_${Date.now()}`),
@@ -99,12 +107,12 @@ function normalizeSharedData(data: any): ConversationData | null {
       created_at: data.conversation?.created_at ?? data.timestamp,
     },
     transcript,
-    nodes: Array.isArray(data.nodes) ? data.nodes : [],
-    edges: Array.isArray(data.edges) ? data.edges : [],
-    actionItems: Array.isArray(data.actionItems) ? data.actionItems : [],
-    statusUpdates: Array.isArray(data.statusUpdates) ? data.statusUpdates : [],
+    nodes: arr(data.nodes, 300),
+    edges: arr(data.edges, 800),
+    actionItems: arr(data.actionItems, 300),
+    statusUpdates: arr(data.statusUpdates, 300),
     summary: data.summary,
-  };
+  } as ConversationData;
 }
 
 /**

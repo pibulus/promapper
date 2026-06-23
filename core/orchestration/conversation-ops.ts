@@ -179,6 +179,28 @@ export function renameTopic(
 }
 
 /**
+ * Add a topic node. Pure sibling to renameTopic/deleteTopic so a manual add goes
+ * through the same audited, undoable path as every other graph mutation instead
+ * of a hand-rolled spread in the island. Caps the label, defaults emoji/color,
+ * and mints a stable id. No-op (returns same ref) on an empty label.
+ */
+export function addTopic(
+  data: ConversationData,
+  input: { label: string; emoji?: string; color?: string },
+): { data: ConversationData; id: string | null } {
+  const label = input.label.trim().slice(0, MAX_LABEL_LENGTH);
+  if (!label) return { data, id: null };
+  const id = `manual_${crypto.randomUUID()}`;
+  const node = {
+    id,
+    label,
+    emoji: (input.emoji?.trim() || "✨").slice(0, 16),
+    color: input.color?.trim() || "#E8839C",
+  };
+  return { data: { ...data, nodes: [...data.nodes, node] }, id };
+}
+
+/**
  * Delete a topic node by id and any edges touching it.
  */
 export function deleteTopic(

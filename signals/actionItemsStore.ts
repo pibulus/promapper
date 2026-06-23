@@ -11,6 +11,7 @@
 import { conversationData, withUndo } from "@signals/conversationStore.ts";
 import type { ConversationData } from "../core/types/conversation-data.ts";
 import {
+  addTopic as addTopicOp,
   deleteEdge as deleteEdgeOp,
   deleteTopic as deleteTopicOp,
   mergeTopics as mergeTopicsOp,
@@ -47,7 +48,11 @@ export function toggleActionItem(id: string): void {
 export function renameSpeaker(oldName: string, newName: string): void {
   const current = conversationData.value;
   if (!current) return;
-  conversationData.value = renameSpeakerOp(current, oldName, newName);
+  // Undoable: a speaker rename rewrites the transcript + conversation.transcript,
+  // the most destructive of the rename ops.
+  withUndo(() => {
+    conversationData.value = renameSpeakerOp(current, oldName, newName);
+  });
 }
 
 // ===================================================================
@@ -57,7 +62,30 @@ export function renameSpeaker(oldName: string, newName: string): void {
 export function renameTopic(id: string, label: string): void {
   const current = conversationData.value;
   if (!current) return;
-  conversationData.value = renameTopicOp(current, id, label);
+  withUndo(() => {
+    conversationData.value = renameTopicOp(current, id, label);
+  });
+}
+
+/**
+ * Add a topic node through the store (undoable, validated) instead of a
+ * hand-rolled spread in the island. Returns the new node id (or null on empty
+ * label) so the caller can select it.
+ */
+export function addTopic(
+  input: { label: string; emoji?: string; color?: string },
+): string | null {
+  const current = conversationData.value;
+  if (!current) return null;
+  let newId: string | null = null;
+  withUndo(() => {
+    const { data, id } = addTopicOp(current, input);
+    if (id) {
+      conversationData.value = data;
+      newId = id;
+    }
+  });
+  return newId;
 }
 
 export function deleteTopic(id: string): void {

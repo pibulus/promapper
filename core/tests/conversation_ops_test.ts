@@ -1,5 +1,6 @@
 import { assertEquals } from "./_assert.ts";
 import {
+  addTopic,
   deleteEdge,
   deleteTopic,
   MAX_LABEL_LENGTH,
@@ -242,4 +243,39 @@ Deno.test("persistTopicPositions writes finite positions, ignores bad ones", () 
     y: 20,
   });
   assertEquals(next.nodes.find((n) => n.id === "risk")?.position, undefined);
+});
+
+Deno.test("addTopic appends a node with a stable id and defaults", () => {
+  const { data, id } = addTopic(graphData(), { label: "Moths" });
+  assertEquals(typeof id, "string");
+  assertEquals(data.nodes.length, 4);
+  const added = data.nodes.find((n) => n.id === id);
+  assertEquals(added?.label, "Moths");
+  assertEquals(added?.emoji, "✨"); // default
+  assertEquals(added?.color, "#E8839C"); // default
+});
+
+Deno.test("addTopic caps the label at MAX_LABEL_LENGTH", () => {
+  const long = "G".repeat(MAX_LABEL_LENGTH + 50);
+  const { data, id } = addTopic(graphData(), { label: long });
+  const added = data.nodes.find((n) => n.id === id);
+  assertEquals(added?.label.length, MAX_LABEL_LENGTH);
+});
+
+Deno.test("addTopic no-ops on an empty label (same ref, null id)", () => {
+  const input = graphData();
+  const { data, id } = addTopic(input, { label: "   " });
+  assertEquals(id, null);
+  assertEquals(data, input); // unchanged reference
+});
+
+Deno.test("addTopic honors a provided emoji and color", () => {
+  const { data, id } = addTopic(graphData(), {
+    label: "Gerald",
+    emoji: "🦇",
+    color: "#123456",
+  });
+  const added = data.nodes.find((n) => n.id === id);
+  assertEquals(added?.emoji, "🦇");
+  assertEquals(added?.color, "#123456");
 });

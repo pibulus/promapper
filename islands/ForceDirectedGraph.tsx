@@ -24,6 +24,7 @@ import {
   forceDirectedEmojimap,
 } from "../utils/forceDirectedEmojimap.ts";
 import {
+  addTopic,
   deleteEdge,
   deleteTopic,
   mergeTopics,
@@ -312,22 +313,13 @@ export default function ForceDirectedGraph(
   }
 
   function addManualNode() {
-    const label = newNodeLabel.value.trim().slice(0, MAX_LABEL_LENGTH);
-    if (!label || !conversationData.value) return;
-
-    const emoji = newNodeEmoji.value.trim() || "✨";
-    const id = `manual_${crypto.randomUUID()}`;
-    const nextNode = {
-      id,
-      label,
-      emoji,
-      color: "#E8839C",
-    };
-
-    conversationData.value = {
-      ...conversationData.value,
-      nodes: [...conversationData.value.nodes, nextNode],
-    };
+    // Route through the store like every other graph mutation: undoable +
+    // validated, instead of a hand-rolled spread that skipped both.
+    const id = addTopic({
+      label: newNodeLabel.value,
+      emoji: newNodeEmoji.value,
+    });
+    if (!id) return;
     selectedNodeId.value = id;
     newNodeLabel.value = "";
     newNodeEmoji.value = "";

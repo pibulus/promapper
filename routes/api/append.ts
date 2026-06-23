@@ -17,7 +17,7 @@ import {
   mergeAppendEdges,
   mergeAppendNodes,
 } from "@core/orchestration/append-merge.ts";
-import type { ActionItem } from "@core/types/index.ts";
+import type { ActionItem, Edge, Node } from "@core/types/index.ts";
 import { guardRequest } from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
 import {
@@ -105,8 +105,14 @@ export const handler: Handlers = {
         existingActionItemsJson,
         conversationId,
       );
-      const existingNodes = parseExistingNodes(existingNodesJson);
-      const existingEdges = parseExistingEdges(existingEdgesJson);
+      const existingNodes = parseExistingNodes(
+        existingNodesJson,
+        conversationId,
+      );
+      const existingEdges = parseExistingEdges(
+        existingEdgesJson,
+        conversationId,
+      );
       const { part: audioPart, fileName } = await uploadAudioFile(audioFile);
 
       // Process audio through nervous system with existing action items and nodes
@@ -290,22 +296,80 @@ function sanitizeActionItem(
   return item;
 }
 
-function parseExistingNodes(json: string | null) {
+// Per-field caps mirror the protocol/share sanitizers so a crafted existing*
+// FormData field can't smuggle multi-KB labels/colors into the merge (and thence
+// into the initiator's response). The action-item parser already sanitizes
+// per-item; nodes/edges were the overlooked siblings.
+const cap = (v: unknown, n: number) =>
+  typeof v === "string" ? v.slice(0, n) : "";
+
+function sanitizeNode(raw: unknown, conversationId: string): Node | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const id = cap(r.id, 128).trim();
+  const label = cap(r.label, 120).trim();
+  if (!id || !label) return null;
+  // Only carry a position through if it's a real {x,y} number pair — drop garbage
+  // rather than passing an untyped object into the merge.
+  const p = r.position as Record<string, unknown> | undefined;
+  const position = p && typeof p.x === "number" && typeof p.y === "number"
+    ? { x: p.x, y: p.y }
+    : undefined;
+  return {
+    id,
+    conversation_id: cap(r.conversation_id, 128) || conversationId,
+    label,
+    emoji: cap(r.emoji, 16) || "🧠",
+    color: cap(r.color, 40) || "#E8839C",
+    created_at: typeof r.created_at === "string"
+      ? r.created_at
+      : new Date().toISOString(),
+    ...(position ? { position } : {}),
+  };
+}
+
+function sanitizeEdge(raw: unknown, conversationId: string): Edge | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const source = cap(r.source_topic_id, 128).trim();
+  const target = cap(r.target_topic_id, 128).trim();
+  if (!source || !target) return null;
+  return {
+    id: typeof r.id === "string" ? cap(r.id, 128) : crypto.randomUUID(),
+    conversation_id: cap(r.conversation_id, 128) || conversationId,
+    source_topic_id: source,
+    target_topic_id: target,
+    color: cap(r.color, 40) || "#8A8F98",
+    created_at: typeof r.created_at === "string"
+      ? r.created_at
+      : new Date().toISOString(),
+  };
+}
+
+function parseExistingNodes(json: string | null, conversationId: string) {
   if (!json) return [];
   try {
     const parsed = JSON.parse(json);
-    return Array.isArray(parsed) ? parsed.slice(0, 200) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((n) => sanitizeNode(n, conversationId))
+      .filter((n): n is Node => Boolean(n))
+      .slice(0, 200);
   } catch (error) {
     console.warn("Failed to parse existing nodes:", error);
     return [];
   }
 }
 
-function parseExistingEdges(json: string | null) {
+function parseExistingEdges(json: string | null, conversationId: string) {
   if (!json) return [];
   try {
     const parsed = JSON.parse(json);
-    return Array.isArray(parsed) ? parsed.slice(0, 400) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((e) => sanitizeEdge(e, conversationId))
+      .filter((e): e is Edge => Boolean(e))
+      .slice(0, 400);
   } catch (error) {
     console.warn("Failed to parse existing edges:", error);
     return [];
