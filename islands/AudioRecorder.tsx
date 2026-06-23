@@ -13,6 +13,7 @@
 import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import { conversationData } from "@signals/conversationStore.ts";
+import { reconcileAppendResult } from "@core/orchestration/append-reconcile.ts";
 import { showToast } from "../utils/toast.ts";
 import { ensureApiSession } from "../utils/apiAuth.ts";
 import { saveAudioBackup } from "../utils/downloadBackup.ts";
@@ -206,45 +207,49 @@ export default function AudioRecorder(
   // Process audio and append to conversation
   async function processAudioAppend(audioBlob: Blob) {
     try {
+      // Snapshot the conversation at request-send time. The server merges its
+      // AI extraction against EXACTLY this snapshot, so it's also the BASE we
+      // diff the user's in-flight edits against when the result returns. Build
+      // the FormData FROM `base` (not re-reading the live signal) so the server's
+      // merge baseline and our reconcile baseline are provably identical.
+      const base = conversationData.value;
+
       const formData = new FormData();
       formData.append("audio", audioBlob);
       formData.append("conversationId", conversationId);
 
       // Pass existing transcript, action items, summary, and nodes for smart appending
-      if (conversationData.value) {
-        if (conversationData.value.transcript?.text) {
-          formData.append(
-            "existingTranscript",
-            conversationData.value.transcript.text,
-          );
+      if (base) {
+        if (base.transcript?.text) {
+          formData.append("existingTranscript", base.transcript.text);
         }
 
-        if (conversationData.value.actionItems) {
+        if (base.actionItems) {
           formData.append(
             "existingActionItems",
-            JSON.stringify(conversationData.value.actionItems),
+            JSON.stringify(base.actionItems),
           );
         }
 
-        if (conversationData.value.summary) {
-          formData.append("existingSummary", conversationData.value.summary);
+        if (base.summary) {
+          formData.append("existingSummary", base.summary);
         }
 
-        if (conversationData.value.nodes) {
-          formData.append(
-            "existingNodes",
-            JSON.stringify(conversationData.value.nodes),
-          );
+        if (base.nodes) {
+          formData.append("existingNodes", JSON.stringify(base.nodes));
         }
-        if (conversationData.value.edges) {
+        if (base.edges) {
           // Feed existing edges so the topic prompt's relationship-preservation
           // hint isn't empty on appends (the append route already parses this).
-          formData.append(
-            "existingEdges",
-            JSON.stringify(conversationData.value.edges),
-          );
+          formData.append("existingEdges", JSON.stringify(base.edges));
         }
       }
+      // NOTE: roomId is deliberately NOT sent. /api/append's pushResultToRoom
+      // only echoes when roomId is present; keeping it absent means an append
+      // produces exactly ONE write to the initiator (the reconcile below) and
+      // ONE outbound liveSync broadcast — no second clobber window, no echo
+      // storm (audit Finding 3). The peer receives the reconciled snapshot via
+      // the normal outbound effect.
 
       await ensureApiSession();
       const result = await enqueueApiRequest(async ({ signal }) => {
@@ -269,8 +274,17 @@ export default function AudioRecorder(
         }
       }
 
-      // Update conversation data
-      conversationData.value = result;
+      // Reconcile: layer any edits the user made DURING the round-trip (toggle,
+      // delete, drag, rename) back on top of the server's AI-growth result so
+      // they aren't clobbered (audit Findings 2/3/5). `base` is the request-time
+      // snapshot; conversationData.value is the current (possibly-edited) signal.
+      // Passthrough when nothing changed (base null, or unchanged by reference).
+      const reconciled = reconcileAppendResult(
+        base,
+        conversationData.value,
+        result,
+      );
+      conversationData.value = reconciled;
       retryRecordingReady.value = false;
       soundBloom();
 
@@ -289,10 +303,12 @@ export default function AudioRecorder(
         onRecordingComplete();
       }
 
-      const completedCount = result.actionItems.filter((i: any) =>
+      // Counts come from the reconciled state, not raw `result`, so the toast
+      // reflects the user's surviving in-flight edits.
+      const completedCount = reconciled.actionItems.filter((i) =>
         i.status === "completed"
       ).length;
-      const pendingCount = result.actionItems.filter((i: any) =>
+      const pendingCount = reconciled.actionItems.filter((i) =>
         i.status === "pending"
       ).length;
 
