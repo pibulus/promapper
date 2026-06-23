@@ -366,7 +366,10 @@ export function ticked({
   linkElements.attr("d", (d) => edgePath(d));
 
   nodeElements.attr("transform", (d) => {
-    if (d && d.x !== undefined && d.y !== undefined) {
+    // Number.isFinite (not !== undefined): a degenerate layout can produce NaN
+    // coords, and `NaN !== undefined` is true, so the old guard let NaN through —
+    // translate(NaN,NaN) makes the node vanish from the viewport.
+    if (d && Number.isFinite(d.x) && Number.isFinite(d.y)) {
       return `translate(${d.x},${d.y})`;
     }
     return "translate(0,0)";

@@ -362,6 +362,7 @@ export default function ForceDirectedGraph(
     }
 
     return () => {
+      clearTimeout(positionDebounceTimerRef.current);
       if (emojimapHandleRef.current) {
         emojimapHandleRef.current.destroy();
       }

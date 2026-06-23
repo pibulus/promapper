@@ -20,6 +20,11 @@ export class ThemeSystem {
   private config: ThemeSystemConfig;
   private currentTheme: Theme;
   private listeners: Array<(theme: Theme) => void> = [];
+  // Keys set by the PREVIOUS theme's `cssVars` block. A theme-specific var (e.g.
+  // GOLD's --accent-strong) would otherwise persist as an inline :root style
+  // after switching to a theme that doesn't define it, overriding the static-CSS
+  // default. We clear last theme's extras that the new theme doesn't redefine.
+  private appliedCssVarKeys: string[] = [];
 
   constructor(config: ThemeSystemConfig) {
     this.config = {
@@ -98,12 +103,19 @@ export class ThemeSystem {
       this.setCSSVar(root, `${prefix}-shadow`, theme.shadow);
     }
 
-    // Extra cssVars overrides (e.g. --shadow-soft, --gradient-bg)
+    // Extra cssVars overrides (e.g. --shadow-soft, --gradient-bg). Clear any
+    // extras the PREVIOUS theme set that this one doesn't redefine, so a
+    // theme-specific var doesn't leak across the switch as inline residue.
+    const nextKeys = theme.cssVars ? Object.keys(theme.cssVars) : [];
+    for (const stale of this.appliedCssVarKeys) {
+      if (!nextKeys.includes(stale)) root.style.removeProperty(stale);
+    }
     if (theme.cssVars) {
       for (const [key, value] of Object.entries(theme.cssVars)) {
         root.style.setProperty(key, value);
       }
     }
+    this.appliedCssVarKeys = nextKeys;
 
     // Persist selection
     this.saveTheme(theme);
