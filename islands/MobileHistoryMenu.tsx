@@ -50,6 +50,7 @@ export default function MobileHistoryMenu() {
   const isOpen = useSignal(false);
   const showConfirmDelete = useSignal<string | null>(null);
   const filterMode = useSignal<FilterMode>("all");
+  const searchQuery = useSignal("");
   const importInputRef = useRef<HTMLInputElement>(null);
 
   // Memoize conversations list - only recalculates when refreshTrigger changes
@@ -58,12 +59,56 @@ export default function MobileHistoryMenu() {
     return getConversationList();
   });
 
-  // Filtered view
-  const visibleConversations = useComputed<StoredConversation[]>(() =>
-    filterMode.value === "starred"
+  // Filtered view — star + search
+  const visibleConversations = useComputed<StoredConversation[]>(() => {
+    let list = filterMode.value === "starred"
       ? conversations.value.filter((c) => c.starred)
-      : conversations.value
-  );
+      : conversations.value;
+
+    const q = searchQuery.value.trim().toLowerCase();
+    if (q) {
+      list = list.filter((c) =>
+        (c.conversation.title || "").toLowerCase().includes(q)
+      );
+    }
+    return list;
+  });
+
+  // Date-grouped conversations for the list. Groups: Today / Yesterday /
+  // This Week / Older. Each group is { label, items }.
+  const groupedConversations = useComputed(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today.getTime() - 86400000);
+    // This Monday (or today if it's Monday)
+    const dow = today.getDay(); // 0=Sun
+    const monday = new Date(
+      today.getTime() - (dow === 0 ? 6 : dow - 1) * 86400000,
+    );
+
+    const groups: { label: string; items: StoredConversation[] }[] = [
+      { label: "Today", items: [] },
+      { label: "Yesterday", items: [] },
+      { label: "This Week", items: [] },
+      { label: "Older", items: [] },
+    ];
+
+    for (const conv of visibleConversations.value) {
+      const d = new Date(conv.updatedAt);
+      const dateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      if (dateOnly.getTime() >= today.getTime()) {
+        groups[0].items.push(conv);
+      } else if (dateOnly.getTime() >= yesterday.getTime()) {
+        groups[1].items.push(conv);
+      } else if (dateOnly.getTime() >= monday.getTime()) {
+        groups[2].items.push(conv);
+      } else {
+        groups[3].items.push(conv);
+      }
+    }
+
+    return groups.filter((g) => g.items.length > 0);
+  });
 
   // Local-storage usage, recomputed whenever the saved set changes. Surfacing
   // this makes the 5MB localStorage ceiling observable — the signal that tells
@@ -337,7 +382,10 @@ export default function MobileHistoryMenu() {
           {(["all", "starred"] as FilterMode[]).map((mode) => (
             <button
               key={mode}
-              onClick={() => (filterMode.value = mode)}
+              onClick={() => {
+                filterMode.value = mode;
+                searchQuery.value = "";
+              }}
               class={`history-filter-btn${
                 filterMode.value === mode ? " is-active" : ""
               }`}
@@ -347,12 +395,25 @@ export default function MobileHistoryMenu() {
           ))}
         </div>
 
+        {/* Search */}
+        <div class="history-search">
+          <input
+            type="text"
+            value={searchQuery.value}
+            onInput={(e) =>
+              searchQuery.value = (e.target as HTMLInputElement).value}
+            placeholder="Search conversations"
+            aria-label="Search conversations"
+            class="w-full rounded px-2 py-1.5 focus:outline-none action-input--xs"
+          />
+        </div>
+
         {/* Conversation List */}
         <div
           class="history-drawer__list overflow-y-auto space-y-3"
-          style={{ padding: "1.25rem 1.5rem", flex: 1 }}
+          style={{ padding: "1rem 1.5rem", flex: 1 }}
         >
-          {visibleConversations.value.length === 0
+          {groupedConversations.value.length === 0
             ? (
               <div
                 style={{
@@ -394,103 +455,112 @@ export default function MobileHistoryMenu() {
               </div>
             )
             : (
-              visibleConversations.value.map((conv) => {
-                const isActive = activeId === conv.id;
-                const fullTitle = conv.conversation.title || "Untitled";
-                const truncatedTitle = fullTitle.length > 35
-                  ? `${fullTitle.substring(0, 35)}…`
-                  : fullTitle;
-                // Use cached date formatter for better performance
-                const dateStr = dateFormatter.format(new Date(conv.updatedAt));
+              groupedConversations.value.map((group) => (
+                <div key={group.label}>
+                  <div class="history-date-group">{group.label}</div>
+                  {group.items.map((conv) => {
+                    const isActive = activeId === conv.id;
+                    const fullTitle = conv.conversation.title || "Untitled";
+                    const truncatedTitle = fullTitle.length > 35
+                      ? `${fullTitle.substring(0, 35)}…`
+                      : fullTitle;
+                    // Use cached date formatter for better performance
+                    const dateStr = dateFormatter.format(
+                      new Date(conv.updatedAt),
+                    );
 
-                return (
-                  <div
-                    key={conv.id}
-                    class={`history-item history-drawer__item${
-                      isActive ? " active" : ""
-                    }`}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "start",
-                        justifyContent: "space-between",
-                        gap: "0.5rem",
-                      }}
-                    >
-                      <button
-                        onClick={() => handleLoad(conv.id)}
-                        class="flex-1 text-left bg-transparent border-none cursor-pointer p-0"
-                      >
-                        <h3
-                          title={fullTitle}
-                          class="history-item-heading"
-                        >
-                          {truncatedTitle}
-                        </h3>
-                        <div
-                          class="flex flex-wrap items-center gap-2 mt-2"
-                          style={{ fontSize: "var(--tiny-size)" }}
-                        >
-                          <span
-                            class="history-item-badge"
-                            style={{
-                              background: "rgba(59, 130, 246, 0.12)",
-                              color: "#2563EB",
-                            }}
-                          >
-                            {conv.nodes.length} topics
-                          </span>
-                          <span
-                            class="history-item-badge"
-                            style={{
-                              background: "rgba(34, 197, 94, 0.12)",
-                              color: "#16A34A",
-                            }}
-                          >
-                            {conv.actionItems.length} items
-                          </span>
-                        </div>
-                        <p class="history-item-date">
-                          {dateStr}
-                        </p>
-                      </button>
-
+                    return (
                       <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "0.5rem",
-                          alignItems: "center",
-                        }}
+                        key={conv.id}
+                        class={`history-item history-drawer__item${
+                          isActive ? " active" : ""
+                        }`}
                       >
-                        {/* Star toggle */}
-                        <button
-                          onClick={(e) => handleToggleStar(e, conv.id)}
-                          title={conv.starred ? "Unstar" : "Star conversation"}
-                          class={`history-action-btn history-star-btn${
-                            conv.starred ? " is-starred" : ""
-                          }`}
-                        >
-                          {conv.starred ? "★" : "☆"}
-                        </button>
-
-                        {/* Delete */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(conv.id);
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "start",
+                            justifyContent: "space-between",
+                            gap: "0.5rem",
                           }}
-                          class="history-action-btn history-delete-btn"
-                          title="Delete conversation"
                         >
-                          🗑️
-                        </button>
+                          <button
+                            onClick={() => handleLoad(conv.id)}
+                            class="flex-1 text-left bg-transparent border-none cursor-pointer p-0"
+                          >
+                            <h3
+                              title={fullTitle}
+                              class="history-item-heading"
+                            >
+                              {truncatedTitle}
+                            </h3>
+                            <div
+                              class="flex flex-wrap items-center gap-2 mt-2"
+                              style={{ fontSize: "var(--tiny-size)" }}
+                            >
+                              <span
+                                class="history-item-badge"
+                                style={{
+                                  background: "rgba(59, 130, 246, 0.12)",
+                                  color: "#2563EB",
+                                }}
+                              >
+                                {conv.nodes.length} topics
+                              </span>
+                              <span
+                                class="history-item-badge"
+                                style={{
+                                  background: "rgba(34, 197, 94, 0.12)",
+                                  color: "#16A34A",
+                                }}
+                              >
+                                {conv.actionItems.length} items
+                              </span>
+                            </div>
+                            <p class="history-item-date">
+                              {dateStr}
+                            </p>
+                          </button>
+
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: "0.5rem",
+                              alignItems: "center",
+                            }}
+                          >
+                            {/* Star toggle */}
+                            <button
+                              onClick={(e) => handleToggleStar(e, conv.id)}
+                              title={conv.starred
+                                ? "Unstar"
+                                : "Star conversation"}
+                              class={`history-action-btn history-star-btn${
+                                conv.starred ? " is-starred" : ""
+                              }`}
+                            >
+                              {conv.starred ? "★" : "☆"}
+                            </button>
+
+                            {/* Delete */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(conv.id);
+                              }}
+                              class="history-action-btn history-delete-btn"
+                              title="Delete conversation"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })
+                    );
+                  })}
+                </div>
+              ))
             )}
         </div>
 

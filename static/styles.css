@@ -4023,6 +4023,23 @@ a:focus-visible {
   transform: scale(1.05);
 }
 
+/* Date-group header in the history drawer. */
+.history-date-group {
+  font-size: var(--tiny-size);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  padding: 0.5rem 0 0.25rem;
+}
+
+/* Search input inside the history drawer. */
+.history-search {
+  padding: 0.5rem 1.5rem 0.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+
 /* ===================================================================
    LIVE COLLAB — header status bar & avatar list
    ================================================================ */
