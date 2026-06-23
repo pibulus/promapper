@@ -352,7 +352,7 @@ project memory form in real-time.
 │                                                           │
 │  ┌──────────────────┐  ┌───────┐  ┌────────────────────┐ │
 │  │ Voice Chat       │  │ Topic │  │ Shared Whiteboard   │ │
-│  │ (RealtimeKit)    │  │ Map   │  │ (Excalidraw/drawio) │ │
+│  │ (RealtimeKit)    │  │ Map   │  │ (Excalidraw)        │ │
 │  │                  │  │       │  │                     │ │
 │  │ 🎙️ Pablo ⚫      │  │ 🕸️    │  │  ┌──┐    ┌──┐      │ │
 │  │ 🎙️ Sarah        │  │ nodes │  │  │DB│←──→│API│      │ │
@@ -366,6 +366,45 @@ project memory form in real-time.
 │  └──────────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────┘
 ```
+
+### Technology Decisions
+
+**Whiteboard: Excalidraw (not drawio).**
+
+- `@excalidraw/excalidraw` — npm package, embed as Preact component
+- Scene is a JSON array of elements — trivial to sync via PartyKit
+- Built-in `isCollaborating` mode, `onChange` fires on every edit
+- `excalidrawAPI.updateScene()` for programmatic AI edits
+- `customData` field on each element for ProMapper metadata
+- Hand-drawn aesthetic matches pastel-punk vibe
+- autopreso already uses it — borrow the edit model pattern
+
+**Voice Relay: fork free4chat (not direct RealtimeKit).**
+
+- `workers/voice-relay/` — Cloudflare Worker, ~200 LOC after stripping Next.js
+- Issues RealtimeKit session tokens, manages room lifecycle via KV
+- P2P audio: WebRTC data channels, no audio passes through the server
+- MIT license, 1.1k stars, battle-tested
+- Cloudflare free tier: 10GB WebRTC/month ≈ 100+ meeting-hours free
+
+**AI Whiteboard Agent: adapt autopreso's edit model.**
+
+- Line-numbered text view of Excalidraw scene
+- Agent emits `replace`, `insert_after`, `delete` operations
+- Apply to canvas via `excalidrawAPI.updateScene()`
+- Same AI pipeline as current (OpenRouter → Claude Haiku for reasoning)
+
+**OCR: tesseract.js (client-side).**
+
+- 38k stars, 100+ languages, runs in browser
+- No server needed — WASM download ~10MB
+- Good enough for notes, screenshots, whiteboard photos
+
+**Offline STT: whisper.cpp (later phase).**
+
+- Cross-platform, mature, multiple model sizes
+- TalkType already has working integration
+- Moonshine is a nicer macOS option (borrow from autopreso)
 
 ### Reference Projects
 
@@ -400,7 +439,7 @@ sensitive meetings. macOS arm64/x64 binaries available.
 - Add to `LiveCollabIsland` as the left pane
 
 **Phase 2b: Shared Whiteboard (manual)**
-- Embed Excalidraw or drawio as `islands/SharedWhiteboard.tsx`
+- Embed Excalidraw as `islands/SharedWhiteboard.tsx`
 - Sync scene via PartyKit (already built)
 - Humans draw manually — click, drag, type
 - Toolbar: pen, rectangle, arrow, text, eraser, colors
@@ -429,3 +468,189 @@ sensitive meetings. macOS arm64/x64 binaries available.
 - **Free tier**: solo only, no meeting rooms, no whiteboard, Flash Lite only
 - **$9/mo**: meeting rooms, voice relay, shared whiteboard, smart models,
   export formats, share links
+
+### Technical Sketches
+
+**Voice Relay Worker** (`workers/voice-relay/src/index.ts`):
+
+```ts
+// Cloudflare Worker — issues RealtimeKit tokens, manages room lifecycle.
+// Forked from free4chat, stripped of Next.js. ~150 LOC.
+
+export default {
+  async fetch(req: Request, env: Env): Promise<Response> {
+    const url = new URL(req.url)
+    const roomId = url.pathname.split('/').pop()!
+
+    // POST /rooms/:id/join — return WebRTC config
+    if (req.method === 'POST') {
+      const exists = await env.KV.get(`room:${roomId}`)
+      if (!exists) return new Response('Room not found', { status: 404 })
+
+      const sessionToken = await env.REALTIME_KIT.createSession({
+        roomId,
+        ttl: 7200, // 2 hours
+      })
+
+      return Response.json({
+        sessionId: crypto.randomUUID(),
+        iceServers: env.TURN_CONFIG,
+        sessionToken,
+      })
+    }
+
+    // GET /rooms/:id — create room
+    await env.KV.put(`room:${roomId}`, 'active', {
+      expirationTtl: 2592000 // 30 days
+    })
+    return Response.json({ roomId })
+  }
+}
+```
+
+**Voice Panel** (`islands/VoicePanel.tsx`):
+
+```tsx
+// Left pane in meeting room — WebRTC voice controls.
+// Handles: join/leave, mute/unmute, speaker indicators.
+
+interface VoicePanelProps { roomId: string }
+
+export default function VoicePanel({ roomId }: VoicePanelProps) {
+  const peers = useSignal<Peer[]>([])
+  const isMuted = useSignal(false)
+  const isConnecting = useSignal(true)
+
+  useEffect(() => {
+    // 1. Fetch session token from Worker
+    // 2. Join RealtimeKit room
+    // 3. Track remote audio + data channels
+    const room = new RealtimeKit.Room(roomId, sessionToken)
+    room.on('participantJoined', (p) => peers.value = [...peers.value, p])
+    room.on('participantLeft', (id) => peers.value = peers.value.filter(p => p.id !== id))
+    room.on('trackSubscribed', (track) => {
+      // Route remote audio to speaker
+      const audioEl = new Audio()
+      audioEl.srcObject = new MediaStream([track])
+      audioEl.play()
+    })
+    room.join()
+  }, [])
+
+  return (
+    <div class="voice-panel">
+      <button onClick={toggleMute}>{isMuted ? '🔇' : '🎤'}</button>
+      {peers.value.map(p => (
+        <div class={p.isSpeaking ? 'speaking' : ''}>{p.name}</div>
+      ))}
+      <button onClick={leave}>Leave</button>
+    </div>
+  )
+}
+```
+
+**Shared Whiteboard** (`islands/SharedWhiteboard.tsx`):
+
+```tsx
+// Excalidraw embedded as a Preact island. Syncs via PartyKit.
+// Both humans and AI can edit the scene.
+
+export default function SharedWhiteboard({ roomId }: { roomId: string }) {
+  const excalidrawRef = useRef(null)
+  const [api, setApi] = useState(null)
+
+  // Human edit → broadcast to room
+  function onChange(elements, appState) {
+    partyService.send({ type: 'whiteboard-update', elements, appState })
+  }
+
+  // Remote edit → apply to canvas
+  useEffect(() => {
+    partyService.on('whiteboard-update', ({ elements, appState }) => {
+      api?.updateScene({ elements, appState, commitToHistory: false })
+    })
+  }, [api])
+
+  return (
+    <Excalidraw
+      ref={excalidrawRef}
+      initialData={{ elements: [], appState: { theme: 'light' } }}
+      excalidrawAPI={(a) => setApi(a)}
+      onChange={onChange}
+      isCollaborating={true}
+      UIOptions={{
+        canvasActions: { export: false, loadScene: false }
+      }}
+      theme="light"
+    />
+  )
+}
+```
+
+**AI Whiteboard Agent** (inspired by autopreso):
+
+```
+Data flow:
+  Transcript chunk (final) → format scene as line-numbered text
+  → build prompt: "You are building a diagram alongside this conversation:
+     Transcript: {chunk}
+     Current scene: {line-numbered-text}
+     Available operations: replace(line, newContent), insert_after(line, text),
+     delete(line)"
+  → send to Claude Haiku (via OpenRouter)
+  → parse response for replace/insert_after/delete operations
+  → apply to scene via excalidrawAPI.updateScene()
+  → PartyKit broadcasts updated scene to all viewers
+```
+
+**Data Flow (complete)**:
+
+```
+Browser mic → getUserMedia (24kHz mono)
+  ↓
+RealtimeKit → P2P audio → other participants hear
+  ↓
+MediaRecorder → 15s chunks → POST /api/live/chunk
+  ↓
+Gemini 3.5 Flash → transcription (native diarisation)
+  ↓
+Claude Haiku → topic extraction + action items + summary
+  ↓
+PartyKit → broadcast to all viewers
+  ↓
+Excalidraw onChange → PartyKit → broadcast whiteboard edits
+  ↓
+(Phase 2c) AI agent → whiteboard tool calls → Excalidraw updateScene
+```
+
+### Files to Create (Phase 2a)
+
+```
+workers/voice-relay/
+  src/index.ts          # Cloudflare Worker
+  wrangler.toml          # Deploy config
+  package.json
+
+islands/
+  VoicePanel.tsx         # WebRTC voice controls (NEW)
+  SharedWhiteboard.tsx   # Excalidraw island (Phase 2b, NEW)
+
+routes/api/live/
+  chunk.ts              # Already created (Phase 1)
+  voice-token.ts        # Proxy to Worker for auth tokens (NEW)
+```
+
+### Files to Modify (Phase 2a)
+
+```
+islands/LiveCollabIsland.tsx
+  → Add VoicePanel as left pane
+  → Add SharedWhiteboard (Phase 2b)
+  → Layout: voice | dashboard | whiteboard (responsive grid)
+
+signals/partyService.ts
+  → Add whiteboard-update message type
+
+party/conversationRoom.ts
+  → Handle whiteboard sync messages
+```
