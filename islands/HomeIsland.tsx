@@ -26,9 +26,11 @@ import MarkdownMakerDrawer from "./MarkdownMakerDrawer.tsx";
 import AudioRecorder from "./AudioRecorder.tsx";
 import ThemeSwitcher from "./ThemeSwitcher.tsx";
 import SoundToggle from "./SoundToggle.tsx";
+import ShortcutsModal from "../components/ShortcutsModal.tsx";
 import AuthModalIsland from "./AuthModalIsland.tsx";
 
 const drawerOpen = signal(false);
+const shortcutsOpen = signal(false);
 
 export default function HomeIsland() {
   // Restore last conversation on mount
@@ -67,7 +69,23 @@ export default function HomeIsland() {
     return () => globalThis.removeEventListener("keydown", onKeydown);
   }, []);
 
-  // Get transcript for MarkdownMaker
+  // ? → keyboard shortcuts cheat sheet
+  useEffect(() => {
+    function onKeydown(e: KeyboardEvent) {
+      const el = e.target as HTMLElement | null;
+      const tag = el?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || el?.isContentEditable) {
+        return;
+      }
+      if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+        e.preventDefault();
+        shortcutsOpen.value = !shortcutsOpen.value;
+      }
+    }
+    globalThis.addEventListener("keydown", onKeydown);
+    return () => globalThis.removeEventListener("keydown", onKeydown);
+  }, []);
+
   const transcript = conversationData.value?.transcript?.text || "";
 
   const heroLines = ["See what you're", "really saying"];
@@ -227,6 +245,12 @@ export default function HomeIsland() {
 
       {/* Auth modal — triggered by requestAuthToken() from anywhere */}
       <AuthModalIsland />
+
+      {/* Keyboard shortcuts cheat sheet */}
+      <ShortcutsModal
+        open={shortcutsOpen.value}
+        onClose={() => shortcutsOpen.value = false}
+      />
     </div>
   );
 }
