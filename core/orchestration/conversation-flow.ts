@@ -194,24 +194,3 @@ export async function processText(
     statusUpdates: analysis.statusUpdates,
   };
 }
-
-/**
- * Generate summary for conversation
- */
-export async function generateSummary(
-  aiService: AIService,
-  text: string,
-): Promise<string> {
-  return aiService.generateSummary(text);
-}
-
-/**
- * Export conversation in different formats
- */
-export async function exportConversation(
-  aiService: AIService,
-  formatPrompt: string,
-  text: string,
-): Promise<string> {
-  return aiService.generateMarkdown(formatPrompt, text);
-}

@@ -6,6 +6,7 @@ import { enqueueApiRequest } from "../utils/requestQueue.ts";
 import { soundBloom } from "@utils/sound.ts";
 import LoadingModal from "../components/LoadingModal.tsx";
 import AudioVisualizer from "./AudioVisualizer.tsx";
+import { showToast } from "../utils/toast.ts";
 
 export default function UploadIsland() {
   const textInput = useSignal("");
@@ -113,8 +114,9 @@ export default function UploadIsland() {
       }, 1000) as unknown as number;
     } catch (error) {
       console.error("Error starting recording:", error);
-      alert(
+      showToast(
         "Could not access microphone. Please grant permission and try again.",
+        "error",
       );
     }
   }
@@ -198,13 +200,15 @@ export default function UploadIsland() {
       });
       conversationData.value = result;
       soundBloom();
-      alert(
-        `✅ Processed! Found ${result.actionItems.length} action items, ${result.nodes.length} topics`,
+      showToast(
+        `Processed! Found ${result.actionItems.length} action items, ${result.nodes.length} topics`,
+        "success",
       );
     } catch (error) {
       console.error("❌ Error processing audio:", error);
-      alert(
+      showToast(
         `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        "error",
       );
     } finally {
       console.log("🏁 Processing complete, hiding modal");
@@ -247,13 +251,15 @@ export default function UploadIsland() {
       conversationData.value = result;
       soundBloom();
       textInput.value = "";
-      alert(
-        `✅ Processed! Found ${result.actionItems.length} action items, ${result.nodes.length} topics`,
+      showToast(
+        `Processed! Found ${result.actionItems.length} action items, ${result.nodes.length} topics`,
+        "success",
       );
     } catch (error) {
       console.error("❌ Error processing text:", error);
-      alert(
+      showToast(
         `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        "error",
       );
     } finally {
       console.log("🏁 Processing complete, hiding modal");
@@ -300,13 +306,15 @@ export default function UploadIsland() {
       conversationData.value = result;
       soundBloom();
       lastUploadName.value = file.name;
-      alert(
-        `✅ Processed! Found ${result.actionItems.length} action items, ${result.nodes.length} topics`,
+      showToast(
+        `Processed! Found ${result.actionItems.length} action items, ${result.nodes.length} topics`,
+        "success",
       );
     } catch (error) {
       console.error("❌ Error processing audio:", error);
-      alert(
+      showToast(
         `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        "error",
       );
     } finally {
       isProcessing.value = false;

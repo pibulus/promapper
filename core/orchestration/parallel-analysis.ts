@@ -100,12 +100,12 @@ export async function analyzeAudio(
   const [topics, actionItems, statusUpdates, summary] = await Promise.all([
     topicsPromise,
     aiService.extractActionItems(
-      audioInput,
+      transcription.text,
       transcription.speakers,
       existingActionItems,
     ),
     existingActionItems.length > 0
-      ? aiService.checkActionItemStatus(audioInput, existingActionItems)
+      ? aiService.checkActionItemStatus(transcription.text, existingActionItems)
       : Promise.resolve([]),
     summaryPromise,
   ]);

@@ -67,8 +67,8 @@ export function cleanJsonResponse(text: string): string {
 // PRIMITIVE NORMALIZERS
 // ===================================================================
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 function normalizeString(value: unknown): string {

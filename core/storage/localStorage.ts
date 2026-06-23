@@ -6,6 +6,7 @@
  */
 
 import type { ConversationData } from "../types/conversation-data.ts";
+import { ts } from "./dates.ts";
 
 // Storage keys
 const CONVERSATIONS_KEY = "project_mapper_conversations";
@@ -173,12 +174,6 @@ export function getAllConversations(): Record<string, StoredConversation> {
  */
 export function getConversationList(): StoredConversation[] {
   const conversations = getAllConversations();
-  // Coerce invalid dates to 0 so a malformed updatedAt can't make the
-  // comparator return NaN (which produces an unstable sort).
-  const ts = (v: string | undefined) => {
-    const t = new Date(v ?? 0).getTime();
-    return Number.isNaN(t) ? 0 : t;
-  };
   return Object.values(conversations).sort(
     (a, b) => ts(b.updatedAt) - ts(a.updatedAt),
   );

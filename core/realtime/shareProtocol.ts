@@ -1,4 +1,5 @@
 import type { ConversationData } from "../types/conversation-data.ts";
+import { isRecord } from "../ai/helpers.ts";
 
 export const SHARE_ROOM_PREFIX = "cm_";
 
@@ -32,10 +33,6 @@ export interface ShareRoomMetadata {
 export interface ShareRoomRecord {
   data: ConversationData;
   metadata: ShareRoomMetadata;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 function normalizeString(value: unknown, maxLength: number): string {

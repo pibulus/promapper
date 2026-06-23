@@ -7,6 +7,8 @@
  * version gate so a future format bump can never trap a user's data.
  */
 
+import { ts } from "./dates.ts";
+
 import type { StoredConversation } from "./localStorage.ts";
 
 export const BACKUP_FORMAT = "promapper-backup";
@@ -102,10 +104,4 @@ export function mergeBackup(
     merged[id] = ts(conv.updatedAt) >= ts(current.updatedAt) ? conv : current;
   }
   return merged;
-}
-
-/** Parse an ISO date to epoch ms, treating missing/invalid values as 0. */
-function ts(value: string | undefined): number {
-  const t = new Date(value ?? 0).getTime();
-  return Number.isNaN(t) ? 0 : t;
 }

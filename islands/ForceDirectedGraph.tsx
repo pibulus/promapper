@@ -31,7 +31,7 @@ import {
   renameTopic,
 } from "@signals/actionItemsStore.ts";
 import { MAX_LABEL_LENGTH } from "@core/orchestration/conversation-ops.ts";
-import { showUndoToast } from "@utils/toast.ts";
+import { showToast, showUndoToast } from "@utils/toast.ts";
 import * as htmlToImage from "html-to-image";
 import ContextMenu from "../components/ContextMenu.tsx";
 
@@ -307,7 +307,7 @@ export default function ForceDirectedGraph(
       link.click();
     } catch (error) {
       console.error("Error exporting as PNG:", error);
-      alert("Failed to export PNG. Please try again.");
+      showToast("Failed to export PNG. Please try again.", "error");
     }
   }
 

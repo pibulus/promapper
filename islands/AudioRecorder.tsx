@@ -13,6 +13,7 @@
 import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import { conversationData } from "@signals/conversationStore.ts";
+import { showToast } from "../utils/toast.ts";
 import { ensureApiSession } from "../utils/apiAuth.ts";
 import { saveAudioBackup } from "../utils/downloadBackup.ts";
 import { enqueueApiRequest } from "../utils/requestQueue.ts";
@@ -137,7 +138,10 @@ export default function AudioRecorder(
       }, 1000) as unknown as number;
     } catch (error) {
       console.error("❌ Error starting recording:", error);
-      alert("Failed to start recording. Please check microphone permissions.");
+      showToast(
+        "Failed to start recording. Please check microphone permissions.",
+        "error",
+      );
       cleanup();
     }
   }
@@ -282,13 +286,15 @@ export default function AudioRecorder(
         i.status === "pending"
       ).length;
 
-      alert(
-        `✅ Recording added!\n${pendingCount} pending • ${completedCount} completed`,
+      showToast(
+        `Recording added — ${pendingCount} pending, ${completedCount} completed`,
+        "success",
       );
     } catch (error) {
       console.error("❌ Error processing audio:", error);
-      alert(
+      showToast(
         `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        "error",
       );
     } finally {
       isProcessing.value = false;
@@ -357,7 +363,7 @@ export default function AudioRecorder(
           URL.revokeObjectURL(currentObjectURLRef.current);
           currentObjectURLRef.current = null;
         }
-        alert("Error playing audio. The file may be corrupted.");
+        showToast("Error playing audio. The file may be corrupted.", "error");
       };
 
       audio.play().catch((error) => {
@@ -369,7 +375,10 @@ export default function AudioRecorder(
           URL.revokeObjectURL(currentObjectURLRef.current);
           currentObjectURLRef.current = null;
         }
-        alert("Failed to play audio. Please check your browser settings.");
+        showToast(
+          "Failed to play audio. Please check your browser settings.",
+          "error",
+        );
       });
 
       audioElementRef.current = audio;

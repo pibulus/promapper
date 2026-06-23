@@ -7,8 +7,6 @@
 import { assertEquals, assertExists } from "./_assert.ts";
 
 import {
-  exportConversation,
-  generateSummary,
   processAudio,
   processText,
 } from "../orchestration/conversation-flow.ts";
@@ -161,30 +159,6 @@ Deno.test("processAudio generates a title from transcription", async () => {
   // Title was generated from the transcription text
   assertEquals(capturedTitle, "Speaker1: hello");
   assertEquals(result.conversation.title, "Generated Title");
-});
-
-// ===================================================================
-// generateSummary
-// ===================================================================
-
-Deno.test("generateSummary delegates to aiService.generateSummary", async () => {
-  const service = createMockAIService();
-  const summary = await generateSummary(service, "long transcript");
-  assertEquals(summary, "This is a summary.");
-});
-
-// ===================================================================
-// exportConversation
-// ===================================================================
-
-Deno.test("exportConversation delegates to aiService.generateMarkdown", async () => {
-  const service = createMockAIService();
-  const result = await exportConversation(
-    service,
-    "convert to report",
-    "transcript text",
-  );
-  assertEquals(result, "# Result");
 });
 
 // ===================================================================

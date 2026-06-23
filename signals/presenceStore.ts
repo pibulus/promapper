@@ -18,9 +18,6 @@ export interface RemoteUser {
 /** Everyone currently in the room (including self, as the server sees us). */
 export const remoteUsers = signal<RemoteUser[]>([]);
 
-/** Ids of users currently typing (for typing indicators). */
-export const typingUserIds = signal<Set<string>>(new Set());
-
 /** Display name for a user: their chosen alias, else the avatar name. */
 export function remoteUserName(user: RemoteUser): string {
   return user.alias?.trim() || user.avatar || "Guest";

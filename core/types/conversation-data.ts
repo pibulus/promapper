@@ -5,6 +5,8 @@
  * in signals/conversationStore.ts; core code should import this file instead.
  */
 
+import type { ActionItem, ActionItemStatusUpdate } from "./action-item.ts";
+
 export interface ConversationData {
   conversation: {
     id: string;
@@ -30,16 +32,7 @@ export interface ConversationData {
     target_topic_id: string;
     color: string;
   }>;
-  actionItems: Array<{
-    id: string;
-    conversation_id: string;
-    description: string;
-    assignee: string | null;
-    due_date: string | null;
-    status: "pending" | "completed";
-    created_at: string;
-    updated_at: string;
-  }>;
-  statusUpdates: unknown[];
+  actionItems: ActionItem[];
+  statusUpdates: ActionItemStatusUpdate[];
   summary?: string;
 }
