@@ -334,3 +334,98 @@ expire 24h after last activity.
 - `core/tests/client_utils_test.ts` — NEW: 15 tests
 - `CLAUDE.md` — updated model architecture docs
 - (deleted) `core/ai/gemini.ts`, `core/tests/gemini_test.ts`
+
+## Meeting Rooms — Phase 2 (branch: `meeting-rooms`)
+
+### Vision
+
+ProMapper meeting room = voice chat + shared whiteboard + live AI mapping.
+One person opens a room, everyone joins via link. They talk. The AI maps the
+conversation AND draws diagrams on a shared canvas. Everyone watches the
+project memory form in real-time.
+
+### Architecture
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  ProMapper Meeting Room (browser tab)                     │
+│                                                           │
+│  ┌──────────────────┐  ┌───────┐  ┌────────────────────┐ │
+│  │ Voice Chat       │  │ Topic │  │ Shared Whiteboard   │ │
+│  │ (RealtimeKit)    │  │ Map   │  │ (Excalidraw/drawio) │ │
+│  │                  │  │       │  │                     │ │
+│  │ 🎙️ Pablo ⚫      │  │ 🕸️    │  │  ┌──┐    ┌──┐      │ │
+│  │ 🎙️ Sarah        │  │ nodes │  │  │DB│←──→│API│      │ │
+│  │ 🎙️ Dennis       │  │ edges │  │  └──┘    └──┘      │ │
+│  │                  │  │       │  │  Both AI + human    │ │
+│  │ [Mute] [Record]  │  │       │  │                    │ │
+│  └──────────────────┘  └───────┘  └────────────────────┘ │
+│                                                           │
+│  ┌──────────────────────────────────────────────────────┐ │
+│  │ Actions ☐ Deploy  ☐ Review  │  Transcript streaming │ │
+│  └──────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────┘
+```
+
+### Reference Projects
+
+**autopreso** (MIT, 384★) — realtime speech → Excalidraw whiteboard.
+Key patterns to borrow:
+- Whiteboard edit model: line-numbered text view → `replace`/`insert_after`/`delete`
+  operations (LLM never sees raw Excalidraw JSON)
+- Two-mode session: `staging` (seed elements) → `live` (AI owns canvas)
+- Turn queue: debounced transcript chunks, filler filtering, one-turn-at-a-time
+- Agent providers: OpenAI / Codex / Ollama through `@ai-sdk/openai` adapter
+- Moonshine: local macOS STT via optional sidecar binary
+
+**free4chat** (MIT, 1.1k★) — WebRTC voice rooms via Cloudflare RealtimeKit.
+Key patterns to borrow:
+- RealtimeKit Worker: issues auth tokens, manages room lifecycle via KV
+- P2P audio: WebRTC data channels, no audio passes through the server
+- Room expiry: auto-close after 2h, 30-day KV TTL
+
+**drawio** (6.2k★) — JavaScript diagramming library. Alternative whiteboard engine
+to Excalidraw. More diagram types, mature, embeddable.
+
+**moonshine** (8.5k★) — local speech-to-text. The offline transcription path for
+sensitive meetings. macOS arm64/x64 binaries available.
+
+### Implementation Plan
+
+**Phase 2a: Voice Relay**
+- Fork free4chat's RealtimeKit Worker → `workers/voice-relay/`
+- Strip Next.js UI, keep ~200 LOC core (auth tokens, room lifecycle)
+- Deploy to Cloudflare Workers (free tier: 10GB WebRTC/month)
+- Create `islands/VoicePanel.tsx` — mute/unmute, who's speaking, leave
+- Add to `LiveCollabIsland` as the left pane
+
+**Phase 2b: Shared Whiteboard (manual)**
+- Embed Excalidraw or drawio as `islands/SharedWhiteboard.tsx`
+- Sync scene via PartyKit (already built)
+- Humans draw manually — click, drag, type
+- Toolbar: pen, rectangle, arrow, text, eraser, colors
+- Share whiteboard state in room snapshot
+
+**Phase 2c: AI Whiteboard Agent**
+- Borrow autopreso's whiteboard edit model:
+  - Format scene as line-numbered text
+  - Agent emits `replace`/`insert_after`/`delete` operations
+  - Apply to canvas via Excalidraw/drawio API
+- Trigger: when new topic nodes appear OR user says "draw this"
+- Prompt: "You are building a diagram alongside a conversation..."
+
+**Phase 3: Image/OCR Input**
+- Drag-and-drop images onto whiteboard or topic map
+- tesseract.js extracts text from screenshots/notebook photos
+- Extracted text enters the AI pipeline as if typed
+
+**Phase 4: Offline Mode (stretch)**
+- Moonshine for local transcription (macOS)
+- Ollama / llama.cpp for local action item extraction
+- No audio leaves the machine — privacy-first
+- Fall through to cloud if local models unavailable
+
+### Pricing Integration
+- **Free tier**: solo only, no meeting rooms, no whiteboard, Flash Lite only
+- **$9/mo**: meeting rooms, voice relay, shared whiteboard, smart models,
+  export formats, share links
