@@ -2639,6 +2639,91 @@ html::-webkit-scrollbar-thumb:hover,
   outline: none;
 }
 
+/* ── ACTION ITEMS — modal & form shared styles ──────────────────── */
+
+/* Modal heading inside a dashboard-card panel (delete, clear-done, add-item). */
+.modal-heading {
+  font-size: var(--heading-size);
+  font-weight: var(--heading-weight);
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+}
+
+/* Modal body paragraph for description text. */
+.modal-description {
+  font-size: var(--small-size);
+  color: var(--color-text-secondary);
+  margin-bottom: 1.25rem;
+  line-height: var(--line-height);
+}
+
+/* Form label in the add-item modal. */
+.action-form-label {
+  font-size: var(--text-size);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* Bordered input (2px, theme token, text-size). */
+.action-input {
+  font-size: var(--text-size);
+  border: 2px solid var(--color-border);
+}
+.action-input--sm {
+  font-size: var(--small-size);
+  border: 2px solid var(--color-border);
+}
+.action-input--xs {
+  font-size: var(--tiny-size);
+  border: 2px solid var(--color-border);
+}
+.action-input-border {
+  border: 2px solid var(--color-border);
+}
+
+/* Compact date-preset pill (Today / Tmrw / Clear). */
+.action-date-preset {
+  padding: 0.1rem 0.45rem;
+  font-size: var(--tiny-size);
+}
+.action-date-preset--lg {
+  padding: 0.15rem 0.55rem;
+  font-size: var(--tiny-size);
+}
+
+/* Filter pill active state (when aria-pressed=true). */
+.action-filter-pill[aria-pressed="true"] {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+/* Modal primary action (soft-black button — delete / clear-done). */
+.btn--dark-action {
+  background: var(--soft-black);
+  border: 2px solid var(--border-cream-strong);
+  font-size: var(--small-size);
+  transition: var(--transition-fast);
+}
+.btn--dark-action:hover {
+  background: var(--soft-brown);
+}
+
+/* Modal cancel button (quiet companion). */
+.btn--modal-cancel {
+  border: 2px solid var(--color-border);
+  font-size: var(--small-size);
+  transition: var(--transition-fast);
+  color: var(--color-text);
+}
+
+/* Progress counter inside the header band. */
+.header-progress {
+  margin-left: 0.5rem;
+  font-size: var(--tiny-size);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+}
+
 .topic-visualizations-shell {
   /* The map canvas sets its own height (clamped); the shell just hugs it and
      adds NO padding, so the canvas bleeds to the card's inner edges. */

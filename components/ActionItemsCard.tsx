@@ -514,14 +514,7 @@ export default function ActionItemsCard(
             <h3>
               Action Items
               {progress.value.total > 0 && (
-                <span
-                  style={{
-                    marginLeft: "0.5rem",
-                    fontSize: "var(--tiny-size)",
-                    fontWeight: "500",
-                    color: "rgba(255,255,255,0.85)",
-                  }}
-                >
+                <span class="header-progress">
                   {progress.value.done} of {progress.value.total} done
                 </span>
               )}
@@ -569,12 +562,7 @@ export default function ActionItemsCard(
                 searchQuery.value = (e.target as HTMLInputElement).value}
               placeholder="Search"
               aria-label="Search action items"
-              class="w-full rounded px-2 py-1 focus:outline-none"
-              style={{
-                fontSize: "var(--tiny-size)",
-                border: "2px solid var(--color-border)",
-                transition: "var(--transition-fast)",
-              }}
+              class="w-full rounded px-2 py-1 focus:outline-none action-input--xs"
             />
             {/* Filter pills — reduce the list (sort only reorders) */}
             <div class="flex gap-2 mt-2">
@@ -585,12 +573,6 @@ export default function ActionItemsCard(
                 }}
                 class="action-filter-pill"
                 aria-pressed={filterMine.value}
-                style={{
-                  background: filterMine.value
-                    ? "var(--color-accent)"
-                    : "var(--surface-cream)",
-                  color: filterMine.value ? "#fff" : "var(--color-text)",
-                }}
               >
                 Mine
               </button>
@@ -601,12 +583,6 @@ export default function ActionItemsCard(
                 }}
                 class="action-filter-pill"
                 aria-pressed={hideDone.value}
-                style={{
-                  background: hideDone.value
-                    ? "var(--color-accent)"
-                    : "var(--surface-cream)",
-                  color: hideDone.value ? "#fff" : "var(--color-text)",
-                }}
               >
                 Hide done
               </button>
@@ -832,11 +808,8 @@ export default function ActionItemsCard(
                                           cancelEdit();
                                         }
                                       }}
-                                      class="w-full rounded px-2 py-1 text-sm"
-                                      style={{
-                                        border: "2px solid var(--color-border)",
-                                        minHeight: "60px",
-                                      }}
+                                      class="w-full rounded px-2 py-1 text-sm action-input-border"
+                                      style={{ minHeight: "60px" }}
                                       autoFocus
                                     />
                                     <p
@@ -861,11 +834,7 @@ export default function ActionItemsCard(
                                       </button>
                                       <button
                                         onClick={cancelEdit}
-                                        class="px-3 py-1 rounded text-xs font-bold"
-                                        style={{
-                                          border:
-                                            "2px solid var(--color-border)",
-                                        }}
+                                        class="px-3 py-1 rounded text-xs font-bold action-input-border"
                                       >
                                         Cancel
                                       </button>
@@ -1140,11 +1109,7 @@ export default function ActionItemsCard(
                                               item.id,
                                               localDateISO(0),
                                             )}
-                                          class="action-filter-pill"
-                                          style={{
-                                            padding: "0.1rem 0.45rem",
-                                            fontSize: "var(--tiny-size)",
-                                          }}
+                                          class="action-filter-pill action-date-preset"
                                         >
                                           Today
                                         </button>
@@ -1154,11 +1119,7 @@ export default function ActionItemsCard(
                                               item.id,
                                               localDateISO(1),
                                             )}
-                                          class="action-filter-pill"
-                                          style={{
-                                            padding: "0.1rem 0.45rem",
-                                            fontSize: "var(--tiny-size)",
-                                          }}
+                                          class="action-filter-pill action-date-preset"
                                         >
                                           Tmrw
                                         </button>
@@ -1166,11 +1127,7 @@ export default function ActionItemsCard(
                                           <button
                                             onClick={() =>
                                               updateDueDate(item.id, null)}
-                                            class="action-filter-pill is-danger"
-                                            style={{
-                                              padding: "0.1rem 0.45rem",
-                                              fontSize: "var(--tiny-size)",
-                                            }}
+                                            class="action-filter-pill is-danger action-date-preset"
                                           >
                                             Clear
                                           </button>
@@ -1244,10 +1201,7 @@ export default function ActionItemsCard(
               }}
               placeholder="Add a task…"
               aria-label="Quick add task"
-              class="action-quick-add w-full rounded px-3 py-2"
-              style={{
-                fontSize: "var(--small-size)",
-              }}
+              class="action-quick-add w-full rounded px-3 py-2 action-input--sm"
             />
           </div>
         </div>
@@ -1262,48 +1216,24 @@ export default function ActionItemsCard(
       >
         <h3
           id="delete-item-modal-title"
-          style={{
-            fontSize: "var(--heading-size)",
-            fontWeight: "var(--heading-weight)",
-            color: "var(--color-text)",
-            marginBottom: "0.5rem",
-          }}
+          class="modal-heading"
         >
           Delete this item?
         </h3>
-        <p
-          style={{
-            fontSize: "var(--small-size)",
-            color: "var(--color-text-secondary)",
-            marginBottom: "1.25rem",
-            lineHeight: "var(--line-height)",
-          }}
-        >
+        <p class="modal-description">
           {visibleItems.value.find((i) => i.id === confirmDeleteItemId.value)
             ?.description}
         </p>
         <div class="flex gap-2">
           <button
             onClick={confirmDelete}
-            class="flex-1 py-2 px-4 rounded font-bold text-white"
-            style={{
-              background: "var(--soft-black)",
-              border: "2px solid var(--border-cream-strong)",
-              fontSize: "var(--small-size)",
-              transition: "var(--transition-fast)",
-            }}
+            class="flex-1 py-2 px-4 rounded font-bold text-white btn--dark-action"
           >
             Delete
           </button>
           <button
             onClick={() => confirmDeleteItemId.value = null}
-            class="flex-1 py-2 px-4 rounded"
-            style={{
-              border: "2px solid var(--color-border)",
-              fontSize: "var(--small-size)",
-              transition: "var(--transition-fast)",
-              color: "var(--color-text)",
-            }}
+            class="flex-1 py-2 px-4 rounded btn--modal-cancel"
           >
             Cancel
           </button>
@@ -1319,24 +1249,12 @@ export default function ActionItemsCard(
       >
         <h3
           id="clear-done-modal-title"
-          style={{
-            fontSize: "var(--heading-size)",
-            fontWeight: "var(--heading-weight)",
-            color: "var(--color-text)",
-            marginBottom: "0.5rem",
-          }}
+          class="modal-heading"
         >
           Clear {progress.value.done} completed item
           {progress.value.done !== 1 ? "s" : ""}?
         </h3>
-        <p
-          style={{
-            fontSize: "var(--small-size)",
-            color: "var(--color-text-secondary)",
-            marginBottom: "1.25rem",
-            lineHeight: "var(--line-height)",
-          }}
-        >
+        <p class="modal-description">
           This will remove all completed items from the list. This cannot be
           undone.
         </p>
@@ -1357,25 +1275,13 @@ export default function ActionItemsCard(
                 );
               }
             }}
-            class="flex-1 py-2 px-4 rounded font-bold text-white"
-            style={{
-              background: "var(--soft-black)",
-              border: "2px solid var(--border-cream-strong)",
-              fontSize: "var(--small-size)",
-              transition: "var(--transition-fast)",
-            }}
+            class="flex-1 py-2 px-4 rounded font-bold text-white btn--dark-action"
           >
             Clear done
           </button>
           <button
             onClick={() => showClearDoneConfirm.value = false}
-            class="flex-1 py-2 px-4 rounded"
-            style={{
-              border: "2px solid var(--color-border)",
-              fontSize: "var(--small-size)",
-              transition: "var(--transition-fast)",
-              color: "var(--color-text)",
-            }}
+            class="flex-1 py-2 px-4 rounded btn--modal-cancel"
           >
             Cancel
           </button>
@@ -1395,12 +1301,8 @@ export default function ActionItemsCard(
       >
         <h3
           id="add-item-modal-title"
-          style={{
-            fontSize: "var(--font-size-xl)",
-            fontWeight: "var(--heading-weight)",
-            color: "var(--color-text)",
-            marginBottom: "1rem",
-          }}
+          class="modal-heading"
+          style={{ fontSize: "var(--font-size-xl)", marginBottom: "1rem" }}
         >
           Add Item
         </h3>
@@ -1409,11 +1311,7 @@ export default function ActionItemsCard(
           <div>
             <label
               htmlFor="new-item-description"
-              style={{
-                fontSize: "var(--text-size)",
-                fontWeight: "600",
-                color: "var(--color-text)",
-              }}
+              class="action-form-label"
             >
               Description *
             </label>
@@ -1430,11 +1328,7 @@ export default function ActionItemsCard(
                 }
               }}
               placeholder="What's the move?"
-              class="w-full rounded px-3 py-2"
-              style={{
-                fontSize: "var(--text-size)",
-                border: "2px solid var(--color-border)",
-              }}
+              class="w-full rounded px-3 py-2 action-input"
               autoFocus
             />
           </div>
@@ -1442,11 +1336,7 @@ export default function ActionItemsCard(
           <div class="relative">
             <label
               htmlFor="new-item-assignee"
-              style={{
-                fontSize: "var(--text-size)",
-                fontWeight: "600",
-                color: "var(--color-text)",
-              }}
+              class="action-form-label"
             >
               Assignee
             </label>
@@ -1492,11 +1382,7 @@ export default function ActionItemsCard(
                   }
                 }}
                 placeholder="Who's on it?"
-                class="w-full rounded px-3 py-2 pr-8"
-                style={{
-                  fontSize: "var(--text-size)",
-                  border: "2px solid var(--color-border)",
-                }}
+                class="w-full rounded px-3 py-2 pr-8 action-input"
               />
               <button
                 type="button"
@@ -1545,11 +1431,7 @@ export default function ActionItemsCard(
           <div>
             <label
               htmlFor="new-item-due-date"
-              style={{
-                fontSize: "var(--text-size)",
-                fontWeight: "600",
-                color: "var(--color-text)",
-              }}
+              class="action-form-label"
             >
               Due Date
             </label>
@@ -1559,33 +1441,21 @@ export default function ActionItemsCard(
               value={newItemDueDate.value}
               onInput={(e) =>
                 newItemDueDate.value = (e.target as HTMLInputElement).value}
-              class="w-full rounded px-3 py-2"
-              style={{
-                fontSize: "var(--text-size)",
-                border: "2px solid var(--color-border)",
-              }}
+              class="w-full rounded px-3 py-2 action-input"
             />
             {/* Date presets */}
             <div class="flex gap-2 mt-2">
               <button
                 type="button"
                 onClick={() => newItemDueDate.value = localDateISO(0)}
-                class="action-filter-pill"
-                style={{
-                  padding: "0.15rem 0.55rem",
-                  fontSize: "var(--tiny-size)",
-                }}
+                class="action-filter-pill action-date-preset--lg"
               >
                 Today
               </button>
               <button
                 type="button"
                 onClick={() => newItemDueDate.value = localDateISO(1)}
-                class="action-filter-pill"
-                style={{
-                  padding: "0.15rem 0.55rem",
-                  fontSize: "var(--tiny-size)",
-                }}
+                class="action-filter-pill action-date-preset--lg"
               >
                 Tomorrow
               </button>
@@ -1593,11 +1463,7 @@ export default function ActionItemsCard(
                 <button
                   type="button"
                   onClick={() => newItemDueDate.value = ""}
-                  class="action-filter-pill is-danger"
-                  style={{
-                    padding: "0.15rem 0.55rem",
-                    fontSize: "var(--tiny-size)",
-                  }}
+                  class="action-filter-pill is-danger action-date-preset--lg"
                 >
                   Clear
                 </button>
