@@ -13,6 +13,9 @@ const CONVERSATIONS_KEY = "project_mapper_conversations";
 const ACTIVE_ID_KEY = "project_mapper_active_id";
 const LEGACY_CONVERSATIONS_KEY = "conversation_mapper_conversations";
 const LEGACY_ACTIVE_ID_KEY = "conversation_mapper_active_id";
+// Corrupted bytes are parked here (not discarded) so a parse failure is
+// recoverable instead of being silently overwritten by the next autosave.
+const CORRUPT_BACKUP_KEY = "project_mapper_conversations__corrupt_backup";
 
 // ===================================================================
 // TYPES
@@ -42,7 +45,18 @@ export interface StoredConversation extends ConversationData {
 export function saveConversation(data: ConversationData): boolean {
   if (typeof window === "undefined") return false;
 
-  const conversations = getAllConversations();
+  const { map: conversations, corrupt } = loadConversationsRaw();
+  // CRITICAL: never autosave over a corrupt store. Writing now would collapse
+  // the map to just this one conversation and overwrite the recoverable bytes,
+  // destroying every other saved conversation. Refuse and let the user recover.
+  if (corrupt) {
+    console.error(
+      "saveConversation: store is corrupt, refusing to overwrite (corrupt " +
+        "bytes preserved at recovery key). Latest change NOT saved.",
+    );
+    return false;
+  }
+
   const conversationId = data.conversation.id;
   // Guard against a missing id polluting the map under a falsy key.
   if (!conversationId) {
@@ -151,22 +165,69 @@ export function loadConversation(id: string): StoredConversation | null {
 }
 
 /**
- * Get all conversations
+ * Pure: classify the raw conversations string. Kept free of any browser globals
+ * so it's directly unit-testable (same pattern as parseBackup). The empty-vs-
+ * corrupt distinction is load-bearing: if a parse failure looks like "no
+ * conversations", the next autosave overwrites the (recoverable) corrupt bytes
+ * with a one-entry map, destroying every other saved conversation forever.
+ *
+ * - null/empty input  → { map:{}, corrupt:false }  (genuinely empty store)
+ * - valid JSON        → { map, corrupt:false }
+ * - invalid JSON      → { map:{}, corrupt:true }    (caller preserves the bytes)
+ */
+export function classifyConversationsRaw(
+  data: string | null,
+): { map: Record<string, StoredConversation>; corrupt: boolean } {
+  if (!data) return { map: {}, corrupt: false };
+  try {
+    return { map: JSON.parse(data), corrupt: false };
+  } catch (error) {
+    console.error("Conversations store is corrupt:", error);
+    return { map: {}, corrupt: true };
+  }
+}
+
+/**
+ * Internal: read the conversations map from localStorage and classify it. On
+ * corruption it parks the raw bytes under a recovery key (once) and reports
+ * `corrupt: true` so writers can refuse to overwrite a recoverable store.
+ */
+function loadConversationsRaw(): {
+  map: Record<string, StoredConversation>;
+  corrupt: boolean;
+} {
+  if (typeof window === "undefined") return { map: {}, corrupt: false };
+
+  const data = localStorage.getItem(CONVERSATIONS_KEY) ??
+    localStorage.getItem(LEGACY_CONVERSATIONS_KEY);
+  if (!data) return { map: {}, corrupt: false };
+
+  // Migrate legacy bytes to the current key on first read.
+  if (!localStorage.getItem(CONVERSATIONS_KEY)) {
+    localStorage.setItem(CONVERSATIONS_KEY, data);
+  }
+
+  const result = classifyConversationsRaw(data);
+  if (result.corrupt && !localStorage.getItem(CORRUPT_BACKUP_KEY)) {
+    // Preserve the corrupt bytes once. Don't clobber an existing backup with a
+    // later (possibly already-shrunk) read.
+    try {
+      localStorage.setItem(CORRUPT_BACKUP_KEY, data);
+    } catch (backupErr) {
+      console.error("Failed to back up corrupt conversations:", backupErr);
+    }
+  }
+  return result;
+}
+
+/**
+ * Get all conversations. Read callers get `{}` on corruption (they render an
+ * empty list, which is harmless); the corrupt bytes are preserved by
+ * loadConversationsRaw for recovery. Writers must use loadConversationsRaw
+ * directly so they can refuse to overwrite a corrupt store.
  */
 export function getAllConversations(): Record<string, StoredConversation> {
-  if (typeof window === "undefined") return {};
-
-  try {
-    const data = localStorage.getItem(CONVERSATIONS_KEY) ??
-      localStorage.getItem(LEGACY_CONVERSATIONS_KEY);
-    if (data && !localStorage.getItem(CONVERSATIONS_KEY)) {
-      localStorage.setItem(CONVERSATIONS_KEY, data);
-    }
-    return data ? JSON.parse(data) : {};
-  } catch (error) {
-    console.error("Failed to load conversations:", error);
-    return {};
-  }
+  return loadConversationsRaw().map;
 }
 
 /**
