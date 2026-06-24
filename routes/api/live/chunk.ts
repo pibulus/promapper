@@ -17,7 +17,7 @@ const CHUNK_TRANSCRIBE_TIMEOUT_MS = 15_000;
 
 export const handler: Handlers = {
   async POST(req) {
-    const guardResponse = guardRequest(req);
+    const guardResponse = await guardRequest(req);
     if (guardResponse) return guardResponse;
 
     try {

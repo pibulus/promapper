@@ -22,23 +22,23 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
   }
 
   if (req.method === "GET") {
-    return handleStatus(req);
+    return await handleStatus(req);
   }
 
   if (req.method === "POST") {
-    return handleLogin(req);
+    return await handleLogin(req);
   }
 
   if (req.method === "DELETE") {
-    return handleLogout(req);
+    return await handleLogout(req);
   }
 
   return new Response("Method not allowed", { status: 405 });
 };
 
-function handleStatus(req: Request) {
+async function handleStatus(req: Request) {
   const cookies = getCookies(req.headers);
-  if (validateSession(cookies[COOKIE_NAME])) {
+  if (await validateSession(cookies[COOKIE_NAME])) {
     return new Response(null, { status: 204 });
   }
   return new Response(null, { status: 401 });
@@ -59,7 +59,7 @@ async function handleLogin(req: Request) {
     });
   }
 
-  const sessionId = createSession();
+  const sessionId = await createSession();
   const headers = new Headers({ "Content-Type": "application/json" });
   setCookie(headers, {
     name: COOKIE_NAME,
@@ -77,7 +77,7 @@ async function handleLogin(req: Request) {
   });
 }
 
-function handleLogout(req: Request) {
+async function handleLogout(req: Request) {
   const cookies = getCookies(req.headers);
   deleteSession(cookies[COOKIE_NAME]);
   const headers = new Headers();

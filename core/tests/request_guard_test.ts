@@ -26,31 +26,31 @@ function reqFrom(origin: string | null, ip = "1.1.1.1"): Request {
   });
 }
 
-Deno.test("guardRequest allows a whitelisted origin", () => {
-  const result = guardRequest(reqFrom("https://promapper.app", "10.0.0.1"));
+Deno.test("guardRequest allows a whitelisted origin", async () => {
+  const result = await guardRequest(reqFrom("https://promapper.app", "10.0.0.1"));
   assertEquals(result, null);
 });
 
-Deno.test("guardRequest allows requests with no origin header (same-origin/server)", () => {
-  const result = guardRequest(reqFrom(null, "10.0.0.2"));
+Deno.test("guardRequest allows requests with no origin header (same-origin/server)", async () => {
+  const result = await guardRequest(reqFrom(null, "10.0.0.2"));
   assertEquals(result, null);
 });
 
-Deno.test("guardRequest blocks a disallowed origin with 403", () => {
-  const result = guardRequest(reqFrom("https://evil.example", "10.0.0.3"));
+Deno.test("guardRequest blocks a disallowed origin with 403", async () => {
+  const result = await guardRequest(reqFrom("https://evil.example", "10.0.0.3"));
   assertEquals(result?.status, 403);
 });
 
 Deno.test("guardRequest rate-limits after the configured max", async () => {
   const ip = "10.0.0.99";
   // limit is 3; 4th request in the window should be blocked
-  assertEquals(guardRequest(reqFrom(null, ip)), null);
-  assertEquals(guardRequest(reqFrom(null, ip)), null);
-  assertEquals(guardRequest(reqFrom(null, ip)), null);
-  const blocked = guardRequest(reqFrom(null, ip));
+  assertEquals(await guardRequest(reqFrom(null, ip)), null);
+  assertEquals(await guardRequest(reqFrom(null, ip)), null);
+  assertEquals(await guardRequest(reqFrom(null, ip)), null);
+  const blocked = await guardRequest(reqFrom(null, ip));
   assertEquals(blocked?.status, 429);
   // a different IP is independent
-  assertEquals(guardRequest(reqFrom(null, "10.0.0.100")), null);
+  assertEquals(await guardRequest(reqFrom(null, "10.0.0.100")), null);
 
   // sanity: blocked body carries a retry hint
   const body = await blocked?.json();

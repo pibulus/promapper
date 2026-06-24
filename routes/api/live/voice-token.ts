@@ -29,7 +29,7 @@ function relayHeaders(): HeadersInit {
 
 export const handler: Handlers = {
   async POST(req) {
-    const guard = guardRequest(req);
+    const guard = await guardRequest(req);
     if (guard) return guard;
 
     let body: { roomId?: string } = {};

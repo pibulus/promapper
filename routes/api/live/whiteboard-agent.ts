@@ -30,7 +30,7 @@ const AGENT_TIMEOUT_MS = 30_000;
 
 export const handler: Handlers = {
   async POST(req) {
-    const guard = guardRequest(req);
+    const guard = await guardRequest(req);
     if (guard) return guard;
 
     let body: {

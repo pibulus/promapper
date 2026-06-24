@@ -17,7 +17,7 @@ function publicHost(): string {
 
 export const handler: Handlers = {
   async POST(req) {
-    const guard = guardRequest(req);
+    const guard = await guardRequest(req);
     if (guard) return guard;
 
     const host = publicHost();

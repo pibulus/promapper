@@ -42,7 +42,7 @@ function withTimeout<T>(
 export const handler: Handlers = {
   async POST(req) {
     try {
-      const guardResponse = guardRequest(req);
+      const guardResponse = await guardRequest(req);
       if (guardResponse) {
         return guardResponse;
       }

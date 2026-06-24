@@ -24,7 +24,7 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
     return new Response("Method not allowed", { status: 405 });
   }
 
-  const guardResponse = guardRequest(req);
+  const guardResponse = await guardRequest(req);
   if (guardResponse) {
     return guardResponse;
   }

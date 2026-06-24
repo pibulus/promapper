@@ -44,8 +44,8 @@ export function shouldBlockUnconfiguredAuth(
   return !hasToken && deployed;
 }
 
-export function guardRequest(req: Request): Response | null {
-  const authBlock = enforceAuth(req);
+export async function guardRequest(req: Request): Promise<Response | null> {
+  const authBlock = await enforceAuth(req);
   if (authBlock) return authBlock;
 
   const originBlock = enforceOrigin(req);
@@ -120,7 +120,7 @@ function enforceRateLimit(req: Request): Response | null {
   return null;
 }
 
-function enforceAuth(req: Request): Response | null {
+async function enforceAuth(req: Request): Promise<Response | null> {
   if (!authToken) {
     if (shouldBlockUnconfiguredAuth(Boolean(authToken), isDeployed)) {
       return jsonResponse(
@@ -132,7 +132,7 @@ function enforceAuth(req: Request): Response | null {
   }
 
   const cookies = getCookies(req.headers);
-  if (validateSession(cookies[SESSION_COOKIE_NAME])) {
+  if (await validateSession(cookies[SESSION_COOKIE_NAME])) {
     return null;
   }
 
