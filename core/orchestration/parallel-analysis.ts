@@ -111,7 +111,11 @@ function buildWarnings(summary: string, garbled: Set<string>): string[] {
 }
 
 /**
- * Run parallel AI analysis on new audio
+ * Run parallel AI analysis on new audio.
+ *
+ * @deprecated Not used by any production route. processAudio() in
+ * conversation-flow.ts handles transcription inline then calls analyzeText().
+ * Kept for the test suite and as a reference for future audio-only pipelines.
  */
 export async function analyzeAudio(
   aiService: AIService,

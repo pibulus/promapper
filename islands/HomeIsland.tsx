@@ -242,6 +242,19 @@ export default function HomeIsland() {
     };
   }, [session?.roomId, session?.partyHost]);
 
+  // Tear down recording on browser back/forward navigation — the session
+  // effect above only fires on session change, not straight unmount.
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop();
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      }
+    };
+  }, []);
+
   // Join/leave toasts
   useEffect(() => {
     if (!session) return;
@@ -657,7 +670,10 @@ export default function HomeIsland() {
           <VoicePanel
             roomId={session.roomId}
             displayName={getLocalIdentity()}
-            peerDisplayNames={users.map((u) => u.alias || u.avatar).filter(Boolean)}
+            peerDisplayNames={users
+              .filter((u) => u.avatar !== getLocalIdentity())
+              .map((u) => u.alias || u.avatar)
+              .filter(Boolean)}
           />
         </div>
       )}

@@ -282,7 +282,7 @@ export function applyWhiteboardOps(
   const sorted = [...ops].sort((a, b) => b.line - a.line);
 
   for (const op of sorted) {
-    const idx = Math.max(0, Math.min(op.line - 1, result.length));
+    const idx = Math.max(0, Math.min(op.line - 1, result.length - 1));
 
     if (op.op === "delete" && idx < result.length) {
       result.splice(idx, 1);

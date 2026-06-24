@@ -20,7 +20,11 @@ export const handler: Handlers<LiveData> = {
   GET(_req, ctx) {
     const partyHost = (Deno.env.get("PUBLIC_PARTYKIT_HOST") ??
       Deno.env.get("PARTYKIT_HOST") ?? "").trim();
-    return ctx.render({ roomId: ctx.params.roomId, partyHost });
+    // Sanitize the roomId before it reaches the template — V8's JSON.stringify
+    // does NOT guarantee escaping of </ (engine-dependent). A roomId containing
+    // </script> would break out of the inline bootstrap script.
+    const safeRoomId = ctx.params.roomId.replace(/[<>&"'/]/g, "");
+    return ctx.render({ roomId: safeRoomId, partyHost });
   },
 };
 

@@ -16,6 +16,7 @@ import { SHARE_ROOM_LIMITS } from "@core/realtime/shareProtocol.ts";
 // novel-length injection) and reuse the shared transcript ceiling for the body.
 const MAX_PROMPT_LENGTH = 5_000;
 const MAX_TEXT_LENGTH = SHARE_ROOM_LIMITS.MAX_TRANSCRIPT_LENGTH;
+const MARKDOWN_TIMEOUT_MS = 45_000;
 
 export const handler = async (req: Request, _ctx: FreshContext) => {
   // Only allow POST
@@ -56,7 +57,14 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
 
     console.log("📝 Generating markdown");
 
-    const markdown = await aiService.generateMarkdown(prompt, context);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), MARKDOWN_TIMEOUT_MS);
+    let markdown: string;
+    try {
+      markdown = await aiService.generateMarkdown(prompt, context, ctrl.signal);
+    } finally {
+      clearTimeout(timer);
+    }
 
     console.log("✅ Markdown generation complete");
 
@@ -71,8 +79,7 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
     console.error("❌ Error in markdown API:", error);
     return new Response(
       JSON.stringify({
-        error: "Failed to generate markdown",
-        details: error instanceof Error ? error.message : "Unknown error",
+        error: "Failed to generate markdown — please try again.",
       }),
       { status: 500, headers: { "Content-Type": "application/json" } },
     );

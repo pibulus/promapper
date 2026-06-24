@@ -56,7 +56,7 @@ export default {
     }
 
     const match = url.pathname.match(
-      /^\/voice\/rooms\/([a-zA-Z0-9_-]+)(\/join)?$/,
+      /^\/voice\/rooms\/([a-zA-Z0-9_-]{1,400})(\/join)?$/,
     );
     if (!match) {
       return json({ error: "Not found" }, 404, corsHeaders(origin));

@@ -15,6 +15,7 @@ import {
 } from "../core/storage/localStorage.ts";
 import type { ConversationData } from "../core/types/conversation-data.ts";
 import { showActionToast, showToast } from "../utils/toast.ts";
+import { liveSession } from "@signals/liveSessionStore.ts";
 
 export type { ConversationData };
 
@@ -127,12 +128,13 @@ if (typeof window !== "undefined") {
   });
 
   // Cross-tab sync: when another tab writes to the conversations store, check
-  // if the currently-open conversation was changed. If so, show a toast with a
-  // Reload action — do NOT silently overwrite (the user may have in-progress
-  // edits). Only fires for the active conversation; ignores shared views.
+  // if the currently-open conversation was changed. Skip entirely during live
+  // meetings — PartyKit is the source of truth, and a storage event would race
+  // with collab updates from the server.
   window.addEventListener("storage", (e) => {
     if (e.key !== CONVERSATIONS_KEY) return;
     if (isViewingShared.value) return;
+    if (liveSession.value) return; // PartyKit owns the data during live meetings
 
     const activeId = getActiveConversationId();
     const current = conversationData.value;

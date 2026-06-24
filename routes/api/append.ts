@@ -63,6 +63,15 @@ export const handler: Handlers = {
         );
       }
 
+      // Reject oversized uploads before buffering the full body into memory.
+      const cl = req.headers.get("content-length");
+      if (cl && parseInt(cl, 10) > MAX_AUDIO_SIZE + 2_097_152) {
+        return new Response(
+          JSON.stringify({ error: "Request body too large" }),
+          { status: 413, headers: { "Content-Type": "application/json" } },
+        );
+      }
+
       const aiService = getAIService();
 
       // Parse form data

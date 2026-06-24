@@ -57,6 +57,15 @@ export const handler: Handlers = {
       // ===============================================================
 
       if (contentType.includes("multipart/form-data")) {
+        // Reject oversized uploads before buffering the full body into memory.
+        // MAX_AUDIO_SIZE + 2MB for form overhead (boundaries, metadata, fields).
+        const cl = req.headers.get("content-length");
+        if (cl && parseInt(cl, 10) > MAX_AUDIO_SIZE + 2_097_152) {
+          return new Response(
+            JSON.stringify({ error: "Request body too large" }),
+            { status: 413, headers: { "Content-Type": "application/json" } },
+          );
+        }
         const formData = await req.formData();
         const audioFile = formData.get("audio") as File;
 
