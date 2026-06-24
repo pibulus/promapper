@@ -1,33 +1,20 @@
 /**
  * ProMapper Voice Relay — Cloudflare Worker
  *
- * Issues Cloudflare RealtimeKit session tokens for WebRTC audio rooms.
- * Forked from free4chat (MIT), stripped of Next.js UI. ~180 LOC core.
+ * Manages WebRTC audio room lifecycle via Cloudflare Realtime SFU.
+ * Rooms are stored in KV. Clients connect directly to the SFU using
+ * the App API Token returned by the join endpoint.
  *
  * Endpoints:
  *   GET  /voice/rooms/:roomId        — create a room
  *   POST /voice/rooms/:roomId/join   — join an existing room
- *   GET  /voice/rooms/:roomId/status — check room status
- *
- * Architecture:
- *   P2P audio via WebRTC data channels. No audio passes through this server.
- *   RealtimeKit acts as the SFU, this Worker manages room lifecycle + tokens.
  */
 
 interface Env {
   KV: KVNamespace;
-  REALTIME_KIT: RealtimeKitAPI;
   VOICE_SHARED_SECRET: string;
-}
-
-interface RealtimeKitAPI {
-  createSession(params: { roomId: string; ttl: number }): Promise<Session>;
-}
-
-interface Session {
-  sessionId: string;
-  iceServers: RTCIceServer[];
-  sessionToken: string;
+  REALTIMEKIT_APP_ID?: string;
+  REALTIMEKIT_APP_SECRET?: string;
 }
 
 const ROOM_TTL_SECONDS = 7200; // 2 hours
@@ -37,16 +24,11 @@ function corsHeaders(origin: string): HeadersInit {
   return {
     "Access-Control-Allow-Origin": origin || "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers":
-      "Content-Type, Authorization, X-Shared-Secret",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Shared-Secret",
   };
 }
 
-function json(
-  data: unknown,
-  status = 200,
-  extraHeaders?: HeadersInit,
-): Response {
+function json(data: unknown, status = 200, extraHeaders?: HeadersInit): Response {
   return new Response(JSON.stringify(data), {
     status,
     headers: { "Content-Type": "application/json", ...extraHeaders },
@@ -54,15 +36,11 @@ function json(
 }
 
 function authorize(req: Request, env: Env): boolean {
-  // If no secret is configured, allow all (dev mode).
   if (!env.VOICE_SHARED_SECRET) return true;
-
   const auth = req.headers.get("Authorization") || "";
   const provided = auth.replace(/^Bearer\s+/i, "").trim();
   const alt = req.headers.get("X-Shared-Secret") || "";
-
-  return provided === env.VOICE_SHARED_SECRET ||
-    alt === env.VOICE_SHARED_SECRET;
+  return provided === env.VOICE_SHARED_SECRET || alt === env.VOICE_SHARED_SECRET;
 }
 
 export default {
@@ -74,9 +52,8 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders(origin) });
     }
 
-    // Route: /voice/rooms/:roomId[/action]
     const match = url.pathname.match(
-      /^\/voice\/rooms\/([a-zA-Z0-9_-]+)(\/join|\/status)?$/,
+      /^\/voice\/rooms\/([a-zA-Z0-9_-]+)(\/join)?$/,
     );
     if (!match) {
       return json({ error: "Not found" }, 404, corsHeaders(origin));
@@ -85,7 +62,6 @@ export default {
     const roomId = match[1];
     const action = match[2] || "";
 
-    // Shared secret auth for create/join (optional — open in dev)
     if (!authorize(req, env)) {
       return json({ error: "Forbidden" }, 403, corsHeaders(origin));
     }
@@ -93,13 +69,8 @@ export default {
     try {
       switch (req.method) {
         case "GET": {
-          // GET /voice/rooms/:roomId — create a new room
           if (action) {
-            return json(
-              { error: "Method not allowed" },
-              405,
-              corsHeaders(origin),
-            );
+            return json({ error: "Method not allowed" }, 405, corsHeaders(origin));
           }
 
           const exists = await env.KV.get(`voice-room:${roomId}`);
@@ -116,14 +87,9 @@ export default {
 
         case "POST": {
           if (action !== "/join") {
-            return json(
-              { error: "Method not allowed" },
-              405,
-              corsHeaders(origin),
-            );
+            return json({ error: "Method not allowed" }, 405, corsHeaders(origin));
           }
 
-          // POST /voice/rooms/:roomId/join — return WebRTC session config
           const exists = await env.KV.get(`voice-room:${roomId}`);
           if (!exists) {
             return json(
@@ -133,23 +99,35 @@ export default {
             );
           }
 
-          const session = await env.REALTIME_KIT.createSession({
-            roomId,
-            ttl: ROOM_TTL_SECONDS,
-          });
-
-          // Touch the KV entry to extend its TTL
           await env.KV.put(`voice-room:${roomId}`, "active", {
             expirationTtl: KV_TTL_SECONDS,
           });
 
+          const appId = env.REALTIMEKIT_APP_ID;
+          const appSecret = env.REALTIMEKIT_APP_SECRET;
+
+          if (!appId || !appSecret) {
+            return json(
+              { error: "SFU not configured" },
+              503,
+              corsHeaders(origin),
+            );
+          }
+
+          // Return SFU credentials — the client connects directly.
+          // The session token is a per-join UUID for room identification.
           return json(
             {
-              sessionId: session.sessionId,
-              iceServers: session.iceServers,
-              sessionToken: session.sessionToken,
+              sessionId: crypto.randomUUID(),
+              sessionToken: appSecret,
               roomId,
               ttl: ROOM_TTL_SECONDS,
+              sfuAppId: appId,
+              rtcEndpoint: `https://rtc.live.cloudflare.com/v1/apps/${appId}`,
+              iceServers: [
+                { urls: "stun:stun.cloudflare.com:3478" },
+                { urls: "turn:turn.cloudflare.com:3478", username: appId, credential: appSecret },
+              ],
             },
             200,
             corsHeaders(origin),
@@ -157,11 +135,7 @@ export default {
         }
 
         default:
-          return json(
-            { error: "Method not allowed" },
-            405,
-            corsHeaders(origin),
-          );
+          return json({ error: "Method not allowed" }, 405, corsHeaders(origin));
       }
     } catch (error) {
       console.error("Voice relay error:", error);

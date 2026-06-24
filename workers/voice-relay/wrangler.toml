@@ -2,16 +2,8 @@ name = "promapper-voice-relay"
 main = "src/index.ts"
 compatibility_date = "2025-06-01"
 
-# Workers.dev route (automatic with subdomain)
 workers_dev = true
 
 [[kv_namespaces]]
 binding = "KV"
 id = "14d267fe7b5649c2a84d45ccc7a7f45d"
-
-# ═══ RealtimeKit ═══
-# Add via Cloudflare Dashboard (wrangler 3.x doesn't support it in toml):
-# Workers & Pages → promapper-voice-relay → Settings → Bindings → Add binding
-#   Type: RealtimeKit
-#   Name: REALTIME_KIT
-#   App ID: 39216095-9302-4104-b8bd-be2ecceb1287
