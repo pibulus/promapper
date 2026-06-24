@@ -44,10 +44,13 @@ import SoundToggle from "./SoundToggle.tsx";
 import ShortcutsModal from "../components/ShortcutsModal.tsx";
 import AuthModalIsland from "./AuthModalIsland.tsx";
 import VoicePanel from "./VoicePanel.tsx";
+import { createDemoConversation } from "../utils/demoData.ts";
+import LoadingModal from "../components/LoadingModal.tsx";
 
 const drawerOpen = signal(false);
 const voiceDrawerOpen = signal(false);
 const shortcutsOpen = signal(false);
+const demoLoading = signal(false);
 
 const CHUNK_INTERVAL_MS = 15_000;
 
@@ -288,6 +291,15 @@ export default function HomeIsland() {
   const transcript = conversationData.value?.transcript?.text || "";
 
   const heroLines = ["See what you're", "really saying"];
+
+  async function loadDemo() {
+    if (demoLoading.value) return;
+    demoLoading.value = true;
+    // Brief delay so the loading modal gets its moment
+    await new Promise((r) => setTimeout(r, 800));
+    conversationData.value = createDemoConversation();
+    demoLoading.value = false;
+  }
 
   return (
     <div class="mapper-scene min-h-screen">
@@ -561,6 +573,35 @@ export default function HomeIsland() {
                     </div>
                     <div class="mapper-card__panel">
                       <UploadIsland />
+                      <div
+                        style={{
+                          marginTop: "1rem",
+                          textAlign: "center",
+                        }}
+                      >
+                        <button
+                          onClick={loadDemo}
+                          disabled={demoLoading.value}
+                          class="btn btn--secondary"
+                          style={{
+                            fontSize: "var(--small-size)",
+                            padding: "0.5rem 1.25rem",
+                          }}
+                        >
+                          {demoLoading.value
+                            ? "Loading demo…"
+                            : "✨ Try a demo"}
+                        </button>
+                        <p
+                          style={{
+                            fontSize: "var(--tiny-size)",
+                            color: "var(--color-text-secondary)",
+                            marginTop: "0.4rem",
+                          }}
+                        >
+                          See the dashboard in action — no AI cost
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -585,6 +626,9 @@ export default function HomeIsland() {
         open={shortcutsOpen.value}
         onClose={() => shortcutsOpen.value = false}
       />
+
+      {/* Demo loading modal */}
+      <LoadingModal isOpen={demoLoading.value} />
     </div>
   );
 }
