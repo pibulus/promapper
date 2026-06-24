@@ -8,7 +8,14 @@ import LoadingModal from "../components/LoadingModal.tsx";
 import AudioVisualizer from "./AudioVisualizer.tsx";
 import { showToast } from "../utils/toast.ts";
 
-export default function UploadIsland() {
+interface UploadIslandProps {
+  onTryDemo?: () => void;
+  demoLoading?: boolean;
+}
+
+export default function UploadIsland(
+  { onTryDemo, demoLoading = false }: UploadIslandProps,
+) {
   const textInput = useSignal("");
   const isProcessing = useSignal(false);
   const isRecording = useSignal(false);
@@ -155,6 +162,13 @@ export default function UploadIsland() {
   }
 
   function cleanup() {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.onstop = null;
+      if (mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+      mediaRecorderRef.current = null;
+    }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
@@ -525,9 +539,51 @@ export default function UploadIsland() {
             class="mapper-slab-button mapper-slab-button--record"
             disabled={primaryDisabled.value}
             onClick={handlePrimaryAction}
+            style={{
+              flex: onTryDemo && !isRecording.value && !selectedFile.value &&
+                  !hasText.value
+                ? "1"
+                : "none",
+              width: onTryDemo && !isRecording.value && !selectedFile.value &&
+                  !hasText.value
+                ? "auto"
+                : "100%",
+            }}
           >
             {primaryLabel.value}
           </button>
+
+          {onTryDemo && !isRecording.value && !selectedFile.value &&
+            !hasText.value && (
+            <button
+              type="button"
+              onClick={onTryDemo}
+              disabled={demoLoading}
+              class="btn btn--secondary"
+              style={{
+                padding: "1rem 1.25rem",
+                borderRadius: "13px",
+                fontSize: "0.92rem",
+                border: "2.5px solid var(--soft-black, #1e1714)",
+                whiteSpace: "nowrap",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow:
+                  "4px 4px 0 0 rgba(30, 23, 20, 0.25), 0 3px 8px rgba(30, 23, 20, 0.14)",
+                fontWeight: 800,
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                background: "var(--surface-cream, #fffaf6)",
+                color: "var(--color-text, #1e1714)",
+                cursor: "pointer",
+                transition: "transform 120ms ease, box-shadow 120ms ease",
+              }}
+            >
+              {demoLoading ? "Loading…" : "✨ Demo"}
+            </button>
+          )}
+
           {lastUploadName.value && !selectedFile.value && !isRecording.value &&
             !hasText.value && (
             <span class="mapper-block-meta">Last: {lastUploadName.value}</span>

@@ -31,6 +31,14 @@ const SESSION_COOKIE_NAME = "cm_session";
 // Deno Deploy always sets DENO_DEPLOYMENT_ID in production; it's absent locally.
 const isDeployed = Boolean(Deno.env.get("DENO_DEPLOYMENT_ID"));
 
+// Warn on first deploy if ALLOWED_ORIGINS is still the default — without this,
+// every request from a non-localhost origin is blocked with 403.
+if (isDeployed && Deno.env.get("ALLOWED_ORIGINS") == null) {
+  console.warn(
+    "[requestGuard] ALLOWED_ORIGINS is not set in production — all cross-origin requests will be blocked. Set it to your deployed domain.",
+  );
+}
+
 /**
  * Pure policy for the "no auth token configured" case. Open locally (the
  * intended dev flow), but FAIL CLOSED when deployed — a deployer who forgets to
@@ -147,11 +155,20 @@ async function enforceAuth(req: Request): Promise<Response | null> {
     ? rawHeader.slice(7).trim()
     : rawHeader.trim();
 
-  if (!token || token !== authToken) {
+  if (!token || !timingSafeEqual(token, authToken)) {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
   return null;
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
 }
 
 function getClientToken(req: Request) {

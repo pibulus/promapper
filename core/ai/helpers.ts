@@ -46,9 +46,12 @@ export async function withRetry<T>(
       return await fn();
     } catch (err) {
       const msg = String((err as Error)?.message || err);
+      // Deno/Web fetch throws TypeError for network failures ("Failed to fetch"
+      // / "NetworkError…"), while Node.js surfaces ECONNRESET/ETIMEDOUT as error
+      // codes. Match both so a brief packet loss during an AI call gets retried.
       const transient =
         /\b(408|429|500|502|503|504|overload|UNAVAILABLE|RESOURCE_EXHAUSTED|ECONNRESET|ETIMEDOUT)\b/i
-          .test(msg);
+          .test(msg) || err instanceof TypeError;
       lastErr = err;
       if (!transient || i === tries - 1) throw err;
       await new Promise((r) => setTimeout(r, baseMs * 2 ** i));

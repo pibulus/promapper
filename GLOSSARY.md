@@ -1,54 +1,44 @@
 # Glossary
 
-Short reference for the main terms and files in this repo.
+A simple map of the terms and files that make up this mapper.
 
-## Core Terms
+## Core Ideas
 
-- `AIService`: Provider-neutral interface for transcription, extraction,
-  summary, title, and markdown generation.
-- `ConversationFlowResult`: The structured result returned by
-  `processText()`/`processAudio()`.
-- `conversationData`: The global Preact signal that holds the active
-  conversation in the UI.
-- `topic graph`: Emoji nodes plus colored edges that visualize conversation
-  themes and relationships.
-- `action item`: A task extracted from the conversation, optionally with
-  assignee, due date, and status.
-- `AI self-checkoff`: The follow-up pass that marks existing action items
-  completed or pending based on later context.
-- `append flow`: The path used when new audio is added to an existing
-  conversation.
-- `OpenRouter`: The primary AI provider in this repo.
-- `Gemini`: The fallback provider and the source of the original multimodal
-  upload flow.
+- `AIService` — The clean boundary interface for transcription, topic
+  extraction, summaries, and title generation.
+- `ConversationFlowResult` — The raw structured data returned by processing
+  audio or text.
+- `conversationData` — The global Preact signal holding the active project map
+  in memory.
+- `Topic Graph` — Visual nodes (emojis) and colored connections showing how
+  conversation themes relate.
+- `Action Item` — A specific task found in the conversation. Can have a person
+  assigned, a due date, and completion status.
+- `AI Self-Checkoff` — The automatic pass that updates existing action items
+  when later conversation mentions work is done.
+- `Append Flow` — Folding fresh audio or text into an existing project map to
+  grow the shared memory.
+- `OpenRouter` — The primary server-side gateway to LLMs (Gemini, Claude,
+  Voxtral).
 
-## Important Files
+## Key Files
 
-- [README.md](./README.md): Product overview, setup, and user-facing docs.
-- [CLAUDE.md](./CLAUDE.md): Current dev guide and architecture map.
-- [core/README.md](./core/README.md): Core AI flow and exports.
-- [core/ai/types.ts](./core/ai/types.ts): Provider-neutral AI contract.
-- [core/ai/openrouter.ts](./core/ai/openrouter.ts): OpenRouter implementation.
-- [core/ai/gemini.ts](./core/ai/gemini.ts): Gemini fallback implementation.
-- [services/ai.ts](./services/ai.ts): Provider selection and caching.
-- [services/audio.ts](./services/audio.ts): Audio upload / inline part
-  conversion.
-- [routes/api/process.ts](./routes/api/process.ts): New conversation endpoint.
-- [routes/api/append.ts](./routes/api/append.ts): Append audio endpoint.
-- [routes/api/markdown.ts](./routes/api/markdown.ts): Provider-agnostic markdown
-  export endpoint.
+- [README.md](./README.md) — Project setup, overview, and features.
+- [CLAUDE.md](./CLAUDE.md) — The dev guide, model architecture, and details.
+- [core/README.md](./core/README.md) — Framework-free AI and data transformation
+  contracts.
+- [core/ai/openrouter.ts](./core/ai/openrouter.ts) — The OpenRouter gateway
+  logic.
+- [routes/api/process.ts](./routes/api/process.ts) — The endpoint for starting a
+  new project map.
+- [routes/api/append.ts](./routes/api/append.ts) — The endpoint for appending
+  new conversation chunks.
 
-## UI Layout
+## Project Structure
 
-- `islands/`: interactive Preact components
-- `components/`: shared presentational pieces
-- `routes/`: Fresh pages and API routes
-- `signals/`: app state and persistence
-- `utils/`: client-side utilities
-- `static/`: CSS and static assets
-
-## Provider Notes
-
-- OpenRouter is the default provider.
-- Gemini can be enabled by setting `AI_PROVIDER=gemini`.
-- `.env` is ignored and should hold local keys only.
+- `islands/` — Hydrated client-side components (Preact).
+- `components/` — Simple presentational cards and static UI.
+- `routes/` — Server-side paths, layouts, and API routes.
+- `signals/` — Local state triggers and sync logic.
+- `utils/` — Small helper scripts.
+- `static/` — Pure assets, icons, and styles.

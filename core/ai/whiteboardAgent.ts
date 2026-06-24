@@ -305,6 +305,7 @@ export function applyWhiteboardOps(
         };
       } else if (op.op === "insert_after") {
         const insertAt = op.line === 0 ? 0 : Math.min(idx + 1, result.length);
+        // Position relative to the reference element if one exists.
         if (idx < result.length) {
           newEl.x = ((result[idx].x as number) ?? 100) + 180;
           newEl.y = (result[idx].y as number) ?? 100;

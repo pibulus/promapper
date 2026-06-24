@@ -834,36 +834,10 @@ export default function HomeIsland() {
                       </p>
                     </div>
                     <div class="mapper-card__panel">
-                      <UploadIsland />
-                      <div
-                        style={{
-                          marginTop: "1rem",
-                          textAlign: "center",
-                        }}
-                      >
-                        <button
-                          onClick={loadDemo}
-                          disabled={demoLoading.value}
-                          class="btn btn--secondary"
-                          style={{
-                            fontSize: "var(--small-size)",
-                            padding: "0.5rem 1.25rem",
-                          }}
-                        >
-                          {demoLoading.value
-                            ? "Loading demo…"
-                            : "✨ Try a demo"}
-                        </button>
-                        <p
-                          style={{
-                            fontSize: "var(--tiny-size)",
-                            color: "var(--color-text-secondary)",
-                            marginTop: "0.4rem",
-                          }}
-                        >
-                          See the dashboard in action — no AI cost
-                        </p>
-                      </div>
+                      <UploadIsland
+                        onTryDemo={loadDemo}
+                        demoLoading={demoLoading.value}
+                      />
                     </div>
                   </div>
                 </div>
