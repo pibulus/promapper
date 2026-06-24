@@ -2,58 +2,67 @@
 
 > Turn messy conversations into living project maps.
 
-**ProMapper** is a friendly way to capture the shape of something while it is
-still unfolding. A voice note, a weekly check-in, a research session, a film
-scene, a court case, a messy written rant - it can become a transcript, a
-summary, action items, a topic map, and exportable markdown docs.
+**ProMapper** is a friendly, local-first way to capture the shape of something
+while it is still unfolding. Like the wax lips in _The Simpsons_, it’s the
+conversation tool with 1,000 uses: a voice note, a weekly check-in, a research
+session, a film scene, a court case, a messy written rant—it instantly maps into
+a transcript, a summary, action items, an interactive topic map, and exportable
+markdown docs.
 
-The useful part is that a map can keep growing. Add more audio or text later and
-ProMapper folds the new material into the same project memory.
+The useful part is that a project map can keep growing. Add more audio or text
+later and ProMapper folds the new material into the same project memory.
 
 ## ✨ Key Features
 
 ### 🎤 Capture → Shape
 
 - **Record or upload** audio files
-- **Automatic transcription** with speaker diarization
-- **AI-powered analysis** extracts topics, action items, summaries
-- **Real-time visualizer** during recording
+- **Automatic transcription** with native speaker diarization (Gemini 3.x)
+- **AI-powered analysis** extracts topics, action items, and summaries in
+  parallel
+- **Real-time visualizer** during recording sessions
 
 ### 🤖 AI Self-Checkoff (The Magic Feature)
 
-User says: _"I finished writing that report"_ → AI automatically marks "Write
-report" action item as ✓ Complete
-
-The AI compares new audio/text against existing action items and updates their
-status with reasoning.
+User says: _"I finished writing that report"_ → AI automatically marks the
+"Write report" action item as ✓ Complete. The AI compares new audio/text against
+existing action items and updates their status with logical reasoning.
 
 ### 🕸️ Interactive Topic Graph (EmojimapViz)
 
-- **Non-chronological visualization** of conversation topics
-- **Emoji-based nodes** with relationship edges
-- **Force-directed layout** for organic topic clustering
-- Helps participants circle back to interrupted topics
+- **Non-chronological visualization** of conversation themes
+- **Emoji-based nodes** with colored relationship edges
+- **Force-directed layout** for organic topic clustering, helping participants
+  circle back to interrupted thoughts
+
+### 🎙️ Collaborative Meeting Rooms (Live Mode)
+
+- **Multiplayer sync**: Real-time cursor presence, chat rooms, and named avatars
+  (e.g. _"Glitch Koala"_) powered by PartyKit.
+- **Shared Whiteboard**: Collaborative sketchpad using Excalidraw, allowing both
+  humans and Claude to draw diagrams side-by-side.
+- **WebRTC Voice Relay**: Zero-latency P2P voice chat with active speaker
+  highlights, powered by Cloudflare RealtimeKit SFU.
 
 ### 📤 Markdown Exports
 
 Turn the same project map into different useful documents:
 
-- Blog posts
-- Technical documentation
-- Meeting summaries
+- Blog posts & Technical documentation
+- Meeting summaries & FAQ sections
 - Person-by-person action lists
 - Diarised transcripts
-- FAQs
 - Haiku poems (why not?)
-- Custom prompts
 
-### 🎨 Beautiful, Responsive UI
+### 🎨 Soft Neo-Toybrut UI
 
 - **Mesh gradient backgrounds** (animated SVG)
-- **Clean Svelte-inspired aesthetic**
-- **Fully responsive** mobile layout
-- **Theme-aware styling** with local theme variables
-- **Draggable cards** for customizable layout
+- **Tactile Sound FX**: Clientside synthesized Web Audio cues (chimes, ticks,
+  whooshes) for interface actions
+- **Theme-aware styling**: Sleek, pastel palettes (Bubblegum, Sky, Grape, Lime,
+  Gold)
+- **Draggable cards** for customizable dashboard layouts
+- **Fully responsive** mobile views with CSS momentum scroll-snapping
 
 ## 🚀 Quick Start
 
