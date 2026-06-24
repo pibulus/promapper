@@ -6,5 +6,11 @@ compatibility_date = "2025-06-01"
 binding = "KV"
 id = "PROMAPPER_VOICE_KV"
 
+# Cloudflare RealtimeKit binding — creates WebRTC session tokens for voice rooms.
+# Create the app at dash.cloudflare.com → RealtimeKit, then fill in the ID below.
+# [[rtc]]
+# binding = "REALTIME_KIT"
+# id = "your-realtimekit-app-id"
+
 # Free tier: 10GB WebRTC/month (~100+ meeting-hours free)
 # Room TTL: 2h idle, 30-day KV storage

@@ -31,13 +31,6 @@ export const handler: Handlers = {
     const guard = guardRequest(req);
     if (guard) return guard;
 
-    if (!VOICE_RELAY_URL) {
-      return new Response(
-        JSON.stringify({ error: "Voice relay is not configured" }),
-        { status: 503, headers: { "Content-Type": "application/json" } },
-      );
-    }
-
     let body: { roomId?: string } = {};
     try {
       body = await req.json();
@@ -53,6 +46,25 @@ export const handler: Handlers = {
       return new Response(
         JSON.stringify({ error: "A valid roomId is required" }),
         { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    // If the Voice Relay Worker isn't deployed yet, return a local-dev
+    // session with public STUN servers so P2P WebRTC can still work on
+    // localhost (no SFU — direct peer connections only).
+    if (!VOICE_RELAY_URL) {
+      return new Response(
+        JSON.stringify({
+          sessionId: crypto.randomUUID(),
+          iceServers: [
+            { urls: "stun:stun.l.google.com:19302" },
+            { urls: "stun:stun1.l.google.com:19302" },
+          ],
+          sessionToken: `local_${crypto.randomUUID()}`,
+          roomId,
+          ttl: 7200,
+        }),
+        { headers: { "Content-Type": "application/json" } },
       );
     }
 

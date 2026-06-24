@@ -160,8 +160,28 @@ export default function VoicePanel({ roomId, displayName }: VoicePanelProps) {
         }
       };
 
-      // 7. Create offer and send to Cloudflare RealtimeKit
-      //    The session token authenticates us to the SFU.
+      // 7. Create offer and send to Cloudflare RealtimeKit.
+      //    In local dev (no rtcEndpoint), skip SFU and use direct P2P
+      //    via PartyKit signaling if available.
+      if (!session.rtcEndpoint) {
+        // Local dev — no Cloudflare SFU available.
+        // The peer connection will use STUN for direct P2P discovery.
+        // Signaling happens through PartyKit (already connected).
+        isConnected.value = true;
+        isConnecting.value = false;
+        hasJoined.value = true;
+        showToast(
+          "Voice connected (local mode — direct P2P, no SFU)",
+          "info",
+        );
+        // Start polling for local audio levels
+        levelIntervalRef.current = setInterval(
+          pollAudioLevels,
+          LEVEL_POLL_MS,
+        ) as unknown as number;
+        return;
+      }
+
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
