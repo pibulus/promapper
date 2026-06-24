@@ -11,6 +11,7 @@
 
 import { useEffect, useRef } from "preact/hooks";
 import { IS_BROWSER } from "$fresh/runtime.ts";
+import { remoteWhiteboardUpdate } from "@signals/partyConnectionStore.ts";
 
 interface SharedWhiteboardProps {
   roomId: string;
@@ -74,6 +75,11 @@ export default function SharedWhiteboard(
           theme: "light",
           excalidrawAPI(api: typeof apiRef.current) {
             apiRef.current = api;
+            if (containerRef.current) {
+              (containerRef.current as HTMLElement & {
+                excalidrawAPI?: typeof apiRef.current;
+              }).excalidrawAPI = api;
+            }
           },
           onChange(elements: unknown[], appState: unknown) {
             onSceneChange?.(JSON.stringify({ elements, appState }));
@@ -102,6 +108,23 @@ export default function SharedWhiteboard(
     (containerRef.current as HTMLElement & {
       excalidrawAPI?: typeof apiRef.current;
     }).excalidrawAPI = apiRef.current;
+  }, [apiRef.current]);
+
+  // Subscribe to remote whiteboard updates from PartyKit reactively.
+  useEffect(() => {
+    if (!IS_BROWSER) return;
+    const unsubscribe = remoteWhiteboardUpdate.subscribe((scene) => {
+      if (!scene || !apiRef.current) return;
+      try {
+        const { elements, appState } = JSON.parse(scene);
+        apiRef.current.updateScene({
+          elements,
+          appState,
+          commitToHistory: false,
+        });
+      } catch { /* malformed scene */ }
+    });
+    return unsubscribe;
   }, []);
 
   return (

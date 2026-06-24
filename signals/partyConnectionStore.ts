@@ -27,3 +27,6 @@ export interface ChatMessage {
 }
 export const chatMessages = signal<ChatMessage[]>([]);
 export const unreadChatCount = signal<number>(0);
+
+// Inbound whiteboard scene updates from remote peers
+export const remoteWhiteboardUpdate = signal<string | null>(null);

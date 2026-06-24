@@ -220,7 +220,7 @@ function loadConversationsRaw(): {
 
   // Migrate legacy bytes to the current key on first read.
   if (!localStorage.getItem(CONVERSATIONS_KEY)) {
-    localStorage.setItem(CONVERSATIONS_KEY, data);
+    safeSetItem(CONVERSATIONS_KEY, data);
   }
 
   const result = classifyConversationsRaw(data);
@@ -295,7 +295,7 @@ export function getActiveConversationId(): string | null {
   const activeId = localStorage.getItem(ACTIVE_ID_KEY) ??
     localStorage.getItem(LEGACY_ACTIVE_ID_KEY);
   if (activeId && !localStorage.getItem(ACTIVE_ID_KEY)) {
-    localStorage.setItem(ACTIVE_ID_KEY, activeId);
+    safeSetItem(ACTIVE_ID_KEY, activeId);
   }
   return activeId;
 }

@@ -24,17 +24,34 @@ function createMockAIService(): AIService {
     async generateTitle(_transcript: string, _signal?: AbortSignal) {
       return "Mock Title";
     },
-    async extractActionItems(_input, _speakers, _existing, _onParseError, _signal?: AbortSignal) {
+    async extractActionItems(
+      _input,
+      _speakers,
+      _existing,
+      _onParseError,
+      _signal?: AbortSignal,
+    ) {
       return [{
         description: "Do something",
         assignee: "Alice",
         due_date: "2025-12-01",
       }];
     },
-    async checkActionItemStatus(_input, _existing, _onParseError, _signal?: AbortSignal) {
+    async checkActionItemStatus(
+      _input,
+      _existing,
+      _onParseError,
+      _signal?: AbortSignal,
+    ) {
       return [];
     },
-    async extractTopics(_text, _existing, _existingEdges, _onParseError, _signal?: AbortSignal) {
+    async extractTopics(
+      _text,
+      _existing,
+      _existingEdges,
+      _onParseError,
+      _signal?: AbortSignal,
+    ) {
       return {
         nodes: [{ id: "n1", label: "Topic", color: "#aaa", emoji: "📌" }],
         edges: [],

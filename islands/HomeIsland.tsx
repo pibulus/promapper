@@ -6,7 +6,7 @@
  */
 
 import { IS_BROWSER } from "$fresh/runtime.ts";
-import { signal } from "@preact/signals";
+import { signal, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import {
   canUndo,
@@ -82,7 +82,8 @@ export default function HomeIsland() {
   useEffect(() => {
     // Auto-restore last active conversation from localStorage
     const activeId = getActiveConversationId();
-    if (activeId && !conversationData.value) {
+    // SKIP auto-restore if liveSession is active to prevent clobbering the live room's state
+    if (activeId && !conversationData.value && !liveSession.value) {
       const stored = loadConversation(activeId);
       if (stored) {
         conversationData.value = stored;
@@ -188,11 +189,34 @@ export default function HomeIsland() {
   const users = remoteUsers.value;
   const seenIds = useRef<Set<string> | null>(null);
 
+  const connectionFailed = useSignal(false);
+
+  useEffect(() => {
+    if (!session) {
+      connectionFailed.value = false;
+      return;
+    }
+    if (connected) {
+      connectionFailed.value = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      if (!connected) {
+        connectionFailed.value = true;
+        showToast(
+          "Connection is taking longer than expected. Still retrying...",
+          "warning",
+        );
+      }
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [session?.roomId, connected]);
+
   // Live recording state
-  const isRecording = signal(false);
-  const recordingTime = signal(0);
-  const isProcessing = signal(false);
-  const liveTranscript = signal<
+  const isRecording = useSignal(false);
+  const recordingTime = useSignal(0);
+  const isProcessing = useSignal(false);
+  const liveTranscript = useSignal<
     Array<{ id: number; text: string; speakers?: string[] }>
   >([]);
 
@@ -201,6 +225,7 @@ export default function HomeIsland() {
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
+  const isStartingRecording = useRef(false);
 
   // Silence-aware refs
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -283,9 +308,14 @@ export default function HomeIsland() {
   }
 
   async function startRecording() {
-    if (isRecording.value || mediaRecorderRef.current) return; // guard double-click
+    if (
+      isRecording.value || mediaRecorderRef.current ||
+      isStartingRecording.current
+    ) return; // guard double-click
+    isStartingRecording.current = true;
     try {
       await ensureApiSession();
+      if (!isStartingRecording.current) return;
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           sampleRate: 16000,
@@ -295,6 +325,10 @@ export default function HomeIsland() {
           autoGainControl: true,
         },
       });
+      if (!isStartingRecording.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
       streamRef.current = stream;
 
       // Set up silence detection via AnalyserNode (time-domain RMS)
@@ -303,6 +337,13 @@ export default function HomeIsland() {
       // Resume under autoplay policies — AudioContext may start suspended
       if (audioCtx.state === "suspended") {
         await audioCtx.resume();
+      }
+      if (!isStartingRecording.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        audioCtx.close();
+        audioCtxRef.current = null;
+        streamRef.current = null;
+        return;
       }
       const source = audioCtx.createMediaStreamSource(stream);
       const analyser = audioCtx.createAnalyser();
@@ -315,6 +356,14 @@ export default function HomeIsland() {
         : "audio/mp4";
 
       const recorder = new MediaRecorder(stream, { mimeType });
+      if (!isStartingRecording.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        audioCtx.close();
+        audioCtxRef.current = null;
+        streamRef.current = null;
+        analyserRef.current = null;
+        return;
+      }
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
       chunkStartRef.current = Date.now();
@@ -373,8 +422,10 @@ export default function HomeIsland() {
         }
       }, 200) as unknown as number;
 
+      isStartingRecording.current = false;
       showToast("Recording — live transcript starting…", "info");
     } catch (err) {
+      isStartingRecording.current = false;
       console.error("Failed to start recording:", err);
       showToast("Couldn't access microphone. Check permissions.", "error");
     }
@@ -411,6 +462,7 @@ export default function HomeIsland() {
   }
 
   async function stopRecording() {
+    isStartingRecording.current = false;
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -580,6 +632,31 @@ export default function HomeIsland() {
                             Live · {users.length} here
                           </span>
                         )
+                        : connectionFailed.value
+                        ? (
+                          <span
+                            style={{
+                              fontSize: "var(--tiny-size)",
+                              color: "var(--color-accent-red, #D32F2F)",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.25rem",
+                            }}
+                            title="Connection is taking longer than expected. Still retrying..."
+                          >
+                            <span
+                              aria-hidden="true"
+                              style={{
+                                width: "7px",
+                                height: "7px",
+                                borderRadius: "50%",
+                                background: "var(--color-accent-red, #D32F2F)",
+                                display: "inline-block",
+                              }}
+                            />
+                            Offline (Reconnecting…)
+                          </span>
+                        )
                         : (
                           <span
                             style={{
@@ -681,6 +758,8 @@ export default function HomeIsland() {
       {/* Live transcript stream — appears during recording */}
       {session && liveTranscript.value.length > 0 && (
         <div
+          aria-live="polite"
+          aria-atomic="false"
           style={{
             padding: "0.75rem var(--card-padding)",
             borderBottom: "2px solid var(--color-border)",

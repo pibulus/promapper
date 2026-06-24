@@ -85,10 +85,11 @@ export default function VoicePanel(
   }
 
   async function joinVoice() {
-    if (!IS_BROWSER || hasJoined.value) return;
+    if (!IS_BROWSER || hasJoined.value || isConnecting.value) return;
     isConnecting.value = true;
 
     const session = await getSession();
+    if (!isConnecting.value) return; // connection aborted by user
     if (!session) {
       isConnecting.value = false;
       return;
@@ -105,9 +106,21 @@ export default function VoicePanel(
       });
       streamRef.current = stream;
 
+      if (!isConnecting.value) {
+        cleanupMedia();
+        return;
+      }
+
       // 2. Set up audio analysis (for speaking detection on local)
       const audioCtx = new AudioContext();
       audioCtxRef.current = audioCtx;
+      if (audioCtx.state === "suspended") {
+        await audioCtx.resume();
+      }
+      if (!isConnecting.value) {
+        cleanupMedia();
+        return;
+      }
       const source = audioCtx.createMediaStreamSource(stream);
       const analyzer = audioCtx.createAnalyser();
       analyzer.fftSize = 256;
@@ -234,6 +247,11 @@ export default function VoicePanel(
         body: pc.localDescription?.sdp || "",
       });
 
+      if (!isConnecting.value) {
+        cleanupMedia();
+        return;
+      }
+
       if (!sdpRes.ok) {
         throw new Error(`RealtimeKit rejected offer: ${sdpRes.status}`);
       }
@@ -262,6 +280,7 @@ export default function VoicePanel(
   }
 
   function leaveVoice() {
+    isConnecting.value = false; // flag connection as aborted
     if (levelIntervalRef.current) {
       clearInterval(levelIntervalRef.current);
       levelIntervalRef.current = null;
@@ -302,7 +321,7 @@ export default function VoicePanel(
       const data = new Uint8Array(analyzerRef.current.frequencyBinCount);
       analyzerRef.current.getByteFrequencyData(data);
       const avg = data.reduce((a, b) => a + b, 0) / data.length;
-      localSpeakingRef.current = avg > SPEAKING_THRESHOLD;
+      localSpeaking.value = avg > SPEAKING_THRESHOLD;
     }
 
     // Check remote peer audio levels — accumulate changes, single assignment
@@ -327,8 +346,8 @@ export default function VoicePanel(
     if (peersChanged) peers.value = updated;
   }
 
-  // Track local speaking state as a simple flag
-  const localSpeakingRef = useRef(false);
+  // Track local speaking state as a signal
+  const localSpeaking = useSignal(false);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -396,13 +415,17 @@ export default function VoicePanel(
 
                 <span
                   class={`voice-speaking-indicator ${
-                    localSpeakingRef.current && !isMuted.value
-                      ? "is-speaking"
-                      : ""
+                    localSpeaking.value && !isMuted.value ? "is-speaking" : ""
                   }`}
-                  aria-hidden="true"
                 >
                   {displayName || "You"}
+                  <span class="sr-only">
+                    {isMuted.value
+                      ? " (Muted)"
+                      : localSpeaking.value
+                      ? " (Speaking)"
+                      : " (Silent)"}
+                  </span>
                 </span>
               </div>
 
@@ -415,7 +438,16 @@ export default function VoicePanel(
                     }`}
                     aria-hidden="true"
                   />
-                  <span class="voice-peer-name">{peer.name}</span>
+                  <span class="voice-peer-name">
+                    {peer.name}
+                    <span class="sr-only">
+                      {peer.isMuted
+                        ? " (Muted)"
+                        : peer.isSpeaking
+                        ? " (Speaking)"
+                        : " (Silent)"}
+                    </span>
+                  </span>
                   {peer.isMuted && (
                     <i
                       class="fa fa-microphone-slash voice-peer-muted"

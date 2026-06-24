@@ -57,6 +57,7 @@ export default function AudioRecorder(
   const recordingTimerRef = useRef<number | null>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const currentObjectURLRef = useRef<string | null>(null); // Track object URLs for cleanup
+  const isStartingRecording = useRef(false);
 
   // Time constants
   const MAX_RECORDING_TIME = 10 * 60; // 10 minutes in seconds
@@ -90,7 +91,10 @@ export default function AudioRecorder(
     // Guard re-entry: a double-tap (or tapping Record while the previous
     // recording's onstop is still processing) would otherwise spin up a second
     // overlapping MediaRecorder session. One recording at a time.
-    if (isRecording.value || isProcessing.value) return;
+    if (
+      isRecording.value || isProcessing.value || isStartingRecording.current
+    ) return;
+    isStartingRecording.current = true;
     try {
       // Request microphone permission
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -100,6 +104,10 @@ export default function AudioRecorder(
           autoGainControl: true,
         },
       });
+      if (!isStartingRecording.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
 
       // Create MediaRecorder with fallback mime types
       const mimeTypes = ["audio/webm", "audio/ogg", "audio/mp4", ""];
@@ -113,6 +121,10 @@ export default function AudioRecorder(
       }
 
       const mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
+      if (!isStartingRecording.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
@@ -128,6 +140,7 @@ export default function AudioRecorder(
       recordingTime.value = 0;
       showTimeWarning.value = false;
       retryRecordingReady.value = false;
+      isStartingRecording.current = false;
 
       // Start timer
       recordingTimerRef.current = setInterval(() => {
@@ -144,6 +157,7 @@ export default function AudioRecorder(
         }
       }, 1000) as unknown as number;
     } catch (error) {
+      isStartingRecording.current = false;
       console.error("❌ Error starting recording:", error);
       showToast(
         "Failed to start recording. Please check microphone permissions.",
@@ -155,6 +169,7 @@ export default function AudioRecorder(
 
   // Stop recording
   async function stopRecording() {
+    isStartingRecording.current = false;
     if (!mediaRecorderRef.current || !isRecording.value) return;
 
     isProcessing.value = true;

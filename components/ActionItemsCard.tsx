@@ -810,6 +810,7 @@ export default function ActionItemsCard(
                                 ? (
                                   <div class="space-y-2">
                                     <textarea
+                                      aria-label="Edit description"
                                       value={editingDescription.value}
                                       onInput={(e) =>
                                         editingDescription.value =
@@ -974,6 +975,7 @@ export default function ActionItemsCard(
                                           >
                                             <input
                                               type="text"
+                                              aria-label="Assignee name"
                                               defaultValue={item.assignee || ""}
                                               placeholder="Type a name…"
                                               class="w-full rounded px-2 py-1 text-xs"
@@ -1075,6 +1077,7 @@ export default function ActionItemsCard(
                                       <input
                                         type="date"
                                         id={`date-${item.id}`}
+                                        aria-label="Due date"
                                         value={item.due_date || ""}
                                         onChange={(e) =>
                                           updateDueDate(

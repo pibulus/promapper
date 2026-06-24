@@ -210,22 +210,27 @@ export function createOpenRouterService(
     modelHint?: string,
     signal?: AbortSignal,
   ): Promise<string> {
-    return await withRetry(async () => {
-      const response = await fetcher(joinUrl(baseUrl, "/chat/completions"), {
-        method: "POST",
-        headers: buildHeaders(options),
-        body: JSON.stringify({
-          model: modelHint ?? options.model,
-          messages,
-          stream: false,
-          temperature: 0.1, // low temp for consistent structured extraction
-          max_tokens: 8192,
-        }),
-        signal,
-      });
+    return await withRetry(
+      async () => {
+        const response = await fetcher(joinUrl(baseUrl, "/chat/completions"), {
+          method: "POST",
+          headers: buildHeaders(options),
+          body: JSON.stringify({
+            model: modelHint ?? options.model,
+            messages,
+            stream: false,
+            temperature: 0.1, // low temp for consistent structured extraction
+            max_tokens: 8192,
+          }),
+          signal,
+        });
 
-      return await parseOpenRouterResponse(response);
-    }, 3, 600, signal);
+        return await parseOpenRouterResponse(response);
+      },
+      3,
+      600,
+      signal,
+    );
   }
 
   async function chatText(
@@ -243,12 +248,16 @@ export function createOpenRouterService(
     signal?: AbortSignal,
   ): Promise<string> {
     const audioPart = await toOpenRouterAudioPart(audioInput);
-    return await chat([
-      {
-        role: "user",
-        content: buildAudioContent(prompt, audioPart),
-      },
-    ], modelHint, signal);
+    return await chat(
+      [
+        {
+          role: "user",
+          content: buildAudioContent(prompt, audioPart),
+        },
+      ],
+      modelHint,
+      signal,
+    );
   }
 
   return {
@@ -270,9 +279,13 @@ export function createOpenRouterService(
       }
     },
 
-    async generateTitle(transcript: string, signal?: AbortSignal): Promise<string> {
+    async generateTitle(
+      transcript: string,
+      signal?: AbortSignal,
+    ): Promise<string> {
       try {
-        return (await chatText(buildTitlePrompt(transcript), undefined, signal)).trim();
+        return (await chatText(buildTitlePrompt(transcript), undefined, signal))
+          .trim();
       } catch (error) {
         console.error("❌ Error generating title:", error);
         throw new Error("Failed to generate title with OpenRouter");

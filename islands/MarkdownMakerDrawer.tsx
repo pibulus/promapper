@@ -445,8 +445,9 @@ export default function MarkdownMakerDrawer(
       <div
         onClick={onClose}
         aria-hidden="true"
-        class="fixed inset-0 z-40 transition-opacity duration-[400ms]"
+        class="fixed inset-x-0 bottom-0 z-30 transition-opacity duration-[400ms]"
         style={{
+          top: "var(--header-height)",
           background: "rgba(30, 23, 20, 0.35)",
           opacity: isAnimating ? "1" : "0",
           pointerEvents: isAnimating ? "auto" : "none",
@@ -456,10 +457,11 @@ export default function MarkdownMakerDrawer(
       {/* Drawer with smooth bouncy slide (our spring — keep it) */}
       <div
         ref={drawerRef}
-        class={`markdown-maker-drawer fixed bottom-0 right-0 top-0 z-50 flex w-96 flex-col overflow-hidden transition-transform duration-[400ms] ${
+        class={`markdown-maker-drawer fixed bottom-0 right-0 z-40 flex w-96 flex-col overflow-hidden transition-transform duration-[400ms] ${
           isAnimating ? "translate-x-0" : "translate-x-full"
         }`}
         style={{
+          top: "var(--header-height)",
           borderLeft: `var(--border-width) solid var(--color-border)`,
           background: "var(--color-secondary)",
           boxShadow: "var(--shadow-lifted)",

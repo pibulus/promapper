@@ -32,15 +32,32 @@ function createMockAIService(
       calls.push("generateTitle");
       return "Test Title";
     },
-    async extractActionItems(_input, _speakers, _existing, _onParseError, _signal?: AbortSignal) {
+    async extractActionItems(
+      _input,
+      _speakers,
+      _existing,
+      _onParseError,
+      _signal?: AbortSignal,
+    ) {
       calls.push("extractActionItems");
       return [{ description: "Do the thing", assignee: null, due_date: null }];
     },
-    async checkActionItemStatus(_input, _existing, _onParseError, _signal?: AbortSignal) {
+    async checkActionItemStatus(
+      _input,
+      _existing,
+      _onParseError,
+      _signal?: AbortSignal,
+    ) {
       calls.push("checkActionItemStatus");
       return [];
     },
-    async extractTopics(_text, _existing, _existingEdges, _onParseError, _signal?: AbortSignal) {
+    async extractTopics(
+      _text,
+      _existing,
+      _existingEdges,
+      _onParseError,
+      _signal?: AbortSignal,
+    ) {
       calls.push("extractTopics");
       return { nodes: [], edges: [] };
     },

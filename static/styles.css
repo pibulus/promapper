@@ -101,7 +101,7 @@
   /* Layout */
   --header-height: 58px;
   --z-header: 50;
-  --z-modal: 50;
+  --z-modal: 100;
   --z-drawer: 40;
 
   /* ===================================================================
@@ -2117,7 +2117,7 @@ html::-webkit-scrollbar-thumb:hover,
 .reader-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 90;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3128,7 +3128,7 @@ html::-webkit-scrollbar-thumb:hover,
 .topic-node-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 80;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3211,7 +3211,7 @@ html::-webkit-scrollbar-thumb:hover,
 .topic-map-fullscreen {
   position: fixed;
   inset: 0;
-  z-index: 90;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4349,7 +4349,7 @@ a:focus-visible {
   position: fixed;
   right: 1rem;
   bottom: 1rem;
-  z-index: var(--z-drawer);
+  z-index: 45;
   padding: 0.6rem 0.9rem;
   border-radius: 999px;
   background: var(--color-accent);
@@ -4363,7 +4363,7 @@ a:focus-visible {
   position: fixed;
   right: 1rem;
   bottom: 1rem;
-  z-index: var(--z-drawer);
+  z-index: 45;
   width: min(320px, calc(100vw - 2rem));
   height: min(420px, 60vh);
   display: flex;
@@ -4461,7 +4461,7 @@ a:focus-visible {
   position: fixed;
   bottom: 0;
   right: 0;
-  top: 0;
+  top: var(--header-height);
   z-index: var(--z-drawer, 40);
   width: 280px;
   max-width: 85vw;

@@ -27,7 +27,9 @@ function reqFrom(origin: string | null, ip = "1.1.1.1"): Request {
 }
 
 Deno.test("guardRequest allows a whitelisted origin", async () => {
-  const result = await guardRequest(reqFrom("https://promapper.app", "10.0.0.1"));
+  const result = await guardRequest(
+    reqFrom("https://promapper.app", "10.0.0.1"),
+  );
   assertEquals(result, null);
 });
 
@@ -37,7 +39,9 @@ Deno.test("guardRequest allows requests with no origin header (same-origin/serve
 });
 
 Deno.test("guardRequest blocks a disallowed origin with 403", async () => {
-  const result = await guardRequest(reqFrom("https://evil.example", "10.0.0.3"));
+  const result = await guardRequest(
+    reqFrom("https://evil.example", "10.0.0.3"),
+  );
   assertEquals(result?.status, 403);
 });
 

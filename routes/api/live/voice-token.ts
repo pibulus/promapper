@@ -74,7 +74,10 @@ export const handler: Handlers = {
     try {
       // Step 1: create the room (idempotent GET)
       const createCtl = new AbortController();
-      const createTimer = setTimeout(() => createCtl.abort(), RELAY_FETCH_TIMEOUT_MS);
+      const createTimer = setTimeout(
+        () => createCtl.abort(),
+        RELAY_FETCH_TIMEOUT_MS,
+      );
       let createRes: Response;
       try {
         createRes = await fetch(
@@ -95,7 +98,10 @@ export const handler: Handlers = {
 
       // Step 2: get a session token
       const joinCtl = new AbortController();
-      const joinTimer = setTimeout(() => joinCtl.abort(), RELAY_FETCH_TIMEOUT_MS);
+      const joinTimer = setTimeout(
+        () => joinCtl.abort(),
+        RELAY_FETCH_TIMEOUT_MS,
+      );
       let joinRes: Response;
       try {
         joinRes = await fetch(

@@ -468,6 +468,7 @@ export default function UploadIsland() {
                   class="mapper-textarea w-full resize-none"
                   rows={6}
                   placeholder="Talk it out, paste a rant, or drop a recording here."
+                  aria-label="Conversation content or transcription input"
                   value={textInput.value}
                   onInput={(e) => {
                     textInput.value = (e.target as HTMLTextAreaElement).value;

@@ -186,10 +186,14 @@ export class ThemeSystem {
   private saveTheme(theme: Theme): void {
     if (typeof window !== "undefined") {
       const storageKey = this.config.storageKey || "app-theme";
-      localStorage.setItem(
-        storageKey,
-        JSON.stringify({ name: theme.name, timestamp: Date.now() }),
-      );
+      try {
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({ name: theme.name, timestamp: Date.now() }),
+        );
+      } catch (err) {
+        console.error("Failed to save theme to localStorage:", err);
+      }
     }
   }
 

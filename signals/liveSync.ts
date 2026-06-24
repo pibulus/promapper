@@ -20,6 +20,7 @@ import {
   type ChatMessage,
   chatMessages,
   partyConnected,
+  remoteWhiteboardUpdate,
   unreadChatCount,
 } from "@signals/partyConnectionStore.ts";
 import {
@@ -79,6 +80,10 @@ export function startLiveSync(
       });
       extra.onChat?.(text, sender, at);
     },
+    onWhiteboardUpdate: (scene) => {
+      remoteWhiteboardUpdate.value = scene;
+      extra.onWhiteboardUpdate?.(scene);
+    },
   });
 
   // Outbound broadcaster: fire on local conversationData changes only.
@@ -99,6 +104,7 @@ export function stopLiveSync(): void {
   lastSentJSON = "";
   chatMessages.value = [];
   unreadChatCount.value = 0;
+  remoteWhiteboardUpdate.value = null;
   disconnectFromRoom();
 }
 
