@@ -274,11 +274,14 @@ export function applyWhiteboardOps(
   elements: Record<string, unknown>[],
   ops: WhiteboardOp[],
 ): Record<string, unknown>[] {
-  // Work on a mutable copy.
   const result = elements.map((el) => ({ ...el } as ExcalidrawElement));
 
-  // Process ops in order. Insertions shift line numbers.
-  for (const op of ops) {
+  // Process ops in REVERSE line-number order so that earlier operations
+  // don't shift indices for later operations. All ops reference the original
+  // scene's line numbers.
+  const sorted = [...ops].sort((a, b) => b.line - a.line);
+
+  for (const op of sorted) {
     const idx = Math.max(0, Math.min(op.line - 1, result.length));
 
     if (op.op === "delete" && idx < result.length) {

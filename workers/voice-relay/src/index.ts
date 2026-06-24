@@ -114,12 +114,13 @@ export default {
             );
           }
 
-          // Return SFU credentials — the client connects directly.
-          // The session token is a per-join UUID for room identification.
+          // Return SFU credentials — the client connects directly to the SFU.
+          // Each join gets a unique sessionId for tracking. The sfuToken is the
+          // app secret (needed by WebRTC to auth with the Cloudflare SFU).
           return json(
             {
               sessionId: crypto.randomUUID(),
-              sessionToken: appSecret,
+              sfuToken: appSecret,
               roomId,
               ttl: ROOM_TTL_SECONDS,
               sfuAppId: appId,

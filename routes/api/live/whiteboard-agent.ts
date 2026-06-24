@@ -74,7 +74,7 @@ export const handler: Handlers = {
 
     try {
       const aiService = getAIService();
-      const response = await aiService.chatText(prompt, "topic");
+      const response = await aiService.chatText(prompt);
 
       const ops = parseWhiteboardOps(response);
       if (ops.length === 0) {

@@ -29,7 +29,8 @@ interface VoiceSession {
     username?: string;
     credential?: string;
   }[];
-  sessionToken: string;
+  sfuToken: string;
+  sessionToken?: string; // legacy field, now sfuToken
   roomId: string;
   ttl: number;
   rtcEndpoint?: string;
@@ -38,6 +39,8 @@ interface VoiceSession {
 interface VoicePanelProps {
   roomId: string;
   displayName: string;
+  /** Called when the parent unmounts/drawer closes — cleanup WebRTC. */
+  onUnmount?: () => void;
 }
 
 // How often we poll audio levels (ms)
@@ -123,16 +126,36 @@ export default function VoicePanel({ roomId, displayName }: VoicePanelProps) {
         pc.addTrack(track, stream);
       });
 
-      // 5. Handle remote tracks — create audio elements for playback
+      // 5. Handle remote tracks — create audio elements + analysers for each
       pc.ontrack = (event) => {
         const [remoteStream] = event.streams;
         if (!remoteStream) return;
+        const peerId = event.track.id;
+
         const audio = new Audio();
         audio.srcObject = remoteStream;
         audio.autoplay = true;
-        // Track ID is used as peer reference
-        const peerId = event.track.id;
         audioElsRef.current.set(peerId, audio);
+
+        // Set up remote audio analysis for speaking detection
+        const remoteAnalyser = audioCtxRef.current?.createAnalyser();
+        if (remoteAnalyser) {
+          remoteAnalyser.fftSize = 256;
+          const remoteSource = audioCtxRef.current!
+            .createMediaStreamSource(remoteStream);
+          remoteSource.connect(remoteAnalyser);
+          // Store analyser keyed by peerId for polling
+          (audio as HTMLAudioElement & { _analyser?: AnalyserNode })._analyser =
+            remoteAnalyser;
+        }
+
+        // Clean up when track ends
+        event.track.onended = () => {
+          audioElsRef.current.delete(peerId);
+          audio.srcObject = null;
+          audio.remove();
+          peers.value = peers.value.filter((p) => p.id !== peerId);
+        };
 
         // Add to peer list
         const existing = peers.value.find((p) => p.id === peerId);
@@ -161,40 +184,43 @@ export default function VoicePanel({ roomId, displayName }: VoicePanelProps) {
       };
 
       // 7. Create offer and send to Cloudflare RealtimeKit.
-      //    In local dev (no rtcEndpoint), skip SFU and use direct P2P
-      //    via PartyKit signaling if available.
-      if (!session.rtcEndpoint) {
-        // Local dev — no Cloudflare SFU available.
-        // The peer connection will use STUN for direct P2P discovery.
-        // Signaling happens through PartyKit (already connected).
-        isConnected.value = true;
+      //    In local dev (no rtcEndpoint), we can't connect — no SFU available.
+      if (!session.rtcEndpoint && !session.sfuToken) {
         isConnecting.value = false;
-        hasJoined.value = true;
         showToast(
-          "Voice connected (local mode — direct P2P, no SFU)",
-          "info",
+          "Voice relay not deployed. SFU is required for multi-peer audio.",
+          "warning",
         );
-        // Start polling for local audio levels
-        levelIntervalRef.current = setInterval(
-          pollAudioLevels,
-          LEVEL_POLL_MS,
-        ) as unknown as number;
+        cleanupMedia();
         return;
       }
+
+      const token = session.sfuToken || session.sessionToken || "";
+      if (!session.rtcEndpoint) {
+        isConnecting.value = false;
+        showToast(
+          "SFU endpoint not available. Deploy the voice relay Worker first.",
+          "warning",
+        );
+        cleanupMedia();
+        return;
+      }
+
+      // Handle ICE candidates — gather and send to SFU
+      pc.onicecandidate = (event) => {
+        if (!event.candidate) return;
+        // ICE candidates are handled by the SFU via the SDP exchange.
+        // Cloudflare's SFU manages candidate trickling internally.
+      };
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      // Send the SDP offer to the Cloudflare RealtimeKit SFU ingress.
-      // The endpoint URL comes from the server (env VOICE_RTC_ENDPOINT).
-      const rtcEndpoint = session.rtcEndpoint ??
-        "https://rtc.live.cloudflare.com/v1/offer";
-
-      const sdpRes = await fetch(rtcEndpoint, {
+      const sdpRes = await fetch(session.rtcEndpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/sdp",
-          "Authorization": `Bearer ${session.sessionToken}`,
+          "Authorization": `Bearer ${token}`,
         },
         body: pc.localDescription?.sdp || "",
       });
@@ -262,26 +288,32 @@ export default function VoicePanel({ roomId, displayName }: VoicePanelProps) {
   }
 
   function pollAudioLevels() {
-    if (!analyzerRef.current) return;
-    const data = new Uint8Array(analyzerRef.current.frequencyBinCount);
-    analyzerRef.current.getByteFrequencyData(data);
-    const avg = data.reduce((a, b) => a + b, 0) / data.length;
-    const speaking = avg > SPEAKING_THRESHOLD;
-
-    // Update local speaking state (just visual for now)
-    if (speaking !== isLocalSpeaking()) {
-      updateLocalSpeaking(speaking);
+    // Check local levels
+    if (analyzerRef.current) {
+      const data = new Uint8Array(analyzerRef.current.frequencyBinCount);
+      analyzerRef.current.getByteFrequencyData(data);
+      const avg = data.reduce((a, b) => a + b, 0) / data.length;
+      localSpeakingRef.current = avg > SPEAKING_THRESHOLD;
     }
+
+    // Check remote peer audio levels
+    audioElsRef.current.forEach((audio, peerId) => {
+      const analyser =
+        (audio as HTMLAudioElement & { _analyser?: AnalyserNode })
+          ._analyser;
+      if (!analyser) return;
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(data);
+      const avg = data.reduce((a, b) => a + b, 0) / data.length;
+      const speaking = avg > SPEAKING_THRESHOLD;
+      peers.value = peers.value.map((p) =>
+        p.id === peerId ? { ...p, isSpeaking: speaking } : p
+      );
+    });
   }
 
   // Track local speaking state as a simple flag
   const localSpeakingRef = useRef(false);
-  function isLocalSpeaking() {
-    return localSpeakingRef.current;
-  }
-  function updateLocalSpeaking(speaking: boolean) {
-    localSpeakingRef.current = speaking;
-  }
 
   // Cleanup on unmount
   useEffect(() => {
