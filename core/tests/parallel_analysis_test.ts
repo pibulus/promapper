@@ -52,6 +52,10 @@ function createMockAIService(
       calls.push("generateMarkdown");
       return "# Markdown";
     },
+    async chatText(_prompt: string) {
+      calls.push("chatText");
+      return "";
+    },
     ...overrides,
   };
 }

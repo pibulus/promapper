@@ -46,6 +46,9 @@ function createMockAIService(): AIService {
     async generateMarkdown(_formatPrompt, _text) {
       return "# Result";
     },
+    async chatText(_prompt) {
+      return '{"operations": []}';
+    },
   };
 }
 

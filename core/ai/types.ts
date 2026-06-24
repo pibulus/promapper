@@ -61,4 +61,6 @@ export interface AIService {
   ): Promise<ConversationGraph>;
   generateSummary(text: string, topicLabels?: string[]): Promise<string>;
   generateMarkdown(formatPrompt: string, text: string): Promise<string>;
+  /** Raw chat prompt — for whiteboard agent and other tools. */
+  chatText(prompt: string, modelHint?: string): Promise<string>;
 }

@@ -9,6 +9,7 @@ import * as $api_auth from "./routes/api/auth.ts";
 import * as $api_live_chunk from "./routes/api/live/chunk.ts";
 import * as $api_live_create from "./routes/api/live/create.ts";
 import * as $api_live_voice_token from "./routes/api/live/voice-token.ts";
+import * as $api_live_whiteboard_agent from "./routes/api/live/whiteboard-agent.ts";
 import * as $api_markdown from "./routes/api/markdown.ts";
 import * as $api_process from "./routes/api/process.ts";
 import * as $api_share_shareId_ from "./routes/api/share/[shareId].ts";
@@ -55,6 +56,7 @@ const manifest = {
     "./routes/api/live/chunk.ts": $api_live_chunk,
     "./routes/api/live/create.ts": $api_live_create,
     "./routes/api/live/voice-token.ts": $api_live_voice_token,
+    "./routes/api/live/whiteboard-agent.ts": $api_live_whiteboard_agent,
     "./routes/api/markdown.ts": $api_markdown,
     "./routes/api/process.ts": $api_process,
     "./routes/api/share/[shareId].ts": $api_share_shareId_,

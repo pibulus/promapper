@@ -313,68 +313,63 @@ expire 24h after last activity.
   `POST /api/live/chunk` → transcript streams live → PartyKit syncs to viewers.
   Frontend: recording button with timer + live transcript panel in
   `LiveCollabIsland.tsx`.
+### What was built this session (June 24, 2026 — Phases 2a, 2b, 2c)
 
-### What was built this session (June 24, 2026 — Phase 2a)
+**Voice Relay (2a):**
+- `workers/voice-relay/src/index.ts` — Cloudflare Worker issues RealtimeKit session tokens
+- `routes/api/live/voice-token.ts` — proxy to voice relay Worker
+- `islands/VoicePanel.tsx` — WebRTC voice controls (join, mute, speaker detection)
+- `islands/LiveCollabIsland.tsx` — two-pane grid: voice sidebar + dashboard
 
-**Voice Relay — done:**
+**Shared Whiteboard (2b):**
+- `islands/SharedWhiteboard.tsx` — Excalidraw embedded in React root, PartyKit-synced
+- Three-pane grid: voice | dashboard | whiteboard
+- `whiteboard-update` message type in party protocol + room
 
-- `workers/voice-relay/src/index.ts` — Cloudflare Worker (~160 LOC). Issues
-  RealtimeKit session tokens, manages room lifecycle via KV. Rooms expire after
-  2h idle, 30-day KV TTL.
-- `routes/api/live/voice-token.ts` — server proxy that hides the Worker URL from
-  the client. Creates room + issues session token in one POST. Returns
-  `{ sessionId, iceServers, sessionToken, roomId, ttl, rtcEndpoint }`.
-- `islands/VoicePanel.tsx` — full WebRTC voice controls: join/leave, mute/unmute
-  (warm-rose tint, not red), remote audio playback, speaking detection
-  (AnalyserNode polling), peer list with green-dot indicators, cleanup on
-  unmount.
-- `islands/LiveCollabIsland.tsx` — two-pane grid layout: VoicePanel left sidebar
-  (240px) + dashboard/transcript right. Responsive: stacks vertically on mobile.
-- `deno.json` — added `workers/` to exclude (Cloudflare types don't typecheck
-  under Deno).
-- `static/styles.css` — ~130 lines of new CSS: `.live-layout` grid,
-  `.voice-panel-*` classes, responsive breakpoints.
-- `fresh.gen.ts` — auto-registered new route + island.
+**AI Whiteboard Agent (2c):**
+- `core/ai/whiteboardAgent.ts` — scene→line-numbered text, prompt builder,
+  operation parser (replace/insert_after/delete), element generator
+- `routes/api/live/whiteboard-agent.ts` — server endpoint that calls Claude
+  Haiku to edit the whiteboard
+- `core/ai/types.ts` — added `chatText()` to AIService interface
+- `core/ai/openrouter.ts` — exposed `chatText()` on OpenRouterService
+- `islands/LiveCollabIsland.tsx` — "Ask AI to draw" button in whiteboard
+  toolbar; sends scene + transcript → agent → applies edits + broadcasts
+- `static/styles.css` — `.whiteboard-toolbar` CSS
 
-### Deploy checklist (voice relay)
+### Deploy checklist
 
-Three env vars needed on the Deno app server:
+Voice relay (2a): `VOICE_RELAY_URL`, `VOICE_SHARED_SECRET`, `VOICE_RTC_ENDPOINT`
+Whiteboard (2b): `@excalidraw/excalidraw` + `react`/`react-dom` in deno.json
+Whiteboard agent (2c): No new env vars — uses existing OpenRouter key
 
-```
-VOICE_RELAY_URL=https://promapper-voice-relay.YOURNAME.workers.dev
-VOICE_SHARED_SECRET=<shared-secret>
-VOICE_RTC_ENDPOINT=https://rtc.live.cloudflare.com/v1/offer
-```
+### What's next
 
-Worker deploy (in `workers/voice-relay/`): `npm install && npx wrangler deploy`.
-Requires a Cloudflare account with RealtimeKit enabled and `VOICE_SHARED_SECRET`
-set as a Worker secret.
-
-### What's next (Phase 2b)
-
-**1. Shared Whiteboard (Excalidraw)**
-
-- Embed `@excalidraw/excalidraw` as `islands/SharedWhiteboard.tsx`.
-- Sync scene via PartyKit (already built).
-- Humans draw manually — click, drag, type. Toolbar: pen, rectangle, arrow,
-  text, eraser, colors.
-- Add to `LiveCollabIsland` as third pane in the grid:
-  `voice | dashboard | whiteboard`.
-- Add `whiteboard-update` message type to party protocol + room.
-
-**2. Short-append optimisation:**
+**1. Short-append optimisation:**
 
 - On appends where the new transcript is < 30s, skip topic extraction + summary
   generation (just append transcript + check action item status). Saves ~2x on
   repeat analyses.
 
-**3. Pricing tiers (freemium):**
+**2. Pricing tiers (freemium):**
 
 - Free tier: 5 conversations, Flash Lite only, solo, no export.
 - $9/mo: unlimited, smart models (Claude for topics/summary, Gemini 3.5 for
   transcription), live meeting rooms, export formats, share links.
 - Implementation: add tier gating in `services/requestGuard.ts` or a new
   middleware.
+
+**3. Image/OCR Input (Phase 3):**
+
+- Drag-and-drop images onto whiteboard or topic map.
+- tesseract.js extracts text from screenshots/notebook photos.
+- Extracted text enters the AI pipeline as if typed.
+
+**4. Offline Mode (Phase 4 — stretch):**
+
+- Moonshine for local transcription (macOS).
+- Ollama / llama.cpp for local action item extraction.
+- No audio leaves the machine — privacy-first.
 
 ### Key files changed this session
 
@@ -383,10 +378,18 @@ set as a Worker secret.
 - `workers/voice-relay/package.json` — NEW: Worker npm manifest
 - `routes/api/live/voice-token.ts` — NEW: proxy to voice relay Worker
 - `islands/VoicePanel.tsx` — NEW: WebRTC voice controls
-- `islands/LiveCollabIsland.tsx` — two-pane grid layout with voice sidebar
-- `deno.json` — exclude `workers/` from Deno typecheck
-- `static/styles.css` — ~130 lines of voice panel + live layout CSS
-- `fresh.gen.ts` — auto-registered new route + island
+- `islands/SharedWhiteboard.tsx` — NEW: Excalidraw whiteboard
+- `core/ai/whiteboardAgent.ts` — NEW: AI scene editor (prompt + ops)
+- `routes/api/live/whiteboard-agent.ts` — NEW: AI whiteboard endpoint
+- `core/ai/types.ts` — added `chatText()` to AIService
+- `core/ai/openrouter.ts` — exposed `chatText()` on OpenRouterService
+- `islands/LiveCollabIsland.tsx` — three-pane grid, recording, AI draw button
+- `party/conversationProtocol.ts` — `whiteboard_update` message type
+- `party/conversationRoom.ts` — whiteboard relay handler
+- `signals/partyService.ts` — `sendWhiteboardUpdate()` + callback
+- `deno.json` — `@excalidraw/excalidraw`, `react`, `react-dom`, exclude `workers/`
+- `static/styles.css` — ~300 lines of voice panel, live layout, whiteboard CSS
+- `fresh.gen.ts` — auto-registered new route + islands
 - `CLAUDE.md` — updated handoff
 
 ## Meeting Rooms — Phase 2 (branch: `meeting-rooms`)

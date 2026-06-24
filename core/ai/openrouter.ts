@@ -353,5 +353,15 @@ export function createOpenRouterService(
         throw new Error("Failed to generate markdown with OpenRouter");
       }
     },
+
+    async chatText(
+      prompt: string,
+      modelHint?: string,
+    ): Promise<string> {
+      return await chat(
+        [{ role: "user", content: prompt }],
+        modelHint,
+      );
+    },
   };
 }

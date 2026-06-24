@@ -4156,6 +4156,9 @@ a:focus-visible {
   border-left: 2px solid var(--color-border);
   background: var(--surface-cream);
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 @media (max-width: 1024px) {
@@ -4325,10 +4328,22 @@ a:focus-visible {
    SHARED WHITEBOARD — Excalidraw embedding
    ================================================================ */
 
+/* Toolbar row above the whiteboard canvas. */
+.whiteboard-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--soft-cream);
+}
+
 .shared-whiteboard {
   width: 100%;
   height: 100%;
   min-height: 400px;
+  /* Fill remaining space below the toolbar. */
+  flex: 1;
 }
 
 .shared-whiteboard-placeholder {

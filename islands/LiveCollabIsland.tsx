@@ -66,6 +66,9 @@ export default function LiveCollabIsland(
   // Whiteboard ref — for pushing remote scene updates from PartyKit
   const whiteboardContainerRef = useRef<HTMLDivElement | null>(null);
 
+  // AI drawing state
+  const isAiDrawing = useSignal(false);
+
   function handleSceneChange(scene: string) {
     sendWhiteboardUpdate(scene);
   }
@@ -92,6 +95,66 @@ export default function LiveCollabIsland(
         commitToHistory: false,
       });
     } catch { /* malformed scene */ }
+  }
+
+  // Phase 2c: Ask the AI to draw on the whiteboard based on the current
+  // transcript + scene.
+  async function requestAiDraw() {
+    if (isAiDrawing.value) return;
+    const el = whiteboardContainerRef.current as
+      | (HTMLElement & {
+        excalidrawAPI?: { getSceneElements?: () => unknown[] };
+      })
+      | null;
+    const sceneElements = el?.excalidrawAPI?.getSceneElements;
+    if (!sceneElements) {
+      showToast("Whiteboard not ready yet", "error");
+      return;
+    }
+
+    const transcript = liveTranscript.value.join("\n").trim();
+    if (!transcript) {
+      showToast("No transcript to work from. Start recording first.", "error");
+      return;
+    }
+
+    isAiDrawing.value = true;
+    try {
+      await ensureApiSession();
+      const elements = sceneElements();
+      const topicLabels = conversationData.value?.nodes
+        ?.map((n: { label?: string }) => n.label)
+        .filter(Boolean) ?? [];
+      const res = await fetch("/api/live/whiteboard-agent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ elements, transcript, topicLabels }),
+      });
+      if (!res.ok) {
+        showToast("AI couldn't draw right now", "error");
+        return;
+      }
+      const { elements: updated } = await res.json();
+      if (updated && Array.isArray(updated)) {
+        // Apply locally
+        (el as HTMLElement & {
+          excalidrawAPI?: { updateScene(opts: unknown): void };
+        })
+          .excalidrawAPI
+          ?.updateScene({ elements: updated, commitToHistory: false });
+        // Broadcast to peers
+        sendWhiteboardUpdate(JSON.stringify({
+          elements: updated,
+          appState: {},
+        }));
+        showToast("AI updated the whiteboard", "info");
+      }
+    } catch (err) {
+      console.error("AI draw failed:", err);
+      showToast("AI couldn't draw right now", "error");
+    } finally {
+      isAiDrawing.value = false;
+    }
   }
 
   useEffect(() => {
@@ -432,6 +495,28 @@ export default function LiveCollabIsland(
             class="live-layout-whiteboard"
             ref={whiteboardContainerRef}
           >
+            <div class="whiteboard-toolbar">
+              <span
+                style={{
+                  fontSize: "var(--tiny-size)",
+                  fontWeight: 700,
+                  color: "var(--color-text)",
+                }}
+              >
+                Whiteboard
+              </span>
+              <button
+                onClick={requestAiDraw}
+                disabled={isAiDrawing.value}
+                class="btn btn--secondary"
+                style={{
+                  fontSize: "var(--tiny-size)",
+                  padding: "0.2rem 0.6rem",
+                }}
+              >
+                {isAiDrawing.value ? "Drawing…" : "Ask AI to draw"}
+              </button>
+            </div>
             <SharedWhiteboard
               roomId={roomId}
               onSceneChange={handleSceneChange}
