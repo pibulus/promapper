@@ -3,8 +3,7 @@
 > Turn messy conversations into living project maps.
 
 **ProMapper** is a friendly, local-first way to capture the shape of something
-while it is still unfolding. Like the wax lips in _The Simpsons_, it’s the
-conversation tool with 1,000 uses: a voice note, a weekly check-in, a research
+while it is still unfolding. A voice note, a weekly check-in, a research
 session, a film scene, a court case, a messy written rant—it instantly maps into
 a transcript, a summary, action items, an interactive topic map, and exportable
 markdown docs.
