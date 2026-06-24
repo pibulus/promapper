@@ -112,6 +112,9 @@ in rectangles, key ideas as standalone text, relationships drawn as arrows.
 Label arrows with the relationship when you can (e.g. "depends on" rather
 than just a bare line). Place new elements below or to the right of existing
 ones so the diagram grows outward gracefully.
+If different speakers contributed distinct ideas, group their elements in
+separate regions and label them with the speaker's name (e.g. "Pablo's points"
+as a text label above the group).
 
 - Add new elements that capture key ideas, entities, or relationships.
 - Update existing elements if the conversation refined a concept.

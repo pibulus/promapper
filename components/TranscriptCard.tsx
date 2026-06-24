@@ -91,13 +91,7 @@ export default function TranscriptCard(
               <div class="relative">
                 {/* Format transcript with speaker highlighting (XSS-safe). */}
                 <div
-                  class="whitespace-pre-wrap leading-relaxed"
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "var(--small-size)",
-                    color: "var(--color-text)",
-                    lineHeight: "1.7",
-                  }}
+                  class="whitespace-pre-wrap leading-relaxed transcript-content"
                   dangerouslySetInnerHTML={{
                     __html: formatTranscriptSafe(transcript.text),
                   }}
@@ -105,17 +99,8 @@ export default function TranscriptCard(
 
                 {/* Speaker list if available */}
                 {transcript.speakers && transcript.speakers.length > 0 && (
-                  <div
-                    class="mt-4 pt-4"
-                    style={{ borderTop: "2px solid var(--color-border)" }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "var(--tiny-size)",
-                        color: "var(--color-text-secondary)",
-                        marginBottom: "0.5rem",
-                      }}
-                    >
+                  <div class="transcript-speakers-section">
+                    <div class="speakers-label">
                       Speakers:
                     </div>
                     <div class="flex flex-wrap gap-2">
@@ -124,11 +109,7 @@ export default function TranscriptCard(
                           ? (
                             <span
                               key={speaker}
-                              class="inline-flex items-center gap-1 rounded p-1"
-                              style={{
-                                background: "var(--surface-cream)",
-                                border: "2px solid var(--color-border)",
-                              }}
+                              class="speaker-edit-container"
                             >
                               <input
                                 value={speakerName.value}
@@ -137,25 +118,17 @@ export default function TranscriptCard(
                                     (e.target as HTMLInputElement).value}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter") saveRename();
-                                  if (e.key === "Escape") cancelRename();
+                                  if (e.key === "Escape") {
+                                    cancelRename();
+                                  }
                                 }}
-                                class="w-24 px-2 py-1 rounded text-xs"
-                                style={{
-                                  border: "1px solid var(--color-border)",
-                                  color: "var(--color-text)",
-                                  minHeight: "32px",
-                                }}
+                                class="speaker-edit-input"
                                 aria-label={`Rename ${speaker}`}
                                 autoFocus
                               />
                               <button
                                 onClick={saveRename}
-                                class="px-2 rounded text-xs font-bold"
-                                style={{
-                                  minHeight: "32px",
-                                  background: "var(--color-accent)",
-                                  color: "white",
-                                }}
+                                class="speaker-btn speaker-btn--save"
                                 aria-label={`Save ${speaker} name`}
                                 title="Save speaker name"
                               >
@@ -163,12 +136,7 @@ export default function TranscriptCard(
                               </button>
                               <button
                                 onClick={cancelRename}
-                                class="px-2 rounded text-xs font-bold"
-                                style={{
-                                  minHeight: "32px",
-                                  background: "var(--surface-cream-hover)",
-                                  color: "var(--color-text)",
-                                }}
+                                class="speaker-btn speaker-btn--cancel"
                                 aria-label="Cancel speaker rename"
                                 title="Cancel"
                               >
@@ -180,13 +148,7 @@ export default function TranscriptCard(
                             <button
                               key={speaker}
                               onClick={() => startRename(speaker)}
-                              class="px-2 py-1 rounded text-xs font-medium"
-                              style={{
-                                background: "var(--color-accent)",
-                                color: "white",
-                                border: "2px solid var(--color-border)",
-                                minHeight: "32px",
-                              }}
+                              class="speaker-badge-btn"
                               title={`Rename ${speaker}`}
                               aria-label={`Rename ${speaker}`}
                               disabled={!onRenameSpeaker}

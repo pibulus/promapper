@@ -11,6 +11,7 @@ import { useEffect, useRef } from "preact/hooks";
 import {
   canUndo,
   conversationData,
+  historyDrawerOpen,
   undoLastMutation,
 } from "@signals/conversationStore.ts";
 import {
@@ -447,30 +448,8 @@ export default function HomeIsland() {
   return (
     <div class="mapper-scene min-h-screen">
       {/* Top Bar - Brand presence */}
-      <header
-        class="app-header-glass"
-        style={{
-          borderBottom: "2px solid rgba(0, 0, 0, 0.08)",
-          boxShadow: "0 2px 12px rgba(0, 0, 0, 0.04)",
-          height: "var(--header-height)",
-          display: "flex",
-          alignItems: "center",
-          position: "sticky",
-          top: 0,
-          zIndex: "var(--z-header)",
-        }}
-      >
-        <div
-          class="max-w-7xl mx-auto px-4 sm:px-6 w-full"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            height: "100%",
-            // Nudge contents down a touch so they read as optically centered
-            // BELOW the warm rainbow band that bleeds through the top edge.
-            paddingTop: "3px",
-          }}
-        >
+      <header class="app-header-glass">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 w-full app-header__container">
           {conversationData.value
             ? (
               // Conversation header — wordmark (= home) · project title · actions.
@@ -513,6 +492,17 @@ export default function HomeIsland() {
                     <i class="fa fa-file-export" aria-hidden="true"></i>
                   </button>
 
+                  {/* History — icon only */}
+                  <button
+                    onClick={() =>
+                      historyDrawerOpen.value = !historyDrawerOpen.value}
+                    class="header-icon-btn"
+                    data-tip="History"
+                    aria-label="View history"
+                  >
+                    <i class="fa fa-history" aria-hidden="true"></i>
+                  </button>
+
                   {/* Go Live + Share + sound mute */}
                   <GoLiveButton />
                   <ShareButton />
@@ -523,59 +513,26 @@ export default function HomeIsland() {
                     <>
                       {connected
                         ? (
-                          <span
-                            class="inline-flex items-center gap-1.5 shrink-0"
-                            style={{
-                              fontSize: "var(--tiny-size)",
-                              color: "var(--color-accent-green, #52A37F)",
-                            }}
-                          >
-                            <span
-                              aria-hidden="true"
-                              style={{
-                                width: "7px",
-                                height: "7px",
-                                borderRadius: "50%",
-                                background:
-                                  "var(--color-accent-green, #52A37F)",
-                                display: "inline-block",
-                              }}
-                            />
+                          <span class="live-badge">
+                            <span aria-hidden="true" class="live-badge__dot" />
                             Live · {users.length} here
                           </span>
                         )
                         : connectionFailed.value
                         ? (
                           <span
-                            style={{
-                              fontSize: "var(--tiny-size)",
-                              color: "var(--color-accent-red, #D32F2F)",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "0.25rem",
-                            }}
+                            class="live-badge--offline"
                             title="Connection is taking longer than expected. Still retrying..."
                           >
                             <span
                               aria-hidden="true"
-                              style={{
-                                width: "7px",
-                                height: "7px",
-                                borderRadius: "50%",
-                                background: "var(--color-accent-red, #D32F2F)",
-                                display: "inline-block",
-                              }}
+                              class="live-badge__dot--offline"
                             />
                             Offline (Reconnecting…)
                           </span>
                         )
                         : (
-                          <span
-                            style={{
-                              fontSize: "var(--tiny-size)",
-                              color: "var(--color-text-secondary)",
-                            }}
-                          >
+                          <span class="live-status-connecting">
                             Connecting…
                           </span>
                         )}
@@ -600,12 +557,7 @@ export default function HomeIsland() {
                           aria-hidden="true"
                         />
                         {isRecording.value && (
-                          <span
-                            style={{
-                              fontSize: "var(--tiny-size)",
-                              fontFamily: "var(--font-mono)",
-                            }}
-                          >
+                          <span class="recording-timer">
                             {formatTime(recordingTime.value)}
                           </span>
                         )}
@@ -672,34 +624,16 @@ export default function HomeIsland() {
         <div
           aria-live="polite"
           aria-atomic="false"
-          style={{
-            padding: "0.75rem var(--card-padding)",
-            borderBottom: "2px solid var(--color-border)",
-            background: "var(--surface-cream-dark)",
-            maxHeight: "200px",
-            overflowY: "auto",
-          }}
+          class="live-transcript-stream"
         >
-          <p
-            style={{
-              fontSize: "var(--tiny-size)",
-              fontWeight: 700,
-              color: "var(--color-accent)",
-              marginBottom: "0.5rem",
-            }}
-          >
+          <p class="live-transcript-title">
             ● Live transcript
           </p>
           {liveTranscript.value.map((chunk, i) => (
             <p
               key={chunk.id}
+              class="live-transcript-item"
               style={{
-                fontSize: "var(--small-size)",
-                color: "var(--color-text)",
-                marginBottom: "0.5rem",
-                lineHeight: 1.5,
-                padding: "0.25rem 0.5rem",
-                borderLeft: "3px solid var(--color-accent)",
                 opacity: i < liveTranscript.value.length - 1 ? 0.6 : 1,
               }}
             >
@@ -714,8 +648,8 @@ export default function HomeIsland() {
         class="flex"
         style={{ minHeight: "calc(100vh - var(--header-height))" }}
       >
-        {/* Mobile History Menu - Only show when NO data */}
-        {!conversationData.value && <MobileHistoryMenu />}
+        {/* Mobile History Menu - Rendered always to be triggerable via header or floating button */}
+        <MobileHistoryMenu />
 
         {/* Content Area - Full width, centered */}
         <main class="app-scroll flex-1 overflow-y-auto px-4 pb-12 pt-4 sm:px-6 lg:px-8">
@@ -758,7 +692,7 @@ export default function HomeIsland() {
 
             {/* Dashboard - Always rendered, shows its own empty state */}
             {conversationData.value && (
-              <section style={{ paddingTop: "clamp(1rem, 3vh, 2rem)" }}>
+              <section class="dashboard-section">
                 <DashboardIsland />
               </section>
             )}

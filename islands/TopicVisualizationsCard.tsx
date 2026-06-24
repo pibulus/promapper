@@ -45,18 +45,11 @@ export default function TopicVisualizationsCard() {
         <div class="topic-visualizations-shell">
           {isVisible.value ? <VisualizationSelector /> : (
             // Loading placeholder
-            <div
-              class="topic-visualizations-placeholder flex items-center justify-center"
-              style={{ minHeight: "360px" }}
-            >
-              <div
-                style={{
-                  textAlign: "center",
-                  color: "var(--color-text-secondary)",
-                  fontSize: "var(--text-size)",
-                }}
-              >
-                <div class="mb-2" style={{ fontSize: "2rem" }}>📊</div>
+            <div class="topic-visualizations-placeholder flex items-center justify-center">
+              <div class="topic-visualizations-placeholder__inner">
+                <div class="mb-2 topic-visualizations-placeholder__emoji">
+                  📊
+                </div>
                 <div>Loading visualization...</div>
               </div>
             </div>

@@ -445,38 +445,22 @@ export default function MarkdownMakerDrawer(
       <div
         onClick={onClose}
         aria-hidden="true"
-        class="fixed inset-x-0 bottom-0 z-30 transition-opacity duration-[400ms]"
-        style={{
-          top: "var(--header-height)",
-          background: "rgba(30, 23, 20, 0.35)",
-          opacity: isAnimating ? "1" : "0",
-          pointerEvents: isAnimating ? "auto" : "none",
-        }}
+        class={`export-drawer-backdrop ${isAnimating ? "is-visible" : ""}`}
       />
 
       {/* Drawer with smooth bouncy slide (our spring — keep it) */}
       <div
         ref={drawerRef}
-        class={`markdown-maker-drawer fixed bottom-0 right-0 z-40 flex w-96 flex-col overflow-hidden transition-transform duration-[400ms] ${
-          isAnimating ? "translate-x-0" : "translate-x-full"
+        class={`markdown-maker-drawer export-drawer ${
+          isAnimating ? "is-open" : ""
         }`}
-        style={{
-          top: "var(--header-height)",
-          borderLeft: `var(--border-width) solid var(--color-border)`,
-          background: "var(--color-secondary)",
-          boxShadow: "var(--shadow-lifted)",
-          transitionTimingFunction: isAnimating
-            ? "cubic-bezier(0.34, 1.56, 0.64, 1)" // bounce in
-            : "cubic-bezier(0.4, 0, 1, 1)", // slide out
-        }}
       >
         {/* Header */}
         <div class="dashboard-card-header">
           <h3>Export</h3>
           <button
             onClick={onClose}
-            class="cursor-pointer transition-colors"
-            style={{ color: "var(--color-text-secondary)" }}
+            class="export-drawer-close-btn"
             title="Close"
             aria-label="Close export"
           >

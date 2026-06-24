@@ -24,7 +24,10 @@ import {
   parseBackup,
   serializeBackup,
 } from "../core/storage/backup.ts";
-import { conversationData } from "@signals/conversationStore.ts";
+import {
+  conversationData,
+  historyDrawerOpen as isOpen,
+} from "@signals/conversationStore.ts";
 import { showToast, showUndoToast } from "../utils/toast.ts";
 
 // Cache date formatter outside component to avoid recreating
@@ -47,7 +50,6 @@ type FilterMode = "all" | "starred";
 
 export default function MobileHistoryMenu() {
   const refreshTrigger = useSignal(0);
-  const isOpen = useSignal(false);
   const showConfirmDelete = useSignal<string | null>(null);
   const filterMode = useSignal<FilterMode>("all");
   const searchQuery = useSignal("");
@@ -279,28 +281,30 @@ export default function MobileHistoryMenu() {
 
   return (
     <>
-      {/* Floating Menu Button - Now works on all screens! */}
-      <button
-        onClick={toggleMenu}
-        class="history-drawer-trigger fixed bottom-6 right-6 flex items-center justify-center z-40 transition-all"
-        aria-label="Open conversation history"
-        title="View saved conversations"
-      >
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+      {/* Floating Menu Button - Hidden when a conversation is open (handled via header trigger) */}
+      {!conversationData.value && (
+        <button
+          onClick={toggleMenu}
+          class="history-drawer-trigger fixed bottom-6 right-6 flex items-center justify-center z-40 transition-all"
+          aria-label="Open conversation history"
+          title="View saved conversations"
         >
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-          <polyline points="9 22 9 12 15 12 15 22" />
-        </svg>
-        <span class="hidden sm:inline">History</span>
-      </button>
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          <span class="hidden sm:inline">History</span>
+        </button>
+      )}
 
       {/* Backdrop */}
       {isOpen.value && (
@@ -328,37 +332,10 @@ export default function MobileHistoryMenu() {
         </div>
 
         {/* New Conversation Button */}
-        <div
-          class="history-drawer__new"
-          style={{
-            padding: "1.25rem 1.5rem",
-            borderBottom: "1px solid rgba(0, 0, 0, 0.06)",
-            flexShrink: 0,
-          }}
-        >
+        <div class="history-drawer__new">
           <button
             onClick={handleNew}
             class="history-drawer-new-btn"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translate(-2px, -2px)";
-              e.currentTarget.style.boxShadow =
-                "6px 6px 0 0 rgba(0, 0, 0, 0.12)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translate(0, 0)";
-              e.currentTarget.style.boxShadow =
-                "4px 4px 0 0 rgba(0, 0, 0, 0.12)";
-            }}
-            onMouseDown={(e) => {
-              e.currentTarget.style.transform = "translate(2px, 2px)";
-              e.currentTarget.style.boxShadow =
-                "2px 2px 0 0 rgba(0, 0, 0, 0.12)";
-            }}
-            onMouseUp={(e) => {
-              e.currentTarget.style.transform = "translate(-2px, -2px)";
-              e.currentTarget.style.boxShadow =
-                "6px 6px 0 0 rgba(0, 0, 0, 0.12)";
-            }}
           >
             <svg
               width="18"

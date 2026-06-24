@@ -23,9 +23,6 @@ export const LIVE_MESSAGE_TYPES = Object.freeze({
   RENAME: "rename", // a peer changed their display name
   WHITEBOARD_UPDATE: "whiteboard_update", // shared whiteboard scene changed
   TRANSCRIPT_CHUNK: "transcript_chunk", // live transcription segment
-  SDP_OFFER: "sdp_offer", // WebRTC signaling
-  SDP_ANSWER: "sdp_answer",
-  ICE_CANDIDATE: "ice_candidate",
 });
 
 export const LIVE_CLOSE_CODES = Object.freeze({

@@ -95,10 +95,7 @@ export default function SummaryCard(
               <div>
                 {/* Main summary (XSS-safe) — sits directly on the card surface. */}
                 <div
-                  style={{
-                    fontSize: "var(--text-size)",
-                    color: "var(--color-text)",
-                  }}
+                  class="summary-content"
                   dangerouslySetInnerHTML={{
                     __html: formatMarkdownSafe(summary),
                   }}
@@ -109,48 +106,17 @@ export default function SummaryCard(
                     sets it apart now; no heavy border box). */
                 }
                 {extractKeyPoints(summary).length > 0 && (
-                  <div
-                    class="mt-4 p-3 rounded-lg"
-                    style={{
-                      background:
-                        "color-mix(in srgb, var(--color-accent) 7%, transparent)",
-                    }}
-                  >
-                    <h4
-                      style={{
-                        fontSize: "var(--text-size)",
-                        fontWeight: "700",
-                        color: "var(--color-accent)",
-                        marginBottom: "0.75rem",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
+                  <div class="summary-key-points">
+                    <h4 class="key-points-title">
                       Key Points
                     </h4>
                     <ul class="space-y-2">
                       {extractKeyPoints(summary).map((point, index) => (
                         <li key={index} class="flex items-start gap-2">
-                          <span
-                            class="flex items-center justify-center rounded"
-                            style={{
-                              minWidth: "1.25rem",
-                              height: "1.25rem",
-                              background: "var(--color-accent)",
-                              color: "white",
-                              fontSize: "0.65rem",
-                              marginTop: "0.125rem",
-                            }}
-                          >
+                          <span class="key-point-icon">
                             <i class="fa fa-check"></i>
                           </span>
-                          <span
-                            style={{
-                              fontSize: "var(--text-size)",
-                              color: "var(--color-text)",
-                              flex: 1,
-                            }}
-                          >
+                          <span class="key-point-text">
                             {point}
                           </span>
                         </li>
@@ -160,14 +126,7 @@ export default function SummaryCard(
                 )}
 
                 {/* Metadata */}
-                <div
-                  class="mt-4 pt-3 flex items-center gap-3"
-                  style={{
-                    borderTop: `1px solid var(--color-border)`,
-                    fontSize: "var(--tiny-size)",
-                    color: "var(--color-text-secondary)",
-                  }}
-                >
+                <div class="summary-meta">
                   <span class="inline-flex items-center gap-1.5">
                     <i class="fa fa-diagram-project" aria-hidden="true"></i>
                     {nodes.length} topics

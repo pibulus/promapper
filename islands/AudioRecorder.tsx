@@ -19,6 +19,7 @@ import { ensureApiSession } from "../utils/apiAuth.ts";
 import { saveAudioBackup } from "../utils/downloadBackup.ts";
 import { enqueueApiRequest } from "../utils/requestQueue.ts";
 import { soundBloom } from "@utils/sound.ts";
+import { useRecorder, formatTime } from "./useRecorder.ts";
 
 interface Recording {
   id: string;
@@ -37,42 +38,62 @@ export default function AudioRecorder(
   { conversationId, onRecordingComplete }: AudioRecorderProps,
 ) {
   // Recording state
-  const isRecording = useSignal(false);
-  const isProcessing = useSignal(false);
-  const recordingTime = useSignal(0);
-  const showTimeWarning = useSignal(false);
   const isExpanded = useSignal(false);
+  const retryRecordingReady = useSignal(false);
 
   // Recordings list + backup notice
   const recordings = useSignal<Recording[]>([]);
   const playingRecordingId = useSignal<string | null>(null);
   const lastBackupNotice = useSignal<string | null>(null);
   const lastRecordingBlobRef = useRef<Blob | null>(null);
-  const retryRecordingReady = useSignal(false);
 
-  // Audio recording refs
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
-  const recordingTimerRef = useRef<number | null>(null);
+  // Audio element ref for playback
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
-  const currentObjectURLRef = useRef<string | null>(null); // Track object URLs for cleanup
-  const isStartingRecording = useRef(false);
+  const currentObjectURLRef = useRef<string | null>(null);
 
   // Time constants
-  const MAX_RECORDING_TIME = 10 * 60; // 10 minutes in seconds
-  const WARNING_TIME = 30; // 30 seconds before limit
-  const MIN_BACKUP_DURATION = 30; // only auto-save clips >= 30s
+  const MAX_RECORDING_TIME = 10 * 60;
+  const WARNING_TIME = 30;
+  const MIN_BACKUP_DURATION = 30;
+
+  // Shared recording hook — handles MediaRecorder lifecycle.
+  const {
+    isRecording,
+    recordingTime,
+    isProcessing,
+    showTimeWarning,
+    startRecording,
+    stopRecording,
+  } = useRecorder({
+    maxDurationSeconds: MAX_RECORDING_TIME,
+    warnAtSecondsLeft: WARNING_TIME,
+    blockNavigation: true,
+    mimeTypes: ["audio/webm", "audio/ogg", "audio/mp4", ""],
+    onStop: async (blob) => {
+      lastRecordingBlobRef.current = blob;
+      retryRecordingReady.value = true;
+      if (recordingTime.value >= MIN_BACKUP_DURATION) {
+        try {
+          saveAudioBackup(blob, conversationId);
+          lastBackupNotice.value = "Saved a backup copy to your Downloads folder";
+          setTimeout(() => {
+            if (lastBackupNotice.value) lastBackupNotice.value = null;
+          }, 4000);
+        } catch (error) {
+          console.warn("Failed to auto-save recording backup:", error);
+        }
+      }
+      await processAudioAppend(blob);
+    },
+  });
 
   const timeRemaining = useComputed(() =>
     MAX_RECORDING_TIME - recordingTime.value
   );
 
-  // Format time as MM:SS
-  function formatTime(seconds: number): string {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  async function retryLastRecording() {
+    if (!lastRecordingBlobRef.current) return;
+    await processAudioAppend(lastRecordingBlobRef.current);
   }
 
   // Format date for display
@@ -84,143 +105,6 @@ export default function AudioRecorder(
       hour: "numeric",
       minute: "2-digit",
     });
-  }
-
-  // Start recording
-  async function startRecording() {
-    // Guard re-entry: a double-tap (or tapping Record while the previous
-    // recording's onstop is still processing) would otherwise spin up a second
-    // overlapping MediaRecorder session. One recording at a time.
-    if (
-      isRecording.value || isProcessing.value || isStartingRecording.current
-    ) return;
-    isStartingRecording.current = true;
-    try {
-      // Request microphone permission
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
-      if (!isStartingRecording.current) {
-        stream.getTracks().forEach((t) => t.stop());
-        return;
-      }
-
-      // Create MediaRecorder with fallback mime types
-      const mimeTypes = ["audio/webm", "audio/ogg", "audio/mp4", ""];
-      let mediaRecorderOptions: MediaRecorderOptions | undefined;
-
-      for (const mimeType of mimeTypes) {
-        if (!mimeType || MediaRecorder.isTypeSupported(mimeType)) {
-          mediaRecorderOptions = mimeType ? { mimeType } : undefined;
-          break;
-        }
-      }
-
-      const mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
-      if (!isStartingRecording.current) {
-        stream.getTracks().forEach((t) => t.stop());
-        return;
-      }
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.start(1000); // Collect data every second
-      mediaRecorderRef.current = mediaRecorder;
-      streamRef.current = stream;
-      isRecording.value = true;
-      recordingTime.value = 0;
-      showTimeWarning.value = false;
-      retryRecordingReady.value = false;
-      isStartingRecording.current = false;
-
-      // Start timer
-      recordingTimerRef.current = setInterval(() => {
-        recordingTime.value++;
-
-        // Show warning at 30 seconds remaining
-        if (timeRemaining.value <= WARNING_TIME && !showTimeWarning.value) {
-          showTimeWarning.value = true;
-        }
-
-        // Auto-stop at limit
-        if (recordingTime.value >= MAX_RECORDING_TIME) {
-          stopRecording();
-        }
-      }, 1000) as unknown as number;
-    } catch (error) {
-      isStartingRecording.current = false;
-      console.error("❌ Error starting recording:", error);
-      showToast(
-        "Failed to start recording. Please check microphone permissions.",
-        "error",
-      );
-      cleanup();
-    }
-  }
-
-  // Stop recording
-  async function stopRecording() {
-    isStartingRecording.current = false;
-    if (!mediaRecorderRef.current || !isRecording.value) return;
-
-    isProcessing.value = true;
-    isRecording.value = false;
-
-    // Stop timer
-    if (recordingTimerRef.current) {
-      clearInterval(recordingTimerRef.current);
-      recordingTimerRef.current = null;
-    }
-
-    return new Promise<void>((resolve) => {
-      const mediaRecorder = mediaRecorderRef.current;
-      if (!mediaRecorder) {
-        resolve();
-        return;
-      }
-
-      mediaRecorder.onstop = async () => {
-        const mimeType = mediaRecorder.mimeType || "audio/webm";
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        lastRecordingBlobRef.current = audioBlob;
-        retryRecordingReady.value = true;
-        const shouldSaveBackup = recordingTime.value >= MIN_BACKUP_DURATION;
-        try {
-          if (shouldSaveBackup) {
-            saveAudioBackup(audioBlob, conversationId);
-            lastBackupNotice.value =
-              `Saved a backup copy to your Downloads folder`;
-            setTimeout(() => {
-              if (lastBackupNotice.value) {
-                lastBackupNotice.value = null;
-              }
-            }, 4000);
-          }
-        } catch (error) {
-          console.warn("⚠️ Failed to auto-save recording backup:", error);
-        }
-
-        await processAudioAppend(audioBlob);
-        cleanup();
-        resolve();
-      };
-
-      mediaRecorder.stop();
-    });
-  }
-
-  async function retryLastRecording() {
-    if (!lastRecordingBlobRef.current) return;
-    await processAudioAppend(lastRecordingBlobRef.current);
   }
 
   // Process audio and append to conversation
@@ -350,18 +234,6 @@ export default function AudioRecorder(
     }
   }
 
-  // Cleanup recording resources
-  function cleanup() {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    mediaRecorderRef.current = null;
-    audioChunksRef.current = [];
-    recordingTime.value = 0;
-    showTimeWarning.value = false;
-  }
-
   // Play/pause recording
   function togglePlayback(recording: Recording) {
     if (playingRecordingId.value === recording.id) {
@@ -458,40 +330,18 @@ export default function AudioRecorder(
     setTimeout(() => URL.revokeObjectURL(url), 100);
   }
 
-  // Handle beforeunload and cleanup
+  // Audio playback cleanup on unmount
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isRecording.value) {
-        e.preventDefault();
-        e.returnValue =
-          "Recording in progress. Are you sure you want to leave?";
-        return e.returnValue;
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-
-      // Prevent async onstop from firing on an unmounted component
-      if (mediaRecorderRef.current) mediaRecorderRef.current.onstop = null;
-
-      // Cleanup audio playback
       if (audioElementRef.current) {
         audioElementRef.current.pause();
         audioElementRef.current.src = "";
         audioElementRef.current = null;
       }
-
-      // Revoke any active object URLs
       if (currentObjectURLRef.current) {
         URL.revokeObjectURL(currentObjectURLRef.current);
         currentObjectURLRef.current = null;
       }
-
-      // Cleanup recording resources
-      cleanup();
     };
   }, []);
 

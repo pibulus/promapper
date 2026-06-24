@@ -117,17 +117,14 @@ export default {
             );
           }
 
-          // Return SFU credentials — the client connects directly to the SFU.
-          // Cloudflare RealtimeKit uses the app secret AS the bearer token for
-          // WebRTC client auth (there is no short-lived session token API).
-          // The secret is scoped to this appId so it cannot be used with other
-          // RealtimeKit apps. sfuToken is the legacy field name; kept for compat.
-          // The VOICE_SHARED_SECRET protects THIS Worker endpoint separately.
+          // Return SFU credentials + the caller's display name so other
+          // peers can identify them in the voice panel.
           return json(
             {
               sessionId: crypto.randomUUID(),
               sfuToken: appSecret,
               roomId,
+              displayName: url.searchParams.get("displayName") || undefined,
               ttl: ROOM_TTL_SECONDS,
               sfuAppId: appId,
               rtcEndpoint: `https://rtc.live.cloudflare.com/v1/apps/${appId}`,

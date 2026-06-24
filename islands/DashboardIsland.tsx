@@ -34,6 +34,13 @@ export default function DashboardIsland() {
     const now = Date.now();
     if (now - lastWhiteboardPush.current < 200) return;
     lastWhiteboardPush.current = now;
+    // Persist to the conversation so the board survives tab/restart.
+    if (conversationData.value) {
+      conversationData.value = {
+        ...conversationData.value,
+        whiteboardScene: scene,
+      };
+    }
     sendWhiteboardUpdate(scene);
   }
 
@@ -55,10 +62,32 @@ export default function DashboardIsland() {
           updateScene(
             opts: { elements: unknown[]; commitToHistory?: boolean },
           ): void;
+          exportToBlob(opts: {
+            mimeType?: string;
+            quality?: number;
+          }): Promise<Blob>;
         };
       })
       | null;
     return el?.excalidrawAPI;
+  }
+
+  async function downloadBoard() {
+    const api = getExcalidrawAPI();
+    const blob = await api?.exportToBlob({
+      mimeType: "image/png",
+      quality: 1,
+    });
+    if (!blob) {
+      showToast("Couldn't export the board", "warning");
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `whiteboard-${new Date().toISOString().slice(0, 10)}.png`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   async function drawFromConversation(silent = false) {
@@ -211,17 +240,28 @@ export default function DashboardIsland() {
               <span class="whiteboard-toolbar-label">
                 ✏️ Whiteboard
               </span>
-              <button
-                onClick={() =>
-                  drawFromConversation(false)}
-                disabled={isDrawing.value}
-                class="whiteboard-draw-btn"
-              >
-                {isDrawing.value ? "…" : "✏️  Draw"}
-              </button>
+              <div style="display: flex; gap: 0.4rem; align-items: center;">
+                <button
+                  onClick={() =>
+                    downloadBoard()}
+                  class="whiteboard-draw-btn"
+                  title="Download board as PNG"
+                >
+                  ⬇️
+                </button>
+                <button
+                  onClick={() =>
+                    drawFromConversation(false)}
+                  disabled={isDrawing.value}
+                  class="whiteboard-draw-btn"
+                >
+                  {isDrawing.value ? "…" : "✏️  Draw"}
+                </button>
+              </div>
             </div>
             <SharedWhiteboard
               roomId={liveSession.value.roomId}
+              initialScene={conversationData.value?.whiteboardScene}
               onSceneChange={handleSceneChange}
             />
           </div>

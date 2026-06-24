@@ -29,9 +29,6 @@ export const MSG = {
   RENAME: "rename",
   WHITEBOARD_UPDATE: "whiteboard_update",
   TRANSCRIPT_CHUNK: "transcript_chunk",
-  SDP_OFFER: "sdp_offer",
-  SDP_ANSWER: "sdp_answer",
-  ICE_CANDIDATE: "ice_candidate",
 } as const;
 
 export interface PartyCallbacks {
@@ -49,10 +46,6 @@ export interface PartyCallbacks {
   onTranscriptChunk?: (
     chunk: { text: string; speakers: string[]; chunkId: string; at: number },
   ) => void;
-  /** WebRTC signaling callbacks for P2P voice. */
-  onSdpOffer?: (payload: string, fromId: string) => void;
-  onSdpAnswer?: (payload: string, fromId: string) => void;
-  onIceCandidate?: (payload: string, fromId: string) => void;
 }
 
 export interface PartyConnectOptions {
@@ -173,20 +166,6 @@ export function connectToRoom(
           }
         }
         break;
-      case MSG.SDP_OFFER:
-      case MSG.SDP_ANSWER:
-      case MSG.ICE_CANDIDATE:
-        if (msg.data && typeof msg.data === "object") {
-          const d = msg.data as { payload?: string; fromId?: string };
-          if (d.payload && d.fromId) {
-            if (msg.type === MSG.SDP_OFFER) {
-              callbacks.onSdpOffer?.(d.payload, d.fromId);
-            } else if (msg.type === MSG.SDP_ANSWER) {
-              callbacks.onSdpAnswer?.(d.payload, d.fromId);
-            } else callbacks.onIceCandidate?.(d.payload, d.fromId);
-          }
-        }
-        break;
     }
   });
 }
@@ -231,18 +210,6 @@ export function sendTranscriptChunk(text: string, speakers: string[]): boolean {
     speakers,
     chunkId: String(Date.now()),
   });
-}
-
-export function sendSdpOffer(payload: string, targetId?: string): boolean {
-  return send(MSG.SDP_OFFER, { payload, targetId });
-}
-
-export function sendSdpAnswer(payload: string, targetId?: string): boolean {
-  return send(MSG.SDP_ANSWER, { payload, targetId });
-}
-
-export function sendIceCandidate(payload: string, targetId?: string): boolean {
-  return send(MSG.ICE_CANDIDATE, { payload, targetId });
 }
 
 export function isConnected(): boolean {

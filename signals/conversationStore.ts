@@ -22,6 +22,9 @@ export type { ConversationData };
 // Global conversation data signal
 export const conversationData = signal<ConversationData | null>(null);
 
+// Global UI signal for history drawer open state
+export const historyDrawerOpen = signal<boolean>(false);
+
 // Flag to prevent auto-save when viewing shared conversations
 export const isViewingShared = signal<boolean>(false);
 

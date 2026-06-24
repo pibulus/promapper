@@ -32,7 +32,7 @@ export const handler: Handlers = {
     const guard = await guardRequest(req);
     if (guard) return guard;
 
-    let body: { roomId?: string } = {};
+    let body: { roomId?: string; displayName?: string } = {};
     try {
       body = await req.json();
     } catch {
@@ -43,6 +43,7 @@ export const handler: Handlers = {
     }
 
     const roomId = (body.roomId ?? "").trim();
+    const displayName = (body.displayName ?? "").trim();
     if (!roomId || roomId.length < 3 || roomId.length > 128) {
       return new Response(
         JSON.stringify({ error: "A valid roomId is required" }),
@@ -96,7 +97,11 @@ export const handler: Handlers = {
         );
       }
 
-      // Step 2: get a session token
+      // Step 2: get a session token (pass displayName so peers can see it)
+      const joinUrl = new URL(
+        `${baseUrl}/voice/rooms/${encodeURIComponent(roomId)}/join`,
+      );
+      if (displayName) joinUrl.searchParams.set("displayName", displayName);
       const joinCtl = new AbortController();
       const joinTimer = setTimeout(
         () => joinCtl.abort(),
@@ -105,7 +110,7 @@ export const handler: Handlers = {
       let joinRes: Response;
       try {
         joinRes = await fetch(
-          `${baseUrl}/voice/rooms/${encodeURIComponent(roomId)}/join`,
+          joinUrl.toString(),
           { method: "POST", headers: relayHeaders(), signal: joinCtl.signal },
         );
       } finally {

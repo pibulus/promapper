@@ -158,29 +158,6 @@ export default class ConversationRoom implements Party.Server {
         }, sender);
         return;
       }
-      case LIVE_MESSAGE_TYPES.SDP_OFFER:
-      case LIVE_MESSAGE_TYPES.SDP_ANSWER:
-      case LIVE_MESSAGE_TYPES.ICE_CANDIDATE: {
-        // WebRTC signaling — relay between peers for P2P voice.
-        const payload = this.field(normalized.data, "payload");
-        const targetId = this.field(normalized.data, "targetId");
-        if (typeof payload !== "string") return;
-        // Relay to all except sender (or to specific target if set)
-        const message = JSON.stringify({
-          type: normalized.type,
-          data: { payload, targetId: String(targetId || ""), fromId: sender.id },
-          sender: this.getPresenceUser(sender),
-        });
-        if (targetId && typeof targetId === "string") {
-          // Direct message to specific peer
-          for (const conn of this.room.getConnections()) {
-            if (conn.id === targetId) conn.send(message);
-          }
-        } else {
-          this.room.broadcast(message, [sender.id]);
-        }
-        return;
-      }
     }
   }
 

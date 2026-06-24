@@ -37,4 +37,6 @@ export interface ConversationData {
   summary?: string;
   /** Transient: non-empty when an AI step degraded — shown once, not persisted. */
   warnings?: string[];
+  /** The Excalidraw scene (serialised JSON). Survives browser restarts. */
+  whiteboardScene?: string;
 }
