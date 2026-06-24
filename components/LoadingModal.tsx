@@ -14,6 +14,7 @@ import { useEffect } from "preact/hooks";
 
 interface LoadingModalProps {
   isOpen: boolean;
+  message?: string;
 }
 
 // Chill, vibey loading messages
@@ -38,8 +39,8 @@ function getRandomItem<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)];
 }
 
-export default function LoadingModal({ isOpen }: LoadingModalProps) {
-  const loadingMessage = getRandomItem(LOADING_MESSAGES);
+export default function LoadingModal({ isOpen, message }: LoadingModalProps) {
+  const loadingMessage = message ?? getRandomItem(LOADING_MESSAGES);
   const loadingEmoji = getRandomItem(LOADING_EMOJIS);
 
   // Prevent body scroll when modal is open

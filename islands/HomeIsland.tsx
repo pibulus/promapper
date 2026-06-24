@@ -46,11 +46,14 @@ import AuthModalIsland from "./AuthModalIsland.tsx";
 import VoicePanel from "./VoicePanel.tsx";
 import { createDemoConversation } from "../utils/demoData.ts";
 import LoadingModal from "../components/LoadingModal.tsx";
+import Confetti from "../components/Confetti.tsx";
 
 const drawerOpen = signal(false);
 const voiceDrawerOpen = signal(false);
 const shortcutsOpen = signal(false);
 const demoLoading = signal(false);
+const demoStage = signal("");
+const showConfetti = signal(false);
 
 const SILENCE_FLUSH_MS = 2_000;
 const MAX_CHUNK_MS = 30_000;
@@ -418,13 +421,32 @@ export default function HomeIsland() {
 
   const heroLines = ["See what you're", "really saying"];
 
+  const stages = [
+    { msg: "reading the town records…", dur: 700 },
+    { msg: "listening for bite incidents…", dur: 600 },
+    { msg: "mapping the topic web…", dur: 500 },
+    { msg: "extracting action items…", dur: 500 },
+    { msg: "assembling the full picture…", dur: 400 },
+  ];
+
   async function loadDemo() {
     if (demoLoading.value) return;
     demoLoading.value = true;
-    // Brief delay so the loading modal gets its moment
-    await new Promise((r) => setTimeout(r, 800));
+    showConfetti.value = false;
+
+    // Theatrical staged loading — builds anticipation
+    for (const stage of stages) {
+      demoStage.value = stage.msg;
+      await new Promise((r) => setTimeout(r, stage.dur));
+    }
+
     conversationData.value = createDemoConversation();
+    soundBloom();
     demoLoading.value = false;
+    showConfetti.value = true;
+
+    // Clear confetti after animation finishes
+    setTimeout(() => showConfetti.value = false, 4000);
   }
 
   return (
@@ -754,7 +776,10 @@ export default function HomeIsland() {
       />
 
       {/* Demo loading modal */}
-      <LoadingModal isOpen={demoLoading.value} />
+      <LoadingModal isOpen={demoLoading.value} message={demoStage.value} />
+
+      {/* Confetti on demo load */}
+      <Confetti trigger={showConfetti.value} />
     </div>
   );
 }
