@@ -24,8 +24,6 @@ import {
 
 const MAX_ELEMENTS = 500;
 const MAX_TRANSCRIPT_LENGTH = 8000;
-/** Whiteboard editing is a reasoning-heavy task — use Claude Haiku. */
-const WHITEBOARD_MODEL_HINT = "topic";
 const AGENT_TIMEOUT_MS = 30_000;
 
 export const handler: Handlers = {
@@ -83,7 +81,7 @@ export const handler: Handlers = {
       try {
         response = await aiService.chatText(
           prompt,
-          WHITEBOARD_MODEL_HINT,
+          undefined,
           ctrl.signal,
         );
       } finally {

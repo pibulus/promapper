@@ -94,13 +94,19 @@ export function buildWhiteboardAgentPrompt(
     ? `\nTopics discussed: ${topicLabels.join(", ")}`
     : "";
 
-  return `You are building a diagram alongside a live conversation. The
+  return `You are building a visual diagram alongside a live conversation. The
 current whiteboard scene is shown below as a line-numbered canvas. Each line
 is an element (shape, text, arrow, etc.) with its type, id, position, and
-text label.
+label. Lines are numbered in draw order, not by position on the canvas —
+two elements next to each other visually may be far apart in the list.
 
 Look at the latest conversation snippet and decide if the diagram needs
-an update:
+an update. Good diagrams feel like a mind map — related concepts grouped
+in rectangles, key ideas as standalone text, relationships drawn as arrows.
+Label arrows with the relationship when you can (e.g. "depends on" rather
+than just a bare line). Place new elements below or to the right of existing
+ones so the diagram grows outward gracefully.
+
 - Add new elements that capture key ideas, entities, or relationships.
 - Update existing elements if the conversation refined a concept.
 - Remove elements that are no longer relevant.
@@ -120,7 +126,8 @@ Respond with a JSON object containing an "operations" array. Each operation
 must be one of:
 
 - {"op": "replace", "line": <number>, "content": "<new element desc>"}
-  Updates the element at that line number.
+  Updates the label or shape of the element at that line.
+  Keep the same position and type unless the conversation changed the concept.
 
 - {"op": "insert_after", "line": <number>, "content": "<new element desc>"}
   Inserts a new element after the given line. Use line=0 to insert at the
@@ -295,10 +302,12 @@ export function applyWhiteboardOps(
 
       if (op.op === "replace" && idx < result.length) {
         const existing = result[idx];
+        // Only update the label/text — the model's job is to refine the
+        // concept, not reposition or retype the element. Preserve the
+        // existing position, type, and dimensions so the diagram stays
+        // visually stable.
         result[idx] = {
           ...existing,
-          id: existing.id || newEl.id,
-          type: newEl.type,
           text: newEl.text ?? existing.text,
           label: newEl.label ?? existing.label,
           strokeColor: newEl.strokeColor ?? existing.strokeColor,

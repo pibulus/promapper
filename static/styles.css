@@ -2238,6 +2238,27 @@ html::-webkit-scrollbar-thumb:hover,
     background 160ms ease,
     opacity 160ms ease;
   cursor: pointer;
+  font-family: var(--font-mono); /* Force monospace for the card text */
+}
+
+/* Monospace fonts for all inputs, textareas, search and presets in action items */
+.action-item-card textarea,
+.action-item-card input,
+.action-item-card button,
+.action-quick-add,
+.action-items-search input,
+.action-dropdown-menu,
+.action-dropdown-menu button,
+.action-dropdown-menu input,
+.action-filter-pill,
+.action-date-preset {
+  font-family: var(--font-mono) !important;
+}
+
+@keyframes border-beam-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .action-item-card:hover {
@@ -4568,18 +4589,53 @@ a:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 0.75rem;
-  border: 2px solid var(--color-border);
+  padding: 0.6rem 1rem;
+  border: 2.5px solid var(--color-border);
   border-bottom: none;
-  border-radius: var(--border-radius) var(--border-radius) 0 0;
-  background: var(--soft-cream);
+  border-radius: 12px 12px 0 0;
+  background: linear-gradient(
+    180deg,
+    var(--soft-cream) 0%,
+    color-mix(in srgb, var(--soft-cream) 92%, var(--color-border) 8%) 100%
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.whiteboard-toolbar-label {
+  font-size: var(--small-size);
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+}
+.whiteboard-draw-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 1.1rem;
+  font-size: var(--tiny-size);
+  font-weight: 700;
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  border: 2px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 150ms ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.whiteboard-draw-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+  border-color: var(--color-accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+.whiteboard-draw-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .shared-whiteboard {
   width: 100%;
   height: 500px;
-  border: 2px solid var(--color-border);
-  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  border: 2.5px solid var(--color-border);
+  border-radius: 0 0 12px 12px;
   overflow: hidden;
 }
 

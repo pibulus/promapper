@@ -256,6 +256,12 @@ export default function HomeIsland() {
             speakers: chunk.speakers,
           },
         ].slice(-20);
+        // Let the whiteboard notice and draw along too.
+        (
+          globalThis as typeof globalThis & {
+            __onTranscriptChunk?: () => void;
+          }
+        ).__onTranscriptChunk?.();
       },
     });
     soundPortal();

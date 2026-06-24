@@ -21,10 +21,10 @@ import SharedWhiteboard from "./SharedWhiteboard.tsx";
 import FlipCard from "./FlipCard.tsx";
 import ReaderModal from "./ReaderModal.tsx";
 
-/** Minimum seconds between auto-sketches so it doesn't fire too often. */
-const AUTO_SKETCH_COOLDOWN_MS = 30_000;
-/** Fire an auto-sketch every Nth transcript chunk. */
-const AUTO_SKETCH_EVERY = 3;
+/** Minimum seconds between auto-draws so it doesn't fire too often. */
+const AUTO_DRAW_COOLDOWN_MS = 30_000;
+/** Fire an auto-draw every Nth transcript chunk. */
+const AUTO_DRAW_EVERY = 3;
 
 export default function DashboardIsland() {
   // Throttle whiteboard broadcasts during active drawing (~60fps onChange)
@@ -38,15 +38,17 @@ export default function DashboardIsland() {
   }
 
   // ---------------------------------------------------------------
-  // Sketch from conversation (manual + auto)
+  // The board draws itself from the conversation.
+  // Manual: click the pencil.  Auto: every few transcript chunks.
   // ---------------------------------------------------------------
-  const isSketching = useSignal(false);
+  const isDrawing = useSignal(false);
   const transcriptChunkCount = useRef(0);
-  const lastAutoSketch = useRef(0);
-  const whiteboardContainerRef = useRef<HTMLDivElement>(null);
+  const lastAutoDraw = useRef(0);
+  const lastDrawnLength = useRef(0);
+  const whiteboardRef = useRef<HTMLDivElement>(null);
 
   function getExcalidrawAPI() {
-    const el = whiteboardContainerRef.current as
+    const el = whiteboardRef.current as
       | (HTMLElement & {
         excalidrawAPI?: {
           getSceneElements?: () => unknown[];
@@ -59,28 +61,24 @@ export default function DashboardIsland() {
     return el?.excalidrawAPI;
   }
 
-  async function sketchFromConversation(silent = false) {
-    if (isSketching.value) return;
+  async function drawFromConversation(silent = false) {
+    if (isDrawing.value) return;
     const api = getExcalidrawAPI();
     const sceneElements = api?.getSceneElements;
     if (!sceneElements) {
-      if (!silent) showToast("Whiteboard isn't ready yet", "warning");
+      if (!silent) showToast("The board isn't ready yet", "warning");
       return;
     }
 
     const transcript = conversationData.value?.transcript?.text?.trim();
     if (!transcript) {
       if (!silent) {
-        showToast(
-          "Nothing to sketch from yet. Record something first.",
-          "warning",
-        );
+        showToast("Nothing to draw from yet. Say something first.", "warning");
       }
       return;
     }
 
-    isSketching.value = true;
-    if (!silent) showToast("Sketching from the conversation…", "info");
+    isDrawing.value = true;
 
     try {
       await ensureApiSession();
@@ -95,7 +93,7 @@ export default function DashboardIsland() {
       });
       if (!res.ok) {
         if (!silent) {
-          showToast("Couldn't sketch right now — try again", "warning");
+          showToast("Couldn't draw right now — try again", "warning");
         }
         return;
       }
@@ -105,30 +103,31 @@ export default function DashboardIsland() {
         sendWhiteboardUpdate(
           JSON.stringify({ elements: updated, appState: {} }),
         );
-        if (!silent) showToast("Whiteboard updated", "success");
+        if (!silent) showToast("Added to the board", "success");
       }
     } catch {
       if (!silent) {
-        showToast("Couldn't sketch right now — try again", "warning");
+        showToast("Couldn't draw right now — try again", "warning");
       }
     } finally {
-      isSketching.value = false;
+      isDrawing.value = false;
     }
   }
 
-  /** Call this when a new transcript chunk arrives in live mode — auto-sketches
-   *  every Nth chunk, with a cooldown so it doesn't flood the API. */
-  (globalThis as Record<string, unknown>).__onTranscriptChunk = () => {
+  (
+    globalThis as typeof globalThis & { __onTranscriptChunk?: () => void }
+  ).__onTranscriptChunk = () => {
     if (!liveSession.value) return;
     transcriptChunkCount.current++;
     const now = Date.now();
-    if (
-      transcriptChunkCount.current % AUTO_SKETCH_EVERY === 0 &&
-      now - lastAutoSketch.current > AUTO_SKETCH_COOLDOWN_MS
-    ) {
-      lastAutoSketch.current = now;
-      sketchFromConversation(true);
-    }
+    if (transcriptChunkCount.current % AUTO_DRAW_EVERY !== 0) return;
+    if (now - lastAutoDraw.current < AUTO_DRAW_COOLDOWN_MS) return;
+    // Skip if barely anything new was said — saves a call for "yeah" / "okay".
+    const currentLen = conversationData.value?.transcript?.text?.length ?? 0;
+    if (currentLen - lastDrawnLength.current < 200) return;
+    lastDrawnLength.current = currentLen;
+    lastAutoDraw.current = now;
+    drawFromConversation(true);
   };
 
   if (!conversationData.value) {
@@ -203,18 +202,18 @@ export default function DashboardIsland() {
 
         {/* Card 5: Whiteboard — only in live meetings, full width */}
         {liveSession.value && (
-          <div style={{ gridColumn: "1 / -1" }} ref={whiteboardContainerRef}>
+          <div style={{ gridColumn: "1 / -1" }} ref={whiteboardRef}>
             <div class="whiteboard-toolbar">
               <span class="whiteboard-toolbar-label">
                 ✏️ Whiteboard
               </span>
               <button
                 onClick={() =>
-                  sketchFromConversation(false)}
-                disabled={isSketching.value}
-                class="whiteboard-sketch-btn"
+                  drawFromConversation(false)}
+                disabled={isDrawing.value}
+                class="whiteboard-draw-btn"
               >
-                {isSketching.value ? "Sketching…" : "✏️  Sketch from chat"}
+                {isDrawing.value ? "…" : "✏️  Draw"}
               </button>
             </div>
             <SharedWhiteboard

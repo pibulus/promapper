@@ -102,7 +102,7 @@ export function usePointerSortable(options: SortableOptions) {
       el.style.transition = "none";
       el.style.transform = `translateY(${delta}px)`;
       requestAnimationFrame(() => {
-        el.style.transition = "transform 200ms cubic-bezier(0.2, 0, 0, 1)";
+        el.style.transition = "transform 280ms cubic-bezier(0.16, 1, 0.3, 1)";
         el.style.transform = "";
       });
     }
@@ -238,7 +238,8 @@ export function usePointerSortable(options: SortableOptions) {
     if (s.autoScrollRAF != null) cancelAnimationFrame(s.autoScrollRAF);
 
     // Spring the lifted row's transform back to zero in its (new) slot.
-    s.rowEl.style.transition = "transform 200ms cubic-bezier(0.2, 0, 0, 1)";
+    s.rowEl.style.transition =
+      "transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1)";
     s.rowEl.style.transform = "";
     const rowEl = s.rowEl;
     setTimeout(() => {
