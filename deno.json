@@ -44,6 +44,8 @@
     "$fresh/": "https://deno.land/x/fresh@1.7.3/",
     "html-to-image": "npm:html-to-image@^1.11.13",
     "@floating-ui/dom": "npm:@floating-ui/dom@^1.6.0",
+    "animejs": "npm:animejs@^3.2.2",
+    "typed.js": "npm:typed.js@^2.1.0",
     "partysocket": "npm:partysocket@^1.0.2",
     "@dicebear/core": "npm:@dicebear/core@9.4.2",
     "@dicebear/collection": "npm:@dicebear/collection@9.4.2",

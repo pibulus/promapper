@@ -127,6 +127,52 @@ export default function HomeIsland() {
     return () => globalThis.removeEventListener("keydown", onKeydown);
   }, []);
 
+  // ✨ typed.js — typewriter effect on the hero heading
+  useEffect(() => {
+    if (!IS_BROWSER || conversationData.value) return;
+    const el = document.querySelector(".mapper-hero-title");
+    if (!el) return;
+
+    let cancelled = false;
+    import("typed.js").then(({ default: Typed }) => {
+      if (cancelled) return;
+      new Typed(el, {
+        strings: ["See what you're^500<br>really saying"],
+        typeSpeed: 55,
+        backSpeed: 20,
+        startDelay: 400,
+        smartBackspace: false,
+        showCursor: true,
+        cursorChar: "▌",
+        contentType: "html",
+        loop: false,
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // ✨ anime.js — spring card entrance when conversation data appears
+  useEffect(() => {
+    if (!IS_BROWSER || !conversationData.value) return;
+    const timer = setTimeout(() => {
+      import("animejs").then(({ default: anime }) => {
+        anime({
+          targets: ".dashboard-skeleton-grid > *, .grid > *",
+          translateY: [24, 0],
+          opacity: [0, 1],
+          scale: [0.96, 1],
+          delay: anime.stagger(60, { start: 100 }),
+          duration: 500,
+          easing: "easeOutElastic(1, .6)",
+        });
+      });
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [conversationData.value]);
+
   // ═══════════════════════════════════════════════════════════════
   // LIVE MODE — activates on the current dashboard
   // ═══════════════════════════════════════════════════════════════
