@@ -36,7 +36,10 @@ function json(data: unknown, status = 200, extraHeaders?: HeadersInit): Response
 }
 
 function authorize(req: Request, env: Env): boolean {
-  if (!env.VOICE_SHARED_SECRET) return true;
+  if (!env.VOICE_SHARED_SECRET) {
+    console.error("VOICE_SHARED_SECRET is required — set it via wrangler secret put");
+    return false;
+  }
   const auth = req.headers.get("Authorization") || "";
   const provided = auth.replace(/^Bearer\s+/i, "").trim();
   const alt = req.headers.get("X-Shared-Secret") || "";
@@ -115,8 +118,11 @@ export default {
           }
 
           // Return SFU credentials — the client connects directly to the SFU.
-          // Each join gets a unique sessionId for tracking. The sfuToken is the
-          // app secret (needed by WebRTC to auth with the Cloudflare SFU).
+          // Cloudflare RealtimeKit uses the app secret AS the bearer token for
+          // WebRTC client auth (there is no short-lived session token API).
+          // The secret is scoped to this appId so it cannot be used with other
+          // RealtimeKit apps. sfuToken is the legacy field name; kept for compat.
+          // The VOICE_SHARED_SECRET protects THIS Worker endpoint separately.
           return json(
             {
               sessionId: crypto.randomUUID(),

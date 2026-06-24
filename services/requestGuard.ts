@@ -4,6 +4,13 @@ import { validateSession } from "@services/authSessions.ts";
 /**
  * Lightweight request guard: origin allow-list + in-memory rate limiting.
  * Not perfect security, but shuts down most casual abuse / open-proxy use.
+ *
+ * IMPORTANT: The rateMap is a module-scoped Map — on Deno Deploy, each
+ * request runs in an ephemeral isolate with its own empty Map, so per-IP
+ * rate limits are NOT enforced. This works correctly only in long-lived
+ * single-isolate environments (local dev, Docker). For production rate
+ * limiting on Deno Deploy, move to Cloudflare Workers KV or a Durable
+ * Object with shared state.
  */
 
 const allowedOrigins =

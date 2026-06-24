@@ -39,8 +39,6 @@ interface VoiceSession {
 interface VoicePanelProps {
   roomId: string;
   displayName: string;
-  /** Called when the parent unmounts/drawer closes — cleanup WebRTC. */
-  onUnmount?: () => void;
 }
 
 // How often we poll audio levels (ms)
@@ -296,20 +294,26 @@ export default function VoicePanel({ roomId, displayName }: VoicePanelProps) {
       localSpeakingRef.current = avg > SPEAKING_THRESHOLD;
     }
 
-    // Check remote peer audio levels
-    audioElsRef.current.forEach((audio, peerId) => {
+    // Check remote peer audio levels — accumulate changes, single assignment
+    let peersChanged = false;
+    const updated = peers.value.map((p) => {
+      const audio = audioElsRef.current.get(p.id);
+      if (!audio) return p;
       const analyser =
         (audio as HTMLAudioElement & { _analyser?: AnalyserNode })
           ._analyser;
-      if (!analyser) return;
+      if (!analyser) return p;
       const data = new Uint8Array(analyser.frequencyBinCount);
       analyser.getByteFrequencyData(data);
       const avg = data.reduce((a, b) => a + b, 0) / data.length;
       const speaking = avg > SPEAKING_THRESHOLD;
-      peers.value = peers.value.map((p) =>
-        p.id === peerId ? { ...p, isSpeaking: speaking } : p
-      );
+      if (speaking !== p.isSpeaking) {
+        peersChanged = true;
+        return { ...p, isSpeaking: speaking };
+      }
+      return p;
     });
+    if (peersChanged) peers.value = updated;
   }
 
   // Track local speaking state as a simple flag

@@ -27,6 +27,10 @@ import {
 } from "@services/audio.ts";
 import { pushResultToRoom } from "@services/partyUpdates.ts";
 
+/** Prevent a crafted existingTranscript FormData field from OOM'ing the
+ *  server during transcript concatenation. 500KB ≈ 2+ hour meeting. */
+const MAX_EXISTING_TRANSCRIPT = 500_000;
+
 export const handler: Handlers = {
   async POST(req) {
     try {
@@ -132,10 +136,15 @@ export const handler: Handlers = {
         },
       );
 
-      // Merge transcripts if we have existing content
-      if (existingTranscript) {
+      // Merge transcripts if we have existing content.
+      // Cap the existing transcript to prevent OOM from oversized FormData values
+      // (the field is client-controlled, not server-enforced).
+      const safeExistingTranscript = existingTranscript
+        ? existingTranscript.slice(0, MAX_EXISTING_TRANSCRIPT)
+        : "";
+      if (safeExistingTranscript) {
         const combinedTranscript =
-          `${existingTranscript}\n\n--- New Recording ---\n\n${result.transcript.text}`;
+          `${safeExistingTranscript}\n\n--- New Recording ---\n\n${result.transcript.text}`;
         result.transcript.text = combinedTranscript;
         result.conversation.transcript = combinedTranscript;
       }
@@ -200,9 +209,18 @@ export const handler: Handlers = {
         finalResult,
       );
 
-      return new Response(JSON.stringify(finalResult), {
-        headers: { "Content-Type": "application/json" },
-      });
+      // NOTE: This endpoint is stateless — two concurrent appends for the
+      // same conversationId both see the same existing* state, merge
+      // independently, and race on localStorage. The client should treat
+      // appendedAt as a conflict detector: if the local conversation has
+      // been updated (by another tab) since the append was submitted, warn
+      // the user and offer to re-merge. See signals/conversationStore.ts.
+      const appendedAt = Date.now();
+
+      return new Response(
+        JSON.stringify({ ...finalResult, appendedAt }),
+        { headers: { "Content-Type": "application/json" } },
+      );
     } catch (error) {
       console.error("❌ Append error:", error);
       return new Response(

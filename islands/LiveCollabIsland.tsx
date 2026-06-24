@@ -1,11 +1,15 @@
 /**
- * Live Collaboration Island
+ * @deprecated LiveCollaboration Island — NOT currently wired to any route.
  *
- * Meeting room root for /live/[roomId]. On mount it joins the PartyKit
- * room and enables the host to record live audio — chunks are transcribed
- * in near-real-time and results push to all viewers. Renders the dashboard
- * plus a live transcript stream, recording controls, and a voice panel
- * for real-time WebRTC audio.
+ * /live/[roomId] renders <HomeIsland /> which contains its own live-mode
+ * recording, voice, and whiteboard logic. This island was the intended
+ * three-pane meeting-room UI but was superseded by the consolidated
+ * HomeIsland approach. Kept for reference; future meeting-room Phase 3
+ * work may revive it as the dedicated room view.
+ *
+ * To re-activate: swap /routes/live/[roomId].tsx to render this instead
+ * of HomeIsland, then reconcile the duplicate recording/voice/whiteboard
+ * code between the two files.
  */
 
 import { useEffect, useRef } from "preact/hooks";

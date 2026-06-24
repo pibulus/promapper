@@ -25,6 +25,13 @@ export const MAX_AUDIO_SIZE = 25 * 1024 * 1024;
 
 export async function uploadAudioFile(file: File): Promise<UploadedAudioFile> {
   const mimeType = file.type || "audio/webm";
+
+  // Reject non-audio MIME types to avoid wasting API credits on garbage.
+  if (mimeType && !mimeType.startsWith("audio/")) {
+    throw new Error(
+      `Unsupported file type: ${mimeType}. Please upload an audio file.`,
+    );
+  }
   const part: OpenRouterAudioPart = {
     inputAudio: {
       data: encodeBase64(new Uint8Array(await file.arrayBuffer())),
