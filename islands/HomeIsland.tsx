@@ -33,6 +33,7 @@ import { sendTranscriptChunk } from "@signals/partyService.ts";
 import { isViewingShared } from "@signals/conversationStore.ts";
 import { ensureApiSession } from "@utils/apiAuth.ts";
 import { soundBloom, soundChime, soundPortal } from "@utils/sound.ts";
+import { formatTime, useRecorder } from "./useRecorder.ts";
 import UploadIsland from "./UploadIsland.tsx";
 import DashboardIsland from "./DashboardIsland.tsx";
 import MobileHistoryMenu from "./MobileHistoryMenu.tsx";
@@ -212,22 +213,36 @@ export default function HomeIsland() {
     return () => clearTimeout(timer);
   }, [session?.roomId, connected]);
 
-  // Live recording state
-  const isRecording = useSignal(false);
-  const recordingTime = useSignal(0);
-  const isProcessing = useSignal(false);
+  // Live recording — shared hook handles MediaRecorder lifecycle.
   const liveTranscript = useSignal<
     Array<{ id: number; text: string; speakers?: string[] }>
   >([]);
 
-  // MediaRecorder refs
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<number | null>(null);
-  const isStartingRecording = useRef(false);
+  const {
+    isRecording,
+    recordingTime,
+    isProcessing,
+    streamRef,
+    mediaRecorderRef,
+    chunksRef,
+    startRecording: _startRecording,
+    stopRecording: _stopRecording,
+    cleanup: _cleanupRecorder,
+  } = useRecorder({
+    audioConstraints: {
+      sampleRate: 16000,
+      channelCount: 1,
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true,
+    },
+    timesliceMs: 500,
+    mimeTypes: ["audio/webm", "audio/mp4"],
+    onBeforeStart: ensureApiSession,
+    silentMicError: true,
+  });
 
-  // Silence-aware refs
+  // Silence-aware refs (HomeIsland-specific)
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const silenceMonitorRef = useRef<number | null>(null);
@@ -268,23 +283,9 @@ export default function HomeIsland() {
     return () => {
       stopLiveSync();
       isViewingShared.value = false;
-      // Tear down recording if component unmounts during a session
       if (isRecording.value) stopRecording();
     };
   }, [session?.roomId, session?.partyHost]);
-
-  // Tear down recording on browser back/forward navigation — the session
-  // effect above only fires on session change, not straight unmount.
-  useEffect(() => {
-    return () => {
-      if (mediaRecorderRef.current) {
-        mediaRecorderRef.current.stop();
-      }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((t) => t.stop());
-      }
-    };
-  }, []);
 
   // Join/leave toasts
   useEffect(() => {
@@ -306,135 +307,61 @@ export default function HomeIsland() {
     seenIds.current = current;
   }, [users]);
 
-  // Recording helpers
-  function formatTime(seconds: number): string {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s < 10 ? "0" : ""}${s}`;
-  }
-
+  // Wrapped startRecording — hooks silence detection onto the shared stream.
   async function startRecording() {
-    if (
-      isRecording.value || mediaRecorderRef.current ||
-      isStartingRecording.current
-    ) return; // guard double-click
-    isStartingRecording.current = true;
-    try {
-      await ensureApiSession();
-      if (!isStartingRecording.current) return;
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          sampleRate: 16000,
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
-      if (!isStartingRecording.current) {
-        stream.getTracks().forEach((t) => t.stop());
-        return;
-      }
-      streamRef.current = stream;
+    await _startRecording();
+    // If recording didn't actually start (cancelled, permission denied), bail.
+    if (!isRecording.value || !streamRef.current) return;
 
-      // Set up silence detection via AnalyserNode (time-domain RMS)
-      const audioCtx = new AudioContext();
-      audioCtxRef.current = audioCtx;
-      // Resume under autoplay policies — AudioContext may start suspended
-      if (audioCtx.state === "suspended") {
-        await audioCtx.resume();
-      }
-      if (!isStartingRecording.current) {
-        stream.getTracks().forEach((t) => t.stop());
-        audioCtx.close();
-        audioCtxRef.current = null;
-        streamRef.current = null;
-        return;
-      }
-      const source = audioCtx.createMediaStreamSource(stream);
-      const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 1024; // 64ms window at 16kHz — stable RMS vs jittery 16ms
-      source.connect(analyser);
-      analyserRef.current = analyser;
-
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm")
-        ? "audio/webm"
-        : "audio/mp4";
-
-      const recorder = new MediaRecorder(stream, { mimeType });
-      if (!isStartingRecording.current) {
-        stream.getTracks().forEach((t) => t.stop());
-        audioCtx.close();
-        audioCtxRef.current = null;
-        streamRef.current = null;
-        analyserRef.current = null;
-        return;
-      }
-      mediaRecorderRef.current = recorder;
-      chunksRef.current = [];
-      chunkStartRef.current = Date.now();
-      lastSpeechRef.current = Date.now(); // start in "just heard speech" state
-
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
-      };
-
-      recorder.onerror = () => {
-        console.error("MediaRecorder error — stopping recording");
-        showToast("Recording failed. Please try again.", "error");
-        stopRecording();
-      };
-
-      recorder.start(500); // collect every 500ms for finer silence gaps
-      isRecording.value = true;
-      recordingTime.value = 0;
-
-      timerRef.current = setInterval(
-        () => recordingTime.value++,
-        1000,
-      ) as unknown as number;
-
-      // Poll audio levels using time-domain RMS — detects speech energy
-      // more reliably than frequency-bin averages, especially for low voices.
-      silenceMonitorRef.current = setInterval(() => {
-        if (!analyserRef.current) return;
-        const bufferLength = analyserRef.current.fftSize;
-        const data = new Uint8Array(bufferLength);
-        analyserRef.current.getByteTimeDomainData(data);
-
-        // Compute RMS amplitude (0–1 scale, centred on 128 = zero-crossing)
-        let sumSquares = 0;
-        for (let i = 0; i < bufferLength; i++) {
-          const normalized = (data[i] - 128) / 128;
-          sumSquares += normalized * normalized;
-        }
-        const rms = Math.sqrt(sumSquares / bufferLength);
-
-        const now = Date.now();
-        const chunkAge = now - chunkStartRef.current;
-
-        if (rms > SPEAKING_THRESHOLD) {
-          lastSpeechRef.current = now;
-        }
-
-        const silenceDuration = now - lastSpeechRef.current;
-
-        if (
-          chunksRef.current.length > 0 &&
-          (silenceDuration > SILENCE_FLUSH_MS || chunkAge > MAX_CHUNK_MS)
-        ) {
-          sendChunk();
-          chunkStartRef.current = now;
-        }
-      }, 200) as unknown as number;
-
-      isStartingRecording.current = false;
-      showToast("Recording — live transcript starting…", "info");
-    } catch (err) {
-      isStartingRecording.current = false;
-      console.error("Failed to start recording:", err);
-      showToast("Couldn't access microphone. Check permissions.", "error");
+    // Set up silence detection on the hook's stream
+    const audioCtx = new AudioContext();
+    audioCtxRef.current = audioCtx;
+    if (audioCtx.state === "suspended") {
+      await audioCtx.resume();
     }
+    if (!isRecording.value) {
+      audioCtx.close();
+      audioCtxRef.current = null;
+      return;
+    }
+    const source = audioCtx.createMediaStreamSource(streamRef.current);
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 1024;
+    source.connect(analyser);
+    analyserRef.current = analyser;
+
+    chunkStartRef.current = Date.now();
+    lastSpeechRef.current = Date.now();
+
+    // Poll audio levels — time-domain RMS for speech energy detection
+    silenceMonitorRef.current = setInterval(() => {
+      if (!analyserRef.current) return;
+      const bufferLength = analyserRef.current.fftSize;
+      const data = new Uint8Array(bufferLength);
+      analyserRef.current.getByteTimeDomainData(data);
+
+      let sumSquares = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        const normalized = (data[i] - 128) / 128;
+        sumSquares += normalized * normalized;
+      }
+      const rms = Math.sqrt(sumSquares / bufferLength);
+      const now = Date.now();
+      const chunkAge = now - chunkStartRef.current;
+
+      if (rms > SPEAKING_THRESHOLD) lastSpeechRef.current = now;
+      const silenceDuration = now - lastSpeechRef.current;
+
+      if (
+        chunksRef.current.length > 0 &&
+        (silenceDuration > SILENCE_FLUSH_MS || chunkAge > MAX_CHUNK_MS)
+      ) {
+        sendChunk();
+        chunkStartRef.current = now;
+      }
+    }, 200) as unknown as number;
+
+    showToast("Recording — live transcript starting…", "info");
   }
 
   async function sendChunk() {
@@ -455,7 +382,6 @@ export default function HomeIsland() {
         const { text, speakers } = await res.json();
         const chunk = { id: Date.now(), text, speakers: speakers as string[] };
         liveTranscript.value = [...liveTranscript.value, chunk].slice(-20);
-        // Broadcast to all viewers in the live room
         if (session && text) {
           sendTranscriptChunk(text, chunk.speakers);
         }
@@ -467,42 +393,22 @@ export default function HomeIsland() {
     }
   }
 
+  // Wrapped stopRecording — tears down silence detection, then delegates to hook.
   async function stopRecording() {
-    isStartingRecording.current = false;
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
     if (silenceMonitorRef.current) {
       clearInterval(silenceMonitorRef.current);
       silenceMonitorRef.current = null;
-    }
-
-    if (
-      mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive"
-    ) {
-      await Promise.race([
-        new Promise<void>((resolve) => {
-          mediaRecorderRef.current!.onstop = () => resolve();
-          mediaRecorderRef.current!.stop();
-        }),
-        new Promise<void>((resolve) => setTimeout(resolve, 5_000)),
-      ]);
-    }
-    await sendChunk();
-
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
     }
     if (audioCtxRef.current) {
       audioCtxRef.current.close();
       audioCtxRef.current = null;
       analyserRef.current = null;
     }
-    mediaRecorderRef.current = null;
-    isRecording.value = false;
-    recordingTime.value = 0;
+    // Flush remaining chunks before stopping
+    if (chunksRef.current.length > 0) {
+      await sendChunk();
+    }
+    await _stopRecording();
     if (liveTranscript.value.length > 0) soundBloom();
   }
 

@@ -34,7 +34,7 @@ export const handler: Handlers = {
     let body: {
       elements?: unknown[];
       transcript?: string;
-      topicLabels?: string[];
+      topics?: Array<{ label: string; emoji?: string; color?: string }>;
     };
     try {
       body = await req.json();
@@ -51,9 +51,7 @@ export const handler: Handlers = {
         : []) as Record<string, unknown>[];
     const transcript = (body.transcript || "").slice(0, MAX_TRANSCRIPT_LENGTH)
       .trim();
-    const topicLabels = Array.isArray(body.topicLabels)
-      ? body.topicLabels.map(String).slice(0, 50)
-      : [];
+    const topics = Array.isArray(body.topics) ? body.topics.slice(0, 50) : [];
 
     if (!transcript) {
       return new Response(
@@ -70,7 +68,7 @@ export const handler: Handlers = {
     const prompt = buildWhiteboardAgentPrompt(
       sceneText,
       transcript,
-      topicLabels,
+      topics,
     );
 
     try {
@@ -98,6 +96,7 @@ export const handler: Handlers = {
       const updated = applyWhiteboardOps(
         elements as Array<Record<string, unknown>>,
         ops,
+        topics as Array<{ label: string; emoji?: string; color?: string }>,
       );
 
       return new Response(JSON.stringify({ elements: updated }), {

@@ -225,6 +225,10 @@ export default function AudioRecorder(
 
   // Process audio and append to conversation
   async function processAudioAppend(audioBlob: Blob) {
+    // Prevent concurrent appends within the same tab.
+    if (isProcessing.value) return;
+    isProcessing.value = true;
+
     try {
       // Snapshot the conversation at request-send time. The server merges its
       // AI extraction against EXACTLY this snapshot, so it's also the BASE we

@@ -83,13 +83,17 @@ export default function DashboardIsland() {
     try {
       await ensureApiSession();
       const elements = sceneElements();
-      const topicLabels = conversationData.value?.nodes
-        ?.map((n: { label?: string }) => n.label)
-        .filter(Boolean) ?? [];
+      const topics = conversationData.value?.nodes
+        ?.map((n: { label?: string; emoji?: string; color?: string }) => ({
+          label: n.label || "",
+          emoji: n.emoji,
+          color: n.color,
+        }))
+        .filter((t) => t.label) ?? [];
       const res = await fetch("/api/live/whiteboard-agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ elements, transcript, topicLabels }),
+        body: JSON.stringify({ elements, transcript, topics }),
       });
       if (!res.ok) {
         if (!silent) {

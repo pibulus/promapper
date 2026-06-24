@@ -88,10 +88,16 @@ export function formatSceneAsText(elements: Record<string, unknown>[]): string {
 export function buildWhiteboardAgentPrompt(
   sceneText: string,
   transcriptChunk: string,
-  topicLabels: string[] = [],
+  topics: Array<{ label: string; emoji?: string; color?: string }> = [],
 ): string {
-  const topicList = topicLabels.length > 0
-    ? `\nTopics discussed: ${topicLabels.join(", ")}`
+  const topicContext = topics.length > 0
+    ? `\nTopic map (use these emojis + colors when drawing elements for each topic):\n${
+      topics
+        .map((t) =>
+          `  ${t.emoji || ""} ${t.label}${t.color ? ` (${t.color})` : ""}`
+        )
+        .join("\n")
+    }\n`
     : "";
 
   return `You are building a visual diagram alongside a live conversation. The
@@ -115,7 +121,7 @@ ones so the diagram grows outward gracefully.
 Conversation snippet:
 """
 ${transcriptChunk.slice(0, 4000)}
-"""${topicList}
+"""${topicContext}
 
 Current whiteboard scene:
 """
@@ -193,10 +199,12 @@ export function parseWhiteboardOps(raw: string): WhiteboardOp[] {
 /**
  * Parse a compact element description back into an Excalidraw element.
  * Format: "type (x,y) label" or "arrow (x1,y1)→(x2,y2)"
+ * If the label matches a known topic, inherits that topic's color + emoji.
  */
 function parseElementDesc(
   desc: string,
   nextId: () => string,
+  topicMap?: Map<string, { emoji?: string; color?: string }>,
 ): ExcalidrawElement | null {
   const trimmed = desc.trim();
   if (!trimmed) return null;
@@ -207,14 +215,14 @@ function parseElementDesc(
   );
   if (arrowMatch) {
     const [, x1, y1, x2, y2] = arrowMatch.map(Number);
-    return {
+    return applyVibe({
       id: nextId(),
       type: "arrow",
       x: x1,
       y: y1,
       points: [[0, 0], [x2 - x1, y2 - y1]],
-      strokeColor: "#e8839c",
-    };
+      strokeColor: nextArrowColor(),
+    });
   }
 
   // Shape/text with optional label.
@@ -228,49 +236,130 @@ function parseElementDesc(
   const y = yStr ? Number(yStr) : 100;
   const cleanLabel = label.replace(/^[\s"]+|[\s"]+$/g, "");
 
+  // If the element label mentions a known topic, steal its color + emoji.
+  const topic = topicMap
+    ? [...topicMap.entries()].find(([key]) =>
+      cleanLabel.toLowerCase().includes(key.toLowerCase())
+    )
+    : undefined;
+  const topicColor = topic?.[1]?.color;
+  const topicEmoji = topic?.[1]?.emoji;
+  const displayLabel = topicEmoji && !cleanLabel.includes(topicEmoji)
+    ? `${topicEmoji} ${cleanLabel}`
+    : cleanLabel;
+
   if (type === "text") {
-    return {
+    return applyVibe({
       id: nextId(),
       type: "text",
       x,
       y,
       width: 200,
       height: 40,
-      text: cleanLabel,
-    };
+      text: displayLabel,
+      strokeColor: topicColor,
+    });
   }
 
   if (type === "rectangle" || type === "diamond" || type === "ellipse") {
-    return {
+    return applyVibe({
       id: nextId(),
       type,
       x,
       y,
       width: 160,
       height: 80,
-      text: cleanLabel || undefined,
-      strokeColor: "#e8839c",
-      backgroundColor: "#fff5f7",
-      fillStyle: "solid",
-    };
+      text: displayLabel || undefined,
+      strokeColor: topicColor,
+      backgroundColor: topicColor
+        ? undefined // applyVibe will fill with the palette fill matching the topic
+        : undefined,
+    });
   }
 
   // Generic: treat as text.
-  return {
+  return applyVibe({
     id: nextId(),
     type: "text",
     x,
     y,
     width: 200,
     height: 40,
-    text: trimmed,
-  };
+    text: displayLabel,
+    strokeColor: topicColor,
+  });
 }
 
 let _counter = 0;
 function aiElementId(): string {
   _counter++;
   return `ai_${Date.now()}_${_counter}`;
+}
+
+// ------------------------------------------------------------------
+// Aesthetic palette — warm, varied, hand-drawn.  Cycles so the
+// board doesn't look like a monochrome engineering diagram.
+// ------------------------------------------------------------------
+const PALETTE = [
+  { stroke: "#e8839c", fill: "#fff5f7" },
+  { stroke: "#5b8def", fill: "#f0f4ff" },
+  { stroke: "#52a37f", fill: "#f0f8f4" },
+  { stroke: "#c47c48", fill: "#fdf6f0" },
+  { stroke: "#b66ad9", fill: "#f8f0fc" },
+  { stroke: "#d66b8f", fill: "#fdf2f5" },
+];
+const ARROW_COLORS = ["#e8839c", "#5b8def", "#8a8f98", "#c47c48", "#52a37f"];
+
+let _paletteIdx = 0;
+function nextColor() {
+  const c = PALETTE[_paletteIdx % PALETTE.length];
+  _paletteIdx++;
+  return c;
+}
+function nextArrowColor() {
+  return ARROW_COLORS[_paletteIdx % ARROW_COLORS.length];
+}
+
+/** Sprinkle a little soul onto a generated shape — hand-drawn roughness,
+ *  softened corners, a bit of variation so it feels like a person drew it. */
+function applyVibe(el: ExcalidrawElement): ExcalidrawElement {
+  if (el.type === "text") {
+    return { ...el, roughness: 0, strokeWidth: 0 };
+  }
+  if (el.type === "arrow") {
+    return {
+      ...el,
+      strokeWidth: 1.5,
+      roughness: 1 + (_paletteIdx % 2),
+      roundness: null,
+    };
+  }
+  // rectangles, diamonds, ellipses — only cycle palette if no topic color set
+  if (el.strokeColor) {
+    // Element came from a matching topic — keep its color, just add vibe extras.
+    return {
+      ...el,
+      strokeWidth: el.strokeWidth || 2,
+      roughness: el.roughness ?? 1,
+      roundness: el.type === "rectangle"
+        ? (el.roundness ?? { type: 3 })
+        : el.roundness,
+      fillStyle: el.fillStyle || "solid",
+      opacity: el.opacity ?? 95,
+      backgroundColor: el.backgroundColor || "#ffffff",
+    };
+  }
+  const color = nextColor();
+  return {
+    ...el,
+    strokeColor: color.stroke,
+    backgroundColor: color.fill,
+    fillStyle: el.fillStyle || "solid",
+    strokeWidth: 2 + (_paletteIdx % 2),
+    roughness: 1 + (_paletteIdx % 3),
+    roundness: el.type === "rectangle" ? { type: 3 } : undefined,
+    opacity: 90 + (_paletteIdx % 11),
+  };
 }
 
 /**
@@ -280,7 +369,11 @@ function aiElementId(): string {
 export function applyWhiteboardOps(
   elements: Record<string, unknown>[],
   ops: WhiteboardOp[],
+  topics: Array<{ label: string; emoji?: string; color?: string }> = [],
 ): Record<string, unknown>[] {
+  const topicMap = topics.length > 0
+    ? new Map(topics.map((t) => [t.label, { emoji: t.emoji, color: t.color }]))
+    : undefined;
   const result = elements.map((el) => ({ ...el } as ExcalidrawElement));
 
   // Process ops in REVERSE line-number order so that earlier operations
@@ -297,7 +390,7 @@ export function applyWhiteboardOps(
     }
 
     if ((op.op === "replace" || op.op === "insert_after") && op.content) {
-      const newEl = parseElementDesc(op.content, aiElementId);
+      const newEl = parseElementDesc(op.content, aiElementId, topicMap);
       if (!newEl) continue;
 
       if (op.op === "replace" && idx < result.length) {

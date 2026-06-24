@@ -42,6 +42,7 @@ import * as $TopicVisualizationsCard from "./islands/TopicVisualizationsCard.tsx
 import * as $UploadIsland from "./islands/UploadIsland.tsx";
 import * as $VisualizationSelector from "./islands/VisualizationSelector.tsx";
 import * as $VoicePanel from "./islands/VoicePanel.tsx";
+import * as $useRecorder from "./islands/useRecorder.ts";
 import * as $vizRegistry from "./islands/vizRegistry.ts";
 import type { Manifest } from "$fresh/server.ts";
 
@@ -89,6 +90,7 @@ const manifest = {
     "./islands/UploadIsland.tsx": $UploadIsland,
     "./islands/VisualizationSelector.tsx": $VisualizationSelector,
     "./islands/VoicePanel.tsx": $VoicePanel,
+    "./islands/useRecorder.ts": $useRecorder,
     "./islands/vizRegistry.ts": $vizRegistry,
   },
   baseUrl: import.meta.url,
