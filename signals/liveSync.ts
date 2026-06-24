@@ -91,7 +91,13 @@ export function startLiveSync(
     const data = conversationData.value;
     if (!partyConnected.value || !data) return;
     if (applyingRemoteUpdate.current) return; // remote apply — don't echo
-    const json = JSON.stringify(data);
+    // Exclude whiteboardScene — the lightweight sendWhiteboardUpdate channel
+    // handles live whiteboard sync. Including it here would broadcast the
+    // entire heavy conversation payload on every mouse stroke.
+    const { whiteboardScene: _wbScene, ...rest } = data as ConversationData & {
+      whiteboardScene?: string;
+    };
+    const json = JSON.stringify(rest);
     if (json === lastSentJSON) return; // nothing actually changed
     lastSentJSON = json;
     sendConversationUpdate(data);

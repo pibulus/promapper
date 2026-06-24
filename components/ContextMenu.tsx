@@ -48,12 +48,10 @@ export default function ContextMenu(
 
   return (
     <div
-      class="fixed bg-white rounded-lg shadow-brutal border-2 border-purple-400 py-2 z-50"
+      class="context-menu"
       style={{
         left: `${x}px`,
         top: `${y}px`,
-        minWidth: "180px",
-        zIndex: 120,
       }}
       onClick={(e) => e.stopPropagation()}
       onContextMenu={(e) => e.preventDefault()}
@@ -61,7 +59,7 @@ export default function ContextMenu(
       {items.map((item, index) => (
         <button
           key={index}
-          class="w-full text-left px-4 py-2 hover:bg-purple-100 flex items-center gap-2 transition-colors"
+          class="context-menu__item"
           onClick={() => {
             item.onClick();
             onClose();

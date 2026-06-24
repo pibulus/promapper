@@ -29,6 +29,7 @@ interface ExcalidrawElement {
   roughness?: number;
   opacity?: number;
   boundElements?: Array<{ id: string; type: string }>;
+  containerId?: string;
   [key: string]: unknown;
 }
 
@@ -36,12 +37,20 @@ function round(n: number): number {
   return Math.round(n * 10) / 10;
 }
 
-function elText(el: ExcalidrawElement): string {
+function elText(
+  el: ExcalidrawElement,
+  boundTextByContainer?: Map<string, string>,
+): string {
   // For text elements, use the text field directly.
   if (el.type === "text" && el.text) {
     return `"${el.text.replace(/"/g, '\\"').slice(0, 80)}"`;
   }
-  // For shapes with text labels.
+  // For containers with bound text, look up the real label.
+  if (el.id && boundTextByContainer?.has(el.id)) {
+    const label = boundTextByContainer.get(el.id)!;
+    return `"${label.replace(/"/g, '\\"').slice(0, 80)}"`;
+  }
+  // Fallback: old-style inline text labels (legacy elements before the bound-text fix).
   const label = el.label?.text || el.text || "";
   if (label) return `"${label.replace(/"/g, '\\"').slice(0, 80)}"`;
   // For containers (rectangle, diamond, ellipse) without labels, describe shape.
@@ -65,20 +74,40 @@ function elText(el: ExcalidrawElement): string {
   return el.type || "element";
 }
 
-/** Convert Excalidraw elements to a compact line-numbered text view. */
+/** Convert Excalidraw elements to a compact line-numbered text view.
+ *  Bound text labels (text elements with containerId) are skipped and their
+ *  content is shown on the container line instead — Excalidraw requires
+ *  separate container + bound-text elements, but the AI only needs to see
+ *  one logical canvas item per line. */
 export function formatSceneAsText(elements: Record<string, unknown>[]): string {
-  return elements
-    .map((elRaw, i) => {
-      const el = elRaw as ExcalidrawElement;
-      const type = el.type || "shape";
-      const pos = el.x !== undefined && el.y !== undefined
-        ? `(${round(el.x)},${round(el.y)})`
-        : "";
-      const text = elText(el);
-      const id = el.id ? ` #${el.id.slice(0, 6)}` : "";
-      return `${i + 1}: ${type}${id} ${pos} ${text}`.trim();
-    })
-    .join("\n");
+  // Build a lookup: containerId → text content for bound text labels.
+  const boundTextByContainer = new Map<string, string>();
+  for (const elRaw of elements) {
+    const el = elRaw as ExcalidrawElement & { containerId?: string };
+    if (el.type === "text" && el.containerId && el.text) {
+      boundTextByContainer.set(el.containerId, el.text);
+    }
+  }
+
+  const lines: string[] = [];
+  let lineNum = 0;
+
+  for (const elRaw of elements) {
+    const el = elRaw as ExcalidrawElement & { containerId?: string };
+    // Skip bound text labels — they're represented inside their container.
+    if (el.type === "text" && el.containerId) continue;
+
+    lineNum++;
+    const type = el.type || "shape";
+    const pos = el.x !== undefined && el.y !== undefined
+      ? `(${round(el.x)},${round(el.y)})`
+      : "";
+    const text = elText(el, boundTextByContainer);
+    const id = el.id ? ` #${el.id.slice(0, 6)}` : "";
+    lines.push(`${lineNum}: ${type}${id} ${pos} ${text}`.trim());
+  }
+
+  return lines.join("\n");
 }
 
 // ===================================================================
@@ -200,32 +229,56 @@ export function parseWhiteboardOps(raw: string): WhiteboardOp[] {
 // ===================================================================
 
 /**
- * Parse a compact element description back into an Excalidraw element.
- * Format: "type (x,y) label" or "arrow (x1,y1)→(x2,y2)"
+ * Parse a compact element description back into Excalidraw elements.
+ * Format: "type (x,y) label" or "arrow (x1,y1)→(x2,y2) label"
+ * Shapes with labels generate TWO elements (container + bound text).
  * If the label matches a known topic, inherits that topic's color + emoji.
  */
 function parseElementDesc(
   desc: string,
   nextId: () => string,
   topicMap?: Map<string, { emoji?: string; color?: string }>,
-): ExcalidrawElement | null {
+): ExcalidrawElement[] | null {
   const trimmed = desc.trim();
   if (!trimmed) return null;
 
-  // Arrow: "arrow (100,200)→(250,150)"
+  // Arrow: "arrow (100,200)→(250,150)" or "arrow (100,200)→(250,150) depends on"
   const arrowMatch = trimmed.match(
-    /^arrow\s*\((\d+),(\d+)\)\s*→\s*\((\d+),(\d+)\)$/i,
+    /^arrow\s*\((\d+),(\d+)\)\s*→\s*\((\d+),(\d+)\)(?:\s+(.*))?$/i,
   );
   if (arrowMatch) {
-    const [, x1, y1, x2, y2] = arrowMatch.map(Number);
-    return applyVibe({
+    const [, x1, y1, x2, y2, rawLabel] = arrowMatch;
+    const x1n = Number(x1);
+    const y1n = Number(y1);
+    const x2n = Number(x2);
+    const y2n = Number(y2);
+    const container = applyVibe({
       id: nextId(),
       type: "arrow",
-      x: x1,
-      y: y1,
-      points: [[0, 0], [x2 - x1, y2 - y1]],
+      x: x1n,
+      y: y1n,
+      points: [[0, 0], [x2n - x1n, y2n - y1n]],
       strokeColor: nextArrowColor(),
     });
+    if (rawLabel && rawLabel.trim()) {
+      const label = rawLabel.trim().replace(/^["']|["']$/g, "");
+      const tlId = nextId();
+      const textEl: ExcalidrawElement = {
+        id: tlId,
+        type: "text",
+        x: (x1n + x2n) / 2 - 40,
+        y: (y1n + y2n) / 2 - 14,
+        width: 120,
+        height: 20,
+        text: label,
+        containerId: container.id,
+        roughness: 0,
+        strokeWidth: 0,
+      };
+      container.boundElements = [{ id: tlId, type: "text" }];
+      return [container, textEl];
+    }
+    return [container];
   }
 
   // Shape/text with optional label.
@@ -241,9 +294,10 @@ function parseElementDesc(
 
   // If the element label mentions a known topic, steal its color + emoji.
   const topic = topicMap
-    ? [...topicMap.entries()].find(([key]) =>
-      cleanLabel.toLowerCase().includes(key.toLowerCase())
-    )
+    ? [...topicMap.entries()].find(([key]) => {
+      const escapedKey = key.replace(/[-\/\\^*+?.()|[\]{}]/g, "\\$&");
+      return new RegExp(`\\b${escapedKey}\\b`, "i").test(cleanLabel);
+    })
     : undefined;
   const topicColor = topic?.[1]?.color;
   const topicEmoji = topic?.[1]?.emoji;
@@ -252,7 +306,7 @@ function parseElementDesc(
     : cleanLabel;
 
   if (type === "text") {
-    return applyVibe({
+    return [applyVibe({
       id: nextId(),
       type: "text",
       x,
@@ -261,27 +315,41 @@ function parseElementDesc(
       height: 40,
       text: displayLabel,
       strokeColor: topicColor,
-    });
+    })];
   }
 
   if (type === "rectangle" || type === "diamond" || type === "ellipse") {
-    return applyVibe({
-      id: nextId(),
+    const containerId = nextId();
+    const textId = nextId();
+    const container = applyVibe({
+      id: containerId,
       type,
       x,
       y,
       width: 160,
       height: 80,
-      text: displayLabel || undefined,
+      boundElements: [{ id: textId, type: "text" }],
       strokeColor: topicColor,
-      backgroundColor: topicColor
-        ? undefined // applyVibe will fill with the palette fill matching the topic
-        : undefined,
+      backgroundColor: topicColor ? undefined : undefined,
     });
+    const textEl: ExcalidrawElement = {
+      id: textId,
+      type: "text",
+      x: x + 10,
+      y: y + 30,
+      width: 140,
+      height: 20,
+      text: displayLabel,
+      containerId: containerId,
+      strokeColor: "#1e1e1e",
+      roughness: 0,
+      strokeWidth: 0,
+    };
+    return [container, textEl];
   }
 
   // Generic: treat as text.
-  return applyVibe({
+  return [applyVibe({
     id: nextId(),
     type: "text",
     x,
@@ -290,7 +358,7 @@ function parseElementDesc(
     height: 40,
     text: displayLabel,
     strokeColor: topicColor,
-  });
+  })];
 }
 
 let _counter = 0;
@@ -365,6 +433,31 @@ function applyVibe(el: ExcalidrawElement): ExcalidrawElement {
   };
 }
 
+// ------------------------------------------------------------------
+// Helpers for operation application
+// ------------------------------------------------------------------
+
+function extractLabel(desc: string): string {
+  const match = desc.match(/^\w+\s*(?:\(\d+,\d+\))?\s*(.+)$/);
+  return match ? match[1].replace(/^["']|["']$/g, "").trim() : desc;
+}
+
+/** Map a line number (from formatSceneAsText, which skips bound text) to the
+ *  real array index.  Returns -1 when the line doesn't exist. */
+function lineToIndex(
+  elements: ExcalidrawElement[],
+  line: number,
+): number {
+  let visibleIdx = 0;
+  for (let i = 0; i < elements.length; i++) {
+    const el = elements[i];
+    if (el.type === "text" && el.containerId) continue;
+    visibleIdx++;
+    if (visibleIdx === line) return i;
+  }
+  return -1;
+}
+
 /**
  * Apply the parsed edit operations to create a new elements array.
  * Returns the updated elements list.
@@ -385,37 +478,70 @@ export function applyWhiteboardOps(
   const sorted = [...ops].sort((a, b) => b.line - a.line);
 
   for (const op of sorted) {
-    const idx = Math.max(0, Math.min(op.line - 1, result.length - 1));
+    const idx = lineToIndex(result, op.line);
+    if (idx < 0 || idx >= result.length) continue;
 
-    if (op.op === "delete" && idx < result.length) {
+    if (op.op === "delete") {
+      const existing = result[idx];
+      // Also remove any bound text elements owned by this container.
+      if (existing.boundElements) {
+        const boundIds = new Set(
+          existing.boundElements.map((b) => b.id),
+        );
+        for (let i = result.length - 1; i >= 0; i--) {
+          if (boundIds.has(result[i].id ?? "")) result.splice(i, 1);
+        }
+      }
       result.splice(idx, 1);
       continue;
     }
 
     if ((op.op === "replace" || op.op === "insert_after") && op.content) {
-      const newEl = parseElementDesc(op.content, aiElementId, topicMap);
-      if (!newEl) continue;
-
-      if (op.op === "replace" && idx < result.length) {
+      if (op.op === "replace") {
         const existing = result[idx];
-        // Only update the label/text — the model's job is to refine the
-        // concept, not reposition or retype the element. Preserve the
-        // existing position, type, and dimensions so the diagram stays
-        // visually stable.
-        result[idx] = {
-          ...existing,
-          text: newEl.text ?? existing.text,
-          label: newEl.label ?? existing.label,
-          strokeColor: newEl.strokeColor ?? existing.strokeColor,
-        };
-      } else if (op.op === "insert_after") {
+        const label = extractLabel(op.content);
+        // Update the container element's label.
+        const updatedLabel = label && label !== `"${existing.text || ""}"`
+          ? label
+          : undefined;
+        if (updatedLabel) {
+          result[idx] = {
+            ...existing,
+            text: updatedLabel,
+            label: existing.label ? { text: updatedLabel } : existing.label,
+          } as ExcalidrawElement;
+        }
+        // Update bound text element if one exists.
+        if (existing.boundElements) {
+          for (const bound of existing.boundElements) {
+            if (bound.type === "text" && updatedLabel) {
+              const textIdx = result.findIndex((e) => e.id === bound.id);
+              if (textIdx >= 0) {
+                result[textIdx] = {
+                  ...result[textIdx],
+                  text: updatedLabel,
+                } as ExcalidrawElement;
+              }
+            }
+          }
+        }
+      } else {
+        // insert_after — generate full elements (container + bound text).
+        const newElements = parseElementDesc(op.content, aiElementId, topicMap);
+        if (!newElements || newElements.length === 0) continue;
+
         const insertAt = op.line === 0 ? 0 : Math.min(idx + 1, result.length);
         // Position relative to the reference element if one exists.
-        if (idx < result.length) {
-          newEl.x = ((result[idx].x as number) ?? 100) + 180;
-          newEl.y = (result[idx].y as number) ?? 100;
+        if (idx < result.length && newElements[0]) {
+          newElements[0].x = ((result[idx].x as number) ?? 100) + 180;
+          newElements[0].y = (result[idx].y as number) ?? 100;
+          // Offset bound text children by the same amount.
+          const dx = newElements[0].x - ((result[idx].x as number) ?? 100);
+          for (let i = 1; i < newElements.length; i++) {
+            newElements[i].x = (newElements[i].x ?? 0) + dx;
+          }
         }
-        result.splice(insertAt, 0, newEl);
+        result.splice(insertAt, 0, ...newElements);
       }
     }
   }

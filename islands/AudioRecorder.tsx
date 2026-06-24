@@ -19,7 +19,7 @@ import { ensureApiSession } from "../utils/apiAuth.ts";
 import { saveAudioBackup } from "../utils/downloadBackup.ts";
 import { enqueueApiRequest } from "../utils/requestQueue.ts";
 import { soundBloom } from "@utils/sound.ts";
-import { useRecorder, formatTime } from "./useRecorder.ts";
+import { formatTime, useRecorder } from "./useRecorder.ts";
 
 interface Recording {
   id: string;
@@ -75,7 +75,8 @@ export default function AudioRecorder(
       if (recordingTime.value >= MIN_BACKUP_DURATION) {
         try {
           saveAudioBackup(blob, conversationId);
-          lastBackupNotice.value = "Saved a backup copy to your Downloads folder";
+          lastBackupNotice.value =
+            "Saved a backup copy to your Downloads folder";
           setTimeout(() => {
             if (lastBackupNotice.value) lastBackupNotice.value = null;
           }, 4000);

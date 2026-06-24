@@ -27,21 +27,26 @@ const AUTO_DRAW_COOLDOWN_MS = 30_000;
 const AUTO_DRAW_EVERY = 3;
 
 export default function DashboardIsland() {
-  // Throttle whiteboard broadcasts during active drawing (~60fps onChange)
+  // Throttle whiteboard broadcasts during active drawing (~60fps onChange).
+  // sendWhiteboardUpdate fires at most every 200ms for live sync.
+  // conversationData persistence is debounced at 2s to avoid hammering signals.
   const lastWhiteboardPush = useRef(0);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handleSceneChange(scene: string) {
-    const now = Date.now();
-    if (now - lastWhiteboardPush.current < 200) return;
-    lastWhiteboardPush.current = now;
-    // Persist to the conversation so the board survives tab/restart.
-    if (conversationData.value) {
-      conversationData.value = {
-        ...conversationData.value,
-        whiteboardScene: scene,
-      };
-    }
     sendWhiteboardUpdate(scene);
+
+    // Debounce conversationData write — only persist after user stops drawing.
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      if (conversationData.value) {
+        conversationData.value = {
+          ...conversationData.value,
+          whiteboardScene: scene,
+        };
+        lastWhiteboardPush.current = Date.now();
+      }
+    }, 2000);
   }
 
   // ---------------------------------------------------------------

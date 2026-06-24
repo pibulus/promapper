@@ -33,6 +33,7 @@ export default function SharedWhiteboard(
     } | null
   >(null);
   const reactRootRef = useRef<{ unmount: () => void } | null>(null);
+  const isRemoteUpdate = useRef(false);
 
   useEffect(() => {
     if (!IS_BROWSER) return;
@@ -82,6 +83,7 @@ export default function SharedWhiteboard(
             }
           },
           onChange(elements: unknown[], appState: unknown) {
+            if (isRemoteUpdate.current) return;
             onSceneChange?.(JSON.stringify({ elements, appState }));
           },
         },
@@ -117,11 +119,13 @@ export default function SharedWhiteboard(
       if (!scene || !apiRef.current) return;
       try {
         const { elements, appState } = JSON.parse(scene);
+        isRemoteUpdate.current = true;
         apiRef.current.updateScene({
           elements,
           appState,
           commitToHistory: false,
         });
+        isRemoteUpdate.current = false;
       } catch { /* malformed scene */ }
     });
     return unsubscribe;
