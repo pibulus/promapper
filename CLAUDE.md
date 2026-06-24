@@ -313,20 +313,27 @@ expire 24h after last activity.
   `POST /api/live/chunk` → transcript streams live → PartyKit syncs to viewers.
   Frontend: recording button with timer + live transcript panel in
   `LiveCollabIsland.tsx`.
+
 ### What was built this session (June 24, 2026 — Phases 2a, 2b, 2c)
 
 **Voice Relay (2a):**
-- `workers/voice-relay/src/index.ts` — Cloudflare Worker issues RealtimeKit session tokens
+
+- `workers/voice-relay/src/index.ts` — Cloudflare Worker issues RealtimeKit
+  session tokens
 - `routes/api/live/voice-token.ts` — proxy to voice relay Worker
-- `islands/VoicePanel.tsx` — WebRTC voice controls (join, mute, speaker detection)
+- `islands/VoicePanel.tsx` — WebRTC voice controls (join, mute, speaker
+  detection)
 - `islands/LiveCollabIsland.tsx` — two-pane grid: voice sidebar + dashboard
 
 **Shared Whiteboard (2b):**
-- `islands/SharedWhiteboard.tsx` — Excalidraw embedded in React root, PartyKit-synced
+
+- `islands/SharedWhiteboard.tsx` — Excalidraw embedded in React root,
+  PartyKit-synced
 - Three-pane grid: voice | dashboard | whiteboard
 - `whiteboard-update` message type in party protocol + room
 
 **AI Whiteboard Agent (2c):**
+
 - `core/ai/whiteboardAgent.ts` — scene→line-numbered text, prompt builder,
   operation parser (replace/insert_after/delete), element generator
 - `routes/api/live/whiteboard-agent.ts` — server endpoint that calls Claude
@@ -387,7 +394,8 @@ Whiteboard agent (2c): No new env vars — uses existing OpenRouter key
 - `party/conversationProtocol.ts` — `whiteboard_update` message type
 - `party/conversationRoom.ts` — whiteboard relay handler
 - `signals/partyService.ts` — `sendWhiteboardUpdate()` + callback
-- `deno.json` — `@excalidraw/excalidraw`, `react`, `react-dom`, exclude `workers/`
+- `deno.json` — `@excalidraw/excalidraw`, `react`, `react-dom`, exclude
+  `workers/`
 - `static/styles.css` — ~300 lines of voice panel, live layout, whiteboard CSS
 - `fresh.gen.ts` — auto-registered new route + islands
 - `CLAUDE.md` — updated handoff

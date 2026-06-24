@@ -474,7 +474,45 @@ export default function LiveCollabIsland(
           {/* Dashboard (or waiting state) */}
           <div style={{ padding: "var(--card-padding)" }}>
             {hasData
-              ? <DashboardIsland />
+              ? (
+                <>
+                  <DashboardIsland />
+                  {/* Whiteboard card — shows when connected */}
+                  {connected && (
+                    <div
+                      ref={whiteboardContainerRef}
+                      style={{ marginTop: "var(--card-padding)" }}
+                    >
+                      <div class="whiteboard-toolbar">
+                        <span
+                          style={{
+                            fontSize: "var(--tiny-size)",
+                            fontWeight: 700,
+                            color: "var(--color-text)",
+                          }}
+                        >
+                          Whiteboard
+                        </span>
+                        <button
+                          onClick={requestAiDraw}
+                          disabled={isAiDrawing.value}
+                          class="btn btn--secondary"
+                          style={{
+                            fontSize: "var(--tiny-size)",
+                            padding: "0.2rem 0.6rem",
+                          }}
+                        >
+                          {isAiDrawing.value ? "Drawing…" : "Ask AI to draw"}
+                        </button>
+                      </div>
+                      <SharedWhiteboard
+                        roomId={roomId}
+                        onSceneChange={handleSceneChange}
+                      />
+                    </div>
+                  )}
+                </>
+              )
               : (
                 <div class="max-w-md mx-auto text-center live-waiting">
                   <div style={{ fontSize: "2rem" }} class="mb-2">🛰️</div>
@@ -488,41 +526,6 @@ export default function LiveCollabIsland(
               )}
           </div>
         </div>
-
-        {/* Right pane: Shared whiteboard */}
-        {connected && (
-          <div
-            class="live-layout-whiteboard"
-            ref={whiteboardContainerRef}
-          >
-            <div class="whiteboard-toolbar">
-              <span
-                style={{
-                  fontSize: "var(--tiny-size)",
-                  fontWeight: 700,
-                  color: "var(--color-text)",
-                }}
-              >
-                Whiteboard
-              </span>
-              <button
-                onClick={requestAiDraw}
-                disabled={isAiDrawing.value}
-                class="btn btn--secondary"
-                style={{
-                  fontSize: "var(--tiny-size)",
-                  padding: "0.2rem 0.6rem",
-                }}
-              >
-                {isAiDrawing.value ? "Drawing…" : "Ask AI to draw"}
-              </button>
-            </div>
-            <SharedWhiteboard
-              roomId={roomId}
-              onSceneChange={handleSceneChange}
-            />
-          </div>
-        )}
       </div>
 
       {/* In-session chat (only once connected) */}
