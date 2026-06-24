@@ -40,9 +40,10 @@ export interface ConversationFlowResult {
 async function safeGenerateTitle(
   aiService: AIService,
   source: string,
+  signal?: AbortSignal,
 ): Promise<string> {
   try {
-    const title = (await aiService.generateTitle(source)).trim();
+    const title = (await aiService.generateTitle(source, signal)).trim();
     if (title) return title;
   } catch (error) {
     console.error("Title generation failed, using fallback:", error);
@@ -60,6 +61,8 @@ export interface ProcessAudioOptions {
   existingEdges?: EdgeInput[];
   /** Skip topic extraction + summary when transcript is short. */
   lightweightIfShort?: boolean;
+  /** AbortSignal to cancel AI calls (threaded to all fetches). */
+  signal?: AbortSignal;
 }
 
 /**
@@ -81,10 +84,11 @@ export async function processAudio(
     existingNodes = [],
     existingEdges = [],
     lightweightIfShort = false,
+    signal,
   } = options;
 
   // 1. Always transcribe
-  const transcription = await aiService.transcribeAudio(audioInput);
+  const transcription = await aiService.transcribeAudio(audioInput, signal);
   const transcriptText = transcription.text.trim();
   const isShort = lightweightIfShort &&
     transcriptText.length < SHORT_APPEND_THRESHOLD;
@@ -133,6 +137,8 @@ export async function processAudio(
         statusUpdates = await aiService.checkActionItemStatus(
           transcriptText,
           existingActionItems,
+          undefined,
+          signal,
         );
       } catch (error) {
         console.error("Lightweight status check failed:", error);
@@ -148,6 +154,7 @@ export async function processAudio(
       existingActionItems,
       existingNodes,
       existingEdges,
+      signal,
     );
 
     nodes = analysis.topics.nodes.map((node) => ({
@@ -181,7 +188,7 @@ export async function processAudio(
     warnings = analysis.warnings;
   }
 
-  const title = await safeGenerateTitle(aiService, transcriptText);
+  const title = await safeGenerateTitle(aiService, transcriptText, signal);
 
   return {
     conversation: {
@@ -218,6 +225,7 @@ export async function processText(
   existingActionItems: ActionItem[] = [],
   existingNodes: NodeInput[] = [],
   existingEdges: EdgeInput[] = [],
+  signal?: AbortSignal,
 ): Promise<ConversationFlowResult> {
   // Parallel AI analysis
   const analysis = await analyzeText(
@@ -227,10 +235,11 @@ export async function processText(
     existingActionItems,
     existingNodes,
     existingEdges,
+    signal,
   );
 
   // Generate title (graceful fallback so a title failure does not sink the flow)
-  const title = await safeGenerateTitle(aiService, text);
+  const title = await safeGenerateTitle(aiService, text, signal);
 
   // Build result
   return {

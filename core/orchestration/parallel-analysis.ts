@@ -39,6 +39,7 @@ export async function analyzeText(
   existingActionItems: ActionItem[] = [],
   existingNodes: NodeInput[] = [],
   existingEdges: EdgeInput[] = [],
+  signal?: AbortSignal,
 ): Promise<AnalysisResult> {
   // Topics first so the summary can lead with what the conversation is about.
   // Only the summary waits on topics — action items and status checks run fully
@@ -57,9 +58,10 @@ export async function analyzeText(
     existingNodes,
     existingEdges,
     onParseError,
+    signal,
   );
   const summaryPromise = topicsPromise.then((topics) =>
-    aiService.generateSummary(text, topics.nodes.map((n) => n.label))
+    aiService.generateSummary(text, topics.nodes.map((n) => n.label), signal)
   ).catch((error) => {
     console.error("Summary generation failed, using fallback:", error);
     return summary_fallback;
@@ -72,9 +74,10 @@ export async function analyzeText(
       speakers,
       existingActionItems,
       onParseError,
+      signal,
     ),
     existingActionItems.length > 0
-      ? aiService.checkActionItemStatus(text, existingActionItems, onParseError)
+      ? aiService.checkActionItemStatus(text, existingActionItems, onParseError, signal)
       : Promise.resolve([]),
     summaryPromise,
   ]);
@@ -123,28 +126,28 @@ export async function analyzeAudio(
   existingActionItems: ActionItem[] = [],
   existingNodes: NodeInput[] = [],
   existingEdges: EdgeInput[] = [],
+  signal?: AbortSignal,
 ): Promise<
   AnalysisResult & { transcription: { text: string; speakers: string[] } }
 > {
   // First transcribe the audio
-  const transcription = await aiService.transcribeAudio(audioInput);
+  const transcription = await aiService.transcribeAudio(audioInput, signal);
 
   const garbled = new Set<string>();
   const onParseError = (what: string) => garbled.add(what);
 
-  // Topics first so the summary leads with the conversation's actual topics.
-  // Only the summary waits on topics; everything else stays parallel (see
-  // analyzeText for the rationale). Degrades to a plain summary if topics fail.
   const topicsPromise = aiService.extractTopics(
     transcription.text,
     existingNodes,
     existingEdges,
     onParseError,
+    signal,
   );
   const summaryPromise = topicsPromise.then((topics) =>
     aiService.generateSummary(
       transcription.text,
       topics.nodes.map((n) => n.label),
+      signal,
     )
   ).catch((error) => {
     console.error("Summary generation failed, using fallback:", error);
@@ -158,12 +161,14 @@ export async function analyzeAudio(
       transcription.speakers,
       existingActionItems,
       onParseError,
+      signal,
     ),
     existingActionItems.length > 0
       ? aiService.checkActionItemStatus(
         transcription.text,
         existingActionItems,
         onParseError,
+        signal,
       )
       : Promise.resolve([]),
     summaryPromise,

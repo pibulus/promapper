@@ -23,14 +23,12 @@ import * as $ArcDiagramViz from "./islands/ArcDiagramViz.tsx";
 import * as $AudioRecorder from "./islands/AudioRecorder.tsx";
 import * as $AudioVisualizer from "./islands/AudioVisualizer.tsx";
 import * as $AuthModalIsland from "./islands/AuthModalIsland.tsx";
-import * as $ChatSidebar from "./islands/ChatSidebar.tsx";
 import * as $DashboardIsland from "./islands/DashboardIsland.tsx";
 import * as $EmojimapViz from "./islands/EmojimapViz.tsx";
 import * as $FlipCard from "./islands/FlipCard.tsx";
 import * as $ForceDirectedGraph from "./islands/ForceDirectedGraph.tsx";
 import * as $GoLiveButton from "./islands/GoLiveButton.tsx";
 import * as $HomeIsland from "./islands/HomeIsland.tsx";
-import * as $LiveCollabIsland from "./islands/LiveCollabIsland.tsx";
 import * as $MarkdownMakerDrawer from "./islands/MarkdownMakerDrawer.tsx";
 import * as $MobileHistoryMenu from "./islands/MobileHistoryMenu.tsx";
 import * as $NodemapTestIsland from "./islands/NodemapTestIsland.tsx";
@@ -72,14 +70,12 @@ const manifest = {
     "./islands/AudioRecorder.tsx": $AudioRecorder,
     "./islands/AudioVisualizer.tsx": $AudioVisualizer,
     "./islands/AuthModalIsland.tsx": $AuthModalIsland,
-    "./islands/ChatSidebar.tsx": $ChatSidebar,
     "./islands/DashboardIsland.tsx": $DashboardIsland,
     "./islands/EmojimapViz.tsx": $EmojimapViz,
     "./islands/FlipCard.tsx": $FlipCard,
     "./islands/ForceDirectedGraph.tsx": $ForceDirectedGraph,
     "./islands/GoLiveButton.tsx": $GoLiveButton,
     "./islands/HomeIsland.tsx": $HomeIsland,
-    "./islands/LiveCollabIsland.tsx": $LiveCollabIsland,
     "./islands/MarkdownMakerDrawer.tsx": $MarkdownMakerDrawer,
     "./islands/MobileHistoryMenu.tsx": $MobileHistoryMenu,
     "./islands/NodemapTestIsland.tsx": $NodemapTestIsland,

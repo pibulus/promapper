@@ -26,22 +26,6 @@ const MAX_TEXT_LENGTH = SHARE_ROOM_LIMITS.MAX_TRANSCRIPT_LENGTH;
 /** Audio processing can take up to 60s for large files (transcription + analysis). */
 const PROCESS_TIMEOUT_MS = 60_000;
 
-function withTimeout<T>(
-  promise: Promise<T>,
-  ms: number,
-  label: string,
-): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`${label} timed out after ${ms}ms`)),
-        ms,
-      )
-    ),
-  ]);
-}
-
 export const handler: Handlers = {
   async POST(req) {
     try {
@@ -105,11 +89,17 @@ export const handler: Handlers = {
         }
 
         const { part: audioPart } = await uploadAudioFile(audioFile);
-        const result = await withTimeout(
-          processAudio(aiService, audioPart, conversationId, {}),
-          PROCESS_TIMEOUT_MS,
-          "Audio processing",
-        );
+
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), PROCESS_TIMEOUT_MS);
+        let result;
+        try {
+          result = await processAudio(aiService, audioPart, conversationId, {
+            signal: ctrl.signal,
+          });
+        } finally {
+          clearTimeout(timer);
+        }
 
         // If this came from a live room, push the result to all collaborators.
         await pushResultToRoom(formData.get("roomId") as string | null, result);
@@ -147,16 +137,23 @@ export const handler: Handlers = {
       }
 
       // Process through nervous system
-      const result = await withTimeout(
-        processText(
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), PROCESS_TIMEOUT_MS);
+      let result;
+      try {
+        result = await processText(
           aiService,
           text,
           conversationId,
           speakers,
-        ),
-        PROCESS_TIMEOUT_MS,
-        "Text processing",
-      );
+          [],
+          [],
+          [],
+          ctrl.signal,
+        );
+      } finally {
+        clearTimeout(timer);
+      }
 
       // If this came from a live room, push the result to all collaborators.
       await pushResultToRoom(roomId, result);

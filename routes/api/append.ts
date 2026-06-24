@@ -30,24 +30,8 @@ import { pushResultToRoom } from "@services/partyUpdates.ts";
 /** Prevent a crafted existingTranscript FormData field from OOM'ing the
  *  server during transcript concatenation. 500KB ≈ 2+ hour meeting. */
 const MAX_EXISTING_TRANSCRIPT = 500_000;
-/** Append audio processing timeout. */
+/** Append audio processing timeout (threaded as AbortSignal to all fetches). */
 const APPEND_TIMEOUT_MS = 60_000;
-
-function withTimeout<T>(
-  promise: Promise<T>,
-  ms: number,
-  label: string,
-): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`${label} timed out after ${ms}ms`)),
-        ms,
-      )
-    ),
-  ]);
-}
 
 export const handler: Handlers = {
   async POST(req) {
@@ -151,8 +135,11 @@ export const handler: Handlers = {
       );
       console.log(`🕸️ Found ${existingNodes.length} existing topics`);
 
-      const result: ConversationFlowResult = await withTimeout(
-        processAudio(
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), APPEND_TIMEOUT_MS);
+      let result: ConversationFlowResult;
+      try {
+        result = await processAudio(
           aiService,
           audioPart,
           conversationId,
@@ -161,11 +148,12 @@ export const handler: Handlers = {
             existingNodes,
             existingEdges,
             lightweightIfShort: true,
+            signal: ctrl.signal,
           },
-        ),
-        APPEND_TIMEOUT_MS,
-        "Append processing",
-      );
+        );
+      } finally {
+        clearTimeout(timer);
+      }
 
       // Merge transcripts if we have existing content.
       // Cap the existing transcript to prevent OOM from oversized FormData values
