@@ -52,7 +52,9 @@ const voiceDrawerOpen = signal(false);
 const shortcutsOpen = signal(false);
 const demoLoading = signal(false);
 
-const CHUNK_INTERVAL_MS = 15_000;
+const SILENCE_FLUSH_MS = 2_000;
+const MAX_CHUNK_MS = 30_000;
+const SPEAKING_THRESHOLD = 15; // 0-255 AnalyserNode level
 
 export default function HomeIsland() {
   // Auto-start live mode if arriving via /live/:roomId link
@@ -144,7 +146,13 @@ export default function HomeIsland() {
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
-  const chunkTimerRef = useRef<number | null>(null);
+
+  // Silence-aware refs
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const silenceMonitorRef = useRef<number | null>(null);
+  const lastSpeechRef = useRef<number>(0);
+  const chunkStartRef = useRef<number>(0);
 
   // Start/stop PartyKit live sync when liveSession changes
   useEffect(() => {
@@ -201,6 +209,16 @@ export default function HomeIsland() {
       });
       streamRef.current = stream;
 
+      // Set up silence detection via AnalyserNode
+      const audioCtx = new AudioContext();
+      audioCtxRef.current = audioCtx;
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.4;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+
       const mimeType = MediaRecorder.isTypeSupported("audio/webm")
         ? "audio/webm"
         : "audio/mp4";
@@ -208,12 +226,14 @@ export default function HomeIsland() {
       const recorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
+      chunkStartRef.current = Date.now();
+      lastSpeechRef.current = 0;
 
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
-      recorder.start(1000);
+      recorder.start(500); // collect every 500ms for finer silence gaps
       isRecording.value = true;
       recordingTime.value = 0;
 
@@ -221,10 +241,35 @@ export default function HomeIsland() {
         () => recordingTime.value++,
         1000,
       ) as unknown as number;
-      chunkTimerRef.current = setInterval(
-        sendChunk,
-        CHUNK_INTERVAL_MS,
-      ) as unknown as number;
+
+      // Poll audio levels — send accumulated chunk when silence is long enough
+      silenceMonitorRef.current = setInterval(() => {
+        if (!analyserRef.current) return;
+        const data = new Uint8Array(analyserRef.current.frequencyBinCount);
+        analyserRef.current.getByteFrequencyData(data);
+        const level = data.reduce((a, b) => a + b, 0) / data.length;
+        const now = Date.now();
+        const chunkAge = now - chunkStartRef.current;
+
+        if (level > SPEAKING_THRESHOLD) {
+          lastSpeechRef.current = now;
+        }
+
+        const silenceDuration = now - lastSpeechRef.current;
+
+        // Flush chunk when:
+        // - silence > 2s AND we have audio accumulated, OR
+        // - chunk has been accumulating > 30s (prevents huge chunks)
+        if (
+          chunksRef.current.length > 0 && (
+            (silenceDuration > SILENCE_FLUSH_MS) ||
+            (chunkAge > MAX_CHUNK_MS)
+          )
+        ) {
+          sendChunk();
+          chunkStartRef.current = now;
+        }
+      }, 250) as unknown as number;
 
       showToast("Recording — live transcript starting…", "info");
     } catch (err) {
@@ -263,9 +308,9 @@ export default function HomeIsland() {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    if (chunkTimerRef.current) {
-      clearInterval(chunkTimerRef.current);
-      chunkTimerRef.current = null;
+    if (silenceMonitorRef.current) {
+      clearInterval(silenceMonitorRef.current);
+      silenceMonitorRef.current = null;
     }
 
     if (
@@ -281,6 +326,11 @@ export default function HomeIsland() {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
+    }
+    if (audioCtxRef.current) {
+      audioCtxRef.current.close();
+      audioCtxRef.current = null;
+      analyserRef.current = null;
     }
     mediaRecorderRef.current = null;
     isRecording.value = false;
