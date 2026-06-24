@@ -21,6 +21,7 @@ export const LIVE_MESSAGE_TYPES = Object.freeze({
   TYPING_START: "typing_start",
   TYPING_STOP: "typing_stop",
   RENAME: "rename", // a peer changed their display name
+  WHITEBOARD_UPDATE: "whiteboard_update", // shared whiteboard scene changed
 });
 
 export const LIVE_CLOSE_CODES = Object.freeze({

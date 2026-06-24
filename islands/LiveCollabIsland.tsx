@@ -26,13 +26,14 @@ import {
 } from "@signals/presenceStore.ts";
 import { buildAvatar } from "@utils/avatar.ts";
 import { startLiveSync, stopLiveSync } from "@signals/liveSync.ts";
-import { sendRename } from "@signals/partyService.ts";
+import { sendRename, sendWhiteboardUpdate } from "@signals/partyService.ts";
 import { showToast } from "@utils/toast.ts";
 import { soundBloom, soundChime, soundPortal } from "@utils/sound.ts";
 import { ensureApiSession } from "@utils/apiAuth.ts";
 import DashboardIsland from "./DashboardIsland.tsx";
 import ChatSidebar from "./ChatSidebar.tsx";
 import VoicePanel from "./VoicePanel.tsx";
+import SharedWhiteboard from "./SharedWhiteboard.tsx";
 import Modal from "../components/Modal.tsx";
 
 interface LiveCollabIslandProps {
@@ -62,6 +63,37 @@ export default function LiveCollabIsland(
   const timerRef = useRef<number | null>(null);
   const chunkTimerRef = useRef<number | null>(null);
 
+  // Whiteboard ref — for pushing remote scene updates from PartyKit
+  const whiteboardContainerRef = useRef<HTMLDivElement | null>(null);
+
+  function handleSceneChange(scene: string) {
+    sendWhiteboardUpdate(scene);
+  }
+
+  // Push a remote whiteboard scene into the Excalidraw instance
+  function applyRemoteWhiteboard(scene: string) {
+    const el = whiteboardContainerRef.current as
+      | (HTMLElement & {
+        excalidrawAPI?: {
+          updateScene(opts: {
+            elements: unknown[];
+            appState: unknown;
+            commitToHistory?: boolean;
+          }): void;
+        };
+      })
+      | null;
+    if (!el?.excalidrawAPI) return;
+    try {
+      const { elements, appState } = JSON.parse(scene);
+      el.excalidrawAPI.updateScene({
+        elements,
+        appState,
+        commitToHistory: false,
+      });
+    } catch { /* malformed scene */ }
+  }
+
   useEffect(() => {
     if (!IS_BROWSER || !partyHost) return;
     isViewingShared.value = true;
@@ -69,6 +101,8 @@ export default function LiveCollabIsland(
       host: partyHost,
       roomId,
       avatar: getLocalIdentity(),
+    }, {
+      onWhiteboardUpdate: applyRemoteWhiteboard,
     });
     return () => {
       stopLiveSync();
@@ -320,7 +354,7 @@ export default function LiveCollabIsland(
         </div>
       </header>
 
-      {/* Two-pane layout: voice panel | dashboard */}
+      {/* Three-pane layout: voice | dashboard | whiteboard */}
       <div class="live-layout">
         {/* Left pane: Voice controls (show whenever connected) */}
         {connected && (
@@ -391,6 +425,19 @@ export default function LiveCollabIsland(
               )}
           </div>
         </div>
+
+        {/* Right pane: Shared whiteboard */}
+        {connected && (
+          <div
+            class="live-layout-whiteboard"
+            ref={whiteboardContainerRef}
+          >
+            <SharedWhiteboard
+              roomId={roomId}
+              onSceneChange={handleSceneChange}
+            />
+          </div>
+        )}
       </div>
 
       {/* In-session chat (only once connected) */}

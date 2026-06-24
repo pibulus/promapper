@@ -321,16 +321,15 @@ expire 24h after last activity.
 - `workers/voice-relay/src/index.ts` — Cloudflare Worker (~160 LOC). Issues
   RealtimeKit session tokens, manages room lifecycle via KV. Rooms expire after
   2h idle, 30-day KV TTL.
-- `routes/api/live/voice-token.ts` — server proxy that hides the Worker URL
-  from the client. Creates room + issues session token in one POST.
-  Returns `{ sessionId, iceServers, sessionToken, roomId, ttl, rtcEndpoint }`.
-- `islands/VoicePanel.tsx` — full WebRTC voice controls: join/leave,
-  mute/unmute (warm-rose tint, not red), remote audio playback, speaking
-  detection (AnalyserNode polling), peer list with green-dot indicators,
-  cleanup on unmount.
-- `islands/LiveCollabIsland.tsx` — two-pane grid layout: VoicePanel left
-  sidebar (240px) + dashboard/transcript right. Responsive: stacks vertically
-  on mobile.
+- `routes/api/live/voice-token.ts` — server proxy that hides the Worker URL from
+  the client. Creates room + issues session token in one POST. Returns
+  `{ sessionId, iceServers, sessionToken, roomId, ttl, rtcEndpoint }`.
+- `islands/VoicePanel.tsx` — full WebRTC voice controls: join/leave, mute/unmute
+  (warm-rose tint, not red), remote audio playback, speaking detection
+  (AnalyserNode polling), peer list with green-dot indicators, cleanup on
+  unmount.
+- `islands/LiveCollabIsland.tsx` — two-pane grid layout: VoicePanel left sidebar
+  (240px) + dashboard/transcript right. Responsive: stacks vertically on mobile.
 - `deno.json` — added `workers/` to exclude (Cloudflare types don't typecheck
   under Deno).
 - `static/styles.css` — ~130 lines of new CSS: `.live-layout` grid,
@@ -348,8 +347,8 @@ VOICE_RTC_ENDPOINT=https://rtc.live.cloudflare.com/v1/offer
 ```
 
 Worker deploy (in `workers/voice-relay/`): `npm install && npx wrangler deploy`.
-Requires a Cloudflare account with RealtimeKit enabled and
-`VOICE_SHARED_SECRET` set as a Worker secret.
+Requires a Cloudflare account with RealtimeKit enabled and `VOICE_SHARED_SECRET`
+set as a Worker secret.
 
 ### What's next (Phase 2b)
 

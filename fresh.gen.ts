@@ -36,6 +36,7 @@ import * as $NodemapTestIsland from "./islands/NodemapTestIsland.tsx";
 import * as $ReaderModal from "./islands/ReaderModal.tsx";
 import * as $ShareButton from "./islands/ShareButton.tsx";
 import * as $SharedConversationLoader from "./islands/SharedConversationLoader.tsx";
+import * as $SharedWhiteboard from "./islands/SharedWhiteboard.tsx";
 import * as $SoundToggle from "./islands/SoundToggle.tsx";
 import * as $ThemeSwitcher from "./islands/ThemeSwitcher.tsx";
 import * as $TopicVisualizationsCard from "./islands/TopicVisualizationsCard.tsx";
@@ -83,6 +84,7 @@ const manifest = {
     "./islands/ReaderModal.tsx": $ReaderModal,
     "./islands/ShareButton.tsx": $ShareButton,
     "./islands/SharedConversationLoader.tsx": $SharedConversationLoader,
+    "./islands/SharedWhiteboard.tsx": $SharedWhiteboard,
     "./islands/SoundToggle.tsx": $SoundToggle,
     "./islands/ThemeSwitcher.tsx": $ThemeSwitcher,
     "./islands/TopicVisualizationsCard.tsx": $TopicVisualizationsCard,

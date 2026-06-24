@@ -27,6 +27,7 @@ export const MSG = {
   TYPING_START: "typing_start",
   TYPING_STOP: "typing_stop",
   RENAME: "rename",
+  WHITEBOARD_UPDATE: "whiteboard_update",
 } as const;
 
 export interface PartyCallbacks {
@@ -38,6 +39,8 @@ export interface PartyCallbacks {
   onChat?: (text: string, sender: RemoteUser, at: number) => void;
   /** A peer started/stopped typing. */
   onTyping?: (typing: boolean, sender: RemoteUser) => void;
+  /** A whiteboard scene update arrived from a peer. */
+  onWhiteboardUpdate?: (scene: string) => void;
 }
 
 export interface PartyConnectOptions {
@@ -126,6 +129,12 @@ export function connectToRoom(
       case MSG.TYPING_STOP:
         if (sender) callbacks.onTyping?.(false, sender);
         break;
+      case MSG.WHITEBOARD_UPDATE:
+        if (msg.data && typeof msg.data === "object") {
+          const d = msg.data as { scene?: string };
+          if (d.scene) callbacks.onWhiteboardUpdate?.(d.scene);
+        }
+        break;
     }
   });
 }
@@ -158,6 +167,10 @@ export function sendRename(alias: string): boolean {
 
 export function sendTyping(typing: boolean): boolean {
   return send(typing ? MSG.TYPING_START : MSG.TYPING_STOP);
+}
+
+export function sendWhiteboardUpdate(scene: string): boolean {
+  return send(MSG.WHITEBOARD_UPDATE, { scene });
 }
 
 export function isConnected(): boolean {

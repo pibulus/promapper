@@ -131,6 +131,18 @@ export default class ConversationRoom implements Party.Server {
         this.relay(normalized.type, undefined, sender);
         return;
       }
+      case LIVE_MESSAGE_TYPES.WHITEBOARD_UPDATE: {
+        // Shared whiteboard scene change — relay to all peers.
+        const scene = this.field(normalized.data, "scene");
+        if (typeof scene !== "string" || scene.length > 500_000) return;
+        await this.saveMetadata(touchRoomMetadata(state.metadata ?? {}));
+        this.relay(
+          LIVE_MESSAGE_TYPES.WHITEBOARD_UPDATE,
+          { scene },
+          sender,
+        );
+        return;
+      }
     }
   }
 
