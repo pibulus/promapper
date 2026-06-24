@@ -80,6 +80,11 @@ export default class ConversationRoom implements Party.Server {
   // ===============================================================
 
   async onMessage(message: string, sender: Party.Connection) {
+    // Prevent OOM from oversized WebSocket messages
+    if (message.length > 1_000_000) {
+      sender.close(4009, "Message too large");
+      return;
+    }
     const state = await this.getRoomState();
     if (state.expired) {
       sender.close(LIVE_CLOSE_CODES.ROOM_EXPIRED, "This live room has expired");

@@ -8,6 +8,7 @@ import { conversationData } from "@signals/conversationStore.ts";
 import { renameSpeaker, setActionItems } from "@signals/actionItemsStore.ts";
 import { liveSession } from "@signals/liveSessionStore.ts";
 import { sendWhiteboardUpdate } from "@signals/partyService.ts";
+import { useRef } from "preact/hooks";
 import TranscriptCard from "../components/TranscriptCard.tsx";
 import SummaryCard from "../components/SummaryCard.tsx";
 import ActionItemsCard from "../components/ActionItemsCard.tsx";
@@ -18,6 +19,15 @@ import FlipCard from "./FlipCard.tsx";
 import ReaderModal from "./ReaderModal.tsx";
 
 export default function DashboardIsland() {
+  // Throttle whiteboard broadcasts during active drawing (~60fps onChange)
+  const lastWhiteboardPush = useRef(0);
+
+  function handleSceneChange(scene: string) {
+    const now = Date.now();
+    if (now - lastWhiteboardPush.current < 200) return;
+    lastWhiteboardPush.current = now;
+    sendWhiteboardUpdate(scene);
+  }
   if (!conversationData.value) {
     return (
       <div class="dashboard-skeleton-grid">
@@ -104,7 +114,7 @@ export default function DashboardIsland() {
             </div>
             <SharedWhiteboard
               roomId={liveSession.value.roomId}
-              onSceneChange={(scene) => sendWhiteboardUpdate(scene)}
+              onSceneChange={handleSceneChange}
             />
           </div>
         )}

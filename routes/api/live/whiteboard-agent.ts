@@ -93,9 +93,16 @@ export const handler: Handlers = {
       });
     } catch (error) {
       console.error("Whiteboard agent failed:", error);
-      return new Response(JSON.stringify({ elements }), {
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          elements,
+          error: "AI whiteboard agent unavailable — your scene is unchanged.",
+        }),
+        {
+          status: 502,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
   },
 };

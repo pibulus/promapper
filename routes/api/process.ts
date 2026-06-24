@@ -138,7 +138,7 @@ export const handler: Handlers = {
       console.error("❌ Processing error:", error);
       return new Response(
         JSON.stringify({
-          error: error instanceof Error ? error.message : "Unknown error",
+          error: "Processing failed — please try again.",
         }),
         { status: 500, headers: { "Content-Type": "application/json" } },
       );

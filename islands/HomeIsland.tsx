@@ -270,6 +270,7 @@ export default function HomeIsland() {
   }
 
   async function startRecording() {
+    if (isRecording.value || mediaRecorderRef.current) return; // guard double-click
     try {
       await ensureApiSession();
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -409,10 +410,13 @@ export default function HomeIsland() {
     if (
       mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive"
     ) {
-      await new Promise<void>((resolve) => {
-        mediaRecorderRef.current!.onstop = () => resolve();
-        mediaRecorderRef.current!.stop();
-      });
+      await Promise.race([
+        new Promise<void>((resolve) => {
+          mediaRecorderRef.current!.onstop = () => resolve();
+          mediaRecorderRef.current!.stop();
+        }),
+        new Promise<void>((resolve) => setTimeout(resolve, 5_000)),
+      ]);
     }
     await sendChunk();
 
