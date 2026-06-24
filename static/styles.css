@@ -4454,7 +4454,7 @@ a:focus-visible {
 }
 
 /* ===================================================================
-   VOICE DRAWER — slide-out voice panel (like MarkdownMakerDrawer)
+   VOICE DRAWER — slide-out voice panel with spring bounce
    ================================================================ */
 
 .voice-drawer {
@@ -4471,11 +4471,41 @@ a:focus-visible {
   border-left: 2px solid var(--color-border);
   box-shadow: var(--shadow-xl);
   transform: translateX(100%);
-  transition: transform 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .voice-drawer.is-open {
   transform: translateX(0);
+}
+
+/* ===================================================================
+   TOAST — slide-in from right with spring bounce
+   ================================================================ */
+
+.toast-pop {
+  animation: toast-slide-in 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(120%) scale(0.88);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-slide-out-right {
+  animation: toast-slide-out 260ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes toast-slide-out {
+  to {
+    transform: translateX(120%) scale(0.9);
+    opacity: 0;
+  }
 }
 
 /* ===================================================================
