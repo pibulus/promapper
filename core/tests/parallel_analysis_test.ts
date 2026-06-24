@@ -24,35 +24,35 @@ function createMockAIService(
 
   return {
     calls,
-    async transcribeAudio(_blob: Blob) {
+    async transcribeAudio(_blob: Blob, _signal?: AbortSignal) {
       calls.push("transcribeAudio");
       return { text: "Speaker1: hello world", speakers: ["Speaker1"] };
     },
-    async generateTitle(_transcript: string) {
+    async generateTitle(_transcript: string, _signal?: AbortSignal) {
       calls.push("generateTitle");
       return "Test Title";
     },
-    async extractActionItems(_input, _speakers, _existing) {
+    async extractActionItems(_input, _speakers, _existing, _onParseError, _signal?: AbortSignal) {
       calls.push("extractActionItems");
       return [{ description: "Do the thing", assignee: null, due_date: null }];
     },
-    async checkActionItemStatus(_input, _existing) {
+    async checkActionItemStatus(_input, _existing, _onParseError, _signal?: AbortSignal) {
       calls.push("checkActionItemStatus");
       return [];
     },
-    async extractTopics(_text, _existing) {
+    async extractTopics(_text, _existing, _existingEdges, _onParseError, _signal?: AbortSignal) {
       calls.push("extractTopics");
       return { nodes: [], edges: [] };
     },
-    async generateSummary(_text) {
+    async generateSummary(_text, _labels, _signal?: AbortSignal) {
       calls.push("generateSummary");
       return "A brief summary.";
     },
-    async generateMarkdown(_formatPrompt, _text) {
+    async generateMarkdown(_formatPrompt, _text, _signal?: AbortSignal) {
       calls.push("generateMarkdown");
       return "# Markdown";
     },
-    async chatText(_prompt: string) {
+    async chatText(_prompt: string, _hint, _signal?: AbortSignal) {
       calls.push("chatText");
       return "";
     },

@@ -39,6 +39,8 @@ interface VoiceSession {
 interface VoicePanelProps {
   roomId: string;
   displayName: string;
+  /** PartyKit display names for remote peers, matched by join order. */
+  peerDisplayNames?: string[];
 }
 
 // How often we poll audio levels (ms)
@@ -46,7 +48,9 @@ const LEVEL_POLL_MS = 200;
 // Threshold for "speaking" (0-255)
 const SPEAKING_THRESHOLD = 20;
 
-export default function VoicePanel({ roomId, displayName }: VoicePanelProps) {
+export default function VoicePanel(
+  { roomId, displayName, peerDisplayNames = [] }: VoicePanelProps,
+) {
   const peers = useSignal<VoicePeer[]>([]);
   const isMuted = useSignal(false);
   const isConnecting = useSignal(false);
@@ -158,9 +162,16 @@ export default function VoicePanel({ roomId, displayName }: VoicePanelProps) {
         // Add to peer list
         const existing = peers.value.find((p) => p.id === peerId);
         if (!existing) {
+          // Try to match a PartyKit display name by join order.
+          // peerDisplayNames is a flat list; each time we add a peer we
+          // consume the next unused name. If none left, fall back to "Peer N".
+          const assignedNames = new Set(peers.value.map((p) => p.name));
+          const partyName = peerDisplayNames.find((n) => !assignedNames.has(n));
+          const name = partyName ??
+            `Peer ${peers.value.length + 1}`;
           peers.value = [...peers.value, {
             id: peerId,
-            name: `Peer ${peers.value.length + 1}`,
+            name,
             isSpeaking: false,
             isMuted: false,
             joinedAt: Date.now(),

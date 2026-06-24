@@ -23,6 +23,21 @@ import { SHARE_ROOM_LIMITS } from "@core/realtime/shareProtocol.ts";
 // Max accepted text length, reusing the existing transcript ceiling so anything
 // processable is also shareable (one source of truth, no second magic number).
 const MAX_TEXT_LENGTH = SHARE_ROOM_LIMITS.MAX_TRANSCRIPT_LENGTH;
+/** Audio processing can take up to 60s for large files (transcription + analysis). */
+const PROCESS_TIMEOUT_MS = 60_000;
+
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  label: string,
+): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+    ),
+  ]);
+}
 
 export const handler: Handlers = {
   async POST(req) {
@@ -78,11 +93,10 @@ export const handler: Handlers = {
         }
 
         const { part: audioPart } = await uploadAudioFile(audioFile);
-        const result = await processAudio(
-          aiService,
-          audioPart,
-          conversationId,
-          {},
+        const result = await withTimeout(
+          processAudio(aiService, audioPart, conversationId, {}),
+          PROCESS_TIMEOUT_MS,
+          "Audio processing",
         );
 
         // If this came from a live room, push the result to all collaborators.
@@ -121,11 +135,15 @@ export const handler: Handlers = {
       }
 
       // Process through nervous system
-      const result = await processText(
-        aiService,
-        text,
-        conversationId,
-        speakers,
+      const result = await withTimeout(
+        processText(
+          aiService,
+          text,
+          conversationId,
+          speakers,
+        ),
+        PROCESS_TIMEOUT_MS,
+        "Text processing",
       );
 
       // If this came from a live room, push the result to all collaborators.

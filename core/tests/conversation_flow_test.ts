@@ -18,35 +18,35 @@ import type { AIService, AudioPart } from "../ai/types.ts";
 
 function createMockAIService(): AIService {
   return {
-    async transcribeAudio(_blob: Blob) {
+    async transcribeAudio(_blob: Blob, _signal?: AbortSignal) {
       return { text: "Speaker1: hello", speakers: ["Speaker1"] };
     },
-    async generateTitle(_transcript: string) {
+    async generateTitle(_transcript: string, _signal?: AbortSignal) {
       return "Mock Title";
     },
-    async extractActionItems(_input, _speakers, _existing) {
+    async extractActionItems(_input, _speakers, _existing, _onParseError, _signal?: AbortSignal) {
       return [{
         description: "Do something",
         assignee: "Alice",
         due_date: "2025-12-01",
       }];
     },
-    async checkActionItemStatus(_input, _existing) {
+    async checkActionItemStatus(_input, _existing, _onParseError, _signal?: AbortSignal) {
       return [];
     },
-    async extractTopics(_text, _existing) {
+    async extractTopics(_text, _existing, _existingEdges, _onParseError, _signal?: AbortSignal) {
       return {
         nodes: [{ id: "n1", label: "Topic", color: "#aaa", emoji: "📌" }],
         edges: [],
       };
     },
-    async generateSummary(_text) {
+    async generateSummary(_text, _labels, _signal?: AbortSignal) {
       return "This is a summary.";
     },
-    async generateMarkdown(_formatPrompt, _text) {
+    async generateMarkdown(_formatPrompt, _text, _signal?: AbortSignal) {
       return "# Result";
     },
-    async chatText(_prompt) {
+    async chatText(_prompt, _hint, _signal?: AbortSignal) {
       return '{"operations": []}';
     },
   };

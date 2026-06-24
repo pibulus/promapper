@@ -37,9 +37,11 @@ export async function withRetry<T>(
   fn: () => Promise<T>,
   tries = 3,
   baseMs = 600,
+  signal?: AbortSignal,
 ): Promise<T> {
   let lastErr: unknown;
   for (let i = 0; i < tries; i++) {
+    if (signal?.aborted) throw signal.reason ?? new Error("Aborted");
     try {
       return await fn();
     } catch (err) {

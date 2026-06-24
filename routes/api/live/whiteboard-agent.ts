@@ -26,6 +26,7 @@ const MAX_ELEMENTS = 500;
 const MAX_TRANSCRIPT_LENGTH = 8000;
 /** Whiteboard editing is a reasoning-heavy task — use Claude Haiku. */
 const WHITEBOARD_MODEL_HINT = "topic";
+const AGENT_TIMEOUT_MS = 30_000;
 
 export const handler: Handlers = {
   async POST(req) {
@@ -76,7 +77,18 @@ export const handler: Handlers = {
 
     try {
       const aiService = getAIService();
-      const response = await aiService.chatText(prompt, WHITEBOARD_MODEL_HINT);
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), AGENT_TIMEOUT_MS);
+      let response: string;
+      try {
+        response = await aiService.chatText(
+          prompt,
+          WHITEBOARD_MODEL_HINT,
+          ctrl.signal,
+        );
+      } finally {
+        clearTimeout(timer);
+      }
 
       const ops = parseWhiteboardOps(response);
       if (ops.length === 0) {

@@ -17,6 +17,7 @@ import { guardRequest } from "@services/requestGuard.ts";
 const VOICE_RELAY_URL = (Deno.env.get("VOICE_RELAY_URL") ?? "").trim();
 const VOICE_SHARED_SECRET = (Deno.env.get("VOICE_SHARED_SECRET") ?? "").trim();
 const VOICE_RTC_ENDPOINT = (Deno.env.get("VOICE_RTC_ENDPOINT") ?? "").trim();
+const RELAY_FETCH_TIMEOUT_MS = 10_000;
 
 function relayHeaders(): HeadersInit {
   const headers: Record<string, string> = {};
@@ -72,10 +73,17 @@ export const handler: Handlers = {
 
     try {
       // Step 1: create the room (idempotent GET)
-      const createRes = await fetch(
-        `${baseUrl}/voice/rooms/${encodeURIComponent(roomId)}`,
-        { method: "GET", headers: relayHeaders() },
-      );
+      const createCtl = new AbortController();
+      const createTimer = setTimeout(() => createCtl.abort(), RELAY_FETCH_TIMEOUT_MS);
+      let createRes: Response;
+      try {
+        createRes = await fetch(
+          `${baseUrl}/voice/rooms/${encodeURIComponent(roomId)}`,
+          { method: "GET", headers: relayHeaders(), signal: createCtl.signal },
+        );
+      } finally {
+        clearTimeout(createTimer);
+      }
 
       if (!createRes.ok && createRes.status !== 201) {
         console.error("Voice relay room creation failed:", createRes.status);
@@ -86,10 +94,17 @@ export const handler: Handlers = {
       }
 
       // Step 2: get a session token
-      const joinRes = await fetch(
-        `${baseUrl}/voice/rooms/${encodeURIComponent(roomId)}/join`,
-        { method: "POST", headers: relayHeaders() },
-      );
+      const joinCtl = new AbortController();
+      const joinTimer = setTimeout(() => joinCtl.abort(), RELAY_FETCH_TIMEOUT_MS);
+      let joinRes: Response;
+      try {
+        joinRes = await fetch(
+          `${baseUrl}/voice/rooms/${encodeURIComponent(roomId)}/join`,
+          { method: "POST", headers: relayHeaders(), signal: joinCtl.signal },
+        );
+      } finally {
+        clearTimeout(joinTimer);
+      }
 
       if (!joinRes.ok) {
         console.error("Voice relay join failed:", joinRes.status);

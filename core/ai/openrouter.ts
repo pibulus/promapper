@@ -208,6 +208,7 @@ export function createOpenRouterService(
   async function chat(
     messages: ChatMessage[],
     modelHint?: string,
+    signal?: AbortSignal,
   ): Promise<string> {
     return await withRetry(async () => {
       const response = await fetcher(joinUrl(baseUrl, "/chat/completions"), {
@@ -220,23 +221,26 @@ export function createOpenRouterService(
           temperature: 0.1, // low temp for consistent structured extraction
           max_tokens: 8192,
         }),
+        signal,
       });
 
       return await parseOpenRouterResponse(response);
-    });
+    }, 3, 600, signal);
   }
 
   async function chatText(
     prompt: string,
     modelHint?: string,
+    signal?: AbortSignal,
   ): Promise<string> {
-    return await chat([{ role: "user", content: prompt }], modelHint);
+    return await chat([{ role: "user", content: prompt }], modelHint, signal);
   }
 
   async function chatAudio(
     prompt: string,
     audioInput: AudioInput,
     modelHint?: string,
+    signal?: AbortSignal,
   ): Promise<string> {
     const audioPart = await toOpenRouterAudioPart(audioInput);
     return await chat([
@@ -244,16 +248,17 @@ export function createOpenRouterService(
         role: "user",
         content: buildAudioContent(prompt, audioPart),
       },
-    ], modelHint);
+    ], modelHint, signal);
   }
 
   return {
-    async transcribeAudio(audioInput: AudioInput) {
+    async transcribeAudio(audioInput: AudioInput, signal?: AbortSignal) {
       try {
         const transcriptText = await chatAudio(
           TRANSCRIPTION_PROMPT,
           audioInput,
           options.transcriptionModel,
+          signal,
         );
         return {
           text: transcriptText,
@@ -265,9 +270,9 @@ export function createOpenRouterService(
       }
     },
 
-    async generateTitle(transcript: string): Promise<string> {
+    async generateTitle(transcript: string, signal?: AbortSignal): Promise<string> {
       try {
-        return (await chatText(buildTitlePrompt(transcript))).trim();
+        return (await chatText(buildTitlePrompt(transcript), undefined, signal)).trim();
       } catch (error) {
         console.error("❌ Error generating title:", error);
         throw new Error("Failed to generate title with OpenRouter");
@@ -279,6 +284,7 @@ export function createOpenRouterService(
       speakers: string[] = [],
       existingActionItems: ActionItem[] = [],
       onParseError?: ParseErrorSink,
+      signal?: AbortSignal,
     ) {
       try {
         const prompt = buildActionItemsPrompt(
@@ -287,8 +293,8 @@ export function createOpenRouterService(
           existingActionItems,
         );
         const text = typeof input === "string"
-          ? await chatText(prompt)
-          : await chatAudio(prompt, input);
+          ? await chatText(prompt, undefined, signal)
+          : await chatAudio(prompt, input, undefined, signal);
         return parseActionItemsResponse(text, onParseError);
       } catch (error) {
         console.error("Error extracting action items:", error);
@@ -300,6 +306,7 @@ export function createOpenRouterService(
       input: string | AudioInput,
       existingActionItems: ActionItem[],
       onParseError?: ParseErrorSink,
+      signal?: AbortSignal,
     ) {
       try {
         if (!existingActionItems || existingActionItems.length === 0) {
@@ -308,8 +315,8 @@ export function createOpenRouterService(
 
         const prompt = buildActionItemStatusPrompt(existingActionItems);
         const text = typeof input === "string"
-          ? await chatText(`${prompt}\n\nText: ${input}`)
-          : await chatAudio(prompt, input);
+          ? await chatText(`${prompt}\n\nText: ${input}`, undefined, signal)
+          : await chatAudio(prompt, input, undefined, signal);
 
         // Validate against real IDs + enum so a hallucinated id/status can't
         // silently flip the wrong task.
@@ -326,6 +333,7 @@ export function createOpenRouterService(
       existingNodes: NodeInput[] = [],
       existingEdges: EdgeInput[] = [],
       onParseError?: ParseErrorSink,
+      signal?: AbortSignal,
     ) {
       if (!text) return { nodes: [], edges: [] };
 
@@ -334,6 +342,7 @@ export function createOpenRouterService(
           await chatText(
             buildTopicExtractionPrompt(text, existingNodes, existingEdges),
             options.topicModel,
+            signal,
           ),
           onParseError,
         );
@@ -346,11 +355,13 @@ export function createOpenRouterService(
     async generateSummary(
       text: string,
       topicLabels: string[] = [],
+      signal?: AbortSignal,
     ): Promise<string> {
       try {
         return (await chatText(
           buildSummaryPrompt(text, topicLabels),
           options.summaryModel,
+          signal,
         )).trim();
       } catch (error) {
         console.error("Error generating summary:", error);
@@ -361,10 +372,13 @@ export function createOpenRouterService(
     async generateMarkdown(
       formatPrompt: string,
       text: string,
+      signal?: AbortSignal,
     ): Promise<string> {
       try {
         return (await chatText(
           buildMarkdownTransformPrompt(formatPrompt, text),
+          undefined,
+          signal,
         )).trim();
       } catch (error) {
         console.error("Error generating markdown:", error);
@@ -375,10 +389,12 @@ export function createOpenRouterService(
     async chatText(
       prompt: string,
       modelHint?: string,
+      signal?: AbortSignal,
     ): Promise<string> {
       return await chat(
         [{ role: "user", content: prompt }],
         modelHint,
+        signal,
       );
     },
   };

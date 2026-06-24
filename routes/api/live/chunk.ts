@@ -12,6 +12,8 @@ import { MAX_AUDIO_SIZE, uploadAudioFile } from "@services/audio.ts";
 /** Live chunks can be very small (Opus compressed silence <200 bytes).
  *  Raise the floor only for clearly invalid blobs (<64 bytes = no audio). */
 const LIVE_CHUNK_MIN_SIZE = 64;
+/** Live chunk transcription should be fast — 15s is generous for a 15s clip. */
+const CHUNK_TRANSCRIBE_TIMEOUT_MS = 15_000;
 
 export const handler: Handlers = {
   async POST(req) {
@@ -39,7 +41,15 @@ export const handler: Handlers = {
 
       const { part: audioPart } = await uploadAudioFile(audioFile);
       const aiService = getAIService();
-      const transcription = await aiService.transcribeAudio(audioPart);
+
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), CHUNK_TRANSCRIBE_TIMEOUT_MS);
+      let transcription: { text: string; speakers: string[] };
+      try {
+        transcription = await aiService.transcribeAudio(audioPart, ctrl.signal);
+      } finally {
+        clearTimeout(timer);
+      }
 
       return new Response(
         JSON.stringify({

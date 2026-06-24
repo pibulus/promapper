@@ -40,27 +40,45 @@ export type AudioInput = Blob | AudioPart;
 export type ParseErrorSink = (what: string) => void;
 
 export interface AIService {
-  transcribeAudio(audioInput: AudioInput): Promise<TranscriptionResult>;
-  generateTitle(transcript: string): Promise<string>;
+  transcribeAudio(
+    audioInput: AudioInput,
+    signal?: AbortSignal,
+  ): Promise<TranscriptionResult>;
+  generateTitle(transcript: string, signal?: AbortSignal): Promise<string>;
   extractActionItems(
     input: string | AudioInput,
     speakers?: string[],
     existingActionItems?: ActionItem[],
     onParseError?: ParseErrorSink,
+    signal?: AbortSignal,
   ): Promise<ActionItemInput[]>;
   checkActionItemStatus(
     input: string | AudioInput,
     existingActionItems: ActionItem[],
     onParseError?: ParseErrorSink,
+    signal?: AbortSignal,
   ): Promise<ActionItemStatusUpdate[]>;
   extractTopics(
     text: string,
     existingNodes?: NodeInput[],
     existingEdges?: EdgeInput[],
     onParseError?: ParseErrorSink,
+    signal?: AbortSignal,
   ): Promise<ConversationGraph>;
-  generateSummary(text: string, topicLabels?: string[]): Promise<string>;
-  generateMarkdown(formatPrompt: string, text: string): Promise<string>;
+  generateSummary(
+    text: string,
+    topicLabels?: string[],
+    signal?: AbortSignal,
+  ): Promise<string>;
+  generateMarkdown(
+    formatPrompt: string,
+    text: string,
+    signal?: AbortSignal,
+  ): Promise<string>;
   /** Raw chat prompt — for whiteboard agent and other tools. */
-  chatText(prompt: string, modelHint?: string): Promise<string>;
+  chatText(
+    prompt: string,
+    modelHint?: string,
+    signal?: AbortSignal,
+  ): Promise<string>;
 }

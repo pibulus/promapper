@@ -30,6 +30,21 @@ import { pushResultToRoom } from "@services/partyUpdates.ts";
 /** Prevent a crafted existingTranscript FormData field from OOM'ing the
  *  server during transcript concatenation. 500KB ≈ 2+ hour meeting. */
 const MAX_EXISTING_TRANSCRIPT = 500_000;
+/** Append audio processing timeout. */
+const APPEND_TIMEOUT_MS = 60_000;
+
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  label: string,
+): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+    ),
+  ]);
+}
 
 export const handler: Handlers = {
   async POST(req) {
@@ -124,16 +139,20 @@ export const handler: Handlers = {
       );
       console.log(`🕸️ Found ${existingNodes.length} existing topics`);
 
-      const result: ConversationFlowResult = await processAudio(
-        aiService,
-        audioPart,
-        conversationId,
-        {
-          existingActionItems,
-          existingNodes,
-          existingEdges,
-          lightweightIfShort: true,
-        },
+      const result: ConversationFlowResult = await withTimeout(
+        processAudio(
+          aiService,
+          audioPart,
+          conversationId,
+          {
+            existingActionItems,
+            existingNodes,
+            existingEdges,
+            lightweightIfShort: true,
+          },
+        ),
+        APPEND_TIMEOUT_MS,
+        "Append processing",
       );
 
       // Merge transcripts if we have existing content.

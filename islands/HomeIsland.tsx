@@ -657,6 +657,7 @@ export default function HomeIsland() {
           <VoicePanel
             roomId={session.roomId}
             displayName={getLocalIdentity()}
+            peerDisplayNames={users.map((u) => u.alias || u.avatar).filter(Boolean)}
           />
         </div>
       )}

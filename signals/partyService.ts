@@ -84,12 +84,20 @@ export function connectToRoom(
   const query: Record<string, string> = { avatar: options.avatar };
   if (options.alias) query.alias = options.alias;
 
-  const thisSocket = new PartySocket({
-    host: options.host,
-    party: "conversation", // matches party/conversationRoom.ts (file: conversationRoom)
-    room: options.roomId,
-    query,
-  });
+  let thisSocket: PartySocket;
+  try {
+    thisSocket = new PartySocket({
+      host: options.host,
+      party: "conversation",
+      room: options.roomId,
+      query,
+    });
+  } catch (err) {
+    console.error("PartySocket constructor failed:", err);
+    partyConnected.value = false;
+    connectedRoomId.value = "";
+    return;
+  }
   socket = thisSocket;
 
   // Every handler bails if the module-level `socket` has since been replaced by
