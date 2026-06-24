@@ -1,0 +1,10 @@
+name = "promapper-voice-relay"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "PROMAPPER_VOICE_KV"
+
+# Free tier: 10GB WebRTC/month (~100+ meeting-hours free)
+# Room TTL: 2h idle, 30-day KV storage

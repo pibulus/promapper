@@ -4,7 +4,8 @@
  * Meeting room root for /live/[roomId]. On mount it joins the PartyKit
  * room and enables the host to record live audio — chunks are transcribed
  * in near-real-time and results push to all viewers. Renders the dashboard
- * plus a live transcript stream and recording controls.
+ * plus a live transcript stream, recording controls, and a voice panel
+ * for real-time WebRTC audio.
  */
 
 import { useEffect, useRef } from "preact/hooks";
@@ -31,6 +32,7 @@ import { soundBloom, soundChime, soundPortal } from "@utils/sound.ts";
 import { ensureApiSession } from "@utils/apiAuth.ts";
 import DashboardIsland from "./DashboardIsland.tsx";
 import ChatSidebar from "./ChatSidebar.tsx";
+import VoicePanel from "./VoicePanel.tsx";
 import Modal from "../components/Modal.tsx";
 
 interface LiveCollabIslandProps {
@@ -318,61 +320,77 @@ export default function LiveCollabIsland(
         </div>
       </header>
 
-      {/* Live transcript stream */}
-      {isRecording.value && liveTranscript.value.length > 0 && (
-        <div
-          style={{
-            padding: "var(--card-padding)",
-            borderBottom: "2px solid var(--color-border)",
-            background: "var(--surface-cream-dark)",
-            maxHeight: "200px",
-            overflowY: "auto",
-          }}
-        >
-          <p
-            style={{
-              fontSize: "var(--tiny-size)",
-              fontWeight: 700,
-              color: "var(--color-accent)",
-              marginBottom: "0.5rem",
-            }}
-          >
-            ● Live transcript
-          </p>
-          {liveTranscript.value.map((chunk, i) => (
-            <p
-              key={i}
+      {/* Two-pane layout: voice panel | dashboard */}
+      <div class="live-layout">
+        {/* Left pane: Voice controls (show whenever connected) */}
+        {connected && (
+          <div class="live-layout-sidebar">
+            <VoicePanel
+              roomId={roomId}
+              displayName={getLocalIdentity()}
+            />
+          </div>
+        )}
+
+        {/* Main content: transcript + dashboard */}
+        <div class="live-layout-main">
+          {/* Live transcript stream */}
+          {isRecording.value && liveTranscript.value.length > 0 && (
+            <div
               style={{
-                fontSize: "var(--small-size)",
-                color: "var(--color-text)",
-                marginBottom: "0.5rem",
-                lineHeight: 1.5,
-                padding: "0.25rem 0.5rem",
-                borderLeft: "3px solid var(--color-accent)",
-                opacity: i < liveTranscript.value.length - 1 ? 0.6 : 1,
+                padding: "var(--card-padding)",
+                borderBottom: "2px solid var(--color-border)",
+                background: "var(--surface-cream-dark)",
+                maxHeight: "200px",
+                overflowY: "auto",
               }}
             >
-              {chunk}
-            </p>
-          ))}
-        </div>
-      )}
-
-      {/* Dashboard (or waiting state) */}
-      <div style={{ padding: "var(--card-padding)" }}>
-        {hasData
-          ? <DashboardIsland />
-          : (
-            <div class="max-w-md mx-auto text-center live-waiting">
-              <div style={{ fontSize: "2rem" }} class="mb-2">🛰️</div>
-              <p style={{ fontWeight: "600", color: "var(--color-text)" }}>
-                Waiting for the conversation…
+              <p
+                style={{
+                  fontSize: "var(--tiny-size)",
+                  fontWeight: 700,
+                  color: "var(--color-accent)",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                ● Live transcript
               </p>
-              <p style={{ fontSize: "var(--small-size)" }} class="mt-1">
-                Start recording to build the project map live.
-              </p>
+              {liveTranscript.value.map((chunk, i) => (
+                <p
+                  key={i}
+                  style={{
+                    fontSize: "var(--small-size)",
+                    color: "var(--color-text)",
+                    marginBottom: "0.5rem",
+                    lineHeight: 1.5,
+                    padding: "0.25rem 0.5rem",
+                    borderLeft: "3px solid var(--color-accent)",
+                    opacity: i < liveTranscript.value.length - 1 ? 0.6 : 1,
+                  }}
+                >
+                  {chunk}
+                </p>
+              ))}
             </div>
           )}
+
+          {/* Dashboard (or waiting state) */}
+          <div style={{ padding: "var(--card-padding)" }}>
+            {hasData
+              ? <DashboardIsland />
+              : (
+                <div class="max-w-md mx-auto text-center live-waiting">
+                  <div style={{ fontSize: "2rem" }} class="mb-2">🛰️</div>
+                  <p style={{ fontWeight: "600", color: "var(--color-text)" }}>
+                    Waiting for the conversation…
+                  </p>
+                  <p style={{ fontSize: "var(--small-size)" }} class="mt-1">
+                    Start recording to build the project map live.
+                  </p>
+                </div>
+              )}
+          </div>
+        </div>
       </div>
 
       {/* In-session chat (only once connected) */}

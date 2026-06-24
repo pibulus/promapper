@@ -273,76 +273,131 @@ expire 24h after last activity.
 ### What was built this session
 
 **AI model overhaul:**
-- Dropped direct Gemini provider (476 lines deleted). OpenRouter-only now via one API key.
-- Per-task model selection: transcription uses `~google/gemini-flash-latest` (native diarisation, 1M context), topics + summary use `~anthropic/claude-haiku-latest` ($1/$5 per 1M for quality), everything else uses `gemini-3.1-flash-lite` ($0.25/$1.50 for cost).
+
+- Dropped direct Gemini provider (476 lines deleted). OpenRouter-only now via
+  one API key.
+- Per-task model selection: transcription uses `~google/gemini-flash-latest`
+  (native diarisation, 1M context), topics + summary use
+  `~anthropic/claude-haiku-latest` ($1/$5 per 1M for quality), everything else
+  uses `gemini-3.1-flash-lite` ($0.25/$1.50 for cost).
 - All three use rolling `~` aliases so models auto-update.
-- Voxtral Small documented as cheaper transcription alternative (no guaranteed diarisation).
+- Voxtral Small documented as cheaper transcription alternative (no guaranteed
+  diarisation).
 
 **Audit hardening:**
-- Replaced 4 native `prompt()`/`confirm()` dialogs with accessible `Modal` components (API auth, topic rename, topic delete, display name).
-- Cross-tab storage sync: `window.addEventListener("storage")` warns when another tab edits the active conversation, offers Reload action.
-- A11y: `aria-expanded` on collapsibles, `.sr-only` utility class, keyboard shortcuts overlay (`?` key).
-- 15 new tests (215 total) for auth modal signals, toast actions, and storage detection logic.
+
+- Replaced 4 native `prompt()`/`confirm()` dialogs with accessible `Modal`
+  components (API auth, topic rename, topic delete, display name).
+- Cross-tab storage sync: `window.addEventListener("storage")` warns when
+  another tab edits the active conversation, offers Reload action.
+- A11y: `aria-expanded` on collapsibles, `.sr-only` utility class, keyboard
+  shortcuts overlay (`?` key).
+- 15 new tests (215 total) for auth modal signals, toast actions, and storage
+  detection logic.
 
 **Inline style debt reduction (~43%):**
-- Added ~20 reusable CSS classes to `static/styles.css` (.modal-stack, .modal-actions, .chat-*, .history-*, .live-*, .share-*, .action-*).
-- Biggest wins: ActionItemsCard (55→29), MobileHistoryMenu (40→26), ChatSidebar (14→2).
+
+- Added ~20 reusable CSS classes to `static/styles.css` (.modal-stack,
+  .modal-actions, .chat-_, .history-_, .live-_, .share-_, .action-*).
+- Biggest wins: ActionItemsCard (55→29), MobileHistoryMenu (40→26), ChatSidebar
+  (14→2).
 
 **Product features:**
+
 - Keyboard shortcuts cheat sheet (`?` key anywhere).
-- History drawer: search by title + date grouping (Today/Yesterday/This Week/Older).
+- History drawer: search by title + date grouping (Today/Yesterday/This
+  Week/Older).
 - Share polish: copy toast, expiry countdown.
 - Bulk actions: "Complete all" + "Clear N done" buttons.
-- **Meeting rooms (Phase 1):** host records mic → audio chunks sent every 15s to `POST /api/live/chunk` → transcript streams live → PartyKit syncs to viewers. Frontend: recording button with timer + live transcript panel in `LiveCollabIsland.tsx`.
+- **Meeting rooms (Phase 1):** host records mic → audio chunks sent every 15s to
+  `POST /api/live/chunk` → transcript streams live → PartyKit syncs to viewers.
+  Frontend: recording button with timer + live transcript panel in
+  `LiveCollabIsland.tsx`.
 
-### What's next (Phase 2)
+### What was built this session (June 24, 2026 — Phase 2a)
 
-**1. free4chat WebRTC voice relay** — https://github.com/i365dev/free4chat
-- MIT license, Cloudflare RealtimeKit (WebRTC), 1.1k stars. Serverless voice chat.
-- No sign-up, rooms auto-close after 2h, built-in screen sharing + file transfer.
-- Integration plan: fork and extract the RealtimeKit Worker (~200 LOC), strip the Next.js UI, embed as a voice panel alongside ProMapper's live dashboard.
-- Cloudflare free tier covers 10GB WebRTC/month (~100+ meeting-hours free).
-- File: create `workers/voice-relay/` in repo with the forked Worker code.
-- ProMapper side: add a voice-room connection hook in `LiveCollabIsland` to capture mixed WebRTC audio for transcription.
+**Voice Relay — done:**
 
-**2. Pricing tiers (freemium):**
+- `workers/voice-relay/src/index.ts` — Cloudflare Worker (~160 LOC). Issues
+  RealtimeKit session tokens, manages room lifecycle via KV. Rooms expire after
+  2h idle, 30-day KV TTL.
+- `routes/api/live/voice-token.ts` — server proxy that hides the Worker URL
+  from the client. Creates room + issues session token in one POST.
+  Returns `{ sessionId, iceServers, sessionToken, roomId, ttl, rtcEndpoint }`.
+- `islands/VoicePanel.tsx` — full WebRTC voice controls: join/leave,
+  mute/unmute (warm-rose tint, not red), remote audio playback, speaking
+  detection (AnalyserNode polling), peer list with green-dot indicators,
+  cleanup on unmount.
+- `islands/LiveCollabIsland.tsx` — two-pane grid layout: VoicePanel left
+  sidebar (240px) + dashboard/transcript right. Responsive: stacks vertically
+  on mobile.
+- `deno.json` — added `workers/` to exclude (Cloudflare types don't typecheck
+  under Deno).
+- `static/styles.css` — ~130 lines of new CSS: `.live-layout` grid,
+  `.voice-panel-*` classes, responsive breakpoints.
+- `fresh.gen.ts` — auto-registered new route + island.
+
+### Deploy checklist (voice relay)
+
+Three env vars needed on the Deno app server:
+
+```
+VOICE_RELAY_URL=https://promapper-voice-relay.YOURNAME.workers.dev
+VOICE_SHARED_SECRET=<shared-secret>
+VOICE_RTC_ENDPOINT=https://rtc.live.cloudflare.com/v1/offer
+```
+
+Worker deploy (in `workers/voice-relay/`): `npm install && npx wrangler deploy`.
+Requires a Cloudflare account with RealtimeKit enabled and
+`VOICE_SHARED_SECRET` set as a Worker secret.
+
+### What's next (Phase 2b)
+
+**1. Shared Whiteboard (Excalidraw)**
+
+- Embed `@excalidraw/excalidraw` as `islands/SharedWhiteboard.tsx`.
+- Sync scene via PartyKit (already built).
+- Humans draw manually — click, drag, type. Toolbar: pen, rectangle, arrow,
+  text, eraser, colors.
+- Add to `LiveCollabIsland` as third pane in the grid:
+  `voice | dashboard | whiteboard`.
+- Add `whiteboard-update` message type to party protocol + room.
+
+**2. Short-append optimisation:**
+
+- On appends where the new transcript is < 30s, skip topic extraction + summary
+  generation (just append transcript + check action item status). Saves ~2x on
+  repeat analyses.
+
+**3. Pricing tiers (freemium):**
+
 - Free tier: 5 conversations, Flash Lite only, solo, no export.
-- $9/mo: unlimited, smart models (Claude for topics/summary, Gemini 3.5 for transcription), live meeting rooms, export formats, share links.
-- Implementation: add tier gating in `services/requestGuard.ts` or a new middleware. Check user plan via `API_AUTH_TOKEN` or Stripe webhook.
-
-**3. Short-append optimisation:**
-- On appends where the new transcript is < 30s, skip topic extraction + summary generation (just append transcript + check action item status). Saves ~2x on repeat analyses.
-
-**4. Offline path (lower priority):**
-- Dennis's whisper + distilbert prototype lives on `conversation_mapper` lineage branch.
-- Could resurrect as an optional local fallback for users who want privacy or offline use.
+- $9/mo: unlimited, smart models (Claude for topics/summary, Gemini 3.5 for
+  transcription), live meeting rooms, export formats, share links.
+- Implementation: add tier gating in `services/requestGuard.ts` or a new
+  middleware.
 
 ### Key files changed this session
-- `services/ai.ts` — OpenRouter-only, per-task model env vars
-- `core/ai/openrouter.ts` — transcriptionModel, summaryModel, topicModel overrides
-- `core/ai/types.ts` — removed GeminiAudioPart, simplified
-- `services/audio.ts` — stripped Gemini upload, inline OpenRouter only
-- `routes/api/live/chunk.ts` — NEW: streaming chunk transcription endpoint
-- `islands/LiveCollabIsland.tsx` — recording controls, live transcript
-- `islands/GoLiveButton.tsx` — "Start Meeting" button
-- `signals/conversationStore.ts` — cross-tab storage sync listener
-- `signals/authModal.ts` — NEW: Promise-based auth token prompt
-- `islands/AuthModalIsland.tsx` — NEW: modal for API auth
-- `utils/toast.ts` — showActionToast()
-- `components/ShortcutsModal.tsx` — NEW: ? key cheat sheet
-- `static/styles.css` — ~20 new CSS classes
-- `core/tests/client_utils_test.ts` — NEW: 15 tests
-- `CLAUDE.md` — updated model architecture docs
-- (deleted) `core/ai/gemini.ts`, `core/tests/gemini_test.ts`
+
+- `workers/voice-relay/src/index.ts` — NEW: Cloudflare Worker for voice relay
+- `workers/voice-relay/wrangler.toml` — NEW: Worker deploy config
+- `workers/voice-relay/package.json` — NEW: Worker npm manifest
+- `routes/api/live/voice-token.ts` — NEW: proxy to voice relay Worker
+- `islands/VoicePanel.tsx` — NEW: WebRTC voice controls
+- `islands/LiveCollabIsland.tsx` — two-pane grid layout with voice sidebar
+- `deno.json` — exclude `workers/` from Deno typecheck
+- `static/styles.css` — ~130 lines of voice panel + live layout CSS
+- `fresh.gen.ts` — auto-registered new route + island
+- `CLAUDE.md` — updated handoff
 
 ## Meeting Rooms — Phase 2 (branch: `meeting-rooms`)
 
 ### Vision
 
-ProMapper meeting room = voice chat + shared whiteboard + live AI mapping.
-One person opens a room, everyone joins via link. They talk. The AI maps the
-conversation AND draws diagrams on a shared canvas. Everyone watches the
-project memory form in real-time.
+ProMapper meeting room = voice chat + shared whiteboard + live AI mapping. One
+person opens a room, everyone joins via link. They talk. The AI maps the
+conversation AND draws diagrams on a shared canvas. Everyone watches the project
+memory form in real-time.
 
 ### Architecture
 
@@ -408,23 +463,26 @@ project memory form in real-time.
 
 ### Reference Projects
 
-**autopreso** (MIT, 384★) — realtime speech → Excalidraw whiteboard.
-Key patterns to borrow:
-- Whiteboard edit model: line-numbered text view → `replace`/`insert_after`/`delete`
-  operations (LLM never sees raw Excalidraw JSON)
+**autopreso** (MIT, 384★) — realtime speech → Excalidraw whiteboard. Key
+patterns to borrow:
+
+- Whiteboard edit model: line-numbered text view →
+  `replace`/`insert_after`/`delete` operations (LLM never sees raw Excalidraw
+  JSON)
 - Two-mode session: `staging` (seed elements) → `live` (AI owns canvas)
 - Turn queue: debounced transcript chunks, filler filtering, one-turn-at-a-time
 - Agent providers: OpenAI / Codex / Ollama through `@ai-sdk/openai` adapter
 - Moonshine: local macOS STT via optional sidecar binary
 
-**free4chat** (MIT, 1.1k★) — WebRTC voice rooms via Cloudflare RealtimeKit.
-Key patterns to borrow:
+**free4chat** (MIT, 1.1k★) — WebRTC voice rooms via Cloudflare RealtimeKit. Key
+patterns to borrow:
+
 - RealtimeKit Worker: issues auth tokens, manages room lifecycle via KV
 - P2P audio: WebRTC data channels, no audio passes through the server
 - Room expiry: auto-close after 2h, 30-day KV TTL
 
-**drawio** (6.2k★) — JavaScript diagramming library. Alternative whiteboard engine
-to Excalidraw. More diagram types, mature, embeddable.
+**drawio** (6.2k★) — JavaScript diagramming library. Alternative whiteboard
+engine to Excalidraw. More diagram types, mature, embeddable.
 
 **moonshine** (8.5k★) — local speech-to-text. The offline transcription path for
 sensitive meetings. macOS arm64/x64 binaries available.
@@ -432,6 +490,7 @@ sensitive meetings. macOS arm64/x64 binaries available.
 ### Implementation Plan
 
 **Phase 2a: Voice Relay**
+
 - Fork free4chat's RealtimeKit Worker → `workers/voice-relay/`
 - Strip Next.js UI, keep ~200 LOC core (auth tokens, room lifecycle)
 - Deploy to Cloudflare Workers (free tier: 10GB WebRTC/month)
@@ -439,6 +498,7 @@ sensitive meetings. macOS arm64/x64 binaries available.
 - Add to `LiveCollabIsland` as the left pane
 
 **Phase 2b: Shared Whiteboard (manual)**
+
 - Embed Excalidraw as `islands/SharedWhiteboard.tsx`
 - Sync scene via PartyKit (already built)
 - Humans draw manually — click, drag, type
@@ -446,6 +506,7 @@ sensitive meetings. macOS arm64/x64 binaries available.
 - Share whiteboard state in room snapshot
 
 **Phase 2c: AI Whiteboard Agent**
+
 - Borrow autopreso's whiteboard edit model:
   - Format scene as line-numbered text
   - Agent emits `replace`/`insert_after`/`delete` operations
@@ -454,20 +515,23 @@ sensitive meetings. macOS arm64/x64 binaries available.
 - Prompt: "You are building a diagram alongside a conversation..."
 
 **Phase 3: Image/OCR Input**
+
 - Drag-and-drop images onto whiteboard or topic map
 - tesseract.js extracts text from screenshots/notebook photos
 - Extracted text enters the AI pipeline as if typed
 
 **Phase 4: Offline Mode (stretch)**
+
 - Moonshine for local transcription (macOS)
 - Ollama / llama.cpp for local action item extraction
 - No audio leaves the machine — privacy-first
 - Fall through to cloud if local models unavailable
 
 ### Pricing Integration
+
 - **Free tier**: solo only, no meeting rooms, no whiteboard, Flash Lite only
-- **$9/mo**: meeting rooms, voice relay, shared whiteboard, smart models,
-  export formats, share links
+- **$9/mo**: meeting rooms, voice relay, shared whiteboard, smart models, export
+  formats, share links
 
 ### Technical Sketches
 
@@ -479,33 +543,33 @@ sensitive meetings. macOS arm64/x64 binaries available.
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
-    const url = new URL(req.url)
-    const roomId = url.pathname.split('/').pop()!
+    const url = new URL(req.url);
+    const roomId = url.pathname.split("/").pop()!;
 
     // POST /rooms/:id/join — return WebRTC config
-    if (req.method === 'POST') {
-      const exists = await env.KV.get(`room:${roomId}`)
-      if (!exists) return new Response('Room not found', { status: 404 })
+    if (req.method === "POST") {
+      const exists = await env.KV.get(`room:${roomId}`);
+      if (!exists) return new Response("Room not found", { status: 404 });
 
       const sessionToken = await env.REALTIME_KIT.createSession({
         roomId,
         ttl: 7200, // 2 hours
-      })
+      });
 
       return Response.json({
         sessionId: crypto.randomUUID(),
         iceServers: env.TURN_CONFIG,
         sessionToken,
-      })
+      });
     }
 
     // GET /rooms/:id — create room
-    await env.KV.put(`room:${roomId}`, 'active', {
-      expirationTtl: 2592000 // 30 days
-    })
-    return Response.json({ roomId })
-  }
-}
+    await env.KV.put(`room:${roomId}`, "active", {
+      expirationTtl: 2592000, // 30 days
+    });
+    return Response.json({ roomId });
+  },
+};
 ```
 
 **Voice Panel** (`islands/VoicePanel.tsx`):
@@ -514,38 +578,43 @@ export default {
 // Left pane in meeting room — WebRTC voice controls.
 // Handles: join/leave, mute/unmute, speaker indicators.
 
-interface VoicePanelProps { roomId: string }
+interface VoicePanelProps {
+  roomId: string;
+}
 
 export default function VoicePanel({ roomId }: VoicePanelProps) {
-  const peers = useSignal<Peer[]>([])
-  const isMuted = useSignal(false)
-  const isConnecting = useSignal(true)
+  const peers = useSignal<Peer[]>([]);
+  const isMuted = useSignal(false);
+  const isConnecting = useSignal(true);
 
   useEffect(() => {
     // 1. Fetch session token from Worker
     // 2. Join RealtimeKit room
     // 3. Track remote audio + data channels
-    const room = new RealtimeKit.Room(roomId, sessionToken)
-    room.on('participantJoined', (p) => peers.value = [...peers.value, p])
-    room.on('participantLeft', (id) => peers.value = peers.value.filter(p => p.id !== id))
-    room.on('trackSubscribed', (track) => {
+    const room = new RealtimeKit.Room(roomId, sessionToken);
+    room.on("participantJoined", (p) => peers.value = [...peers.value, p]);
+    room.on(
+      "participantLeft",
+      (id) => peers.value = peers.value.filter((p) => p.id !== id),
+    );
+    room.on("trackSubscribed", (track) => {
       // Route remote audio to speaker
-      const audioEl = new Audio()
-      audioEl.srcObject = new MediaStream([track])
-      audioEl.play()
-    })
-    room.join()
-  }, [])
+      const audioEl = new Audio();
+      audioEl.srcObject = new MediaStream([track]);
+      audioEl.play();
+    });
+    room.join();
+  }, []);
 
   return (
     <div class="voice-panel">
-      <button onClick={toggleMute}>{isMuted ? '🔇' : '🎤'}</button>
-      {peers.value.map(p => (
-        <div class={p.isSpeaking ? 'speaking' : ''}>{p.name}</div>
+      <button onClick={toggleMute}>{isMuted ? "🔇" : "🎤"}</button>
+      {peers.value.map((p) => (
+        <div class={p.isSpeaking ? "speaking" : ""}>{p.name}</div>
       ))}
       <button onClick={leave}>Leave</button>
     </div>
-  )
+  );
 }
 ```
 
@@ -556,34 +625,34 @@ export default function VoicePanel({ roomId }: VoicePanelProps) {
 // Both humans and AI can edit the scene.
 
 export default function SharedWhiteboard({ roomId }: { roomId: string }) {
-  const excalidrawRef = useRef(null)
-  const [api, setApi] = useState(null)
+  const excalidrawRef = useRef(null);
+  const [api, setApi] = useState(null);
 
   // Human edit → broadcast to room
   function onChange(elements, appState) {
-    partyService.send({ type: 'whiteboard-update', elements, appState })
+    partyService.send({ type: "whiteboard-update", elements, appState });
   }
 
   // Remote edit → apply to canvas
   useEffect(() => {
-    partyService.on('whiteboard-update', ({ elements, appState }) => {
-      api?.updateScene({ elements, appState, commitToHistory: false })
-    })
-  }, [api])
+    partyService.on("whiteboard-update", ({ elements, appState }) => {
+      api?.updateScene({ elements, appState, commitToHistory: false });
+    });
+  }, [api]);
 
   return (
     <Excalidraw
       ref={excalidrawRef}
-      initialData={{ elements: [], appState: { theme: 'light' } }}
+      initialData={{ elements: [], appState: { theme: "light" } }}
       excalidrawAPI={(a) => setApi(a)}
       onChange={onChange}
       isCollaborating={true}
       UIOptions={{
-        canvasActions: { export: false, loadScene: false }
+        canvasActions: { export: false, loadScene: false },
       }}
       theme="light"
     />
-  )
+  );
 }
 ```
 

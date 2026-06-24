@@ -8,6 +8,7 @@ import * as $api_append from "./routes/api/append.ts";
 import * as $api_auth from "./routes/api/auth.ts";
 import * as $api_live_chunk from "./routes/api/live/chunk.ts";
 import * as $api_live_create from "./routes/api/live/create.ts";
+import * as $api_live_voice_token from "./routes/api/live/voice-token.ts";
 import * as $api_markdown from "./routes/api/markdown.ts";
 import * as $api_process from "./routes/api/process.ts";
 import * as $api_share_shareId_ from "./routes/api/share/[shareId].ts";
@@ -40,6 +41,7 @@ import * as $ThemeSwitcher from "./islands/ThemeSwitcher.tsx";
 import * as $TopicVisualizationsCard from "./islands/TopicVisualizationsCard.tsx";
 import * as $UploadIsland from "./islands/UploadIsland.tsx";
 import * as $VisualizationSelector from "./islands/VisualizationSelector.tsx";
+import * as $VoicePanel from "./islands/VoicePanel.tsx";
 import * as $vizRegistry from "./islands/vizRegistry.ts";
 import type { Manifest } from "$fresh/server.ts";
 
@@ -51,6 +53,7 @@ const manifest = {
     "./routes/api/auth.ts": $api_auth,
     "./routes/api/live/chunk.ts": $api_live_chunk,
     "./routes/api/live/create.ts": $api_live_create,
+    "./routes/api/live/voice-token.ts": $api_live_voice_token,
     "./routes/api/markdown.ts": $api_markdown,
     "./routes/api/process.ts": $api_process,
     "./routes/api/share/[shareId].ts": $api_share_shareId_,
@@ -85,6 +88,7 @@ const manifest = {
     "./islands/TopicVisualizationsCard.tsx": $TopicVisualizationsCard,
     "./islands/UploadIsland.tsx": $UploadIsland,
     "./islands/VisualizationSelector.tsx": $VisualizationSelector,
+    "./islands/VoicePanel.tsx": $VoicePanel,
     "./islands/vizRegistry.ts": $vizRegistry,
   },
   baseUrl: import.meta.url,

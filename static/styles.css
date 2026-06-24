@@ -4111,6 +4111,202 @@ a:focus-visible {
 }
 
 /* ===================================================================
+   LIVE LAYOUT — two-pane grid for meeting rooms
+   ================================================================ */
+
+/* Main grid: sidebar (voice) | main (dashboard + transcript).
+   On narrow screens, stacks vertically. */
+.live-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 56px);
+}
+
+@media (max-width: 768px) {
+  .live-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+}
+
+/* Left sidebar — voice panel, whiteboard tools (future). */
+.live-layout-sidebar {
+  border-right: 2px solid var(--color-border);
+  background: var(--surface-cream);
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .live-layout-sidebar {
+    border-right: none;
+    border-bottom: 2px solid var(--color-border);
+    max-height: 300px;
+  }
+}
+
+/* Main content area — transcript + dashboard. */
+.live-layout-main {
+  min-width: 0;
+  overflow-y: auto;
+}
+
+/* ===================================================================
+   VOICE PANEL — WebRTC voice controls for meeting rooms
+   ================================================================ */
+
+/* Root panel. */
+.voice-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Header row: title + connection dot. */
+.voice-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.voice-panel-title {
+  font-size: var(--small-size);
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.voice-connection-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  transition: background 0.3s ease;
+}
+
+/* Scrollable body with peer list. */
+.voice-panel-body {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+}
+
+/* Join button (full-width primary). */
+.voice-join-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Local mute/unmute row. */
+.voice-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Mute/unmute button. */
+.voice-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--border-radius-sm);
+  border: 2px solid var(--color-border);
+  background: var(--surface-cream);
+  color: var(--color-text);
+  font-size: var(--tiny-size);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.voice-btn:hover {
+  background: var(--soft-cream-dark);
+}
+
+/* Muted state — warm-rose tint (not red). */
+.voice-btn.is-muted {
+  border-color: var(--color-accent-warm, #e8839c);
+  color: var(--color-accent-warm, #e8839c);
+}
+
+.voice-btn.is-muted:hover {
+  background: rgba(232, 131, 156, 0.07);
+}
+
+/* Mute/unmute label text. */
+.voice-btn-label {
+  font-size: var(--tiny-size);
+}
+
+/* Local speaking indicator (name + pulsing dot effect done inline). */
+.voice-speaking-indicator {
+  font-size: var(--tiny-size);
+  color: var(--color-text-secondary);
+}
+
+.voice-speaking-indicator.is-speaking {
+  color: var(--color-accent-green, #52a37f);
+  font-weight: 600;
+}
+
+/* Peer entry in the list. */
+.voice-peer {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0;
+  font-size: var(--tiny-size);
+}
+
+/* Peer status dot (green when speaking). */
+.voice-peer-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-border);
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.voice-peer-dot.is-speaking {
+  background: var(--color-accent-green, #52a37f);
+}
+
+/* Peer display name. */
+.voice-peer-name {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+/* Muted mic icon next to a peer. */
+.voice-peer-muted {
+  color: var(--color-text-secondary);
+  font-size: 0.7em;
+  margin-left: auto;
+}
+
+/* Empty state when no peers. */
+.voice-no-peers {
+  font-size: var(--tiny-size);
+  color: var(--color-text-secondary);
+  text-align: center;
+  margin: 0.5rem 0;
+}
+
+/* Leave button at bottom. */
+.voice-leave-btn {
+  margin-top: auto;
+  width: 100%;
+  justify-content: center;
+}
+
+/* ===================================================================
    CHAT SIDEBAR — floating chat panel for live-collab rooms
    ================================================================ */
 
