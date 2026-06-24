@@ -77,7 +77,12 @@ export async function analyzeText(
       signal,
     ),
     existingActionItems.length > 0
-      ? aiService.checkActionItemStatus(text, existingActionItems, onParseError, signal)
+      ? aiService.checkActionItemStatus(
+        text,
+        existingActionItems,
+        onParseError,
+        signal,
+      )
       : Promise.resolve([]),
     summaryPromise,
   ]);

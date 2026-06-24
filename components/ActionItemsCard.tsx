@@ -715,23 +715,10 @@ export default function ActionItemsCard(
                             isDragging ? " is-dragging" : ""
                           }${isSettling ? " is-settling" : ""}`}
                           style={{
-                            padding: "0.7rem 0.85rem",
-                            borderRadius: "var(--border-radius-sm)",
-                            background: "var(--surface-card)",
-                            border: `1px solid ${
-                              isSelected
-                                ? "var(--color-accent)"
-                                : "var(--color-border)"
-                            }`,
-                            boxShadow: "none",
                             // touch-action none on draggable rows lets long-press
                             // grab take over from scrolling without the browser
                             // hijacking the gesture.
                             touchAction: canDrag ? "pan-y" : undefined,
-                            outline: isSelected
-                              ? `2px solid var(--color-accent)`
-                              : "none",
-                            outlineOffset: "2px",
                           }}
                         >
                           <div class="grid grid-cols-[auto_auto_1fr] gap-3 items-start">
@@ -741,19 +728,13 @@ export default function ActionItemsCard(
                                 ? (
                                   <i
                                     class="fa fa-grip-vertical drag-handle"
-                                    style={{
-                                      color: "var(--color-text-secondary)",
-                                      fontSize: "var(--heading-size)",
-                                      cursor: "grab",
-                                      touchAction: "none",
-                                    }}
                                     title="Drag to reorder"
                                     onPointerDown={(e) =>
                                       onHandlePointerDown(e, item.id)}
                                   >
                                   </i>
                                 )
-                                : <div style={{ width: "16px" }}></div>}
+                                : <div class="drag-handle-placeholder"></div>}
                             </div>
 
                             {/* Checkbox */}
@@ -850,12 +831,7 @@ export default function ActionItemsCard(
                                       style={{ minHeight: "60px" }}
                                       autoFocus
                                     />
-                                    <p
-                                      class="text-xs italic"
-                                      style={{
-                                        color: "var(--color-text-secondary)",
-                                      }}
-                                    >
+                                    <p class="text-xs italic action-edit-hint">
                                       Ctrl+Enter to save · Esc to cancel
                                     </p>
                                     <div class="flex gap-2 edit-actions">
@@ -863,16 +839,13 @@ export default function ActionItemsCard(
                                         onClick={saveEdit}
                                         disabled={!editingDescription.value
                                           .trim()}
-                                        class="px-3 py-1 rounded text-xs font-bold text-white disabled:opacity-40"
-                                        style={{
-                                          background: "var(--color-accent)",
-                                        }}
+                                        class="btn btn--accent btn--compact font-bold disabled:opacity-40"
                                       >
                                         Save
                                       </button>
                                       <button
                                         onClick={cancelEdit}
-                                        class="px-3 py-1 rounded text-xs font-bold action-input-border"
+                                        class="btn btn--secondary btn--compact font-bold"
                                       >
                                         Cancel
                                       </button>
@@ -886,10 +859,6 @@ export default function ActionItemsCard(
                                         ? " is-completed"
                                         : ""
                                     }`}
-                                    style={{
-                                      fontSize: "var(--text-size)",
-                                      color: "var(--color-text)",
-                                    }}
                                     onDblClick={() =>
                                       startEditing(
                                         item.id,
@@ -915,12 +884,7 @@ export default function ActionItemsCard(
                                           item.assignee,
                                           item.due_date,
                                         )}
-                                      class="action-item-chip px-3 py-1.5 rounded text-xs"
-                                      style={{
-                                        border:
-                                          "2px dashed var(--color-border)",
-                                        color: "var(--color-text-secondary)",
-                                      }}
+                                      class="action-item-chip action-item-chip--add px-3 py-1.5 rounded text-xs"
                                     >
                                       + add details
                                     </button>
@@ -937,52 +901,26 @@ export default function ActionItemsCard(
                                                 item.id
                                               ? null
                                               : item.id}
-                                        class="action-item-chip action-item-chip-btn flex items-center gap-2 px-3 py-1.5 rounded text-xs transition-colors"
-                                        style={{
-                                          border:
-                                            "2px solid var(--color-border)",
-                                        }}
+                                        class={`action-item-chip action-item-chip--btn flex items-center gap-2 px-3 py-1.5 rounded text-xs transition-colors${
+                                          item.assignee ? " has-value" : ""
+                                        }`}
                                       >
                                         <i class="fa fa-user text-xs"></i>
-                                        <span
-                                          style={{
-                                            color: item.assignee
-                                              ? "var(--color-text)"
-                                              : "var(--color-text-secondary)",
-                                          }}
-                                        >
+                                        <span>
                                           {item.assignee || "None"}
                                         </span>
                                       </button>
                                       {activeAssigneeDropdown.value ===
                                           item.id && (
-                                        <div
-                                          class="absolute z-10 mt-1 rounded shadow-lg"
-                                          style={{
-                                            background: "var(--surface-cream)",
-                                            border:
-                                              "2px solid var(--color-border)",
-                                            minWidth: "170px",
-                                          }}
-                                        >
+                                        <div class="action-dropdown-menu">
                                           {/* Custom name input */}
-                                          <div
-                                            style={{
-                                              padding: "0.375rem 0.5rem",
-                                              borderBottom:
-                                                "1px solid var(--color-border)",
-                                            }}
-                                          >
+                                          <div class="action-dropdown-input-wrapper">
                                             <input
                                               type="text"
                                               aria-label="Assignee name"
                                               defaultValue={item.assignee || ""}
                                               placeholder="Type a name…"
-                                              class="w-full rounded px-2 py-1 text-xs"
-                                              style={{
-                                                border:
-                                                  "2px solid var(--color-border)",
-                                              }}
+                                              class="action-dropdown-input"
                                               onKeyDown={(e) => {
                                                 if (e.key === "Enter") {
                                                   const val =
@@ -1029,11 +967,7 @@ export default function ActionItemsCard(
                                               activeAssigneeDropdown.value =
                                                 null;
                                             }}
-                                            class="w-full text-left px-3 py-2 text-xs action-dropdown-option"
-                                            style={{
-                                              borderBottom:
-                                                "1px solid var(--color-border)",
-                                            }}
+                                            class="action-dropdown-option"
                                           >
                                             None
                                           </button>
@@ -1050,19 +984,11 @@ export default function ActionItemsCard(
                                                   activeAssigneeDropdown.value =
                                                     null;
                                                 }}
-                                                class="w-full text-left px-3 py-2 text-xs action-dropdown-option"
-                                                style={{
-                                                  borderBottom:
-                                                    "1px solid var(--color-border)",
-                                                  background:
-                                                    item.assignee === assignee
-                                                      ? "var(--color-accent)"
-                                                      : "transparent",
-                                                  color:
-                                                    item.assignee === assignee
-                                                      ? "white"
-                                                      : "var(--color-text)",
-                                                }}
+                                                class={`action-dropdown-option${
+                                                  item.assignee === assignee
+                                                    ? " is-active"
+                                                    : ""
+                                                }`}
                                               >
                                                 {assignee}
                                               </button>
@@ -1108,27 +1034,13 @@ export default function ActionItemsCard(
                                             }
                                           }
                                         }}
-                                        class="action-item-chip action-item-chip-btn flex items-center gap-2 px-3 py-1.5 rounded text-xs transition-colors"
-                                        style={{
-                                          border:
-                                            "2px solid var(--color-border)",
-                                        }}
+                                        class={`action-item-chip action-item-chip--btn flex items-center gap-2 px-3 py-1.5 rounded text-xs transition-colors${
+                                          item.due_date ? " has-value" : ""
+                                        }${isOverdue ? " is-overdue" : ""}`}
                                       >
                                         <i class="fa fa-calendar text-xs">
                                         </i>
-                                        <span
-                                          class={isOverdue ? "is-overdue" : ""}
-                                          style={{
-                                            color: isOverdue
-                                              ? "var(--soft-brown)"
-                                              : item.due_date
-                                              ? "var(--color-text)"
-                                              : "var(--color-text-secondary)",
-                                            fontWeight: isOverdue
-                                              ? "700"
-                                              : "400",
-                                          }}
-                                        >
+                                        <span>
                                           {item.due_date
                                             ? formatFriendlyDate(item.due_date)
                                             : "None"}
@@ -1139,10 +1051,7 @@ export default function ActionItemsCard(
                                           hovered/focused (always-on for touch),
                                           so rows aren't crammed with editor UI. */
                                       }
-                                      <div
-                                        class="action-item-date-presets flex gap-1 mt-1 flex-wrap"
-                                        style={{ fontSize: "var(--tiny-size)" }}
-                                      >
+                                      <div class="action-item-date-presets flex gap-1 mt-1 flex-wrap">
                                         <button
                                           onClick={() =>
                                             updateDueDate(
