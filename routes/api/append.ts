@@ -124,9 +124,12 @@ export const handler: Handlers = {
         aiService,
         audioPart,
         conversationId,
-        existingActionItems,
-        existingNodes,
-        existingEdges,
+        {
+          existingActionItems,
+          existingNodes,
+          existingEdges,
+          lightweightIfShort: true,
+        },
       );
 
       // Merge transcripts if we have existing content

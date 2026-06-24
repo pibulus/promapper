@@ -78,7 +78,12 @@ export const handler: Handlers = {
         }
 
         const { part: audioPart } = await uploadAudioFile(audioFile);
-        const result = await processAudio(aiService, audioPart, conversationId);
+        const result = await processAudio(
+          aiService,
+          audioPart,
+          conversationId,
+          {},
+        );
 
         // If this came from a live room, push the result to all collaborators.
         await pushResultToRoom(formData.get("roomId") as string | null, result);

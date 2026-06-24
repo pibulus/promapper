@@ -130,7 +130,7 @@ Deno.test("processText passes speakers to AIService", async () => {
 
 Deno.test("processAudio returns ConversationFlowResult with correct shape", async () => {
   const service = createMockAIService();
-  const result = await processAudio(service, mockAudioPart, "conv-2");
+  const result = await processAudio(service, mockAudioPart, "conv-2", {});
 
   assertEquals(result.conversation.id, "conv-2");
   assertEquals(result.conversation.source, "audio");
@@ -158,7 +158,7 @@ Deno.test("processAudio generates a title from transcription", async () => {
     },
   };
 
-  const result = await processAudio(service, mockAudioPart, "conv-3");
+  const result = await processAudio(service, mockAudioPart, "conv-3", {});
 
   // Title was generated from the transcription text
   assertEquals(capturedTitle, "Speaker1: hello");

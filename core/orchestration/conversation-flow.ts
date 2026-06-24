@@ -6,7 +6,7 @@
  */
 
 import type { AIService, AudioPart } from "../ai/types.ts";
-import { analyzeAudio, analyzeText } from "./parallel-analysis.ts";
+import { analyzeText } from "./parallel-analysis.ts";
 import type {
   ActionItem,
   Conversation,
@@ -51,66 +51,95 @@ async function safeGenerateTitle(
   return snippet ? `${snippet}${source.length > 40 ? "…" : ""}` : "Untitled";
 }
 
+/** Rough char count for ~30s of speech at normal pace. */
+export const SHORT_APPEND_THRESHOLD = 500;
+
+export interface ProcessAudioOptions {
+  existingActionItems?: ActionItem[];
+  existingNodes?: NodeInput[];
+  existingEdges?: EdgeInput[];
+  /** Skip topic extraction + summary when transcript is short. */
+  lightweightIfShort?: boolean;
+}
+
 /**
- * Process new audio input
+ * Process new audio input.
+ *
+ * When `lightweightIfShort` is true and the transcription is under
+ * SHORT_APPEND_THRESHOLD characters, the heavy analyses (topic extraction,
+ * action-item extraction, summary) are skipped — only transcription and
+ * status checks run. Saves ~2x on live-meeting append costs.
  */
 export async function processAudio(
   aiService: AIService,
   audioInput: AudioPart,
   conversationId: string,
-  existingActionItems: ActionItem[] = [],
-  existingNodes: NodeInput[] = [],
-  existingEdges: EdgeInput[] = [],
+  options: ProcessAudioOptions = {},
 ): Promise<ConversationFlowResult> {
-  // Parallel AI analysis
-  const analysis = await analyzeAudio(
-    aiService,
-    audioInput,
-    existingActionItems,
-    existingNodes,
-    existingEdges,
-  );
+  const {
+    existingActionItems = [],
+    existingNodes = [],
+    existingEdges = [],
+    lightweightIfShort = false,
+  } = options;
 
-  // Generate title from transcription. A title failure must not sink the whole
-  // flow when transcript/topics/actions all succeeded — fall back gracefully.
-  const title = await safeGenerateTitle(
-    aiService,
-    analysis.transcription.text,
-  );
+  // 1. Always transcribe
+  const transcription = await aiService.transcribeAudio(audioInput);
+  const transcriptText = transcription.text.trim();
+  const isShort = lightweightIfShort &&
+    transcriptText.length < SHORT_APPEND_THRESHOLD;
 
-  // Build result
-  return {
-    conversation: {
-      id: conversationId,
-      title,
-      source: "audio",
-      transcript: analysis.transcription.text,
-    },
-    transcript: {
-      id: crypto.randomUUID(),
-      conversation_id: conversationId,
-      text: analysis.transcription.text,
-      speakers: analysis.transcription.speakers,
-      source: "audio",
-      created_at: new Date().toISOString(),
-    },
-    nodes: analysis.topics.nodes.map((node) => ({
+  let nodes: Node[] = [];
+  let edges: Edge[] = [];
+  let actionItems: ActionItem[] = [];
+  let statusUpdates: Array<
+    { id: string; status: "completed" | "pending"; reason: string }
+  > = [];
+  let summary = "";
+  let warnings: string[] = [];
+
+  if (isShort) {
+    // Lightweight: skip topic extraction, action extraction, summary.
+    // Only check if existing items were completed/reopened.
+    if (existingActionItems.length > 0) {
+      try {
+        statusUpdates = await aiService.checkActionItemStatus(
+          transcriptText,
+          existingActionItems,
+        );
+      } catch (error) {
+        console.error("Lightweight status check failed:", error);
+      }
+    }
+    summary = "(skipped — short append)";
+  } else {
+    // Full analysis — use analyzeText since we already transcribed
+    const analysis = await analyzeText(
+      aiService,
+      transcriptText,
+      transcription.speakers,
+      existingActionItems,
+      existingNodes,
+      existingEdges,
+    );
+
+    nodes = analysis.topics.nodes.map((node) => ({
       id: node.id,
       conversation_id: conversationId,
       label: node.label,
       emoji: node.emoji,
       color: node.color,
       created_at: new Date().toISOString(),
-    })),
-    edges: analysis.topics.edges.map((edge) => ({
+    }));
+    edges = analysis.topics.edges.map((edge) => ({
       id: crypto.randomUUID(),
       conversation_id: conversationId,
       source_topic_id: edge.source_topic_id,
       target_topic_id: edge.target_topic_id,
       color: edge.color,
       created_at: new Date().toISOString(),
-    })),
-    actionItems: analysis.actionItems.map((item) => ({
+    }));
+    actionItems = analysis.actionItems.map((item) => ({
       id: crypto.randomUUID(),
       conversation_id: conversationId,
       description: item.description,
@@ -119,10 +148,35 @@ export async function processAudio(
       status: "pending" as const,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-    })),
-    summary: analysis.summary,
-    statusUpdates: analysis.statusUpdates,
-    warnings: analysis.warnings,
+    }));
+    statusUpdates = analysis.statusUpdates;
+    summary = analysis.summary;
+    warnings = analysis.warnings;
+  }
+
+  const title = await safeGenerateTitle(aiService, transcriptText);
+
+  return {
+    conversation: {
+      id: conversationId,
+      title,
+      source: "audio",
+      transcript: transcriptText,
+    },
+    transcript: {
+      id: crypto.randomUUID(),
+      conversation_id: conversationId,
+      text: transcriptText,
+      speakers: transcription.speakers,
+      source: "audio",
+      created_at: new Date().toISOString(),
+    },
+    nodes,
+    edges,
+    actionItems,
+    summary,
+    statusUpdates,
+    warnings,
   };
 }
 
