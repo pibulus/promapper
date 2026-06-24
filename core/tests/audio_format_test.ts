@@ -76,7 +76,7 @@ Deno.test("inferOpenRouterAudioFormat prefers mime over extension", () => {
 
 Deno.test("audio size constants are sane", () => {
   assertEquals(MIN_AUDIO_SIZE, 1024);
-  assertEquals(MAX_AUDIO_SIZE, 50 * 1024 * 1024);
+  assertEquals(MAX_AUDIO_SIZE, 25 * 1024 * 1024);
   // A real recording clears MIN; an empty container header does not.
   assertEquals(500 < MIN_AUDIO_SIZE, true);
   assertEquals(50_000 > MIN_AUDIO_SIZE, true);

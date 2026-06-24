@@ -18,8 +18,10 @@ export interface UploadedAudioFile {
  */
 export const MIN_AUDIO_SIZE = 1024;
 
-/** Maximum audio upload accepted, to prevent abuse. */
-export const MAX_AUDIO_SIZE = 50 * 1024 * 1024;
+/** Maximum audio upload accepted, to prevent abuse.
+ *  Kept under 25MB so base64 encoding (~33% overhead) stays within
+ *  Deno Deploy's 128MB free-tier memory budget. */
+export const MAX_AUDIO_SIZE = 25 * 1024 * 1024;
 
 export async function uploadAudioFile(file: File): Promise<UploadedAudioFile> {
   const mimeType = file.type || "audio/webm";

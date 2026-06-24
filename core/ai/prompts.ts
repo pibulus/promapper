@@ -13,7 +13,7 @@ import type { ActionItem, EdgeInput, NodeInput } from "../types/index.ts";
 
 export const TRANSCRIPTION_PROMPT =
   `Transcribe this audio file accurately and completely,
-removing any redundant 'ums,' 'likes, 'uhs', and similar filler words.
+removing redundant filler words such as "um," "like," "uh," "you know," "I mean," and similar hesitation markers.
 Return only the cleaned-up transcription, with no additional text.
 
 I want you to denote all the different speakers.
@@ -204,7 +204,9 @@ Return a JSON object with the following structure:
 
 Return only JSON. Do not include markdown fences, comments, or explanation.
 
-CONVERSATION: ${text}`;
+<transcript>
+${text}
+</transcript>`;
 };
 
 // ===================================================================
@@ -227,8 +229,9 @@ export const buildSummaryPrompt = (
 
   return `Summarize the following conversation text. Focus on the main points and key takeaways. Return the summary in a concise and clear format.
 ${topicHint}
-CONVERSATION TEXT:
-${text}`;
+<transcript>
+${text}
+</transcript>`;
 };
 
 // ===================================================================

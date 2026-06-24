@@ -92,7 +92,7 @@ export const handler: Handlers = {
       if (audioFile.size > MAX_AUDIO_SIZE) {
         return new Response(
           JSON.stringify({
-            error: `File too large. Maximum size is 50MB (received ${
+            error: `File too large. Maximum size is 25MB (received ${
               (audioFile.size / 1024 / 1024).toFixed(1)
             }MB)`,
           }),

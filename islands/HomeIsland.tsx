@@ -174,6 +174,8 @@ export default function HomeIsland() {
     return () => {
       stopLiveSync();
       isViewingShared.value = false;
+      // Tear down recording if component unmounts during a session
+      if (isRecording.value) stopRecording();
     };
   }, [session?.roomId, session?.partyHost]);
 
@@ -221,6 +223,10 @@ export default function HomeIsland() {
       // Set up silence detection via AnalyserNode (time-domain RMS)
       const audioCtx = new AudioContext();
       audioCtxRef.current = audioCtx;
+      // Resume under autoplay policies — AudioContext may start suspended
+      if (audioCtx.state === "suspended") {
+        await audioCtx.resume();
+      }
       const source = audioCtx.createMediaStreamSource(stream);
       const analyser = audioCtx.createAnalyser();
       analyser.fftSize = 256;
@@ -240,6 +246,12 @@ export default function HomeIsland() {
 
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      recorder.onerror = () => {
+        console.error("MediaRecorder error — stopping recording");
+        showToast("Recording failed. Please try again.", "error");
+        stopRecording();
       };
 
       recorder.start(500); // collect every 500ms for finer silence gaps

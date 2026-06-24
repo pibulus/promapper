@@ -89,6 +89,33 @@ export async function processAudio(
   const isShort = lightweightIfShort &&
     transcriptText.length < SHORT_APPEND_THRESHOLD;
 
+  // If transcription came back empty (silence, model error, etc.), bail
+  // early instead of wasting API calls on topics/summary for empty input.
+  if (!transcriptText) {
+    return {
+      conversation: {
+        id: conversationId,
+        title: "Untitled",
+        source: "audio",
+        transcript: "",
+      },
+      transcript: {
+        id: crypto.randomUUID(),
+        conversation_id: conversationId,
+        text: "",
+        speakers: transcription.speakers,
+        source: "audio",
+        created_at: new Date().toISOString(),
+      },
+      nodes: [],
+      edges: [],
+      actionItems: [],
+      statusUpdates: [],
+      warnings: ["No speech detected in this recording."],
+      summary: "(no speech detected)",
+    };
+  }
+
   let nodes: Node[] = [];
   let edges: Edge[] = [];
   let actionItems: ActionItem[] = [];

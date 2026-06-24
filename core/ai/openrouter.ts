@@ -64,7 +64,10 @@ function isOpenRouterAudioPart(
   );
 }
 
-function inferAudioFormat(mimeType: string): OpenRouterAudioFormat {
+function inferAudioFormat(
+  mimeType: string,
+  fileName = "",
+): OpenRouterAudioFormat {
   const normalized = mimeType.toLowerCase().split(";")[0].trim();
   const byMime: Record<string, OpenRouterAudioFormat> = {
     "audio/wav": "wav",
@@ -82,7 +85,20 @@ function inferAudioFormat(mimeType: string): OpenRouterAudioFormat {
     "audio/x-m4a": "m4a",
     "audio/webm": "webm",
   };
-  return byMime[normalized] ?? "webm";
+  if (byMime[normalized]) return byMime[normalized];
+
+  const extension = fileName.toLowerCase().split(".").pop();
+  const byExt: Record<string, OpenRouterAudioFormat> = {
+    wav: "wav",
+    mp3: "mp3",
+    aiff: "aiff",
+    aac: "aac",
+    ogg: "ogg",
+    flac: "flac",
+    m4a: "m4a",
+    webm: "webm",
+  };
+  return (extension && byExt[extension]) ? byExt[extension] : "webm";
 }
 
 async function toOpenRouterAudioPart(
@@ -92,11 +108,13 @@ async function toOpenRouterAudioPart(
     return input;
   }
 
-  const mimeType = (input as Blob).type || "audio/webm";
+  const blob = input as Blob;
+  const mimeType = blob.type || "audio/webm";
+  const fileName = "name" in blob ? (blob as { name?: string }).name ?? "" : "";
   return {
     inputAudio: {
-      data: encodeBase64(new Uint8Array(await (input as Blob).arrayBuffer())),
-      format: inferAudioFormat(mimeType),
+      data: encodeBase64(new Uint8Array(await blob.arrayBuffer())),
+      format: inferAudioFormat(mimeType, fileName),
       mimeType,
     },
   };

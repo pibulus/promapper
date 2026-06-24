@@ -7,7 +7,12 @@
 import { Handlers } from "$fresh/server.ts";
 import { guardRequest } from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
-import { MIN_AUDIO_SIZE, uploadAudioFile } from "@services/audio.ts";
+import { uploadAudioFile } from "@services/audio.ts";
+
+/** Live chunks can be very small (e.g., a 500ms near-silent interval
+ *  compressed by Opus to <200 bytes). Raise the floor only for clearly
+ *  empty/invalid blobs (<64 bytes = no audio data at all). */
+const LIVE_CHUNK_MIN_SIZE = 64;
 
 export const handler: Handlers = {
   async POST(req) {
@@ -18,7 +23,7 @@ export const handler: Handlers = {
       const formData = await req.formData();
       const audioFile = formData.get("audio") as File | null;
 
-      if (!audioFile || audioFile.size < MIN_AUDIO_SIZE) {
+      if (!audioFile || audioFile.size < LIVE_CHUNK_MIN_SIZE) {
         return new Response(
           JSON.stringify({ error: "No audio data in chunk" }),
           { status: 400, headers: { "Content-Type": "application/json" } },
