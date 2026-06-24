@@ -10,7 +10,8 @@ export async function ensureApiSession(): Promise<void> {
 
   inFlightSession = (async () => {
     const status = await fetch("/api/auth", { method: "GET" });
-    if (status.ok) {
+    // 204 = valid session, 501 = auth disabled (local dev) — both mean proceed.
+    if (status.ok || status.status === 501) {
       return;
     }
 

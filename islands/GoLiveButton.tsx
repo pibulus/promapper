@@ -1,12 +1,14 @@
 /**
  * Start Meeting Button
  *
- * Creates a live meeting room from the current conversation and navigates to it.
- * Host can record live audio — transcription + analysis push to all viewers.
+ * Activates live mode on the current dashboard — creates a PartyKit room,
+ * connects the live sync, and enables recording, voice, whiteboard, and
+ * chat without leaving the page. The dashboard IS the meeting room.
  */
 
 import { useSignal } from "@preact/signals";
 import { conversationData } from "@signals/conversationStore.ts";
+import { startLiveMode } from "@signals/liveSessionStore.ts";
 import { ensureApiSession } from "@utils/apiAuth.ts";
 import { showToast } from "@utils/toast.ts";
 
@@ -32,8 +34,11 @@ export default function GoLiveButton() {
         showToast(msg, "error");
         return;
       }
-      const { roomId } = await res.json();
-      globalThis.location.href = `/live/${roomId}`;
+      const { roomId, host } = await res.json();
+      startLiveMode(roomId, host);
+      // Update URL without navigation so the room is shareable.
+      globalThis.history.pushState({}, "", `/live/${roomId}`);
+      showToast("Meeting room started", "info");
     } catch (_e) {
       showToast("Couldn't start a meeting room.", "error");
     } finally {

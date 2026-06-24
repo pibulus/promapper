@@ -6,11 +6,14 @@
 
 import { conversationData } from "@signals/conversationStore.ts";
 import { renameSpeaker, setActionItems } from "@signals/actionItemsStore.ts";
+import { liveSession } from "@signals/liveSessionStore.ts";
+import { sendWhiteboardUpdate } from "@signals/partyService.ts";
 import TranscriptCard from "../components/TranscriptCard.tsx";
 import SummaryCard from "../components/SummaryCard.tsx";
 import ActionItemsCard from "../components/ActionItemsCard.tsx";
 import ActionItemsBack from "../components/ActionItemsBack.tsx";
 import TopicVisualizationsCard from "./TopicVisualizationsCard.tsx";
+import SharedWhiteboard from "./SharedWhiteboard.tsx";
 import FlipCard from "./FlipCard.tsx";
 import ReaderModal from "./ReaderModal.tsx";
 
@@ -84,6 +87,27 @@ export default function DashboardIsland() {
 
         {/* Card 4: Topic Visualizations - FULL WIDTH (spans all columns) */}
         <TopicVisualizationsCard />
+
+        {/* Card 5: Whiteboard — only in live meetings, full width */}
+        {liveSession.value && (
+          <div style={{ gridColumn: "1 / -1" }}>
+            <div class="whiteboard-toolbar">
+              <span
+                style={{
+                  fontSize: "var(--tiny-size)",
+                  fontWeight: 700,
+                  color: "var(--color-text)",
+                }}
+              >
+                Whiteboard
+              </span>
+            </div>
+            <SharedWhiteboard
+              roomId={liveSession.value.roomId}
+              onSceneChange={(scene) => sendWhiteboardUpdate(scene)}
+            />
+          </div>
+        )}
       </div>
 
       {

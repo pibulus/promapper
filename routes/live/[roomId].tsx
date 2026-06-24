@@ -1,14 +1,15 @@
 /**
  * Live Collaboration Route
  *
- * Real-time shared view of a conversation. Anyone with the room link can view
- * and edit; updates sync to everyone via PartyKit. The room id is the secret
- * (no passwords); rooms expire 24h after last activity.
+ * Anyone with the room link joins the live session. The page renders the
+ * standard HomeIsland, and a small bootstrap script sets the liveSession
+ * signal so live features (PartyKit sync, voice drawer, recording, chat)
+ * activate automatically on the current dashboard.
  */
 
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { Head } from "$fresh/runtime.ts";
-import LiveCollabIsland from "../../islands/LiveCollabIsland.tsx";
+import HomeIsland from "../../islands/HomeIsland.tsx";
 
 interface LiveData {
   roomId: string;
@@ -17,7 +18,6 @@ interface LiveData {
 
 export const handler: Handlers<LiveData> = {
   GET(_req, ctx) {
-    // The browser connects directly to PartyKit, so it needs the public host.
     const partyHost = (Deno.env.get("PUBLIC_PARTYKIT_HOST") ??
       Deno.env.get("PARTYKIT_HOST") ?? "").trim();
     return ctx.render({ roomId: ctx.params.roomId, partyHost });
@@ -34,11 +34,15 @@ export default function LiveRoom({ data }: PageProps<LiveData>) {
           content="A live ProMapper collaboration room"
         />
         <meta name="robots" content="noindex" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__LIVE_ROOM__ = ${
+              JSON.stringify({ roomId: data.roomId, partyHost: data.partyHost })
+            };`,
+          }}
+        />
       </Head>
-
-      <div class="mapper-scene min-h-screen">
-        <LiveCollabIsland roomId={data.roomId} partyHost={data.partyHost} />
-      </div>
+      <HomeIsland />
     </>
   );
 }

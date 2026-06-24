@@ -5,8 +5,9 @@
  * Shows only dashboard when data exists
  */
 
+import { IS_BROWSER } from "$fresh/runtime.ts";
 import { signal } from "@preact/signals";
-import { useEffect } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 import {
   canUndo,
   conversationData,
@@ -17,6 +18,20 @@ import {
   loadConversation,
 } from "../core/storage/localStorage.ts";
 import { showToast } from "@utils/toast.ts";
+import {
+  liveSession,
+  startLiveMode,
+  stopLiveMode,
+} from "@signals/liveSessionStore.ts";
+import {
+  connectedRoomId,
+  partyConnected,
+} from "@signals/partyConnectionStore.ts";
+import { getLocalIdentity, remoteUsers } from "@signals/presenceStore.ts";
+import { startLiveSync, stopLiveSync } from "@signals/liveSync.ts";
+import { isViewingShared } from "@signals/conversationStore.ts";
+import { ensureApiSession } from "@utils/apiAuth.ts";
+import { soundBloom, soundChime, soundPortal } from "@utils/sound.ts";
 import UploadIsland from "./UploadIsland.tsx";
 import DashboardIsland from "./DashboardIsland.tsx";
 import MobileHistoryMenu from "./MobileHistoryMenu.tsx";
@@ -28,11 +43,29 @@ import ThemeSwitcher from "./ThemeSwitcher.tsx";
 import SoundToggle from "./SoundToggle.tsx";
 import ShortcutsModal from "../components/ShortcutsModal.tsx";
 import AuthModalIsland from "./AuthModalIsland.tsx";
+import VoicePanel from "./VoicePanel.tsx";
 
 const drawerOpen = signal(false);
+const voiceDrawerOpen = signal(false);
 const shortcutsOpen = signal(false);
 
+const CHUNK_INTERVAL_MS = 15_000;
+
 export default function HomeIsland() {
+  // Auto-start live mode if arriving via /live/:roomId link
+  useEffect(() => {
+    if (!IS_BROWSER) return;
+    const preset = (globalThis as unknown as {
+      __LIVE_ROOM__?: { roomId: string; partyHost: string };
+    })
+      .__LIVE_ROOM__;
+    if (preset?.roomId && preset?.partyHost && !liveSession.value) {
+      startLiveMode(preset.roomId, preset.partyHost);
+      // Load the shared conversation from the PartyKit room
+      conversationData.value = null; // will be set by live sync onInit
+    }
+  }, []);
+
   // Restore last conversation on mount
   useEffect(() => {
     // Auto-restore last active conversation from localStorage
@@ -86,6 +119,172 @@ export default function HomeIsland() {
     return () => globalThis.removeEventListener("keydown", onKeydown);
   }, []);
 
+  // ═══════════════════════════════════════════════════════════════
+  // LIVE MODE — activates on the current dashboard
+  // ═══════════════════════════════════════════════════════════════
+
+  const session = liveSession.value;
+  const connected = session
+    ? (partyConnected.value && connectedRoomId.value === session.roomId)
+    : false;
+  const users = remoteUsers.value;
+  const seenIds = useRef<Set<string> | null>(null);
+
+  // Live recording state
+  const isRecording = signal(false);
+  const recordingTime = signal(0);
+  const isProcessing = signal(false);
+  const liveTranscript = signal<string[]>([]);
+
+  // MediaRecorder refs
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<number | null>(null);
+  const chunkTimerRef = useRef<number | null>(null);
+
+  // Start/stop PartyKit live sync when liveSession changes
+  useEffect(() => {
+    if (!session) {
+      stopLiveSync();
+      isViewingShared.value = false;
+      return;
+    }
+    isViewingShared.value = true;
+    startLiveSync({
+      host: session.partyHost,
+      roomId: session.roomId,
+      avatar: getLocalIdentity(),
+    });
+    soundPortal();
+    return () => {
+      stopLiveSync();
+      isViewingShared.value = false;
+    };
+  }, [session?.roomId, session?.partyHost]);
+
+  // Join/leave toasts
+  useEffect(() => {
+    if (!session) return;
+    const current = new Set(users.map((u) => u.id));
+    if (seenIds.current === null) {
+      seenIds.current = current;
+      return;
+    }
+    for (const u of users) {
+      if (!seenIds.current.has(u.id)) {
+        showToast(`${u.alias || u.avatar} joined`, "info");
+        soundChime();
+      }
+    }
+    for (const id of seenIds.current) {
+      if (!current.has(id)) showToast("Someone left", "info");
+    }
+    seenIds.current = current;
+  }, [users]);
+
+  // Recording helpers
+  function formatTime(seconds: number): string {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  }
+
+  async function startRecording() {
+    try {
+      await ensureApiSession();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { sampleRate: 16000, channelCount: 1 },
+      });
+      streamRef.current = stream;
+
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : "audio/mp4";
+
+      const recorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = recorder;
+      chunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      recorder.start(1000);
+      isRecording.value = true;
+      recordingTime.value = 0;
+
+      timerRef.current = setInterval(
+        () => recordingTime.value++,
+        1000,
+      ) as unknown as number;
+      chunkTimerRef.current = setInterval(
+        sendChunk,
+        CHUNK_INTERVAL_MS,
+      ) as unknown as number;
+
+      showToast("Recording — live transcript starting…", "info");
+    } catch (err) {
+      console.error("Failed to start recording:", err);
+      showToast("Couldn't access microphone. Check permissions.", "error");
+    }
+  }
+
+  async function sendChunk() {
+    const chunks = chunksRef.current.splice(0);
+    if (chunks.length === 0) return;
+    isProcessing.value = true;
+    try {
+      const blob = new Blob(chunks, {
+        type: mediaRecorderRef.current?.mimeType || "audio/webm",
+      });
+      const form = new FormData();
+      form.append("audio", blob, "chunk.webm");
+      const res = await fetch("/api/live/chunk", {
+        method: "POST",
+        body: form,
+      });
+      if (res.ok) {
+        const { text } = await res.json();
+        liveTranscript.value = [...liveTranscript.value, text].slice(-20);
+      }
+    } catch (err) {
+      console.error("Chunk send failed:", err);
+    } finally {
+      isProcessing.value = false;
+    }
+  }
+
+  async function stopRecording() {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (chunkTimerRef.current) {
+      clearInterval(chunkTimerRef.current);
+      chunkTimerRef.current = null;
+    }
+
+    if (
+      mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive"
+    ) {
+      await new Promise<void>((resolve) => {
+        mediaRecorderRef.current!.onstop = () => resolve();
+        mediaRecorderRef.current!.stop();
+      });
+    }
+    await sendChunk();
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    mediaRecorderRef.current = null;
+    isRecording.value = false;
+    recordingTime.value = 0;
+    if (liveTranscript.value.length > 0) soundBloom();
+  }
+
   const transcript = conversationData.value?.transcript?.text || "";
 
   const heroLines = ["See what you're", "really saying"];
@@ -131,6 +330,7 @@ export default function HomeIsland() {
                     onClick={(e) => {
                       e.preventDefault();
                       conversationData.value = null;
+                      stopLiveMode();
                       window.history.pushState({}, "", "/");
                     }}
                   >
@@ -162,6 +362,87 @@ export default function HomeIsland() {
                   <GoLiveButton />
                   <ShareButton />
                   <SoundToggle />
+
+                  {/* Live session controls — shown when a meeting is active */}
+                  {session && (
+                    <>
+                      {connected
+                        ? (
+                          <span
+                            class="inline-flex items-center gap-1.5 shrink-0"
+                            style={{
+                              fontSize: "var(--tiny-size)",
+                              color: "var(--color-accent-green, #52A37F)",
+                            }}
+                          >
+                            <span
+                              aria-hidden="true"
+                              style={{
+                                width: "7px",
+                                height: "7px",
+                                borderRadius: "50%",
+                                background:
+                                  "var(--color-accent-green, #52A37F)",
+                                display: "inline-block",
+                              }}
+                            />
+                            Live · {users.length} here
+                          </span>
+                        )
+                        : (
+                          <span
+                            style={{
+                              fontSize: "var(--tiny-size)",
+                              color: "var(--color-text-secondary)",
+                            }}
+                          >
+                            Connecting…
+                          </span>
+                        )}
+
+                      {/* Recording */}
+                      <button
+                        onClick={isRecording.value
+                          ? stopRecording
+                          : startRecording}
+                        disabled={isProcessing.value && isRecording.value}
+                        class={`header-icon-btn${
+                          isRecording.value ? " is-recording" : ""
+                        }`}
+                        aria-label={isRecording.value
+                          ? "Stop recording"
+                          : "Record meeting"}
+                      >
+                        <i
+                          class={`fa ${
+                            isRecording.value ? "fa-stop" : "fa-microphone"
+                          }`}
+                          aria-hidden="true"
+                        />
+                        {isRecording.value && (
+                          <span
+                            style={{
+                              fontSize: "var(--tiny-size)",
+                              fontFamily: "var(--font-mono)",
+                            }}
+                          >
+                            {formatTime(recordingTime.value)}
+                          </span>
+                        )}
+                      </button>
+
+                      {/* Voice drawer toggle */}
+                      <button
+                        onClick={() =>
+                          voiceDrawerOpen.value = !voiceDrawerOpen.value}
+                        class="header-icon-btn"
+                        data-tip="Voice"
+                        aria-label="Toggle voice panel"
+                      >
+                        <i class="fa fa-headphones" aria-hidden="true" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </>
             )
@@ -187,6 +468,59 @@ export default function HomeIsland() {
           transcript={transcript}
           conversationId={conversationData.value.conversation.id}
         />
+      )}
+
+      {/* Voice Drawer — slide-out when live session is active */}
+      {session && (
+        <div
+          class={`voice-drawer${voiceDrawerOpen.value ? " is-open" : ""}`}
+          aria-hidden={!voiceDrawerOpen.value}
+        >
+          <VoicePanel
+            roomId={session.roomId}
+            displayName={getLocalIdentity()}
+          />
+        </div>
+      )}
+
+      {/* Live transcript stream — appears during recording */}
+      {session && liveTranscript.value.length > 0 && (
+        <div
+          style={{
+            padding: "0.75rem var(--card-padding)",
+            borderBottom: "2px solid var(--color-border)",
+            background: "var(--surface-cream-dark)",
+            maxHeight: "200px",
+            overflowY: "auto",
+          }}
+        >
+          <p
+            style={{
+              fontSize: "var(--tiny-size)",
+              fontWeight: 700,
+              color: "var(--color-accent)",
+              marginBottom: "0.5rem",
+            }}
+          >
+            ● Live transcript
+          </p>
+          {liveTranscript.value.map((chunk, i) => (
+            <p
+              key={i}
+              style={{
+                fontSize: "var(--small-size)",
+                color: "var(--color-text)",
+                marginBottom: "0.5rem",
+                lineHeight: 1.5,
+                padding: "0.25rem 0.5rem",
+                borderLeft: "3px solid var(--color-accent)",
+                opacity: i < liveTranscript.value.length - 1 ? 0.6 : 1,
+              }}
+            >
+              {chunk}
+            </p>
+          ))}
+        </div>
       )}
 
       {/* Main Layout - No sidebar, centered content */}

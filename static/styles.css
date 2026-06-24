@@ -4452,3 +4452,28 @@ a:focus-visible {
   border-radius: var(--border-radius-sm);
   font-weight: 700;
 }
+
+/* ===================================================================
+   VOICE DRAWER — slide-out voice panel (like MarkdownMakerDrawer)
+   ================================================================ */
+
+.voice-drawer {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  top: 0;
+  z-index: var(--z-drawer, 40);
+  width: 280px;
+  max-width: 85vw;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-cream);
+  border-left: 2px solid var(--color-border);
+  box-shadow: var(--shadow-xl);
+  transform: translateX(100%);
+  transition: transform 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.voice-drawer.is-open {
+  transform: translateX(0);
+}
