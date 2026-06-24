@@ -43,6 +43,9 @@ export async function pushSnapshotToRoom(
   const url = `${base}/parties/conversation/${encodeURIComponent(roomId)}`;
   const token = Deno.env.get("PARTYKIT_UPDATE_TOKEN")?.trim();
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5_000);
+
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -51,14 +54,21 @@ export async function pushSnapshotToRoom(
         ...(token ? { "x-partykit-token": token } : {}),
       },
       body: JSON.stringify(snapshot),
+      signal: controller.signal,
     });
     if (!res.ok) {
       console.error(`[party] push failed (${res.status}) for room ${roomId}`);
     }
     return res.ok;
   } catch (error) {
-    console.error("[party] push error:", error);
+    if (error instanceof DOMException && error.name === "AbortError") {
+      console.warn(`[party] push timed out for room ${roomId}`);
+    } else {
+      console.error("[party] push error:", error);
+    }
     return false;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

@@ -217,7 +217,7 @@ export function createOpenRouterService(
           model: modelHint ?? options.model,
           messages,
           stream: false,
-          temperature: 0.4,
+          temperature: 0.1, // low temp for consistent structured extraction
           max_tokens: 8192,
         }),
       });

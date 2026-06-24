@@ -13,7 +13,10 @@ export function extractSpeakers(text: string): string[] {
   const speakerSet = new Set<string>();
   const lines = text.split("\n");
   lines.forEach((line) => {
-    const match = line.match(/^([\w\s]+):/);
+    // Match speaker names with non-Latin scripts, parenthetical annotations,
+    // spaces, hyphens, and apostrophes. Captures names like:
+    // "José:", "Speaker 1 (Product Lead):", "Søren:", "김민수:"
+    const match = line.match(/^([\p{L}\p{N}\s\-'()]+):/u);
     if (match) {
       speakerSet.add(match[1].trim());
     }
@@ -262,7 +265,13 @@ function fallbackEmoji(label: string): string {
 
 function normalizeEmoji(value: unknown, label: string): string {
   const emoji = normalizeString(value);
-  if (emoji) return Array.from(emoji)[0] || fallbackEmoji(label);
+  if (emoji) {
+    // Keep the full grapheme, not just the first codepoint.
+    // Compound emoji (e.g. 👨‍💻, 🇺🇸) span multiple codepoints.
+    const first = [...new Intl.Segmenter("en", { granularity: "grapheme" })
+      .segment(emoji)];
+    return first ? first[0].segment : fallbackEmoji(label);
+  }
   return fallbackEmoji(label);
 }
 

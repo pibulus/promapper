@@ -142,7 +142,9 @@ export default function HomeIsland() {
   const isRecording = signal(false);
   const recordingTime = signal(0);
   const isProcessing = signal(false);
-  const liveTranscript = signal<string[]>([]);
+  const liveTranscript = signal<
+    Array<{ id: number; text: string; speakers?: string[] }>
+  >([]);
 
   // MediaRecorder refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -229,8 +231,7 @@ export default function HomeIsland() {
       }
       const source = audioCtx.createMediaStreamSource(stream);
       const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 256;
-      analyser.smoothingTimeConstant = 0.3;
+      analyser.fftSize = 1024; // 64ms window at 16kHz — stable RMS vs jittery 16ms
       source.connect(analyser);
       analyserRef.current = analyser;
 
@@ -319,8 +320,11 @@ export default function HomeIsland() {
         body: form,
       });
       if (res.ok) {
-        const { text } = await res.json();
-        liveTranscript.value = [...liveTranscript.value, text].slice(-20);
+        const { text, speakers } = await res.json();
+        liveTranscript.value = [
+          ...liveTranscript.value,
+          { id: Date.now(), text, speakers },
+        ].slice(-20);
       }
     } catch (err) {
       console.error("Chunk send failed:", err);
@@ -594,7 +598,7 @@ export default function HomeIsland() {
           </p>
           {liveTranscript.value.map((chunk, i) => (
             <p
-              key={i}
+              key={chunk.id}
               style={{
                 fontSize: "var(--small-size)",
                 color: "var(--color-text)",
@@ -605,7 +609,7 @@ export default function HomeIsland() {
                 opacity: i < liveTranscript.value.length - 1 ? 0.6 : 1,
               }}
             >
-              {chunk}
+              {chunk.text}
             </p>
           ))}
         </div>

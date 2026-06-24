@@ -138,7 +138,7 @@ export async function processAudio(
         console.error("Lightweight status check failed:", error);
       }
     }
-    summary = "(skipped — short append)";
+    summary = ""; // short append — summary not updated this round
   } else {
     // Full analysis — use analyzeText since we already transcribed
     const analysis = await analyzeText(
