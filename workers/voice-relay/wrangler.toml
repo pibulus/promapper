@@ -9,21 +9,9 @@ workers_dev = true
 binding = "KV"
 id = "14d267fe7b5649c2a84d45ccc7a7f45d"
 
-# ── RealtimeKit binding (uncomment + fill ID after creating app) ──
-# 1. dash.cloudflare.com → Workers & Pages → KV → Create namespace
-#    Name it "PROMAPPER_VOICE_KV", copy the ID into the `id` field above.
-#
-# 2. dash.cloudflare.com → RealtimeKit → Create application
-#    Copy the App ID, uncomment below, paste it in `id`.
-#
-# 3. Set the shared secret as a Worker secret:
-#    npx wrangler secret put VOICE_SHARED_SECRET
-#
-# 4. Deploy: npx wrangler deploy
-#
-# 5. In ProMapper .env, set:
-#    VOICE_RELAY_URL=https://promapper-voice-relay.YOUR-SUBDOMAIN.workers.dev
-#
-# [[rtc]]
-# binding = "REALTIME_KIT"
-# id = "your-realtimekit-app-id-here"
+# ═══ RealtimeKit ═══
+# Add via Cloudflare Dashboard (wrangler 3.x doesn't support it in toml):
+# Workers & Pages → promapper-voice-relay → Settings → Bindings → Add binding
+#   Type: RealtimeKit
+#   Name: REALTIME_KIT
+#   App ID: 39216095-9302-4104-b8bd-be2ecceb1287
