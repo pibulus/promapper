@@ -54,7 +54,10 @@ const demoLoading = signal(false);
 
 const SILENCE_FLUSH_MS = 2_000;
 const MAX_CHUNK_MS = 30_000;
-const SPEAKING_THRESHOLD = 15; // 0-255 AnalyserNode level
+/** RMS amplitude threshold — values below this are treated as silence.
+ *  Typical speech lands between 0.02–0.20 at comfortable mic distance.
+ *  0.008 is generous to catch quiet/soft speakers. */
+const SPEAKING_THRESHOLD = 0.008;
 
 export default function HomeIsland() {
   // Auto-start live mode if arriving via /live/:roomId link
@@ -205,17 +208,23 @@ export default function HomeIsland() {
     try {
       await ensureApiSession();
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { sampleRate: 16000, channelCount: 1 },
+        audio: {
+          sampleRate: 16000,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
       });
       streamRef.current = stream;
 
-      // Set up silence detection via AnalyserNode
+      // Set up silence detection via AnalyserNode (time-domain RMS)
       const audioCtx = new AudioContext();
       audioCtxRef.current = audioCtx;
       const source = audioCtx.createMediaStreamSource(stream);
       const analyser = audioCtx.createAnalyser();
       analyser.fftSize = 256;
-      analyser.smoothingTimeConstant = 0.4;
+      analyser.smoothingTimeConstant = 0.3;
       source.connect(analyser);
       analyserRef.current = analyser;
 
@@ -227,7 +236,7 @@ export default function HomeIsland() {
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
       chunkStartRef.current = Date.now();
-      lastSpeechRef.current = 0;
+      lastSpeechRef.current = Date.now(); // start in "just heard speech" state
 
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunksRef.current.push(e.data);
@@ -242,34 +251,39 @@ export default function HomeIsland() {
         1000,
       ) as unknown as number;
 
-      // Poll audio levels — send accumulated chunk when silence is long enough
+      // Poll audio levels using time-domain RMS — detects speech energy
+      // more reliably than frequency-bin averages, especially for low voices.
       silenceMonitorRef.current = setInterval(() => {
         if (!analyserRef.current) return;
-        const data = new Uint8Array(analyserRef.current.frequencyBinCount);
-        analyserRef.current.getByteFrequencyData(data);
-        const level = data.reduce((a, b) => a + b, 0) / data.length;
+        const bufferLength = analyserRef.current.fftSize;
+        const data = new Uint8Array(bufferLength);
+        analyserRef.current.getByteTimeDomainData(data);
+
+        // Compute RMS amplitude (0–1 scale, centred on 128 = zero-crossing)
+        let sumSquares = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          const normalized = (data[i] - 128) / 128;
+          sumSquares += normalized * normalized;
+        }
+        const rms = Math.sqrt(sumSquares / bufferLength);
+
         const now = Date.now();
         const chunkAge = now - chunkStartRef.current;
 
-        if (level > SPEAKING_THRESHOLD) {
+        if (rms > SPEAKING_THRESHOLD) {
           lastSpeechRef.current = now;
         }
 
         const silenceDuration = now - lastSpeechRef.current;
 
-        // Flush chunk when:
-        // - silence > 2s AND we have audio accumulated, OR
-        // - chunk has been accumulating > 30s (prevents huge chunks)
         if (
-          chunksRef.current.length > 0 && (
-            (silenceDuration > SILENCE_FLUSH_MS) ||
-            (chunkAge > MAX_CHUNK_MS)
-          )
+          chunksRef.current.length > 0 &&
+          (silenceDuration > SILENCE_FLUSH_MS || chunkAge > MAX_CHUNK_MS)
         ) {
           sendChunk();
           chunkStartRef.current = now;
         }
-      }, 250) as unknown as number;
+      }, 200) as unknown as number;
 
       showToast("Recording — live transcript starting…", "info");
     } catch (err) {
