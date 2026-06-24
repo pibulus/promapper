@@ -132,15 +132,48 @@ export default class ConversationRoom implements Party.Server {
         return;
       }
       case LIVE_MESSAGE_TYPES.WHITEBOARD_UPDATE: {
-        // Shared whiteboard scene change — relay to all peers.
         const scene = this.field(normalized.data, "scene");
         if (typeof scene !== "string" || scene.length > 500_000) return;
         await this.saveMetadata(touchRoomMetadata(state.metadata ?? {}));
-        this.relay(
-          LIVE_MESSAGE_TYPES.WHITEBOARD_UPDATE,
-          { scene },
+        this.relay(LIVE_MESSAGE_TYPES.WHITEBOARD_UPDATE, { scene }, sender);
+        return;
+      }
+      case LIVE_MESSAGE_TYPES.TRANSCRIPT_CHUNK: {
+        // Live transcript segment from the recording host — relay to all.
+        const text = this.field(normalized.data, "text");
+        const speakers = this.field(normalized.data, "speakers");
+        const chunkId = this.field(normalized.data, "chunkId");
+        if (typeof text !== "string" || text.length > 8000) return;
+        this.relay(LIVE_MESSAGE_TYPES.TRANSCRIPT_CHUNK, {
+          text,
+          speakers: Array.isArray(speakers) ? speakers : [],
+          chunkId: typeof chunkId === "string" ? chunkId : String(Date.now()),
+          at: Date.now(),
           sender,
-        );
+        }, sender);
+        return;
+      }
+      case LIVE_MESSAGE_TYPES.SDP_OFFER:
+      case LIVE_MESSAGE_TYPES.SDP_ANSWER:
+      case LIVE_MESSAGE_TYPES.ICE_CANDIDATE: {
+        // WebRTC signaling — relay between peers for P2P voice.
+        const payload = this.field(normalized.data, "payload");
+        const targetId = this.field(normalized.data, "targetId");
+        if (typeof payload !== "string") return;
+        // Relay to all except sender (or to specific target if set)
+        const message = JSON.stringify({
+          type: normalized.type,
+          data: { payload, targetId: String(targetId || ""), fromId: sender.id },
+          sender: this.getPresenceUser(sender),
+        });
+        if (targetId && typeof targetId === "string") {
+          // Direct message to specific peer
+          for (const conn of this.room.getConnections()) {
+            if (conn.id === targetId) conn.send(message);
+          }
+        } else {
+          this.room.broadcast(message, [sender.id]);
+        }
         return;
       }
     }

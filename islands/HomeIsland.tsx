@@ -29,6 +29,7 @@ import {
 } from "@signals/partyConnectionStore.ts";
 import { getLocalIdentity, remoteUsers } from "@signals/presenceStore.ts";
 import { startLiveSync, stopLiveSync } from "@signals/liveSync.ts";
+import { sendTranscriptChunk } from "@signals/partyService.ts";
 import { isViewingShared } from "@signals/conversationStore.ts";
 import { ensureApiSession } from "@utils/apiAuth.ts";
 import { soundBloom, soundChime, soundPortal } from "@utils/sound.ts";
@@ -220,6 +221,17 @@ export default function HomeIsland() {
       host: session.partyHost,
       roomId: session.roomId,
       avatar: getLocalIdentity(),
+    }, {
+      onTranscriptChunk: (chunk) => {
+        liveTranscript.value = [
+          ...liveTranscript.value,
+          {
+            id: Number(chunk.chunkId) || Date.now(),
+            text: chunk.text,
+            speakers: chunk.speakers,
+          },
+        ].slice(-20);
+      },
     });
     soundPortal();
     return () => {
@@ -370,10 +382,12 @@ export default function HomeIsland() {
       });
       if (res.ok) {
         const { text, speakers } = await res.json();
-        liveTranscript.value = [
-          ...liveTranscript.value,
-          { id: Date.now(), text, speakers },
-        ].slice(-20);
+        const chunk = { id: Date.now(), text, speakers: speakers as string[] };
+        liveTranscript.value = [...liveTranscript.value, chunk].slice(-20);
+        // Broadcast to all viewers in the live room
+        if (session && text) {
+          sendTranscriptChunk(text, chunk.speakers);
+        }
       }
     } catch (err) {
       console.error("Chunk send failed:", err);
