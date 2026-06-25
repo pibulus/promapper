@@ -9,6 +9,7 @@ import { assertEquals, assertExists } from "./_assert.ts";
 import {
   processAudio,
   processText,
+  SHORT_APPEND_THRESHOLD,
 } from "../orchestration/conversation-flow.ts";
 import type { AIService, AudioPart } from "../ai/types.ts";
 
@@ -203,4 +204,95 @@ Deno.test("processText still succeeds when title generation throws", async () =>
   assertEquals((result.conversation.title as string).length > 0, true);
   // Everything else still came through.
   assertEquals(result.actionItems.length, 1);
+});
+
+// ===================================================================
+// short-append optimisation (lightweightIfShort)
+// ===================================================================
+// The mock transcribes to "Speaker1: hello" (15 chars), comfortably under
+// SHORT_APPEND_THRESHOLD — so lightweightIfShort:true takes the light path.
+
+Deno.test("processAudio short path skips topics + summary, keeps status check", async () => {
+  let statusChecked = false;
+  let topicsExtracted = false;
+  let summaryGenerated = false;
+
+  const existing = [{
+    id: "task-feed-the-axolotl",
+    conversation_id: "conv-light",
+    description: "feed the axolotl before the tank rave",
+    assignee: "Marisol",
+    due_date: null,
+    status: "pending" as const,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }];
+
+  const service: AIService = {
+    ...createMockAIService(),
+    async checkActionItemStatus(_input, _existing, _onErr, _signal) {
+      statusChecked = true;
+      return [{
+        id: "task-feed-the-axolotl",
+        description: "feed the axolotl before the tank rave",
+        status: "completed",
+        reason: "they said the axolotl's been fed",
+      }];
+    },
+    async extractTopics(_t, _e, _ee, _onErr, _signal) {
+      topicsExtracted = true;
+      return { nodes: [], edges: [] };
+    },
+    async generateSummary(_t, _l, _signal) {
+      summaryGenerated = true;
+      return "should not run";
+    },
+  };
+
+  const result = await processAudio(service, mockAudioPart, "conv-light", {
+    existingActionItems: existing,
+    lightweightIfShort: true,
+  });
+
+  // Heavy analyses were skipped...
+  assertEquals(topicsExtracted, false);
+  assertEquals(summaryGenerated, false);
+  assertEquals(result.nodes.length, 0);
+  assertEquals(result.summary, "");
+
+  // ...but the killer self-checkoff feature still fired.
+  assertEquals(statusChecked, true);
+  assertEquals(result.statusUpdates.length, 1);
+  assertEquals(result.statusUpdates[0].status, "completed");
+});
+
+Deno.test("processAudio runs full analysis when lightweightIfShort is off", async () => {
+  let topicsExtracted = false;
+  const service: AIService = {
+    ...createMockAIService(),
+    async extractTopics(_t, _e, _ee, _onErr, _signal) {
+      topicsExtracted = true;
+      return {
+        nodes: [{ id: "n1", label: "Topic", color: "#aaa", emoji: "📌" }],
+        edges: [],
+      };
+    },
+  };
+
+  // Same short transcript, but the flag is off → full path regardless.
+  const result = await processAudio(service, mockAudioPart, "conv-full", {
+    lightweightIfShort: false,
+  });
+
+  assertEquals(topicsExtracted, true);
+  assertEquals(result.nodes.length, 1);
+  assertEquals(result.summary, "This is a summary.");
+});
+
+Deno.test("SHORT_APPEND_THRESHOLD is a sane non-negative number", () => {
+  // Resolved once at module load from env (default 500). Whatever the
+  // environment, it must be a usable threshold — never NaN/negative, which
+  // would silently disable or invert the optimisation.
+  assertEquals(Number.isFinite(SHORT_APPEND_THRESHOLD), true);
+  assertEquals(SHORT_APPEND_THRESHOLD >= 0, true);
 });

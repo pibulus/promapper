@@ -352,13 +352,18 @@ Whiteboard agent (2c): No new env vars — uses existing OpenRouter key
 
 ### What's next
 
-**1. Short-append optimisation:**
+**✅ DONE — Short-append optimisation** (commit `8cb4b63`, env-tunable in a
+follow-up): appends whose transcript is under `SHORT_APPEND_THRESHOLD` chars
+(default 500 ≈ 30s) skip topic extraction + summary generation — only
+transcription + action-item status checks run. Saves ~2x on live-meeting
+appends. Self-checkoff stays alive on short chunks. Tune the cutoff with the
+`SHORT_APPEND_THRESHOLD` env var (raise = more appends go light; `0` =
+effectively always full analysis). Wired in
+`core/orchestration/conversation-flow.ts`
 
-- On appends where the new transcript is < 30s, skip topic extraction + summary
-  generation (just append transcript + check action item status). Saves ~2x on
-  repeat analyses.
+- `routes/api/append.ts` (`lightweightIfShort: true`).
 
-**2. Pricing tiers (freemium):**
+**1. Pricing tiers (freemium):**
 
 - Free tier: 5 conversations, Flash Lite only, solo, no export.
 - $9/mo: unlimited, smart models (Claude for topics/summary, Gemini 3.5 for
@@ -366,13 +371,13 @@ Whiteboard agent (2c): No new env vars — uses existing OpenRouter key
 - Implementation: add tier gating in `services/requestGuard.ts` or a new
   middleware.
 
-**3. Image/OCR Input (Phase 3):**
+**2. Image/OCR Input (Phase 3):**
 
 - Drag-and-drop images onto whiteboard or topic map.
 - tesseract.js extracts text from screenshots/notebook photos.
 - Extracted text enters the AI pipeline as if typed.
 
-**4. Offline Mode (Phase 4 — stretch):**
+**3. Offline Mode (Phase 4 — stretch):**
 
 - Moonshine for local transcription (macOS).
 - Ollama / llama.cpp for local action item extraction.

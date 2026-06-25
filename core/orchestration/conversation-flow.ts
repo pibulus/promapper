@@ -52,8 +52,37 @@ async function safeGenerateTitle(
   return snippet ? `${snippet}${source.length > 40 ? "…" : ""}` : "Untitled";
 }
 
-/** Rough char count for ~30s of speech at normal pace. */
-export const SHORT_APPEND_THRESHOLD = 500;
+/**
+ * Char count under which an append is treated as "short" and skips the heavy
+ * analyses (topics + summary), keeping only transcription + status checks.
+ *
+ * Defaults to 500 (≈30s of speech at normal pace). Override with
+ * `SHORT_APPEND_THRESHOLD` to tune without a code change — raise it to make
+ * more appends lightweight (cheaper, less re-analysis), lower it (or set 0) to
+ * effectively disable the optimisation and always run full analysis.
+ *
+ * Read once at module load. `Deno.env` is guarded so this stays importable in
+ * non-Deno contexts (the PartyKit bundler, tests that stub the runtime).
+ */
+function resolveShortAppendThreshold(): number {
+  try {
+    const raw = Deno.env.get("SHORT_APPEND_THRESHOLD");
+    if (raw != null && raw.trim() !== "") {
+      const parsed = Number(raw);
+      if (Number.isFinite(parsed) && parsed >= 0) {
+        return Math.floor(parsed);
+      }
+      console.warn(
+        `Ignoring invalid SHORT_APPEND_THRESHOLD="${raw}" — using default 500.`,
+      );
+    }
+  } catch {
+    // Deno unavailable (non-Deno bundler/test) — fall through to default.
+  }
+  return 500;
+}
+
+export const SHORT_APPEND_THRESHOLD = resolveShortAppendThreshold();
 
 export interface ProcessAudioOptions {
   existingActionItems?: ActionItem[];
