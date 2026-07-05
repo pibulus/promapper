@@ -19,8 +19,6 @@ export const markdownService = {
     conversation?: unknown,
   ): Promise<string> {
     try {
-      console.log("📝 Generating markdown");
-
       await ensureApiSession();
       const data = await enqueueApiRequest(async ({ signal }) => {
         const response = await fetch("/api/markdown", {
@@ -39,7 +37,6 @@ export const markdownService = {
 
         return response.json();
       });
-      console.log("✅ Markdown generation complete");
       return data.markdown;
     } catch (error) {
       console.error("❌ Error generating markdown:", error);

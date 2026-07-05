@@ -187,17 +187,12 @@ export default function UploadIsland(
 
   async function processRecordedAudio(audioBlob: Blob) {
     if (isProcessing.value) return; // guard double-submit
-    console.log("🎤 Starting audio processing...", {
-      size: audioBlob.size,
-      type: audioBlob.type,
-    });
     isProcessing.value = true;
 
     try {
       const formData = new FormData();
       formData.append("audio", audioBlob, "recording.webm");
 
-      console.log("📤 Sending audio to API...");
       await ensureApiSession();
       const result = await enqueueApiRequest(async ({ signal }) => {
         const response = await fetch("/api/process", {
@@ -212,7 +207,6 @@ export default function UploadIsland(
           throw new Error(error.error || "Processing failed");
         }
 
-        console.log("📥 Received response from API");
         return response.json();
       });
 
@@ -238,7 +232,6 @@ export default function UploadIsland(
         "error",
       );
     } finally {
-      console.log("🏁 Processing complete, hiding modal");
       isProcessing.value = false;
     }
   }
@@ -248,13 +241,9 @@ export default function UploadIsland(
     // (often empty after the first clears the input → "No text provided").
     if (!hasText.value || isProcessing.value) return;
 
-    console.log("📝 Starting text processing...", {
-      length: textInput.value.length,
-    });
     isProcessing.value = true;
 
     try {
-      console.log("📤 Sending text to API...");
       await ensureApiSession();
       const result = await enqueueApiRequest(async ({ signal }) => {
         const response = await fetch("/api/process", {
@@ -270,7 +259,6 @@ export default function UploadIsland(
           throw new Error(error.error || "Processing failed");
         }
 
-        console.log("📥 Received response from API");
         return response.json();
       });
       const flowResult = coerceFlowResult(result);
@@ -296,7 +284,6 @@ export default function UploadIsland(
         "error",
       );
     } finally {
-      console.log("🏁 Processing complete, hiding modal");
       isProcessing.value = false;
     }
   }

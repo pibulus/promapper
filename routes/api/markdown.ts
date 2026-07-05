@@ -57,8 +57,6 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
       ? buildExportContext(conversation, text)
       : text;
 
-    console.log("📝 Generating markdown");
-
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), MARKDOWN_TIMEOUT_MS);
     let markdown: string;
@@ -67,8 +65,6 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
     } finally {
       clearTimeout(timer);
     }
-
-    console.log("✅ Markdown generation complete");
 
     return new Response(
       JSON.stringify({ markdown }),

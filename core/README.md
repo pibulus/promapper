@@ -82,20 +82,13 @@ import { createOpenRouterService } from "./ai/openrouter.ts";
 
 const aiService = createOpenRouterService({
   apiKey: openRouterApiKey,
-  model: "google/gemini-2.5-flash-lite",
+  model: "google/gemini-3.1-flash-lite",
 });
 ```
 
-Gemini can still be used directly:
-
-```typescript
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { createGeminiService } from "./ai/gemini.ts";
-
-const genAI = new GoogleGenerativeAI(geminiApiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-const aiService = createGeminiService(model);
-```
+OpenRouter is the only provider — the direct Gemini implementation
+(`core/ai/gemini.ts`) was removed in June 2026 along with the
+`@google/generative-ai` dependency.
 
 The Fresh server normally uses `services/ai.ts` to select and cache the service
 from environment variables.

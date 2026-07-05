@@ -92,10 +92,6 @@ export default function HomeIsland() {
       const stored = loadConversation(activeId);
       if (stored) {
         conversationData.value = stored;
-        console.log(
-          "✅ Restored conversation from localStorage:",
-          stored.conversation.title || activeId,
-        );
       }
     }
   }, []);

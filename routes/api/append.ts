@@ -129,12 +129,6 @@ export const handler: Handlers = {
       );
       const { part: audioPart } = await uploadAudioFile(audioFile);
 
-      console.log(`📎 Appending audio to conversation ${conversationId}`);
-      console.log(
-        `📋 Found ${existingActionItems.length} existing action items`,
-      );
-      console.log(`🕸️ Found ${existingNodes.length} existing topics`);
-
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), APPEND_TIMEOUT_MS);
       let result: ConversationFlowResult;
@@ -178,24 +172,11 @@ export const handler: Handlers = {
 
       // Process status updates from AI analysis
       // These tell us which action items were marked as complete in the new audio
-      console.log(`✅ Status updates detected: ${result.statusUpdates.length}`);
 
       const mergedActionItems = mergeAppendActionItems(
         existingActionItems,
         result.actionItems,
         result.statusUpdates,
-      );
-
-      console.log(`📊 Final action items: ${mergedActionItems.length} total`);
-      console.log(
-        `   - ${
-          mergedActionItems.filter((i) => i.status === "completed").length
-        } completed`,
-      );
-      console.log(
-        `   - ${
-          mergedActionItems.filter((i) => i.status === "pending").length
-        } pending`,
       );
 
       // Union the topic map: append GROWS the map. Without this the AI's fresh
@@ -209,9 +190,6 @@ export const handler: Handlers = {
         existingEdges,
         result.edges,
         validNodeIds,
-      );
-      console.log(
-        `🕸️ Topic map merged: ${mergedNodes.length} nodes, ${mergedEdges.length} edges`,
       );
 
       // Build final result

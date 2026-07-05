@@ -83,9 +83,11 @@ export const handler: Handlers = {
         ? body.elements.slice(0, MAX_ELEMENTS)
           .filter((el) => el && typeof el === "object")
         : []) as Record<string, unknown>[];
-    const transcript = (typeof body.transcript === "string"
-      ? body.transcript
-      : "").slice(0, MAX_TRANSCRIPT_LENGTH).trim();
+    const transcript =
+      (typeof body.transcript === "string" ? body.transcript : "").slice(
+        0,
+        MAX_TRANSCRIPT_LENGTH,
+      ).trim();
     const topics = sanitizeTopics(body.topics);
 
     if (!transcript) {

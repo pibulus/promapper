@@ -8,6 +8,7 @@
  */
 
 import { copyToClipboard } from "../utils/toast.ts";
+import { localDateISO } from "@core/storage/dates.ts";
 
 interface ActionItem {
   id: string;
@@ -21,19 +22,6 @@ interface ActionItemsBackProps {
   items: ActionItem[];
   onMarkAllDone: () => void;
   onClearDone: () => void;
-}
-
-/** Local YYYY-MM-DD for today + offsetDays (no UTC shift). */
-function localDateISO(offsetDays: number): string {
-  const now = new Date();
-  const d = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate() + offsetDays,
-  );
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${
-    String(d.getDate()).padStart(2, "0")
-  }`;
 }
 
 /** Plain-text summary for sharing/pasting (open grouped by person, then done). */

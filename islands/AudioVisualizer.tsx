@@ -23,7 +23,6 @@ export default function AudioVisualizer({ analyser }: AudioVisualizerProps) {
       return;
     }
 
-    console.log("🎵 Initializing audio visualizer");
     const canvas = canvasRef.current;
     const canvasCtx = canvas.getContext("2d");
 
@@ -37,14 +36,10 @@ export default function AudioVisualizer({ analyser }: AudioVisualizerProps) {
       .getPropertyValue("--color-accent").trim();
     if (accentColor) {
       accentColorRef.current = accentColor;
-      console.log("🎨 Using theme accent color:", accentColor);
     }
 
     // Initialize data array for frequency data
     dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
-    console.log(
-      `🎵 Audio visualizer initialized (${analyser.frequencyBinCount} frequency bins)`,
-    );
 
     // Animation draw function - ELEGANT BARS
     function draw() {
@@ -100,7 +95,6 @@ export default function AudioVisualizer({ analyser }: AudioVisualizerProps) {
         cancelAnimationFrame(animationFrameIdRef.current);
         animationFrameIdRef.current = null;
       }
-      console.log("🎵 Audio visualizer cleaned up");
     };
   }, [analyser]);
 

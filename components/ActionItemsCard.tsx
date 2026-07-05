@@ -16,6 +16,7 @@ import {
 } from "@utils/sound.ts";
 import { showUndoToast } from "@utils/toast.ts";
 import { canUndo, undoLastMutation } from "@signals/conversationStore.ts";
+import { localDateISO } from "@core/storage/dates.ts";
 import Modal from "./Modal.tsx";
 import Confetti from "./Confetti.tsx";
 
@@ -59,19 +60,6 @@ function formatFriendlyDate(dateString: string): string {
     "Dec",
   ];
   return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`;
-}
-
-// Compute a local YYYY-MM-DD for today + offsetDays, no UTC shift
-function localDateISO(offsetDays: number): string {
-  const now = new Date();
-  const d = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate() + offsetDays,
-  );
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${
-    String(d.getDate()).padStart(2, "0")
-  }`;
 }
 
 export default function ActionItemsCard(
