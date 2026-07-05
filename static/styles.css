@@ -5926,7 +5926,83 @@ label {
   font-style: italic;
   line-height: 1.5;
   color: var(--color-text-secondary);
-  border-left: 3px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+  border-left: 3px solid
+    color-mix(in srgb, var(--color-accent) 40%, transparent);
   padding-left: 0.6rem;
   max-width: 42ch;
+}
+
+/* Share/live convergence */
+.share-live-row {
+  padding-bottom: 0.6rem;
+  margin-bottom: 0.35rem;
+  border-bottom: 2px dashed var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.shared-live-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.1rem;
+  margin-bottom: 1rem;
+  border: 2px solid var(--soft-black);
+  border-radius: var(--border-radius);
+  background: var(--color-accent);
+  color: white;
+  font-weight: 800;
+  font-size: var(--small-size);
+  text-decoration: none;
+  box-shadow: 3px 3px 0 var(--soft-black);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.shared-live-banner:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--soft-black);
+}
+
+.shared-live-banner .fa-arrow-right {
+  margin-left: auto;
+}
+
+.shared-filter-badge {
+  padding: 0.5rem 0.9rem;
+  margin-bottom: 1rem;
+  border: 2px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--surface-cream);
+  font-size: var(--small-size);
+  color: var(--color-text-secondary);
+  width: fit-content;
+}
+
+/* Per-person share affordance on the Overview back face */
+.card-back-person-share {
+  width: 1.6rem;
+  height: 1.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+  opacity: 0.55;
+  cursor: pointer;
+  transition: opacity var(--transition-fast), color var(--transition-fast);
+}
+
+.card-back-person-share:hover {
+  opacity: 1;
+  color: var(--color-accent);
+}
+
+.card-back-person-share:active {
+  transform: translateY(1px) scale(0.95);
 }

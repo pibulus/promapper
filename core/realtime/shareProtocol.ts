@@ -22,6 +22,41 @@ export const SHARE_ROOM_LIMITS = {
   DEFAULT_TTL_MS: 30 * 24 * 60 * 60 * 1000,
 };
 
+/** Optional pointer from a snapshot share to a live PartyKit room. */
+export interface ShareLiveInfo {
+  roomId: string;
+}
+
+/** Optional per-assignee filter a share was created with. */
+export interface ShareFilterInfo {
+  assignee: string;
+}
+
+/** A share payload: the conversation plus optional live/filter metadata. */
+export type SharedConversationPayload = ConversationData & {
+  live?: ShareLiveInfo;
+  filter?: ShareFilterInfo;
+};
+
+const LIVE_ROOM_ID_RE = /^[A-Za-z0-9_-]{3,64}$/;
+
+export function sanitizeShareLive(input: unknown): ShareLiveInfo | undefined {
+  if (!isRecord(input)) return undefined;
+  const roomId = typeof input.roomId === "string" ? input.roomId.trim() : "";
+  return LIVE_ROOM_ID_RE.test(roomId) ? { roomId } : undefined;
+}
+
+export function sanitizeShareFilter(
+  input: unknown,
+): ShareFilterInfo | undefined {
+  if (!isRecord(input)) return undefined;
+  const assignee = normalizeString(
+    input.assignee,
+    SHARE_ROOM_LIMITS.MAX_ASSIGNEE_LENGTH,
+  );
+  return assignee ? { assignee } : undefined;
+}
+
 export interface ShareRoomMetadata {
   shareId: string;
   createdAt: string;
@@ -220,7 +255,7 @@ export function generateShareRoomId(): string {
 
 export function sanitizeShareConversation(
   input: unknown,
-): ConversationData | null {
+): SharedConversationPayload | null {
   if (!isRecord(input)) return null;
 
   const conversationInput = isRecord(input.conversation)
@@ -242,7 +277,12 @@ export function sanitizeShareConversation(
 
   if (!transcriptText) return null;
 
+  const live = sanitizeShareLive(input.live);
+  const filter = sanitizeShareFilter(input.filter);
+
   return {
+    ...(live ? { live } : {}),
+    ...(filter ? { filter } : {}),
     conversation: {
       id: conversationId,
       title: normalizeOptionalString(

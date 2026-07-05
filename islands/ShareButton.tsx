@@ -7,6 +7,7 @@
 
 import { useComputed, useSignal } from "@preact/signals";
 import { conversationData } from "@signals/conversationStore.ts";
+import { liveSession } from "@signals/liveSessionStore.ts";
 import {
   createBestShareLink,
   type ShareCreationResult,
@@ -23,7 +24,16 @@ export default function ShareButton() {
     if (!conversationData.value) return;
     isGenerating.value = true;
     try {
-      const result = await createBestShareLink(conversationData.value, 30);
+      // Shared from a live session → the snapshot carries a pointer to the
+      // room, so the shared page can offer "join live".
+      const extras = liveSession.value
+        ? { live: { roomId: liveSession.value.roomId } }
+        : undefined;
+      const result = await createBestShareLink(
+        conversationData.value,
+        30,
+        extras,
+      );
       share.value = result;
       if (result.mode !== "local-only") {
         copyToClipboard(result.url);
@@ -33,6 +43,11 @@ export default function ShareButton() {
     } finally {
       isGenerating.value = false;
     }
+  }
+
+  function liveRoomUrl(): string {
+    if (!liveSession.value || typeof window === "undefined") return "";
+    return `${window.location.origin}/live/${liveSession.value.roomId}`;
   }
 
   async function handleCopyUrl() {
@@ -91,12 +106,48 @@ export default function ShareButton() {
             isLocalOnly ? " is-local" : ""
           }`}
         >
+          {liveSession.value && (
+            <div class="share-live-row">
+              <p
+                class="text-xs font-bold"
+                style={{ color: "var(--color-text)" }}
+              >
+                <span class="live-badge__dot" aria-hidden="true" />{" "}
+                Live room link
+              </p>
+              <p
+                class="text-xs"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
+                Real-time — anyone with it joins this session (open ~24h after
+                the last activity).
+              </p>
+              <div class="flex gap-2">
+                <input
+                  type="text"
+                  value={liveRoomUrl()}
+                  readonly
+                  class="min-w-0 flex-1 px-2 py-1 font-mono text-xs share-url-input"
+                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                />
+                <button
+                  onClick={() => copyToClipboard(liveRoomUrl())}
+                  class="min-h-9 px-3 py-1 text-xs font-bold share-copy-btn"
+                  title="Copy live room link"
+                >
+                  <i class="fa fa-copy" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+          )}
+
           <p class="text-xs font-bold" style={{ color: "var(--color-text)" }}>
             {share.value.mode === "public-url"
               ? "Portable share link"
               : share.value.mode === "server-share"
               ? "Share link"
               : "Saved on this device"}
+            {liveSession.value ? " (snapshot)" : ""}
           </p>
 
           {isLocalOnly && (

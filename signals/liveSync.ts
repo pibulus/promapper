@@ -38,8 +38,15 @@ import {
 } from "@signals/presenceStore.ts";
 import type { ConversationData } from "../core/types/conversation-data.ts";
 
+import { showToast } from "@utils/toast.ts";
+
 let stopBroadcast: (() => void) | null = null;
 let lastSentJSON = "";
+// Reconnect-flush state: a local edit failed to send (socket down) and the
+// last room snapshot we saw. On reconnect INIT, if the room hasn't moved,
+// our local state wins and gets re-sent; if it has, remote wins (honestly).
+let unsentLocal = false;
+let lastRemoteJSON = "";
 
 /**
  * Connect to a room and start two-way conversation sync. Extra callbacks
@@ -59,8 +66,28 @@ export function startLiveSync(
     ...extra,
     onInit: (data, meta) => {
       if (data) {
-        applyRemoteConversation(data as ConversationData);
-        lastSentJSON = JSON.stringify(data);
+        const incoming = JSON.stringify(data);
+        if (
+          unsentLocal && lastRemoteJSON && incoming === lastRemoteJSON &&
+          conversationData.value
+        ) {
+          // Reconnected and the room is exactly where we left it — nobody
+          // else edited while we were away. Our unsent local state wins.
+          unsentLocal = false;
+          lastSentJSON = localJSON(conversationData.value);
+          if (sendConversationUpdate(conversationData.value)) {
+            showToast("Reconnected — your changes synced", "success");
+          }
+        } else {
+          if (unsentLocal) {
+            // The room moved on while we were offline — remote wins, say so.
+            showToast("Reconnected — synced the room's latest", "info");
+          }
+          unsentLocal = false;
+          applyRemoteConversation(data as ConversationData);
+          lastSentJSON = incoming;
+        }
+        lastRemoteJSON = incoming;
       }
       extra.onInit?.(data, meta);
     },
@@ -68,6 +95,7 @@ export function startLiveSync(
       if (!data) return;
       applyRemoteConversation(data as ConversationData);
       lastSentJSON = JSON.stringify(data);
+      lastRemoteJSON = lastSentJSON;
       extra.onConversationUpdate?.(data);
     },
     onChat: (text, sender: RemoteUser, at) => {
@@ -100,14 +128,27 @@ export function startLiveSync(
     const json = JSON.stringify(rest);
     if (json === lastSentJSON) return; // nothing actually changed
     lastSentJSON = json;
-    sendConversationUpdate(data);
+    if (!sendConversationUpdate(data)) {
+      // Socket down mid-edit — remember so the reconnect INIT can flush.
+      unsentLocal = true;
+    }
   });
+}
+
+/** The outbound JSON shape (whiteboardScene excluded) for echo-dedup. */
+function localJSON(data: ConversationData): string {
+  const { whiteboardScene: _s, ...rest } = data as ConversationData & {
+    whiteboardScene?: string;
+  };
+  return JSON.stringify(rest);
 }
 
 export function stopLiveSync(): void {
   stopBroadcast?.();
   stopBroadcast = null;
   lastSentJSON = "";
+  unsentLocal = false;
+  lastRemoteJSON = "";
   chatMessages.value = [];
   unreadChatCount.value = 0;
   remoteWhiteboardUpdate.value = null;

@@ -1312,11 +1312,13 @@ export default function ActionItemsCard(
                                         </div>
                                       )}
 
-                                    {/* AI self-checkoff — make the magic take
+                                    {
+                                      /* AI self-checkoff — make the magic take
                                         a bow. Chip shows when the AI flipped
                                         this item; tap reveals what it heard.
                                         Fields vanish on manual toggle (by
-                                        design) and the chip goes with them. */}
+                                        design) and the chip goes with them. */
+                                    }
                                     {(item as AIFlaggedItem).ai_checked && (
                                       <div class="action-item-ai">
                                         <button
@@ -1331,19 +1333,19 @@ export default function ActionItemsCard(
                                                 : item.id}
                                           title="The AI updated this item — tap for why"
                                         >
-                                          ✨ AI{" "}
-                                          {item.status === "completed"
+                                          ✨ AI {item.status === "completed"
                                             ? "checked this off"
                                             : "reopened this"}
                                         </button>
                                         {expandedReasonId.value === item.id &&
                                           (item as AIFlaggedItem)
-                                            .checked_reason && (
-                                          <p class="action-item-ai-reason">
-                                            "{(item as AIFlaggedItem)
-                                              .checked_reason}"
-                                          </p>
-                                        )}
+                                            .checked_reason &&
+                                          (
+                                            <p class="action-item-ai-reason">
+                                              "{(item as AIFlaggedItem)
+                                                .checked_reason}"
+                                            </p>
+                                          )}
                                       </div>
                                     )}
                                   </>

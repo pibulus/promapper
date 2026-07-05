@@ -21,6 +21,9 @@ interface Props {
 export default function SharedConversationLoader({ shareId }: Props) {
   const isLoading = useSignal(true);
   const loadError = useSignal<string | null>(null);
+  // Share extras: pointer to a live room + per-assignee filter badge.
+  const liveRoomId = useSignal<string | null>(null);
+  const filterAssignee = useSignal<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -36,6 +39,9 @@ export default function SharedConversationLoader({ shareId }: Props) {
 
         if (shared) {
           applySharedData(shared);
+          const extras = extractShareExtras(shared);
+          liveRoomId.value = extras.liveRoomId;
+          filterAssignee.value = extras.filterAssignee;
           return;
         }
 
@@ -54,6 +60,9 @@ export default function SharedConversationLoader({ shareId }: Props) {
 
         if (!cancelled && payload.data) {
           applySharedData(payload.data);
+          const extras = extractShareExtras(payload.data);
+          liveRoomId.value = extras.liveRoomId;
+          filterAssignee.value = extras.filterAssignee;
         }
       } catch (error) {
         if (!cancelled) {
@@ -114,6 +123,27 @@ export default function SharedConversationLoader({ shareId }: Props) {
 
   return (
     <div>
+      {
+        /* Live-room pointer — this snapshot came from a session that may
+          still be going. */
+      }
+      {liveRoomId.value && (
+        <a href={`/live/${liveRoomId.value}`} class="shared-live-banner">
+          <span class="live-badge__dot" aria-hidden="true" />
+          This project has a live room — join in real time
+          <i class="fa fa-arrow-right" aria-hidden="true" />
+        </a>
+      )}
+
+      {/* Filtered-share badge */}
+      {filterAssignee.value && (
+        <div class="shared-filter-badge">
+          Showing{" "}
+          <strong>{filterAssignee.value}</strong>'s action items from this
+          project
+        </div>
+      )}
+
       {/* Info Banner */}
       <div class="bg-blue-100 border-4 border-blue-300 rounded-lg p-4 mb-6">
         <p class="text-sm text-blue-800">
@@ -129,6 +159,24 @@ export default function SharedConversationLoader({ shareId }: Props) {
       <DashboardIsland />
     </div>
   );
+}
+
+/** Pull sanitizable live/filter extras off a share payload. */
+function extractShareExtras(
+  shared: unknown,
+): { liveRoomId: string | null; filterAssignee: string | null } {
+  const s = (shared ?? {}) as Record<string, unknown>;
+  const live = s.live as Record<string, unknown> | undefined;
+  const filter = s.filter as Record<string, unknown> | undefined;
+  const roomId = typeof live?.roomId === "string" &&
+      /^[A-Za-z0-9_-]{3,64}$/.test(live.roomId)
+    ? live.roomId
+    : null;
+  const assignee =
+    typeof filter?.assignee === "string" && filter.assignee.trim()
+      ? filter.assignee.trim().slice(0, 120)
+      : null;
+  return { liveRoomId: roomId, filterAssignee: assignee };
 }
 
 function applySharedData(shared: unknown) {

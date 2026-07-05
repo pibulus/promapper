@@ -22,6 +22,16 @@ export interface SharedConversation extends ConversationData {
   shareId: string;
   sharedAt: string;
   expiresAt?: string; // Optional expiration
+  /** Pointer to a live PartyKit room (set when shared from a live session). */
+  live?: { roomId: string };
+  /** Per-assignee filter this share was created with. */
+  filter?: { assignee: string };
+}
+
+/** Optional metadata attached at share-create time. */
+export interface ShareExtras {
+  live?: { roomId: string };
+  filter?: { assignee: string };
 }
 
 export interface ShareCreationResult {
@@ -57,7 +67,10 @@ function generateShareId(): string {
   return id;
 }
 
-function createShareableData(data: ConversationData): ConversationData {
+function createShareableData(
+  data: ConversationData,
+  extras?: ShareExtras,
+): ConversationData & ShareExtras {
   return {
     conversation: {
       id: data.conversation.id,
@@ -72,7 +85,24 @@ function createShareableData(data: ConversationData): ConversationData {
     actionItems: data.actionItems ?? [],
     statusUpdates: data.statusUpdates ?? [],
     summary: data.summary,
+    ...(extras?.live ? { live: extras.live } : {}),
+    ...(extras?.filter ? { filter: extras.filter } : {}),
   };
+}
+
+/** Client-side sanitize of share extras on the decode path. */
+// deno-lint-ignore no-explicit-any
+function normalizeShareExtras(data: any): ShareExtras {
+  const extras: ShareExtras = {};
+  const roomId = data?.live?.roomId;
+  if (typeof roomId === "string" && /^[A-Za-z0-9_-]{3,64}$/.test(roomId)) {
+    extras.live = { roomId };
+  }
+  const assignee = data?.filter?.assignee;
+  if (typeof assignee === "string" && assignee.trim()) {
+    extras.filter = { assignee: assignee.trim().slice(0, 120) };
+  }
+  return extras;
 }
 
 function normalizeSharedData(data: any): ConversationData | null {
@@ -161,8 +191,11 @@ export function decompressData(compressed: string): any {
   }
 }
 
-export function encodeShareDataForUrl(data: ConversationData): string {
-  return compressData(createShareableData(data));
+export function encodeShareDataForUrl(
+  data: ConversationData,
+  extras?: ShareExtras,
+): string {
+  return compressData(createShareableData(data, extras));
 }
 
 export function loadUrlSharedConversation(
@@ -175,6 +208,7 @@ export function loadUrlSharedConversation(
 
   return {
     ...normalized,
+    ...normalizeShareExtras(data),
     shareId: "url-share",
     sharedAt: new Date().toISOString(),
   };
@@ -187,6 +221,7 @@ export function loadUrlSharedConversation(
 function createLocalShareLink(
   data: ConversationData,
   expiresInDays?: number,
+  extras?: ShareExtras,
 ): ShareCreationResult {
   if (typeof window === "undefined") {
     return {
@@ -197,7 +232,7 @@ function createLocalShareLink(
     };
   }
 
-  const shareableData = createShareableData(data);
+  const shareableData = createShareableData(data, extras);
   const expiresAt = expiresInDays
     ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString()
     : undefined;
@@ -222,6 +257,7 @@ function createLocalShareLink(
 
   const shared: SharedConversation = {
     ...data,
+    ...extras,
     shareId,
     sharedAt: new Date().toISOString(),
     expiresAt,
@@ -243,12 +279,13 @@ function createLocalShareLink(
 export async function createBestShareLink(
   data: ConversationData,
   expiresInDays?: number,
+  extras?: ShareExtras,
 ): Promise<ShareCreationResult> {
   if (typeof window === "undefined") {
-    return createLocalShareLink(data, expiresInDays);
+    return createLocalShareLink(data, expiresInDays, extras);
   }
 
-  const compressed = encodeShareDataForUrl(data);
+  const compressed = encodeShareDataForUrl(data, extras);
   if (compressed && compressed.length < 2000) {
     const shareId = `url:${compressed}`;
     return {
@@ -263,7 +300,7 @@ export async function createBestShareLink(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        data: createShareableData(data),
+        data: createShareableData(data, extras),
         ttlDays: expiresInDays,
       }),
     });

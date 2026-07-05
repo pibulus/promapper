@@ -41,7 +41,10 @@ function item(
 }
 
 Deno.test("receipt counts new topics and new tasks", () => {
-  const base = conv({ nodes: [node("a")], actionItems: [item("t1", "pending")] });
+  const base = conv({
+    nodes: [node("a")],
+    actionItems: [item("t1", "pending")],
+  });
   const next = conv({
     nodes: [node("a"), node("b"), node("c")],
     actionItems: [item("t1", "pending"), item("t2", "pending")],

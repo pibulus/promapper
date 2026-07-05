@@ -82,7 +82,8 @@ function openDB(): Promise<IDBDatabase> {
         }
       };
       req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error ?? new Error("IndexedDB open failed"));
+      req.onerror = () =>
+        reject(req.error ?? new Error("IndexedDB open failed"));
       req.onblocked = () => reject(new Error("IndexedDB open blocked"));
     });
     // A failed open should not poison every future call — allow a retry.
@@ -96,7 +97,8 @@ function openDB(): Promise<IDBDatabase> {
 function requestToPromise<T>(req: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error ?? new Error("IndexedDB request failed"));
+    req.onerror = () =>
+      reject(req.error ?? new Error("IndexedDB request failed"));
   });
 }
 
@@ -198,7 +200,9 @@ export async function deleteRecording(id: string): Promise<boolean> {
  * Remove takes whose conversation no longer exists. Called once per app load
  * with the ids of all saved conversations.
  */
-export async function sweepOrphans(liveConversationIds: string[]): Promise<void> {
+export async function sweepOrphans(
+  liveConversationIds: string[],
+): Promise<void> {
   if (!idbAvailable()) return;
   try {
     const live = new Set(liveConversationIds);

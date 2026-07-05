@@ -206,46 +206,59 @@ export default function DashboardIsland() {
     <div>
       {/* Grid Container - Simple CSS Grid */}
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        {
+          /* Mobile hierarchy: a returning user's question is "what do I do
+            next" — Action Items lead the single-column stack, transcript
+            recedes to the bottom. Desktop reading order (Transcript |
+            Summary | Actions) is restored with md:order-none. */
+        }
+
         {/* Card 1: Transcript */}
-        <TranscriptCard
-          transcript={transcript}
-          onRenameSpeaker={renameSpeaker}
-        />
+        <div class="order-3 md:order-none min-w-0">
+          <TranscriptCard
+            transcript={transcript}
+            onRenameSpeaker={renameSpeaker}
+          />
+        </div>
 
         {/* Card 2: Summary */}
-        <SummaryCard
-          summary={summary ?? null}
-          nodes={nodes}
-          conversationSource={conversation.source}
-        />
+        <div class="order-2 md:order-none min-w-0">
+          <SummaryCard
+            summary={summary ?? null}
+            nodes={nodes}
+            conversationSource={conversation.source}
+          />
+        </div>
 
         {/* Card 3: Action Items — flips to an overview/bulk-actions back */}
-        <FlipCard
-          label="Action Items"
-          front={
-            <ActionItemsCard
-              actionItems={actionItems}
-              conversationId={conversation.id ?? ""}
-              onUpdateItems={setActionItems}
-            />
-          }
-          back={
-            <ActionItemsBack
-              items={actionItems}
-              onMarkAllDone={() =>
-                setActionItems(
-                  actionItems.map((i) => ({
-                    ...i,
-                    status: "completed" as const,
-                  })),
-                )}
-              onClearDone={() =>
-                setActionItems(
-                  actionItems.filter((i) => i.status !== "completed"),
-                )}
-            />
-          }
-        />
+        <div class="order-1 md:order-none min-w-0">
+          <FlipCard
+            label="Action Items"
+            front={
+              <ActionItemsCard
+                actionItems={actionItems}
+                conversationId={conversation.id ?? ""}
+                onUpdateItems={setActionItems}
+              />
+            }
+            back={
+              <ActionItemsBack
+                items={actionItems}
+                onMarkAllDone={() =>
+                  setActionItems(
+                    actionItems.map((i) => ({
+                      ...i,
+                      status: "completed" as const,
+                    })),
+                  )}
+                onClearDone={() =>
+                  setActionItems(
+                    actionItems.filter((i) => i.status !== "completed"),
+                  )}
+              />
+            }
+          />
+        </div>
 
         {/* Card 4: Topic Visualizations - FULL WIDTH (spans all columns) */}
         <TopicVisualizationsCard />

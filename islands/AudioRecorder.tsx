@@ -325,7 +325,9 @@ export default function AudioRecorder(
     else if (take.mimeType.includes("mp4")) extension = "m4a";
     else if (take.mimeType.includes("wav")) extension = "wav";
 
-    a.download = `${take.fileName.replace(/\s+/g, "-").toLowerCase()}.${extension}`;
+    a.download = `${
+      take.fileName.replace(/\s+/g, "-").toLowerCase()
+    }.${extension}`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 100);
   }
@@ -418,7 +420,8 @@ export default function AudioRecorder(
                     <div class="recording-dock__take-actions">
                       <button
                         type="button"
-                        onClick={() => togglePlayback(take)}
+                        onClick={() =>
+                          togglePlayback(take)}
                         aria-label={playingTakeId.value === take.id
                           ? `Pause ${take.fileName}`
                           : `Play ${take.fileName}`}
@@ -434,7 +437,8 @@ export default function AudioRecorder(
                       </button>
                       <button
                         type="button"
-                        onClick={() => downloadTake(take)}
+                        onClick={() =>
+                          downloadTake(take)}
                         aria-label={`Download ${take.fileName}`}
                       >
                         <i class="fa fa-download" aria-hidden="true" />

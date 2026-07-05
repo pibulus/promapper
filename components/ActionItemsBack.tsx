@@ -7,8 +7,10 @@
  * card backs stay consistent (no per-card style reinvention).
  */
 
-import { copyToClipboard } from "../utils/toast.ts";
+import { copyToClipboard, showToast } from "../utils/toast.ts";
 import { localDateISO } from "@core/storage/dates.ts";
+import { conversationData } from "@signals/conversationStore.ts";
+import { createBestShareLink } from "@core/storage/shareService.ts";
 
 interface ActionItem {
   id: string;
@@ -46,6 +48,40 @@ function buildSummary(items: ActionItem[]): string {
     for (const i of done) lines.push(`- ${i.description}`);
   }
   return lines.join("\n").trim();
+}
+
+/**
+ * Share just one person's slice: a snapshot share whose actionItems are
+ * filtered to that assignee, with filter metadata so the shared view says so.
+ */
+async function shareAssigneeItems(who: string) {
+  const data = conversationData.value;
+  if (!data) return;
+  const matches = (assignee: string | null | undefined) =>
+    (assignee?.trim() || "Unassigned") === who;
+  const filtered = {
+    ...data,
+    actionItems: data.actionItems.filter((i) => matches(i.assignee)),
+  };
+  try {
+    const result = await createBestShareLink(filtered, 30, {
+      filter: { assignee: who },
+    });
+    if (result.mode === "local-only") {
+      showToast(
+        result.warning ?? "Couldn't create a portable link right now",
+        "warning",
+      );
+      return;
+    }
+    const copied = await copyToClipboard(result.url);
+    if (copied) {
+      showToast(`That's ${who}'s items — link ready to paste`, "info");
+    }
+  } catch (error) {
+    console.error("Assignee share failed:", error);
+    showToast("Couldn't create that share — try again", "error");
+  }
 }
 
 export default function ActionItemsBack(
@@ -154,7 +190,18 @@ export default function ActionItemsBack(
                             style={{ marginBottom: "0.2rem" }}
                           >
                             <span class="truncate">{who}</span>
-                            <span class="card-back-stat-value">{count}</span>
+                            <span class="flex items-center gap-1">
+                              <button
+                                type="button"
+                                class="card-back-person-share"
+                                aria-label={`Share ${who}'s items as a link`}
+                                title={`Share ${who}'s items`}
+                                onClick={() => shareAssigneeItems(who)}
+                              >
+                                <i class="fa fa-link" aria-hidden="true" />
+                              </button>
+                              <span class="card-back-stat-value">{count}</span>
+                            </span>
                           </div>
                           <div class="card-back-bar">
                             <div
