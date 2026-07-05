@@ -132,7 +132,8 @@ export default function LoadingModal({ isOpen, message }: LoadingModalProps) {
           align-items: center;
           justify-content: center;
           position: relative;
-          min-width: 350px;
+          /* Clamp so it never overflows a 320px viewport (iPhone SE). */
+          min-width: min(350px, calc(100vw - 2rem));
           min-height: 180px;
           border-radius: 14px;
           background: rgba(255, 255, 255, 0.05);

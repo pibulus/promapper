@@ -128,6 +128,9 @@ export default function HomeIsland() {
       if (e.key === "?" || (e.shiftKey && e.key === "/")) {
         e.preventDefault();
         shortcutsOpen.value = !shortcutsOpen.value;
+      } else if (e.key === "Escape" && voiceDrawerOpen.value) {
+        // Escape closes the voice drawer (parity with backdrop tap).
+        voiceDrawerOpen.value = false;
       }
     }
     globalThis.addEventListener("keydown", onKeydown);
@@ -230,15 +233,17 @@ export default function HomeIsland() {
     stopRecording: _stopRecording,
     cleanup: _cleanupRecorder,
   } = useRecorder({
+    // No sampleRate/channelCount — iOS rejects those constraints with
+    // OverconstrainedError on some devices. The transcription model handles
+    // whatever rate the browser gives us.
     audioConstraints: {
-      sampleRate: 16000,
-      channelCount: 1,
       echoCancellation: true,
       noiseSuppression: true,
       autoGainControl: true,
     },
     timesliceMs: 500,
-    mimeTypes: ["audio/webm", "audio/mp4"],
+    // "" trailing fallback = let the browser pick if neither type is supported.
+    mimeTypes: ["audio/webm", "audio/mp4", ""],
     onBeforeStart: ensureApiSession,
     silentMicError: true,
   });
@@ -373,8 +378,16 @@ export default function HomeIsland() {
       const blob = new Blob(chunks, {
         type: mediaRecorderRef.current?.mimeType || "audio/webm",
       });
+      // Name the file to match the actual codec. iOS records audio/mp4, not
+      // webm — a mismatched extension makes the server's format inference
+      // fragile if the Content-Type is ever lost in transit.
+      const ext = blob.type.includes("mp4")
+        ? "m4a"
+        : blob.type.includes("ogg")
+        ? "ogg"
+        : "webm";
       const form = new FormData();
-      form.append("audio", blob, "chunk.webm");
+      form.append("audio", blob, `chunk.${ext}`);
       const res = await fetch("/api/live/chunk", {
         method: "POST",
         body: form,
@@ -604,19 +617,39 @@ export default function HomeIsland() {
 
       {/* Voice Drawer — slide-out when live session is active */}
       {session && (
-        <div
-          class={`voice-drawer${voiceDrawerOpen.value ? " is-open" : ""}`}
-          aria-hidden={!voiceDrawerOpen.value}
-        >
-          <VoicePanel
-            roomId={session.roomId}
-            displayName={getLocalIdentity()}
-            peerDisplayNames={users
-              .filter((u) => u.avatar !== getLocalIdentity())
-              .map((u) => u.alias || u.avatar)
-              .filter(Boolean)}
+        <>
+          {/* Backdrop — tap to close so the drawer is never a thumb-trap. */}
+          <div
+            class={`voice-drawer-backdrop${
+              voiceDrawerOpen.value ? " is-open" : ""
+            }`}
+            aria-hidden="true"
+            onClick={() => voiceDrawerOpen.value = false}
           />
-        </div>
+          <div
+            class={`voice-drawer${voiceDrawerOpen.value ? " is-open" : ""}`}
+            role="dialog"
+            aria-label="Voice panel"
+            aria-hidden={!voiceDrawerOpen.value}
+          >
+            <button
+              type="button"
+              class="voice-drawer-close"
+              aria-label="Close voice panel"
+              onClick={() => voiceDrawerOpen.value = false}
+            >
+              <i class="fa fa-times" aria-hidden="true" />
+            </button>
+            <VoicePanel
+              roomId={session.roomId}
+              displayName={getLocalIdentity()}
+              peerDisplayNames={users
+                .filter((u) => u.avatar !== getLocalIdentity())
+                .map((u) => u.alias || u.avatar)
+                .filter(Boolean)}
+            />
+          </div>
+        </>
       )}
 
       {/* Live transcript stream — appears during recording */}

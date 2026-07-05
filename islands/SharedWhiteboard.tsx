@@ -19,6 +19,29 @@ interface SharedWhiteboardProps {
   onSceneChange?: (scene: string) => void;
 }
 
+/**
+ * Strip per-viewer state from Excalidraw's appState before syncing. Without
+ * this, a remote edit carries the sender's scroll/zoom/selection and silently
+ * teleports everyone else's canvas — brutal on mobile, mid-stroke.
+ */
+function sharedAppState(appState: unknown): Record<string, unknown> {
+  if (!appState || typeof appState !== "object") return {};
+  const {
+    scrollX: _scrollX,
+    scrollY: _scrollY,
+    zoom: _zoom,
+    cursorButton: _cursorButton,
+    selectedElementIds: _selectedElementIds,
+    selectedGroupIds: _selectedGroupIds,
+    width: _width,
+    height: _height,
+    offsetTop: _offsetTop,
+    offsetLeft: _offsetLeft,
+    ...rest
+  } = appState as Record<string, unknown>;
+  return rest;
+}
+
 export default function SharedWhiteboard(
   { initialScene, onSceneChange }: SharedWhiteboardProps,
 ) {
@@ -84,7 +107,10 @@ export default function SharedWhiteboard(
           },
           onChange(elements: unknown[], appState: unknown) {
             if (isRemoteUpdate.current) return;
-            onSceneChange?.(JSON.stringify({ elements, appState }));
+            // Broadcast only collaborative state — never our viewport.
+            onSceneChange?.(
+              JSON.stringify({ elements, appState: sharedAppState(appState) }),
+            );
           },
         },
       );
@@ -122,10 +148,18 @@ export default function SharedWhiteboard(
         isRemoteUpdate.current = true;
         apiRef.current.updateScene({
           elements,
-          appState,
+          // Drop any viewport state the sender may have included so our
+          // pan/zoom is never yanked.
+          appState: sharedAppState(appState),
           commitToHistory: false,
         });
-        isRemoteUpdate.current = false;
+        // updateScene schedules a React render; onChange fires on the *next*
+        // tick. Clearing synchronously here would already be too late, so the
+        // remote edit would echo back to PartyKit as a local one (broadcast
+        // storm). Clear after the render flushes instead.
+        setTimeout(() => {
+          isRemoteUpdate.current = false;
+        }, 0);
       } catch { /* malformed scene */ }
     });
     return unsubscribe;

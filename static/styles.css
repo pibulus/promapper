@@ -1652,6 +1652,9 @@ body {
   }
 
   .mapper-stage {
+    /* Once the card is single-column the 560px floor just strands the input
+       below the fold (e.g. iPhone 8 landscape, small tablets). */
+    min-height: unset;
     padding-top: 5.5rem;
   }
 }
@@ -1667,6 +1670,58 @@ body {
     align-items: flex-start;
   }
 
+  /* Header: in a live session the action cluster holds up to 9 controls,
+     which overflow a 375px bar. Let the cluster scroll horizontally so every
+     control stays reachable (never clipped), and tighten the gap. The title
+     yields width first so the controls keep their tap targets. */
+  .app-header__actions {
+    gap: 0.2rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+
+  .app-header__actions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-header__title {
+    min-width: 0;
+    flex-shrink: 1;
+  }
+
+  /* Drop the verbose "Live · N here" text to just the pulse dot on phones. */
+  .live-badge {
+    font-size: 0;
+    gap: 0;
+  }
+
+  .live-badge__dot {
+    margin: 0;
+  }
+
+  /* iOS zooms the whole page when a focused input's font is < 16px. Force
+     16px on phones (padding still keeps these visually compact). */
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  input[type="password"],
+  input:not([type]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  /* The history search sits in a slide-up sheet — give it a comfortable tap
+     height too (was ~24px). */
+  .action-input--xs {
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+  }
+
   .mapper-card {
     min-height: unset;
     border-width: 2px;
@@ -1680,6 +1735,9 @@ body {
   }
 
   .mapper-card__inner {
+    /* Single column on phones — the two minmax() tracks summed to ~660px
+       and forced the whole app into horizontal scroll at 375px. */
+    grid-template-columns: 1fr;
     gap: 0.95rem;
     padding: 1rem;
     min-height: unset;
@@ -1823,6 +1881,8 @@ body {
     height: auto !important;
     max-height: calc(82vh - 168px);
     padding: 1rem !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .history-drawer__item {
@@ -4219,20 +4279,64 @@ a:focus-visible {
 /* Filter toggle button (All / Starred). Base state = inactive. */
 .history-filter-btn {
   flex: 1;
-  padding: 6px 0;
+  padding: 10px 0;
   font-size: var(--tiny-size);
   font-weight: 600;
   border-radius: var(--border-radius-sm);
-  border: 2px solid rgba(0, 0, 0, 0.1);
-  background: rgba(0, 0, 0, 0.03);
+  border: 2px solid rgba(30, 23, 20, 0.1);
+  background: rgba(30, 23, 20, 0.03);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 .history-filter-btn.is-active {
   border-color: var(--soft-black);
   background: var(--soft-black);
   color: white;
+}
+
+/* Backup export/import buttons — CSS hover (no JS mouse handlers, which stick
+   on touch) and a proper 44px tap target. Tint set per-variant. */
+.history-backup-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 0.95rem;
+  font-size: var(--tiny-size);
+  font-weight: 600;
+  border-radius: var(--border-radius-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border: 2px solid var(--backup-tint, rgba(232, 131, 156, 0.3));
+  background: color-mix(
+    in srgb,
+    var(--backup-tint, rgba(232, 131, 156, 1)) 12%,
+    transparent
+  );
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+@media (hover: hover) {
+  .history-backup-btn:hover {
+    background: color-mix(
+      in srgb,
+      var(--backup-tint, rgba(232, 131, 156, 1)) 22%,
+      transparent
+    );
+    color: var(--soft-black);
+  }
+}
+.history-backup-btn:active {
+  transform: translateY(1px);
+}
+.history-backup-btn--export {
+  --backup-tint: rgba(232, 131, 156, 0.85);
+}
+.history-backup-btn--import {
+  --backup-tint: rgba(134, 197, 166, 0.85);
 }
 
 /* Conversation item title. */
@@ -4790,6 +4894,66 @@ a:focus-visible {
   transform: translateX(0);
 }
 
+/* Tap-to-close backdrop — sits just under the drawer. */
+.voice-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-drawer, 40) - 1);
+  background: rgba(30, 23, 20, 0.32);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 280ms ease;
+}
+
+.voice-drawer-backdrop.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Visible close affordance — always reachable, never trapped. */
+.voice-drawer-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.voice-drawer-close:hover {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  color: var(--color-text);
+}
+
+/* Mobile: drawer becomes a bottom sheet, matching the history drawer. */
+@media (max-width: 640px) {
+  .voice-drawer {
+    inset: auto 0 0 0;
+    top: auto;
+    width: 100%;
+    max-width: 100%;
+    height: min(72vh, 620px);
+    border-left: none;
+    border-top: 2px solid var(--color-border);
+    border-radius: 22px 22px 0 0;
+    transform: translateY(100%);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .voice-drawer.is-open {
+    transform: translateY(0);
+  }
+}
+
 /* ===================================================================
    TOAST — slide-in from right with spring bounce
    ================================================================ */
@@ -4980,6 +5144,15 @@ a:focus-visible {
   background: var(--surface-cream-dark);
   max-height: 150px;
   overflow-y: auto;
+  /* Don't chain scroll into the page behind on iOS. */
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 640px) {
+  .live-transcript-stream {
+    /* 150px ate a third of a phone screen — keep it to a couple of lines. */
+    max-height: 84px;
+  }
 }
 
 .live-transcript-title {

@@ -125,6 +125,17 @@ export default function MobileHistoryMenu() {
     refreshTrigger.value++;
   }, []);
 
+  // Lock body scroll while the drawer is open so iOS momentum scroll inside
+  // the list doesn't chain through to the page behind it.
+  useEffect(() => {
+    if (!isOpen.value) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen.value]);
+
   // Refresh list when conversationData changes (debounced)
   useEffect(() => {
     if (conversationData.value) {
@@ -620,25 +631,7 @@ export default function MobileHistoryMenu() {
           >
             <button
               onClick={handleExport}
-              style={{
-                padding: "7px 14px",
-                fontSize: "var(--tiny-size)",
-                fontWeight: "600",
-                border: "2px solid rgba(232, 131, 156, 0.3)",
-                borderRadius: "var(--border-radius-sm)",
-                background: "rgba(232, 131, 156, 0.1)",
-                color: "var(--color-text-secondary)",
-                cursor: "pointer",
-                transition: "all var(--transition-fast)",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(232, 131, 156, 0.2)";
-                e.currentTarget.style.color = "var(--soft-black)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(232, 131, 156, 0.1)";
-                e.currentTarget.style.color = "var(--color-text-secondary)";
-              }}
+              class="history-backup-btn history-backup-btn--export"
               title="Download all conversations as a JSON backup"
             >
               ↓ Export
@@ -646,25 +639,7 @@ export default function MobileHistoryMenu() {
 
             <button
               onClick={() => importInputRef.current?.click()}
-              style={{
-                padding: "7px 14px",
-                fontSize: "var(--tiny-size)",
-                fontWeight: "600",
-                border: "2px solid rgba(134, 197, 166, 0.3)",
-                borderRadius: "var(--border-radius-sm)",
-                background: "rgba(134, 197, 166, 0.1)",
-                color: "var(--color-text-secondary)",
-                cursor: "pointer",
-                transition: "all var(--transition-fast)",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(134, 197, 166, 0.2)";
-                e.currentTarget.style.color = "var(--soft-black)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(134, 197, 166, 0.1)";
-                e.currentTarget.style.color = "var(--color-text-secondary)";
-              }}
+              class="history-backup-btn history-backup-btn--import"
               title="Import conversations from a backup file (merges, never overwrites newer)"
             >
               ↑ Import

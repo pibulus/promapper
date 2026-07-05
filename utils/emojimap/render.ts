@@ -38,6 +38,9 @@ export function createSvg(node: HTMLElement, config: Config) {
     .attr("viewBox", `0 0 ${config.width} ${config.height}`)
     .attr("preserveAspectRatio", "xMidYMid meet")
     .style("background-color", config.backgroundColor)
+    // Let D3 own pan/zoom gestures instead of the browser trying to scroll
+    // the page — otherwise touch zoom stutters and fights native scroll.
+    .style("touch-action", "none")
     .on("click", (event) => {
       if (event.target === svg.node() && config.onBackgroundClick) {
         config.onBackgroundClick(event);

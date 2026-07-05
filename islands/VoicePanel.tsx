@@ -88,6 +88,15 @@ export default function VoicePanel(
     if (!IS_BROWSER || hasJoined.value || isConnecting.value) return;
     isConnecting.value = true;
 
+    // Create the AudioContext synchronously inside the click handler, before
+    // any await. iOS's user-gesture chain dies at the first network call, so
+    // constructing/resuming it here keeps audio unlocked on iPhone.
+    const audioCtx = new AudioContext();
+    audioCtxRef.current = audioCtx;
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume().catch(() => {});
+    }
+
     const session = await getSession();
     if (!isConnecting.value) return; // connection aborted by user
     if (!session) {
@@ -111,16 +120,8 @@ export default function VoicePanel(
         return;
       }
 
-      // 2. Set up audio analysis (for speaking detection on local)
-      const audioCtx = new AudioContext();
-      audioCtxRef.current = audioCtx;
-      if (audioCtx.state === "suspended") {
-        await audioCtx.resume();
-      }
-      if (!isConnecting.value) {
-        cleanupMedia();
-        return;
-      }
+      // 2. Set up audio analysis (for speaking detection on local).
+      //    AudioContext was created up-front to preserve the iOS gesture chain.
       const source = audioCtx.createMediaStreamSource(stream);
       const analyzer = audioCtx.createAnalyser();
       analyzer.fftSize = 256;
@@ -147,9 +148,22 @@ export default function VoicePanel(
         if (!remoteStream) return;
         const peerId = event.track.id;
 
-        const audio = new Audio();
+        // iOS Safari ignores autoplay on a detached `new Audio()` — the
+        // element must carry `playsInline` AND live in the DOM, then we call
+        // play() explicitly (the join button gesture satisfies the policy).
+        const audio = document.createElement("audio");
         audio.srcObject = remoteStream;
         audio.autoplay = true;
+        audio.playsInline = true;
+        audio.muted = false;
+        // Off-screen but in the DOM — required for iOS playback.
+        audio.style.display = "none";
+        document.body.appendChild(audio);
+        audio.play().catch((err) => {
+          // Autoplay blocked (no gesture in chain) — surface a nudge.
+          console.warn("Remote audio autoplay blocked:", err);
+          showToast("Tap to enable voice audio", "info");
+        });
         audioElsRef.current.set(peerId, audio);
 
         // Set up remote audio analysis for speaking detection
