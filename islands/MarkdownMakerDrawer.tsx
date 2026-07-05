@@ -5,7 +5,7 @@
  * Ported from Svelte project_mapper version with full functionality
  */
 
-import { signal } from "@preact/signals";
+import { useSignal } from "@preact/signals";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { markdownPrompts } from "../utils/markdownPrompts.ts";
 import { markdownService } from "../utils/markdownService.ts";
@@ -27,19 +27,22 @@ interface SavedOutput {
   created_at: string;
 }
 
-const selectedPromptId = signal<string | null>(null);
-const customPrompt = signal("");
-const markdown = signal("");
-const loading = signal(false);
-const error = signal<string | null>(null);
-const savedOutputs = signal<SavedOutput[]>([]);
-// When a saved snapshot is loaded back for editing, saving updates it in place
-// instead of appending a new one.
-const activeDraftId = signal<string | null>(null);
-
 export default function MarkdownMakerDrawer(
   { isOpen, onClose, transcript, conversationId }: MarkdownMakerDrawerProps,
 ) {
+  // Per-instance state — useSignal, NOT module-level signal(): module scope
+  // is shared across concurrent SSR requests, so one visitor's generated
+  // markdown could flash into another visitor's first paint.
+  const selectedPromptId = useSignal<string | null>(null);
+  const customPrompt = useSignal("");
+  const markdown = useSignal("");
+  const loading = useSignal(false);
+  const error = useSignal<string | null>(null);
+  const savedOutputs = useSignal<SavedOutput[]>([]);
+  // When a saved snapshot is loaded back for editing, saving updates it in
+  // place instead of appending a new one.
+  const activeDraftId = useSignal<string | null>(null);
+
   const drawerRef = useRef<HTMLDivElement>(null);
   const [shouldRender, setShouldRender] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);

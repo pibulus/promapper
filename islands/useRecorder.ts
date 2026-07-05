@@ -58,6 +58,30 @@ export function formatTime(seconds: number): string {
   return `${m}:${s < 10 ? "0" : ""}${s}`;
 }
 
+/**
+ * Turn a getUserMedia (or onBeforeStart) rejection into something the user
+ * can act on — "grant permission", "close the other app", and "you're
+ * offline" are three very different problems.
+ */
+export function describeMicError(err: unknown): string {
+  if (err instanceof DOMException) {
+    switch (err.name) {
+      case "NotAllowedError":
+      case "SecurityError":
+        return "Microphone access was denied — allow it in your browser settings.";
+      case "NotFoundError":
+        return "No microphone found. Plug one in or check your input settings.";
+      case "NotReadableError":
+        return "Your microphone is busy in another app. Close it and try again.";
+    }
+  }
+  // onBeforeStart failures (auth ping, network) carry their own message.
+  if (err instanceof Error && err.message && !(err instanceof TypeError)) {
+    return err.message;
+  }
+  return "Couldn't access microphone. Check permissions.";
+}
+
 export function useRecorder(opts: RecorderOptions = {}): RecorderHandle {
   const {
     audioConstraints = {
@@ -181,10 +205,7 @@ export function useRecorder(opts: RecorderOptions = {}): RecorderHandle {
       isStartingRecording.current = false;
       console.error("useRecorder start failed:", err);
       if (!silentMicError) {
-        showToast(
-          "Couldn't access microphone. Check permissions.",
-          "error",
-        );
+        showToast(describeMicError(err), "error");
       }
     }
   }

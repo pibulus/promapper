@@ -18,6 +18,7 @@ import { showToast } from "../utils/toast.ts";
 import { ensureApiSession } from "../utils/apiAuth.ts";
 import { saveAudioBackup } from "../utils/downloadBackup.ts";
 import { enqueueApiRequest } from "../utils/requestQueue.ts";
+import { coerceFlowResult } from "../utils/coerceFlowResult.ts";
 import { soundBloom } from "@utils/sound.ts";
 import { formatTime, useRecorder } from "./useRecorder.ts";
 
@@ -174,10 +175,14 @@ export default function AudioRecorder(
 
         return response.json();
       });
-      console.log("✅ Audio appended successfully:", result);
 
-      if (result.warnings?.length) {
-        for (const warning of result.warnings) {
+      const flowResult = coerceFlowResult(result);
+      if (!flowResult) {
+        throw new Error("Server returned an unexpected response — try again.");
+      }
+
+      if (flowResult.warnings.length) {
+        for (const warning of flowResult.warnings) {
           showToast(warning, "warning");
         }
       }
@@ -190,7 +195,7 @@ export default function AudioRecorder(
       const reconciled = reconcileAppendResult(
         base,
         conversationData.value,
-        result,
+        flowResult,
       );
       conversationData.value = reconciled;
       retryRecordingReady.value = false;

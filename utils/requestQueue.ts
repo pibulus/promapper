@@ -23,9 +23,22 @@ export function enqueueApiRequest<T>(
 ): Promise<T> {
   return queue.enqueue(() => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, timeoutMs);
 
     return task({ signal: controller.signal })
+      .catch((err) => {
+        // Translate our own timeout abort into something a human can act on
+        // (callers surface err.message in a toast — "The operation was
+        // aborted" reads like a crash).
+        if (timedOut) {
+          throw new Error("Request timed out — please try again.");
+        }
+        throw err;
+      })
       .finally(() => clearTimeout(timeoutId));
   });
 }

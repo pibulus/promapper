@@ -98,9 +98,16 @@ export default function VoicePanel(
     }
 
     const session = await getSession();
-    if (!isConnecting.value) return; // connection aborted by user
+    if (!isConnecting.value) {
+      // Aborted by user — release the AudioContext created above (browsers cap
+      // concurrent contexts; leaking one per failed join eventually bricks
+      // voice for the whole tab).
+      cleanupMedia();
+      return;
+    }
     if (!session) {
       isConnecting.value = false;
+      cleanupMedia();
       return;
     }
 
@@ -213,10 +220,13 @@ export default function VoicePanel(
         if (pc.connectionState === "connected") {
           isConnected.value = true;
           isConnecting.value = false;
-        } else if (
-          pc.connectionState === "disconnected" ||
-          pc.connectionState === "failed"
-        ) {
+        } else if (pc.connectionState === "failed") {
+          // Terminal — tear everything down so the mic + level polling don't
+          // keep running behind a dead connection.
+          leaveVoice();
+          showToast("Voice connection lost", "warning");
+        } else if (pc.connectionState === "disconnected") {
+          // May recover on its own — reflect the state but keep media alive.
           isConnected.value = false;
         }
       };
@@ -313,7 +323,9 @@ export default function VoicePanel(
     pcRef.current = null;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
-    audioCtxRef.current?.close();
+    if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
+      audioCtxRef.current.close().catch(() => {});
+    }
     audioCtxRef.current = null;
     analyzerRef.current = null;
     audioElsRef.current.forEach((el) => {

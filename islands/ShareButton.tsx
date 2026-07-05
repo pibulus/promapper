@@ -45,7 +45,11 @@ export default function ShareButton() {
       await navigator.clipboard.writeText(text);
       showToast("Share link copied", "success");
     } catch (error) {
+      // Clipboard API can be unavailable (non-HTTPS, older Safari) — the link
+      // is still visible in the panel, so point the user at it rather than
+      // failing silently.
       console.error("Failed to copy share link:", error);
+      showToast("Couldn't copy automatically — copy the link below", "warning");
     }
   }
 

@@ -29,6 +29,28 @@ export const handler: Handlers<LiveData> = {
 };
 
 export default function LiveRoom({ data }: PageProps<LiveData>) {
+  // No PartyKit host configured = live sync can never connect. Say so instead
+  // of rendering a normal-looking homepage that silently isn't live (the
+  // shared link would just look dead to the person who received it).
+  if (!data.partyHost) {
+    return (
+      <>
+        <Head>
+          <title>Live Collaboration | ProMapper</title>
+          <meta name="robots" content="noindex" />
+        </Head>
+        <main class="live-unconfigured">
+          <h1>Live rooms are napping</h1>
+          <p>
+            This server isn't set up for live collaboration yet (no PartyKit
+            host configured). You can still use ProMapper solo on the{" "}
+            <a href="/">home page</a>.
+          </p>
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <Head>

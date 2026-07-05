@@ -3,6 +3,7 @@ import { useEffect, useRef } from "preact/hooks";
 import { conversationData } from "@signals/conversationStore.ts";
 import { ensureApiSession } from "../utils/apiAuth.ts";
 import { enqueueApiRequest } from "../utils/requestQueue.ts";
+import { coerceFlowResult } from "../utils/coerceFlowResult.ts";
 import { soundBloom } from "@utils/sound.ts";
 import LoadingModal from "../components/LoadingModal.tsx";
 import AudioVisualizer from "./AudioVisualizer.tsx";
@@ -215,19 +216,19 @@ export default function UploadIsland(
         return response.json();
       });
 
-      console.log("✅ Processing complete:", {
-        actionItems: result.actionItems.length,
-        topics: result.nodes.length,
-      });
-      conversationData.value = result;
-      if (result.warnings?.length) {
-        for (const warning of result.warnings) {
+      const flowResult = coerceFlowResult(result);
+      if (!flowResult) {
+        throw new Error("Server returned an unexpected response — try again.");
+      }
+      conversationData.value = flowResult;
+      if (flowResult.warnings.length) {
+        for (const warning of flowResult.warnings) {
           showToast(warning, "warning");
         }
       }
       soundBloom();
       showToast(
-        `Processed! Found ${result.actionItems.length} action items, ${result.nodes.length} topics`,
+        `Processed! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
         "success",
       );
     } catch (error) {
@@ -272,20 +273,20 @@ export default function UploadIsland(
         console.log("📥 Received response from API");
         return response.json();
       });
-      console.log("✅ Processing complete:", {
-        actionItems: result.actionItems.length,
-        topics: result.nodes.length,
-      });
-      conversationData.value = result;
-      if (result.warnings?.length) {
-        for (const warning of result.warnings) {
+      const flowResult = coerceFlowResult(result);
+      if (!flowResult) {
+        throw new Error("Server returned an unexpected response — try again.");
+      }
+      conversationData.value = flowResult;
+      if (flowResult.warnings.length) {
+        for (const warning of flowResult.warnings) {
           showToast(warning, "warning");
         }
       }
       soundBloom();
       textInput.value = "";
       showToast(
-        `Processed! Found ${result.actionItems.length} action items, ${result.nodes.length} topics`,
+        `Processed! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
         "success",
       );
     } catch (error) {
@@ -337,16 +338,20 @@ export default function UploadIsland(
 
         return response.json();
       });
-      conversationData.value = result;
-      if (result.warnings?.length) {
-        for (const warning of result.warnings) {
+      const flowResult = coerceFlowResult(result);
+      if (!flowResult) {
+        throw new Error("Server returned an unexpected response — try again.");
+      }
+      conversationData.value = flowResult;
+      if (flowResult.warnings.length) {
+        for (const warning of flowResult.warnings) {
           showToast(warning, "warning");
         }
       }
       soundBloom();
       lastUploadName.value = file.name;
       showToast(
-        `Processed! Found ${result.actionItems.length} action items, ${result.nodes.length} topics`,
+        `Processed! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
         "success",
       );
     } catch (error) {

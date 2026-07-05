@@ -6,7 +6,7 @@
  */
 
 import { IS_BROWSER } from "$fresh/runtime.ts";
-import { signal, useSignal } from "@preact/signals";
+import { useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import {
   canUndo,
@@ -51,13 +51,6 @@ import { createDemoConversation } from "../utils/demoData.ts";
 import LoadingModal from "../components/LoadingModal.tsx";
 import Confetti from "../components/Confetti.tsx";
 
-const drawerOpen = signal(false);
-const voiceDrawerOpen = signal(false);
-const shortcutsOpen = signal(false);
-const demoLoading = signal(false);
-const demoStage = signal("");
-const showConfetti = signal(false);
-
 const SILENCE_FLUSH_MS = 2_000;
 const MAX_CHUNK_MS = 30_000;
 /** RMS amplitude threshold — values below this are treated as silence.
@@ -66,6 +59,16 @@ const MAX_CHUNK_MS = 30_000;
 const SPEAKING_THRESHOLD = 0.008;
 
 export default function HomeIsland() {
+  // Per-instance UI state. These MUST be useSignal (not module-level signal())
+  // — module scope is shared across concurrent SSR requests, so one visitor's
+  // in-flight demo modal would render into another visitor's HTML.
+  const drawerOpen = useSignal(false);
+  const voiceDrawerOpen = useSignal(false);
+  const shortcutsOpen = useSignal(false);
+  const demoLoading = useSignal(false);
+  const demoStage = useSignal("");
+  const showConfetti = useSignal(false);
+
   // Auto-start live mode if arriving via /live/:roomId link
   useEffect(() => {
     if (!IS_BROWSER) return;
@@ -157,6 +160,10 @@ export default function HomeIsland() {
         contentType: "html",
         loop: false,
       });
+    }).catch(() => {
+      // Chunk failed to load (network blip) — restore the static heading so
+      // the hero isn't left blank.
+      el.innerHTML = "See what you're<br>really saying";
     });
 
     return () => {
@@ -178,7 +185,7 @@ export default function HomeIsland() {
           duration: 500,
           easing: "easeOutElastic(1, .6)",
         });
-      });
+      }).catch(() => {/* entrance animation is optional */});
     }, 50);
     return () => clearTimeout(timer);
   }, [conversationData.value]);
@@ -245,7 +252,9 @@ export default function HomeIsland() {
     // "" trailing fallback = let the browser pick if neither type is supported.
     mimeTypes: ["audio/webm", "audio/mp4", ""],
     onBeforeStart: ensureApiSession,
-    silentMicError: true,
+    // Let the hook surface mic failures — silentMicError:true left the live
+    // record button doing nothing on failure, with no explanation at all.
+    silentMicError: false,
   });
 
   // Silence-aware refs (HomeIsland-specific)
@@ -319,53 +328,71 @@ export default function HomeIsland() {
     // If recording didn't actually start (cancelled, permission denied), bail.
     if (!isRecording.value || !streamRef.current) return;
 
-    // Set up silence detection on the hook's stream
-    const audioCtx = new AudioContext();
-    audioCtxRef.current = audioCtx;
-    if (audioCtx.state === "suspended") {
-      await audioCtx.resume();
-    }
-    if (!isRecording.value) {
-      audioCtx.close();
-      audioCtxRef.current = null;
-      return;
-    }
-    const source = audioCtx.createMediaStreamSource(streamRef.current);
-    const analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 1024;
-    source.connect(analyser);
-    analyserRef.current = analyser;
-
+    // Set up silence detection on the hook's stream. If any of this throws
+    // (context cap reached, stream already ended), fall back to a plain
+    // max-interval flush — without SOME monitor, chunks would never leave the
+    // buffer until the user hits stop.
     chunkStartRef.current = Date.now();
     lastSpeechRef.current = Date.now();
-
-    // Poll audio levels — time-domain RMS for speech energy detection
-    silenceMonitorRef.current = setInterval(() => {
-      if (!analyserRef.current) return;
-      const bufferLength = analyserRef.current.fftSize;
-      const data = new Uint8Array(bufferLength);
-      analyserRef.current.getByteTimeDomainData(data);
-
-      let sumSquares = 0;
-      for (let i = 0; i < bufferLength; i++) {
-        const normalized = (data[i] - 128) / 128;
-        sumSquares += normalized * normalized;
+    try {
+      const audioCtx = new AudioContext();
+      audioCtxRef.current = audioCtx;
+      if (audioCtx.state === "suspended") {
+        await audioCtx.resume();
       }
-      const rms = Math.sqrt(sumSquares / bufferLength);
-      const now = Date.now();
-      const chunkAge = now - chunkStartRef.current;
-
-      if (rms > SPEAKING_THRESHOLD) lastSpeechRef.current = now;
-      const silenceDuration = now - lastSpeechRef.current;
-
-      if (
-        chunksRef.current.length > 0 &&
-        (silenceDuration > SILENCE_FLUSH_MS || chunkAge > MAX_CHUNK_MS)
-      ) {
-        sendChunk();
-        chunkStartRef.current = now;
+      if (!isRecording.value) {
+        audioCtx.close().catch(() => {});
+        audioCtxRef.current = null;
+        return;
       }
-    }, 200) as unknown as number;
+      const source = audioCtx.createMediaStreamSource(streamRef.current);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 1024;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+
+      // Poll audio levels — time-domain RMS for speech energy detection
+      silenceMonitorRef.current = setInterval(() => {
+        if (!analyserRef.current) return;
+        const bufferLength = analyserRef.current.fftSize;
+        const data = new Uint8Array(bufferLength);
+        analyserRef.current.getByteTimeDomainData(data);
+
+        let sumSquares = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          const normalized = (data[i] - 128) / 128;
+          sumSquares += normalized * normalized;
+        }
+        const rms = Math.sqrt(sumSquares / bufferLength);
+        const now = Date.now();
+        const chunkAge = now - chunkStartRef.current;
+
+        if (rms > SPEAKING_THRESHOLD) lastSpeechRef.current = now;
+        const silenceDuration = now - lastSpeechRef.current;
+
+        if (
+          chunksRef.current.length > 0 &&
+          (silenceDuration > SILENCE_FLUSH_MS || chunkAge > MAX_CHUNK_MS)
+        ) {
+          sendChunk();
+          chunkStartRef.current = now;
+        }
+      }, 200) as unknown as number;
+    } catch (err) {
+      console.error("Silence detection unavailable, using timed flush:", err);
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close().catch(() => {});
+        audioCtxRef.current = null;
+      }
+      analyserRef.current = null;
+      // Degraded mode: flush on a fixed cadence instead of on silence.
+      silenceMonitorRef.current = setInterval(() => {
+        if (chunksRef.current.length > 0) {
+          sendChunk();
+          chunkStartRef.current = Date.now();
+        }
+      }, MAX_CHUNK_MS) as unknown as number;
+    }
 
     showToast("Recording — live transcript starting…", "info");
   }
@@ -393,11 +420,17 @@ export default function HomeIsland() {
         body: form,
       });
       if (res.ok) {
-        const { text, speakers } = await res.json();
-        const chunk = { id: Date.now(), text, speakers: speakers as string[] };
-        liveTranscript.value = [...liveTranscript.value, chunk].slice(-20);
-        if (session && text) {
-          sendTranscriptChunk(text, chunk.speakers);
+        const payload = await res.json().catch(() => null);
+        const text = typeof payload?.text === "string" ? payload.text : "";
+        const speakers = Array.isArray(payload?.speakers)
+          ? payload.speakers.filter((s: unknown): s is string =>
+            typeof s === "string"
+          )
+          : [];
+        if (text) {
+          const chunk = { id: Date.now(), text, speakers };
+          liveTranscript.value = [...liveTranscript.value, chunk].slice(-20);
+          if (session) sendTranscriptChunk(text, speakers);
         }
       }
     } catch (err) {
@@ -414,7 +447,7 @@ export default function HomeIsland() {
       silenceMonitorRef.current = null;
     }
     if (audioCtxRef.current) {
-      audioCtxRef.current.close();
+      audioCtxRef.current.close().catch(() => {});
       audioCtxRef.current = null;
       analyserRef.current = null;
     }

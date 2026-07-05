@@ -8,7 +8,7 @@ import { conversationData } from "@signals/conversationStore.ts";
 import { renameSpeaker, setActionItems } from "@signals/actionItemsStore.ts";
 import { liveSession } from "@signals/liveSessionStore.ts";
 import { sendWhiteboardUpdate } from "@signals/partyService.ts";
-import { useRef } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import { showToast } from "@utils/toast.ts";
 import { ensureApiSession } from "@utils/apiAuth.ts";
@@ -135,7 +135,10 @@ export default function DashboardIsland() {
         }
         return;
       }
-      const { elements: updated } = await res.json();
+      const payload = await res.json().catch(() => null);
+      const updated = payload && typeof payload === "object"
+        ? (payload as { elements?: unknown }).elements
+        : null;
       if (updated && Array.isArray(updated)) {
         api?.updateScene({ elements: updated, commitToHistory: false });
         sendWhiteboardUpdate(
@@ -152,21 +155,30 @@ export default function DashboardIsland() {
     }
   }
 
-  (
-    globalThis as typeof globalThis & { __onTranscriptChunk?: () => void }
-  ).__onTranscriptChunk = () => {
-    if (!liveSession.value) return;
-    transcriptChunkCount.current++;
-    const now = Date.now();
-    if (transcriptChunkCount.current % AUTO_DRAW_EVERY !== 0) return;
-    if (now - lastAutoDraw.current < AUTO_DRAW_COOLDOWN_MS) return;
-    // Skip if barely anything new was said — saves a call for "yeah" / "okay".
-    const currentLen = conversationData.value?.transcript?.text?.length ?? 0;
-    if (currentLen - lastDrawnLength.current < 200) return;
-    lastDrawnLength.current = currentLen;
-    lastAutoDraw.current = now;
-    drawFromConversation(true);
-  };
+  // Registered in an effect (not the render body) so it's not a render-phase
+  // side effect, and cleaned up on unmount so a stale closure never lingers on
+  // globalThis after the dashboard goes away.
+  useEffect(() => {
+    const g = globalThis as typeof globalThis & {
+      __onTranscriptChunk?: () => void;
+    };
+    g.__onTranscriptChunk = () => {
+      if (!liveSession.value) return;
+      transcriptChunkCount.current++;
+      const now = Date.now();
+      if (transcriptChunkCount.current % AUTO_DRAW_EVERY !== 0) return;
+      if (now - lastAutoDraw.current < AUTO_DRAW_COOLDOWN_MS) return;
+      // Skip if barely anything new was said — saves a call for "yeah"/"okay".
+      const currentLen = conversationData.value?.transcript?.text?.length ?? 0;
+      if (currentLen - lastDrawnLength.current < 200) return;
+      lastDrawnLength.current = currentLen;
+      lastAutoDraw.current = now;
+      drawFromConversation(true);
+    };
+    return () => {
+      delete g.__onTranscriptChunk;
+    };
+  }, []);
 
   if (!conversationData.value) {
     return (

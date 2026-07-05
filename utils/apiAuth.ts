@@ -9,7 +9,16 @@ export async function ensureApiSession(): Promise<void> {
   }
 
   inFlightSession = (async () => {
-    const status = await fetch("/api/auth", { method: "GET" });
+    let status: Response;
+    try {
+      status = await fetch("/api/auth", { method: "GET" });
+    } catch {
+      // Offline / server unreachable. Without this catch the rejection
+      // surfaces as a misleading "Couldn't access microphone" downstream.
+      throw new Error(
+        "Can't reach the server — check your connection and try again.",
+      );
+    }
     // 204 = valid session, 501 = auth disabled (local dev) — both mean proceed.
     if (status.ok || status.status === 501) {
       return;

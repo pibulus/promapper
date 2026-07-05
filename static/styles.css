@@ -5404,3 +5404,22 @@ a:focus-visible {
   transform: translate(2px, 2px);
   box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.12);
 }
+
+/* Live route fallback when no PartyKit host is configured */
+.live-unconfigured {
+  max-width: 480px;
+  margin: 20vh auto 0;
+  padding: 2rem;
+  text-align: center;
+}
+
+.live-unconfigured h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.live-unconfigured a {
+  color: var(--color-accent);
+  text-decoration: underline;
+}

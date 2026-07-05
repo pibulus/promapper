@@ -136,6 +136,19 @@ export default function MobileHistoryMenu() {
     };
   }, [isOpen.value]);
 
+  // Escape closes the delete confirmation (keyboard parity with the buttons).
+  useEffect(() => {
+    if (!showConfirmDelete.value) return;
+    function onKeydown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        cancelDelete();
+      }
+    }
+    globalThis.addEventListener("keydown", onKeydown);
+    return () => globalThis.removeEventListener("keydown", onKeydown);
+  }, [showConfirmDelete.value]);
+
   // Refresh list when conversationData changes (debounced)
   useEffect(() => {
     if (conversationData.value) {
@@ -666,8 +679,14 @@ export default function MobileHistoryMenu() {
             backdropFilter: "blur(8px)",
             WebkitBackdropFilter: "blur(8px)",
           }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) cancelDelete();
+          }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Delete this conversation?"
             style={{
               background: "rgba(255, 255, 255, 0.98)",
               backdropFilter: "blur(20px)",
@@ -733,6 +752,8 @@ export default function MobileHistoryMenu() {
               </button>
               <button
                 onClick={cancelDelete}
+                // Focus lands on the safe action when the dialog opens.
+                autofocus
                 style={{
                   flex: 1,
                   padding: "14px 20px",

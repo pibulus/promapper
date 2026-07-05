@@ -31,15 +31,14 @@ export default function SharedConversationLoader({ shareId }: Props) {
     loadError.value = null;
 
     async function loadShare() {
-      const shared = loadSharedConversation(shareId);
-
-      if (shared) {
-        applySharedData(shared);
-        if (!cancelled) isLoading.value = false;
-        return;
-      }
-
       try {
+        const shared = loadSharedConversation(shareId);
+
+        if (shared) {
+          applySharedData(shared);
+          return;
+        }
+
         const response = await fetch(
           `/api/share/${encodeURIComponent(shareId)}`,
         );
@@ -132,14 +131,26 @@ export default function SharedConversationLoader({ shareId }: Props) {
   );
 }
 
-function applySharedData(shared: any) {
+function applySharedData(shared: unknown) {
+  // The dashboard dereferences conversation.source and transcript.text — a
+  // share payload missing either would white-screen the whole shared view.
+  if (!shared || typeof shared !== "object") {
+    throw new Error("This share link could not be loaded.");
+  }
+  const s = shared as Record<string, unknown>;
+  if (!s.conversation || typeof s.conversation !== "object") {
+    throw new Error("This share link could not be loaded.");
+  }
   conversationData.value = {
-    conversation: shared.conversation,
-    transcript: shared.transcript,
-    nodes: shared.nodes ?? [],
-    edges: shared.edges ?? [],
-    actionItems: shared.actionItems ?? [],
-    statusUpdates: shared.statusUpdates ?? [],
-    summary: shared.summary,
-  };
+    conversation: s.conversation,
+    transcript: s.transcript && typeof s.transcript === "object"
+      ? s.transcript
+      : { text: "", speakers: [] },
+    nodes: Array.isArray(s.nodes) ? s.nodes : [],
+    edges: Array.isArray(s.edges) ? s.edges : [],
+    actionItems: Array.isArray(s.actionItems) ? s.actionItems : [],
+    statusUpdates: Array.isArray(s.statusUpdates) ? s.statusUpdates : [],
+    summary: s.summary,
+    // deno-lint-ignore no-explicit-any
+  } as any;
 }
