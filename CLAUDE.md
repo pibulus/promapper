@@ -741,3 +741,31 @@ signals/partyService.ts
 party/conversationRoom.ts
   → Handle whiteboard sync messages
 ```
+
+## July 6, 2026 — Decisive Pass (branch: fable-audit-2026-07-05)
+
+The loop is now the product. Shipped on top of the July 5 audit+vibe passes:
+
+1. **Recording dock** (`islands/AudioRecorder.tsx` reworked): floating
+   bottom-center pill on the dashboard — Record slab + takes chip + expandable
+   timeline. Header mic icon removed. Hides during live sessions (mic-conflict
+   guard, graceful stop-on-live).
+2. **Durable takes**: `core/storage/recordingsDB.ts` (IndexedDB, 200MB/100 caps,
+   pure planEviction + tests, orphan sweep on load). Take saved BEFORE the AI
+   runs; listen-back survives reload. The conversation_mapper heritage feature,
+   done right.
+3. **Append receipts**: `core/orchestration/append-receipt.ts` — every take
+   stamped with "+2 topics · 3 new tasks · ✓ 1 done" (toast + timeline).
+4. **AI visibility**: ✨ chip on ai_checked items, tap reveals checked_reason.
+   Demo cookie item seeds it.
+5. **Share/live convergence**: share extras (live:{roomId}, filter: {assignee})
+   sanitized end-to-end; live link offered when sharing from a session; shared
+   view shows join-live banner + filter badge; per-person share buttons on the
+   Overview back; liveSync reconnect-flush (unsent local edits re-send when the
+   room hasn't moved, honest toast when it has).
+6. **Mobile card order**: Action Items lead the single-column stack, transcript
+   last (desktop reading order unchanged via md:order-none).
+
+213 tests green. NOT yet real-device tested: dock on iPhone (recording, sheet,
+safe-area), IDB persistence on Safari, live reconnect flow with two real peers.
+That QA is the next session's first job.
