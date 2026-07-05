@@ -19,7 +19,18 @@
       "Bash(else echo \"Not found\")",
       "mcp__sequential-thinking__sequentialthinking_tools",
       "Bash(git show-ref:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(ps -Ao pid,pcpu,pmem,comm -r)",
+      "Bash(ps -Ao pid,pmem,pcpu,rss,comm -m)",
+      "Bash(ps -Ao pid,pcpu,pmem,etime,command)",
+      "Bash(lsof -iTCP -sTCP:LISTEN -P -n)",
+      "Bash(/bin/ps -Ao pid,pcpu,pmem,etime,comm -r)",
+      "Bash(/bin/ps -Ao pid,pmem,pcpu,rss,etime,comm -m)",
+      "Bash(/bin/ps -Ao pid,ppid,pcpu,pmem,etime,command)",
+      "Bash(memory_pressure)",
+      "Bash(sysctl vm.swapusage)",
+      "Bash(identify /Users/pabloalvarado/Projects/active/apps/promapper/static/og-image.png)",
+      "Bash(magick identify *)"
     ],
     "deny": [],
     "ask": []
