@@ -18,6 +18,9 @@ export interface ShareStore {
 
 const memoryRecords = new Map<string, ShareRoomRecord>();
 
+/** Supabase REST calls sit on user-facing request paths — never hang them. */
+const SUPABASE_FETCH_TIMEOUT_MS = 10_000;
+
 export class MemoryShareStore implements ShareStore {
   async create(
     data: ConversationData,
@@ -88,6 +91,7 @@ export class SupabaseShareStore implements ShareStore {
         data: sanitized,
         expires_at: metadata.expiresAt,
       }),
+      signal: AbortSignal.timeout(SUPABASE_FETCH_TIMEOUT_MS),
     });
 
     const payload = await response.json().catch(() => null);
@@ -110,7 +114,10 @@ export class SupabaseShareStore implements ShareStore {
 
     const response = await fetch(
       `${this.restUrl("conversation_shares")}?${params}`,
-      { headers: this.headers() },
+      {
+        headers: this.headers(),
+        signal: AbortSignal.timeout(SUPABASE_FETCH_TIMEOUT_MS),
+      },
     );
 
     const payload = await response.json().catch(() => null);

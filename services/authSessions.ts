@@ -108,10 +108,13 @@ export async function validateSession(
       return false;
     }
 
-    // Sweep expired revocations occasionally
+    // Cap the revocation set: drop the OLDEST half (Set iterates in insertion
+    // order) instead of flushing everything — recently revoked sids stay
+    // blocked. Best-effort by design; the set is per-isolate anyway.
     if (revoked.size > 1000) {
+      let toDrop = revoked.size - 500;
       for (const sid of revoked) {
-        // Can't fully check without decoding, but cap is enough for safety
+        if (toDrop-- <= 0) break;
         revoked.delete(sid);
       }
     }

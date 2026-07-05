@@ -116,17 +116,25 @@ export const handler: Handlers = {
       const body = await req.json();
       const { text, speakers = [], roomId = null } = body;
 
-      if (!text) {
+      // Non-string text (objects/arrays) would sail past the length cap below,
+      // so the type check and the presence check happen together.
+      if (typeof text !== "string" || !text) {
         return new Response(
           JSON.stringify({ error: "No text provided" }),
           { status: 400, headers: { "Content-Type": "application/json" } },
         );
       }
 
+      // Speakers ride along into AI prompts — keep them short strings only.
+      const safeSpeakers: string[] = Array.isArray(speakers)
+        ? speakers.filter((s: unknown): s is string => typeof s === "string")
+          .map((s: string) => s.slice(0, 100)).slice(0, 50)
+        : [];
+
       // Cap input length before allocating/forwarding to the AI. Aligns with the
       // existing transcript ceiling (SHARE_ROOM_LIMITS.MAX_TRANSCRIPT_LENGTH):
       // anything we accept for processing must also be shareable.
-      if (typeof text === "string" && text.length > MAX_TEXT_LENGTH) {
+      if (text.length > MAX_TEXT_LENGTH) {
         return new Response(
           JSON.stringify({
             error:
@@ -145,7 +153,7 @@ export const handler: Handlers = {
           aiService,
           text,
           conversationId,
-          speakers,
+          safeSpeakers,
           [],
           [],
           [],

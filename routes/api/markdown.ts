@@ -32,17 +32,19 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
   try {
     const { prompt, text, conversation } = await req.json();
 
-    if (!prompt || !text) {
+    // Require actual strings — a non-string truthy value would skip the
+    // length caps below.
+    if (
+      typeof prompt !== "string" || !prompt ||
+      typeof text !== "string" || !text
+    ) {
       return new Response(
         JSON.stringify({ error: "Missing prompt or text" }),
         { status: 400, headers: { "Content-Type": "application/json" } },
       );
     }
 
-    if (
-      (typeof prompt === "string" && prompt.length > MAX_PROMPT_LENGTH) ||
-      (typeof text === "string" && text.length > MAX_TEXT_LENGTH)
-    ) {
+    if (prompt.length > MAX_PROMPT_LENGTH || text.length > MAX_TEXT_LENGTH) {
       return new Response(
         JSON.stringify({ error: "Prompt or text is too large." }),
         { status: 413, headers: { "Content-Type": "application/json" } },
@@ -51,7 +53,7 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
 
     const aiService = getAIService();
 
-    const context = conversation
+    const context = conversation && typeof conversation === "object"
       ? buildExportContext(conversation, text)
       : text;
 

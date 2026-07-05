@@ -151,10 +151,13 @@ export default class ConversationRoom implements Party.Server {
         if (typeof text !== "string" || text.length > 8000) return;
         this.relay(LIVE_MESSAGE_TYPES.TRANSCRIPT_CHUNK, {
           text,
-          speakers: Array.isArray(speakers) ? speakers : [],
+          // Keep only short strings — a peer's payload is not trusted.
+          speakers: Array.isArray(speakers)
+            ? speakers.filter((s): s is string => typeof s === "string")
+              .map((s) => s.slice(0, 100)).slice(0, 50)
+            : [],
           chunkId: typeof chunkId === "string" ? chunkId : String(Date.now()),
           at: Date.now(),
-          sender,
         }, sender);
         return;
       }

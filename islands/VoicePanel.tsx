@@ -154,7 +154,9 @@ export default function VoicePanel(
         const audio = document.createElement("audio");
         audio.srcObject = remoteStream;
         audio.autoplay = true;
-        audio.playsInline = true;
+        // playsInline is a video-element property in the DOM types; for audio
+        // the content attribute is what iOS actually reads.
+        audio.setAttribute("playsinline", "true");
         audio.muted = false;
         // Off-screen but in the DOM — required for iOS playback.
         audio.style.display = "none";

@@ -11,6 +11,11 @@ export const handler: Handlers = {
 
     try {
       const shareId = ctx.params.shareId;
+      // Real share ids are always "cm_" + UUID. Rejecting junk here avoids a
+      // pointless Supabase round-trip per request on a public endpoint.
+      if (!/^cm_[0-9a-fA-F-]{36}$/.test(shareId)) {
+        return jsonResponse({ error: "Share not found." }, 404);
+      }
       const record = await getShareStore().get(shareId);
 
       if (!record) {
@@ -24,15 +29,10 @@ export const handler: Handlers = {
         data: record.data,
       });
     } catch (error) {
+      // Log the detail server-side; never forward provider/DB messages to an
+      // unauthenticated caller.
       console.error("[ShareRead] Failed to load share:", error);
-      return jsonResponse(
-        {
-          error: error instanceof Error
-            ? error.message
-            : "Could not load share.",
-        },
-        500,
-      );
+      return jsonResponse({ error: "Could not load share." }, 500);
     }
   },
 };

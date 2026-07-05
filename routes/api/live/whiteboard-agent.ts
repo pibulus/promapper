@@ -25,16 +25,49 @@ import {
 const MAX_ELEMENTS = 500;
 const MAX_TRANSCRIPT_LENGTH = 8000;
 const AGENT_TIMEOUT_MS = 30_000;
+// A 500-element Excalidraw scene serializes to well under 5MB.
+const MAX_BODY_BYTES = 5_242_880;
+
+interface AgentTopic {
+  label: string;
+  emoji?: string;
+  color?: string;
+}
+
+/** Keep only well-shaped topics; their fields flow into the AI prompt. */
+function sanitizeTopics(raw: unknown): AgentTopic[] {
+  if (!Array.isArray(raw)) return [];
+  const topics: AgentTopic[] = [];
+  for (const entry of raw.slice(0, 50)) {
+    if (!entry || typeof entry !== "object") continue;
+    const t = entry as Record<string, unknown>;
+    if (typeof t.label !== "string" || !t.label.trim()) continue;
+    topics.push({
+      label: t.label.slice(0, 200),
+      emoji: typeof t.emoji === "string" ? t.emoji.slice(0, 16) : undefined,
+      color: typeof t.color === "string" ? t.color.slice(0, 32) : undefined,
+    });
+  }
+  return topics;
+}
 
 export const handler: Handlers = {
   async POST(req) {
     const guard = await guardRequest(req);
     if (guard) return guard;
 
+    const cl = req.headers.get("content-length");
+    if (cl && parseInt(cl, 10) > MAX_BODY_BYTES) {
+      return new Response(JSON.stringify({ error: "Scene too large" }), {
+        status: 413,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     let body: {
       elements?: unknown[];
       transcript?: string;
-      topics?: Array<{ label: string; emoji?: string; color?: string }>;
+      topics?: unknown;
     };
     try {
       body = await req.json();
@@ -48,10 +81,12 @@ export const handler: Handlers = {
     const elements =
       (Array.isArray(body.elements)
         ? body.elements.slice(0, MAX_ELEMENTS)
+          .filter((el) => el && typeof el === "object")
         : []) as Record<string, unknown>[];
-    const transcript = (body.transcript || "").slice(0, MAX_TRANSCRIPT_LENGTH)
-      .trim();
-    const topics = Array.isArray(body.topics) ? body.topics.slice(0, 50) : [];
+    const transcript = (typeof body.transcript === "string"
+      ? body.transcript
+      : "").slice(0, MAX_TRANSCRIPT_LENGTH).trim();
+    const topics = sanitizeTopics(body.topics);
 
     if (!transcript) {
       return new Response(
@@ -93,11 +128,7 @@ export const handler: Handlers = {
         });
       }
 
-      const updated = applyWhiteboardOps(
-        elements as Array<Record<string, unknown>>,
-        ops,
-        topics as Array<{ label: string; emoji?: string; color?: string }>,
-      );
+      const updated = applyWhiteboardOps(elements, ops, topics);
 
       return new Response(JSON.stringify({ elements: updated }), {
         headers: { "Content-Type": "application/json" },

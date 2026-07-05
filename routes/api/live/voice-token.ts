@@ -53,8 +53,16 @@ export const handler: Handlers = {
 
     // If the Voice Relay Worker isn't deployed yet, return a local-dev
     // session with public STUN servers so P2P WebRTC can still work on
-    // localhost (no SFU — direct peer connections only).
+    // localhost (no SFU — direct peer connections only). In production a
+    // missing relay URL is a deploy misconfig — fail closed instead of
+    // silently minting tokens that point nowhere.
     if (!VOICE_RELAY_URL) {
+      if (Deno.env.get("DENO_DEPLOYMENT_ID")) {
+        return new Response(
+          JSON.stringify({ error: "Voice relay not configured" }),
+          { status: 503, headers: { "Content-Type": "application/json" } },
+        );
+      }
       return new Response(
         JSON.stringify({
           sessionId: crypto.randomUUID(),

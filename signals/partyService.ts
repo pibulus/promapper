@@ -88,7 +88,7 @@ export function connectToRoom(
   } catch (err) {
     console.error("PartySocket constructor failed:", err);
     partyConnected.value = false;
-    connectedRoomId.value = "";
+    connectedRoomId.value = null;
     return;
   }
   socket = thisSocket;
