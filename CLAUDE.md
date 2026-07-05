@@ -28,8 +28,9 @@ app by dunking on other tools, subscriptions, managers, or corporate software.
 Just say what this thing is and why it is useful. Avoid fake authority,
 productivity-coach voice, and strings of imperatives like "Talk. Paste. Append."
 
-The main AI provider is OpenRouter. Gemini remains available as a fallback by
-setting `AI_PROVIDER=gemini`.
+The AI provider is OpenRouter only. (The direct-Gemini fallback and its
+`AI_PROVIDER` switch were removed in June 2026 — one API key, per-task model
+routing.)
 
 The killer feature is AI self-checkoff: when a follow-up recording mentions that
 work is done, the app can mark matching action items complete, or move them back
@@ -39,11 +40,12 @@ Run locally with `deno task dev` or `deno task start` on `localhost:8003`.
 Required local env for the default setup:
 
 ```env
-AI_PROVIDER=openrouter
 OPENROUTER_API_KEY=...
-OPENROUTER_MODEL=google/gemini-2.5-flash-lite
 API_AUTH_TOKEN=...
 ```
+
+Optional model overrides: `OPENROUTER_MODEL`, `OPENROUTER_TRANSCRIPTION_MODEL`,
+`OPENROUTER_SUMMARY_MODEL`, `OPENROUTER_TOPIC_MODEL`.
 
 ## AI Model Architecture
 
@@ -80,9 +82,9 @@ context).
 - `~google/gemini-pro-latest` — rolling alias, auto-points to newest Pro
 - `~anthropic/claude-haiku-latest` — rolling alias, auto-points to newest Haiku
 
-**Gemini fallback** — set `AI_PROVIDER=gemini` to use Google's API directly with
-`gemini-2.5-flash`. No per-task model split (Gemini doesn't route through
-OpenRouter).
+**No direct-Gemini fallback** — `core/ai/gemini.ts` and the `AI_PROVIDER` switch
+were deleted in June 2026. Gemini models are reached through OpenRouter like
+everything else.
 
 **Offline path (prototype, not merged)** — Dennis built an offline version that
 downloads whisper for transcription and distilbert for action-item extraction.
@@ -108,7 +110,7 @@ path.
     prompts.ts                  # Prompt builders
     helpers.ts                  # Shared JSON/speaker parsing
     openrouter.ts               # OpenRouter chat/audio implementation
-    gemini.ts                   # Gemini fallback implementation
+    whiteboardAgent.ts          # AI whiteboard scene editor (prompt + ops)
   orchestration/
     conversation-flow.ts        # Builds ConversationFlowResult
     parallel-analysis.ts        # Topics/actions/status/summary in parallel
@@ -173,8 +175,7 @@ the existing conversation.
 ## Key Patterns
 
 - `AIService` is the boundary. Provider-specific code stays in
-  `core/ai/openrouter.ts`, `core/ai/gemini.ts`, `services/ai.ts`, and
-  `services/audio.ts`.
+  `core/ai/openrouter.ts`, `services/ai.ts`, and `services/audio.ts`.
 - API keys stay server-side. Islands call server routes only.
 - `conversationData` in `signals/conversationStore.ts` is the main app state.
   Null-check it before nested access.
@@ -246,8 +247,11 @@ expire 24h after last activity.
 - Client: `signals/partyService.ts` (PartySocket), `signals/liveSync.ts`
   (loopback-guarded two-way sync — `applyRemoteConversation` sets a guard so the
   outbound effect doesn't echo), `signals/presenceStore.ts` +
-  `signals/partyConnectionStore.ts`. Route `routes/live/[roomId].tsx` +
-  `islands/LiveCollabIsland.tsx` + `islands/ChatSidebar.tsx`.
+  `signals/partyConnectionStore.ts`. Route `routes/live/[roomId].tsx` renders
+  the standard `HomeIsland` — live mode (voice drawer, recording, transcript
+  stream) activates on the existing dashboard. (`LiveCollabIsland` and
+  `ChatSidebar` were absorbed into `HomeIsland` — references to them in the
+  session-history sections below are historical.)
 - Server-push: `services/partyUpdates.ts`; `/api/process` + `/api/append` POST
   results to the room when a `roomId` is passed. `/api/live/create` seeds a
   room.
@@ -259,8 +263,7 @@ expire 24h after last activity.
 ## When Adding Features
 
 1. Provider-agnostic AI contracts go in `core/ai/types.ts`.
-2. Provider-specific implementation goes in `core/ai/openrouter.ts` or
-   `core/ai/gemini.ts`.
+2. Provider-specific implementation goes in `core/ai/openrouter.ts`.
 3. Server env/provider wiring goes in `services/ai.ts` and `services/audio.ts`.
 4. Orchestration belongs in `core/orchestration/`.
 5. Interactive UI goes in `islands/`.
