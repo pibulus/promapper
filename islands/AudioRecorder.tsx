@@ -1,20 +1,37 @@
 /**
- * Audio Recorder Island - Record and append audio to conversations
+ * Recording Dock — the heartbeat of the app.
  *
- * Features:
- * - Record audio with MediaRecorder API
- * - Display existing recordings
- * - Play/pause/download controls
- * - 10-minute time limit with warnings
- * - Navigation blocking during recording
- * - Append to existing conversation
+ * A floating bottom-center dock on the dashboard: tap to record another take,
+ * tap the count to relive previous takes. Each take is persisted to IndexedDB
+ * BEFORE the AI pipeline runs (audio survives a failed append), then stamped
+ * with a receipt of what it changed (+topics · new tasks · ✓ done).
+ *
+ * Mount rules (see HomeIsland): stays mounted while a conversation exists —
+ * unmounting mid-recording kills the take without onStop. Hidden via CSS
+ * during a live session (live mode has its own mic flow; two recorders would
+ * fight over getUserMedia) — an effect stops any active take when live starts.
  */
 
 import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import { conversationData } from "@signals/conversationStore.ts";
+import { liveSession } from "@signals/liveSessionStore.ts";
 import { reconcileAppendResult } from "@core/orchestration/append-reconcile.ts";
-import { showToast } from "../utils/toast.ts";
+import {
+  type AppendReceipt,
+  computeAppendReceipt,
+  formatAppendReceipt,
+} from "@core/orchestration/append-receipt.ts";
+import {
+  deleteRecording as deleteStoredRecording,
+  listRecordings,
+  saveRecording,
+  type StoredRecording,
+  sweepOrphans,
+  updateRecording,
+} from "@core/storage/recordingsDB.ts";
+import { getAllConversations } from "@core/storage/localStorage.ts";
+import { showToast, showUndoToast } from "../utils/toast.ts";
 import { ensureApiSession } from "../utils/apiAuth.ts";
 import { saveAudioBackup } from "../utils/downloadBackup.ts";
 import { enqueueApiRequest } from "../utils/requestQueue.ts";
@@ -22,42 +39,31 @@ import { coerceFlowResult } from "../utils/coerceFlowResult.ts";
 import { soundBloom } from "@utils/sound.ts";
 import { formatTime, useRecorder } from "./useRecorder.ts";
 
-interface Recording {
-  id: string;
-  conversation_id: string;
-  file_name: string;
-  data: Blob;
-  created_at: string;
-}
-
 interface AudioRecorderProps {
   conversationId: string;
   onRecordingComplete?: () => void;
 }
 
+// Run the orphan sweep once per page load, not per mount.
+let sweptThisLoad = false;
+
 export default function AudioRecorder(
   { conversationId, onRecordingComplete }: AudioRecorderProps,
 ) {
-  // Recording state
-  const isExpanded = useSignal(false);
+  const takesOpen = useSignal(false);
   const retryRecordingReady = useSignal(false);
+  const takes = useSignal<StoredRecording[]>([]);
+  const playingTakeId = useSignal<string | null>(null);
 
-  // Recordings list + backup notice
-  const recordings = useSignal<Recording[]>([]);
-  const playingRecordingId = useSignal<string | null>(null);
-  const lastBackupNotice = useSignal<string | null>(null);
   const lastRecordingBlobRef = useRef<Blob | null>(null);
-
-  // Audio element ref for playback
+  const lastTakeIdRef = useRef<string | null>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const currentObjectURLRef = useRef<string | null>(null);
 
-  // Time constants
   const MAX_RECORDING_TIME = 10 * 60;
   const WARNING_TIME = 30;
   const MIN_BACKUP_DURATION = 30;
 
-  // Shared recording hook — handles MediaRecorder lifecycle.
   const {
     isRecording,
     recordingTime,
@@ -73,14 +79,24 @@ export default function AudioRecorder(
     onStop: async (blob) => {
       lastRecordingBlobRef.current = blob;
       retryRecordingReady.value = true;
-      if (recordingTime.value >= MIN_BACKUP_DURATION) {
+      // Persist the take FIRST — the audio must survive a failed AI pipeline.
+      const take: StoredRecording = {
+        id: crypto.randomUUID(),
+        conversationId,
+        data: blob,
+        mimeType: blob.type || "audio/webm",
+        fileName: `Take ${takes.value.length + 1}`,
+        createdAt: new Date().toISOString(),
+        durationSec: recordingTime.value,
+      };
+      lastTakeIdRef.current = take.id;
+      const persisted = await saveRecording(take);
+      takes.value = [...takes.value, take];
+      if (!persisted && recordingTime.value >= MIN_BACKUP_DURATION) {
+        // No IndexedDB (private mode) — long takes still get a file backup.
         try {
           saveAudioBackup(blob, conversationId);
-          lastBackupNotice.value =
-            "Saved a backup copy to your Downloads folder";
-          setTimeout(() => {
-            if (lastBackupNotice.value) lastBackupNotice.value = null;
-          }, 4000);
+          showToast("Saved a backup copy to your Downloads folder", "info");
         } catch (error) {
           console.warn("Failed to auto-save recording backup:", error);
         }
@@ -93,15 +109,40 @@ export default function AudioRecorder(
     MAX_RECORDING_TIME - recordingTime.value
   );
 
+  // Hydrate takes from IndexedDB whenever the conversation changes; sweep
+  // orphaned takes once per load.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!sweptThisLoad) {
+        sweptThisLoad = true;
+        try {
+          await sweepOrphans(Object.keys(getAllConversations()));
+        } catch { /* best-effort */ }
+      }
+      const stored = await listRecordings(conversationId);
+      if (!cancelled) takes.value = stored;
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationId]);
+
+  // Going live mid-take: stop gracefully (flush + append) so the live-mode
+  // recorder can have the mic. The dock hides via CSS while live.
+  useEffect(() => {
+    if (liveSession.value && isRecording.value) {
+      stopRecording();
+    }
+  }, [liveSession.value]);
+
   async function retryLastRecording() {
     if (!lastRecordingBlobRef.current) return;
     await processAudioAppend(lastRecordingBlobRef.current);
   }
 
-  // Format date for display
   function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleString("en-US", {
+    return new Date(dateString).toLocaleString("en-US", {
       month: "short",
       day: "numeric",
       hour: "numeric",
@@ -201,32 +242,23 @@ export default function AudioRecorder(
       retryRecordingReady.value = false;
       soundBloom();
 
-      // Add recording to list
-      const newRecording: Recording = {
-        id: crypto.randomUUID(),
-        conversation_id: conversationId,
-        file_name: `Recording ${recordings.value.length + 1}`,
-        data: audioBlob,
-        created_at: new Date().toISOString(),
-      };
-      recordings.value = [...recordings.value, newRecording];
+      // Stamp the take with its receipt — what this recording actually changed.
+      const receipt = computeAppendReceipt(base, reconciled);
+      const takeId = lastTakeIdRef.current;
+      if (takeId) {
+        updateRecording(takeId, { receipt });
+        takes.value = takes.value.map((t) =>
+          t.id === takeId ? { ...t, receipt } : t
+        );
+      }
 
-      // Call completion callback
       if (onRecordingComplete) {
         onRecordingComplete();
       }
 
-      // Counts come from the reconciled state, not raw `result`, so the toast
-      // reflects the user's surviving in-flight edits.
-      const completedCount = reconciled.actionItems.filter((i) =>
-        i.status === "completed"
-      ).length;
-      const pendingCount = reconciled.actionItems.filter((i) =>
-        i.status === "pending"
-      ).length;
-
+      const line = formatAppendReceipt(receipt);
       showToast(
-        `Recording added — ${pendingCount} pending, ${completedCount} completed`,
+        line ? `Take mapped — ${line}` : "Take mapped — no new items this time",
         "success",
       );
     } catch (error) {
@@ -240,387 +272,265 @@ export default function AudioRecorder(
     }
   }
 
-  // Play/pause recording
-  function togglePlayback(recording: Recording) {
-    if (playingRecordingId.value === recording.id) {
-      // Pause current recording
-      if (audioElementRef.current) {
-        audioElementRef.current.pause();
-        audioElementRef.current.src = "";
-      }
-      // Revoke object URL to free memory
-      if (currentObjectURLRef.current) {
-        URL.revokeObjectURL(currentObjectURLRef.current);
-        currentObjectURLRef.current = null;
-      }
-      playingRecordingId.value = null;
-    } else {
-      // Stop any currently playing audio first
-      if (audioElementRef.current) {
-        audioElementRef.current.pause();
-        audioElementRef.current.src = "";
-      }
-      // Revoke previous object URL
-      if (currentObjectURLRef.current) {
-        URL.revokeObjectURL(currentObjectURLRef.current);
-        currentObjectURLRef.current = null;
-      }
-
-      // Create and play new audio
-      const objectURL = URL.createObjectURL(recording.data);
-      currentObjectURLRef.current = objectURL;
-      const audio = new Audio(objectURL);
-
-      audio.onended = () => {
-        playingRecordingId.value = null;
-        audioElementRef.current = null;
-        // Revoke URL when done playing
-        if (currentObjectURLRef.current) {
-          URL.revokeObjectURL(currentObjectURLRef.current);
-          currentObjectURLRef.current = null;
-        }
-      };
-
-      audio.onerror = (error) => {
-        console.error("Error playing audio:", error);
-        playingRecordingId.value = null;
-        audioElementRef.current = null;
-        // Revoke URL on error
-        if (currentObjectURLRef.current) {
-          URL.revokeObjectURL(currentObjectURLRef.current);
-          currentObjectURLRef.current = null;
-        }
-        showToast("Error playing audio. The file may be corrupted.", "error");
-      };
-
-      audio.play().catch((error) => {
-        console.error("Failed to play audio:", error);
-        playingRecordingId.value = null;
-        audioElementRef.current = null;
-        // Revoke URL on play error
-        if (currentObjectURLRef.current) {
-          URL.revokeObjectURL(currentObjectURLRef.current);
-          currentObjectURLRef.current = null;
-        }
-        showToast(
-          "Failed to play audio. Please check your browser settings.",
-          "error",
-        );
-      });
-
-      audioElementRef.current = audio;
-      playingRecordingId.value = recording.id;
+  function stopPlayback() {
+    if (audioElementRef.current) {
+      audioElementRef.current.pause();
+      audioElementRef.current.src = "";
+      audioElementRef.current = null;
     }
+    if (currentObjectURLRef.current) {
+      URL.revokeObjectURL(currentObjectURLRef.current);
+      currentObjectURLRef.current = null;
+    }
+    playingTakeId.value = null;
   }
 
-  // Download recording
-  function downloadRecording(recording: Recording) {
-    const url = URL.createObjectURL(recording.data);
+  // Exclusive play/pause — starting one take pauses any other.
+  function togglePlayback(take: StoredRecording) {
+    if (playingTakeId.value === take.id) {
+      stopPlayback();
+      return;
+    }
+    stopPlayback();
+
+    const objectURL = URL.createObjectURL(take.data);
+    currentObjectURLRef.current = objectURL;
+    const audio = new Audio(objectURL);
+
+    audio.onended = stopPlayback;
+    audio.onerror = () => {
+      stopPlayback();
+      showToast("Error playing audio. The file may be corrupted.", "error");
+    };
+    audio.play().catch((error) => {
+      console.error("Failed to play audio:", error);
+      stopPlayback();
+      showToast(
+        "Failed to play audio. Please check your browser settings.",
+        "error",
+      );
+    });
+
+    audioElementRef.current = audio;
+    playingTakeId.value = take.id;
+  }
+
+  function downloadTake(take: StoredRecording) {
+    const url = URL.createObjectURL(take.data);
     const a = document.createElement("a");
     a.href = url;
 
-    // Add proper file extension based on mime type
     let extension = "webm";
-    if (recording.data.type.includes("ogg")) extension = "ogg";
-    else if (recording.data.type.includes("mp4")) extension = "mp4";
-    else if (recording.data.type.includes("wav")) extension = "wav";
+    if (take.mimeType.includes("ogg")) extension = "ogg";
+    else if (take.mimeType.includes("mp4")) extension = "m4a";
+    else if (take.mimeType.includes("wav")) extension = "wav";
 
-    const fileName = recording.file_name.includes(".")
-      ? recording.file_name
-      : `${recording.file_name}.${extension}`;
-
-    a.download = fileName;
+    a.download = `${take.fileName.replace(/\s+/g, "-").toLowerCase()}.${extension}`;
     a.click();
-
-    // Revoke URL after a short delay to ensure download started
     setTimeout(() => URL.revokeObjectURL(url), 100);
   }
 
-  // Audio playback cleanup on unmount
+  function deleteTake(take: StoredRecording) {
+    if (playingTakeId.value === take.id) stopPlayback();
+    deleteStoredRecording(take.id);
+    takes.value = takes.value.filter((t) => t.id !== take.id);
+    showUndoToast(`Deleted ${take.fileName}`, () => {
+      saveRecording(take);
+      takes.value = [...takes.value, take].sort((a, b) =>
+        a.createdAt.localeCompare(b.createdAt)
+      );
+    });
+  }
+
+  // Playback cleanup on unmount
   useEffect(() => {
-    return () => {
-      if (audioElementRef.current) {
-        audioElementRef.current.pause();
-        audioElementRef.current.src = "";
-        audioElementRef.current = null;
-      }
-      if (currentObjectURLRef.current) {
-        URL.revokeObjectURL(currentObjectURLRef.current);
-        currentObjectURLRef.current = null;
-      }
-    };
+    return () => stopPlayback();
   }, []);
 
-  // Handle ESC key to close panel (but not while recording)
+  // ESC closes the takes sheet (not while recording — Stop stays primary).
   useEffect(() => {
-    if (!isExpanded.value) return;
-
+    if (!takesOpen.value) return;
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape" && !isRecording.value) {
-        isExpanded.value = false;
+        takesOpen.value = false;
       }
     }
-
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [isExpanded.value, isRecording.value]);
+  }, [takesOpen.value, isRecording.value]);
+
+  const capProgress = Math.min(
+    100,
+    (recordingTime.value / MAX_RECORDING_TIME) * 100,
+  );
 
   return (
-    <div class="relative">
-      {/* Compact button in header */}
-      <button
-        onClick={() => isExpanded.value = !isExpanded.value}
-        class={`header-icon-btn${isRecording.value ? " is-recording" : ""}`}
-        data-tip={isRecording.value ? "Recording…" : "Recordings"}
-        aria-label={isRecording.value ? "Recording" : "Audio recordings"}
-        aria-expanded={isExpanded.value}
-      >
-        <i
-          class={isRecording.value
-            ? "fa fa-circle animate-pulse"
-            : "fa fa-microphone"}
-          aria-hidden="true"
-        >
-        </i>
-        {isRecording.value && (
-          <span
-            style={{ fontFamily: "var(--font-mono)" }}
-            class="text-xs font-semibold"
-          >
-            {formatTime(timeRemaining.value)}
-          </span>
-        )}
-        {recordings.value.length > 0 && !isRecording.value && (
-          <span class="header-icon-btn__badge">
-            {recordings.value.length}
-          </span>
-        )}
-      </button>
-
-      {/* Expanded panel */}
-      {isExpanded.value && (
+    <div class={`recording-dock${liveSession.value ? " is-hidden" : ""}`}>
+      {/* Takes timeline sheet */}
+      {takesOpen.value && (
         <div
-          class="audio-recorder-panel absolute top-full right-0 mt-2 rounded-lg shadow-2xl z-50"
-          style={{
-            background: "var(--color-secondary)",
-            border: `var(--border-width) solid var(--color-border)`,
-            width: "380px",
-            maxHeight: "500px",
-            overflow: "hidden",
-          }}
+          class="recording-dock__sheet"
+          role="dialog"
+          aria-label="Recorded takes"
         >
-          {/* Header */}
-          <div
-            style={{
-              background: "var(--color-accent)",
-              padding: "var(--card-padding)",
-              borderBottom: `var(--border-width) solid var(--color-border)`,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "var(--heading-size)",
-                fontWeight: "var(--heading-weight)",
-                color: "white",
-              }}
-            >
-              🎙️ Audio Recordings
-            </h3>
+          <div class="recording-dock__sheet-header">
+            <h3>Takes</h3>
             <button
-              onClick={() => isExpanded.value = false}
-              class="text-white hover:text-gray-200"
-              title="Close"
-              aria-label="Close recorder"
+              type="button"
+              class="recording-dock__sheet-close"
+              aria-label="Close takes"
+              onClick={() => takesOpen.value = false}
             >
-              <i class="fa fa-times" aria-hidden="true"></i>
+              <i class="fa fa-times" aria-hidden="true" />
             </button>
           </div>
-
-          {/* Recording controls */}
-          <div style={{ padding: "var(--card-padding)" }}>
-            <button
-              onClick={isRecording.value ? stopRecording : startRecording}
-              disabled={isProcessing.value && !isRecording.value}
-              class="w-full py-3 font-bold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed mb-3"
-              style={{
-                border: `var(--border-width) solid var(--color-border)`,
-                background: isRecording.value
-                  ? "#EF4444"
-                  : "var(--color-accent)",
-                color: "white",
-                boxShadow: "var(--shadow-soft)",
-                transition: "var(--transition-medium)",
-                fontSize: "var(--text-size)",
-              }}
-            >
-              {isRecording.value ? "⏹ Stop Recording" : "🎙️ Add Recording"}
-            </button>
-
-            {/* Recording warning */}
-            {isRecording.value && (
-              <div class="space-y-2 mb-4">
-                <div class="flex items-center justify-between text-sm">
-                  <span style={{ color: "var(--color-text-secondary)" }}>
-                    Time remaining:
-                  </span>
-                  <span
-                    class={`font-mono font-bold ${
-                      showTimeWarning.value ? "animate-pulse text-red-500" : ""
-                    }`}
-                  >
-                    {formatTime(timeRemaining.value)}
-                  </span>
-                </div>
-                <div
-                  class="rounded p-2 text-xs"
-                  style={{
-                    background: "#FEE2E2",
-                    border: "2px solid #FECACA",
-                    color: "#B91C1C",
-                  }}
-                >
-                  ⚠️ Don't leave the page while recording
-                </div>
-              </div>
-            )}
-
-            {/* Processing indicator */}
-            {isProcessing.value && (
-              <div class="flex items-center justify-center gap-2 py-4">
-                <span class="animate-spin">⚡</span>
-                <span style={{ color: "var(--color-text-secondary)" }}>
-                  Processing audio...
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Recordings list */}
-          <div
-            style={{
-              padding: "0 var(--card-padding) var(--card-padding)",
-              maxHeight: "300px",
-              overflowY: "auto",
-            }}
-          >
-            {recordings.value.length === 0
+          <div class="recording-dock__sheet-body">
+            {takes.value.length === 0
               ? (
-                <div class="text-center py-6">
-                  <i
-                    class="fa fa-microphone text-3xl mb-2"
-                    style={{
-                      color: "var(--color-text-secondary)",
-                      opacity: 0.3,
-                    }}
-                  >
-                  </i>
-                  <p
-                    style={{
-                      fontSize: "var(--small-size)",
-                      color: "var(--color-text-secondary)",
-                    }}
-                  >
-                    No recordings yet
-                  </p>
-                </div>
+                <p class="recording-dock__empty">
+                  No takes yet — hit record and keep talking. Each take lands
+                  here so you can listen back.
+                </p>
               )
               : (
-                <div class="space-y-2">
-                  {recordings.value.map((recording) => (
-                    <div
-                      key={recording.id}
-                      class="rounded-lg p-3 hover:bg-white/50 transition-colors"
-                      style={{
-                        background: "rgba(255,255,255,0.3)",
-                        border: "2px solid var(--color-border)",
-                      }}
-                    >
-                      <div class="flex items-center justify-between gap-2">
-                        <div class="flex-1 min-w-0">
-                          <p
-                            style={{
-                              fontSize: "var(--text-size)",
-                              fontWeight: "600",
-                              color: "var(--color-text)",
-                            }}
-                            class="truncate"
-                          >
-                            {recording.file_name}
-                          </p>
-                          <p
-                            style={{
-                              fontSize: "var(--tiny-size)",
-                              color: "var(--color-text-secondary)",
-                            }}
-                          >
-                            {formatDate(recording.created_at)}
-                          </p>
-                        </div>
-                        <div class="flex gap-1">
-                          <button
-                            onClick={() => togglePlayback(recording)}
-                            class="w-8 h-8 flex items-center justify-center rounded hover:bg-white/50 transition-colors"
-                            title={playingRecordingId.value === recording.id
-                              ? "Pause"
-                              : "Play"}
-                            aria-label={playingRecordingId.value ===
-                                recording.id
-                              ? "Pause recording"
-                              : "Play recording"}
-                          >
-                            <i
-                              class={`fa ${
-                                playingRecordingId.value === recording.id
-                                  ? "fa-pause animate-pulse"
-                                  : "fa-play"
-                              } text-sm`}
-                              aria-hidden="true"
-                            >
-                            </i>
-                          </button>
-                          <button
-                            onClick={() => downloadRecording(recording)}
-                            class="w-8 h-8 flex items-center justify-center rounded hover:bg-white/50 transition-colors"
-                            title="Download"
-                            aria-label="Download recording"
-                          >
-                            <i
-                              class="fa fa-download text-sm"
-                              aria-hidden="true"
-                            >
-                            </i>
-                          </button>
-                        </div>
-                      </div>
+                [...takes.value].reverse().map((take) => (
+                  <div key={take.id} class="recording-dock__take">
+                    <div class="recording-dock__take-info">
+                      <p class="recording-dock__take-name">
+                        {take.fileName}
+                        {take.durationSec
+                          ? (
+                            <span class="recording-dock__take-duration">
+                              {formatTime(take.durationSec)}
+                            </span>
+                          )
+                          : null}
+                      </p>
+                      <p class="recording-dock__take-date">
+                        {formatDate(take.createdAt)}
+                      </p>
+                      {take.receipt && formatAppendReceipt(take.receipt) && (
+                        <p class="recording-dock__take-receipt">
+                          {formatAppendReceipt(take.receipt)}
+                        </p>
+                      )}
                     </div>
-                  ))}
-                </div>
+                    <div class="recording-dock__take-actions">
+                      <button
+                        type="button"
+                        onClick={() => togglePlayback(take)}
+                        aria-label={playingTakeId.value === take.id
+                          ? `Pause ${take.fileName}`
+                          : `Play ${take.fileName}`}
+                      >
+                        <i
+                          class={`fa ${
+                            playingTakeId.value === take.id
+                              ? "fa-pause animate-pulse"
+                              : "fa-play"
+                          }`}
+                          aria-hidden="true"
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => downloadTake(take)}
+                        aria-label={`Download ${take.fileName}`}
+                      >
+                        <i class="fa fa-download" aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        class="is-delete"
+                        onClick={() => deleteTake(take)}
+                        aria-label={`Delete ${take.fileName}`}
+                      >
+                        <i class="fa fa-times" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </div>
+                ))
               )}
           </div>
         </div>
       )}
-      {lastBackupNotice.value && (
-        <div class="mt-4 flex flex-wrap items-center gap-2">
-          <div class="inline-flex items-center gap-2 rounded-full border border-[#f5c999] bg-[#fff6eb] px-4 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#7a4b1f] shadow-sm">
-            <span aria-hidden="true">💾</span>
-            <span>{lastBackupNotice.value}</span>
-          </div>
-        </div>
-      )}
-      {retryRecordingReady.value && (
-        <div class="mt-2">
-          <button
-            class="rounded-full border border-[#7a4b1f]/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-[#7a4b1f] transition hover:border-[#7a4b1f] hover:text-[#4d2b0f]"
-            onClick={retryLastRecording}
-            disabled={isProcessing.value}
-          >
-            Retry Last Recording
-          </button>
-        </div>
-      )}
+
+      {/* The pill */}
+      <div
+        class={`recording-dock__pill${
+          isRecording.value ? " is-recording" : ""
+        }`}
+      >
+        {isRecording.value
+          ? (
+            <>
+              <span class="recording-dock__pulse" aria-hidden="true" />
+              <span class="recording-dock__timer">
+                {formatTime(recordingTime.value)}
+              </span>
+              <span class="recording-dock__cap" aria-hidden="true">
+                <span
+                  class="recording-dock__cap-fill"
+                  style={{ width: `${capProgress}%` }}
+                />
+              </span>
+              {showTimeWarning.value && (
+                <span class="recording-dock__warning">
+                  Auto-stop in {formatTime(timeRemaining.value)}
+                </span>
+              )}
+              <button
+                type="button"
+                class="recording-dock__stop"
+                onClick={stopRecording}
+              >
+                <i class="fa fa-stop" aria-hidden="true" /> Stop
+              </button>
+            </>
+          )
+          : isProcessing.value
+          ? (
+            <span class="recording-dock__processing">
+              <span class="animate-spin" aria-hidden="true">⚡</span>
+              Mapping your words…
+            </span>
+          )
+          : (
+            <>
+              <button
+                type="button"
+                class="recording-dock__record"
+                onClick={startRecording}
+                aria-label="Record another take"
+              >
+                <span class="recording-dock__record-dot" aria-hidden="true" />
+                Record
+              </button>
+              <button
+                type="button"
+                class="recording-dock__takes-chip"
+                onClick={() => takesOpen.value = !takesOpen.value}
+                aria-expanded={takesOpen.value}
+                aria-label={`${takes.value.length} recorded take${
+                  takes.value.length === 1 ? "" : "s"
+                }`}
+              >
+                <i class="fa fa-headphones" aria-hidden="true" />
+                {takes.value.length}
+              </button>
+              {retryRecordingReady.value && (
+                <button
+                  type="button"
+                  class="recording-dock__retry"
+                  onClick={retryLastRecording}
+                  disabled={isProcessing.value}
+                >
+                  Retry last
+                </button>
+              )}
+            </>
+          )}
+      </div>
     </div>
   );
 }

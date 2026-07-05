@@ -518,12 +518,6 @@ export default function HomeIsland() {
                   </h1>
                 </div>
                 <div class="app-header__actions">
-                  {/* Audio Recorder */}
-                  <AudioRecorder
-                    conversationId={conversationData.value.conversation.id ||
-                      ""}
-                  />
-
                   {/* Export — icon only */}
                   <button
                     onClick={() => drawerOpen.value = !drawerOpen.value}
@@ -716,7 +710,11 @@ export default function HomeIsland() {
         <MobileHistoryMenu />
 
         {/* Content Area - Full width, centered */}
-        <main class="app-scroll flex-1 overflow-y-auto px-4 pb-12 pt-4 sm:px-6 lg:px-8">
+        <main
+          class={`app-scroll flex-1 overflow-y-auto px-4 pt-4 sm:px-6 lg:px-8 ${
+            conversationData.value ? "pb-36" : "pb-12"
+          }`}
+        >
           <div class="max-w-7xl mx-auto grid gap-4 sm:gap-6">
             {/* Hero Section - Only show when NO data */}
             {!conversationData.value && (
@@ -765,6 +763,16 @@ export default function HomeIsland() {
       </div>
 
       {/* Auth modal — triggered by requestAuthToken() from anywhere */}
+      {/* Recording dock — the "talk again" loop, front and center. Mounted
+          whenever a conversation exists (NOT gated on liveSession: unmounting
+          mid-recording would kill the take without onStop — the dock hides
+          itself via CSS and stops gracefully when live mode starts). */}
+      {conversationData.value && (
+        <AudioRecorder
+          conversationId={conversationData.value.conversation.id || ""}
+        />
+      )}
+
       <AuthModalIsland />
 
       {/* Keyboard shortcuts cheat sheet */}
