@@ -194,6 +194,10 @@ const ACTION_ITEMS = [
     status: "completed" as const,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    // Show off the AI self-checkoff in the demo.
+    ai_checked: true,
+    checked_reason:
+      "Sheriff Buck closed the meeting with 'someone get Mabel a cookie' — the room considered it handled.",
   },
   {
     id: "demo_ai_5",

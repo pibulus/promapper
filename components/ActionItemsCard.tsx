@@ -37,6 +37,12 @@ interface ActionItemsCardProps {
   onUpdateItems: (items: ActionItem[]) => void;
 }
 
+/** Optional AI-attribution fields set by the server's append merge. */
+type AIFlaggedItem = ActionItem & {
+  ai_checked?: boolean;
+  checked_reason?: string;
+};
+
 /**
  * Parse a YYYY-MM-DD date string at local midnight to avoid UTC offset shifting
  * the displayed day (e.g. "2025-12-01" showing as "Nov 30" in UTC-5 timezones).
@@ -116,6 +122,8 @@ export default function ActionItemsCard(
   // separate from the persistent completed state so it never replays on
   // re-render (scroll/filter/append); cleared after the animation.
   const poppingId = useSignal<string | null>(null);
+  // Which item's AI-reason line is expanded (one at a time).
+  const expandedReasonId = useSignal<string | null>(null);
 
   // Refs
   const dropdownTimeoutRef = useRef<number | null>(null);
@@ -1303,6 +1311,41 @@ export default function ActionItemsCard(
                                           </div>
                                         </div>
                                       )}
+
+                                    {/* AI self-checkoff — make the magic take
+                                        a bow. Chip shows when the AI flipped
+                                        this item; tap reveals what it heard.
+                                        Fields vanish on manual toggle (by
+                                        design) and the chip goes with them. */}
+                                    {(item as AIFlaggedItem).ai_checked && (
+                                      <div class="action-item-ai">
+                                        <button
+                                          type="button"
+                                          class="action-item-chip action-item-chip--ai px-3 py-1 rounded text-xs"
+                                          aria-expanded={expandedReasonId
+                                            .value === item.id}
+                                          onClick={() =>
+                                            expandedReasonId.value =
+                                              expandedReasonId.value === item.id
+                                                ? null
+                                                : item.id}
+                                          title="The AI updated this item — tap for why"
+                                        >
+                                          ✨ AI{" "}
+                                          {item.status === "completed"
+                                            ? "checked this off"
+                                            : "reopened this"}
+                                        </button>
+                                        {expandedReasonId.value === item.id &&
+                                          (item as AIFlaggedItem)
+                                            .checked_reason && (
+                                          <p class="action-item-ai-reason">
+                                            "{(item as AIFlaggedItem)
+                                              .checked_reason}"
+                                          </p>
+                                        )}
+                                      </div>
+                                    )}
                                   </>
                                 )}
                             </div>

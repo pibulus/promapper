@@ -5895,3 +5895,38 @@ label {
     animation: none;
   }
 }
+
+/* AI self-checkoff chip + reason reveal (Action Items). Accent-tinted like
+   .is-overdue but softer — the AI is a helper, not an alarm. */
+.action-item-chip--ai {
+  border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--surface-cream));
+  color: var(--color-accent);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.action-item-chip--ai:hover {
+  background: color-mix(in srgb, var(--color-accent) 18%, var(--surface-cream));
+}
+
+.action-item-chip--ai:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+.action-item-ai {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.action-item-ai-reason {
+  font-size: var(--tiny-size);
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  border-left: 3px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
+  padding-left: 0.6rem;
+  max-width: 42ch;
+}
