@@ -1693,6 +1693,25 @@ body {
     flex-shrink: 1;
   }
 
+  /* The wordmark never shrinks or gets overlapped. The left group's Tailwind
+     flex-1 means basis 0% — it yields EVERYTHING to the actions cluster and
+     the brand text overflows underneath it. Basis auto instead: both sides
+     shrink proportionally, the title truncates, and the actions cluster
+     scrolls internally once it runs out of room. */
+  .app-header__brand {
+    flex-shrink: 0;
+  }
+
+  .app-header__container > .flex-1 {
+    flex: 1 1 auto;
+  }
+
+  .app-header__actions {
+    flex: 0 1 auto;
+    min-width: 0;
+    margin-left: 0.4rem;
+  }
+
   /* Drop the verbose "Live · N here" text to just the pulse dot on phones. */
   .live-badge {
     font-size: 0;
@@ -5422,4 +5441,78 @@ a:focus-visible {
 .live-unconfigured a {
   color: var(--color-accent);
   text-decoration: underline;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   VIBE PASS — universal press feedback + micro-delight (2026-07-05)
+   Mobile has no hover: :active is the ONLY tactile channel there. Every
+   interactive control must visibly land when tapped. Transform-only
+   (compositor-friendly), guarded for reduced motion at the end.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Kill the iOS double-tap-zoom delay on every control — instant taps. */
+button,
+[role="button"],
+a,
+input,
+select,
+textarea,
+label {
+  touch-action: manipulation;
+}
+
+/* The press: everything clickable that only had hover feedback. Quick dip +
+   slight shrink = physical. Release springs back on each button's own
+   transition (or snaps — imperceptible at this scale). */
+.card-back-btn:not(:disabled):active,
+.history-filter-btn:active,
+.history-action-btn:active,
+.flip-card-btn:active,
+.action-header-btn:active,
+.action-item-chip--btn:active,
+.action-item-edit-btn:active,
+.action-item-delete-btn:active,
+.mapper-clip-btn:active,
+.topic-map-add-button:active,
+.header-export-btn:active,
+.topic-viz-trigger:active,
+.topic-viz-menu-item:active,
+.voice-drawer-close:active,
+.whiteboard-toolbar button:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+/* Whimsy: the wordmark's accent dot does a happy little hop on brand hover.
+   Springy linear() so it overshoots like a real bounce. */
+.app-header__brand-dot {
+  display: inline-block;
+}
+.app-header__brand:hover .app-header__brand-dot {
+  animation: brand-dot-hop 0.55s
+    linear(
+      0,
+      0.4 12%,
+      1.05 32%,
+      0.85 46%,
+      1.02 62%,
+      0.97 76%,
+      1 100%
+    );
+}
+@keyframes brand-dot-hop {
+  0% {
+    transform: translateY(0);
+  }
+  32% {
+    transform: translateY(-5px) scale(1.25);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-header__brand:hover .app-header__brand-dot {
+    animation: none;
+  }
 }

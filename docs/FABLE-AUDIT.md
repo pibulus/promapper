@@ -128,3 +128,64 @@ endpoints ✅.
 - `4022560` chore: 🧹 dead code sweep — 6 unused components, 3 orphaned deps,
   debug logs, dedupe
 - (this commit) docs: CLAUDE.md accuracy + this report
+
+---
+
+## 🎸 VIBE PASS — 2026-07-05 (same branch)
+
+Calibrated against the design bible (BRAND-design-reference, ANIMATION-holy-
+cheatsheet, STACK-softstack-chassis). Drove the real app in Playwright at 1280px
+and 375px: home → ✨DEMO → full dashboard (Dusty Gulch pig-biting incident 🐷),
+history drawer open/close, header layout measured via `getBoundingClientRect`,
+press/hover rules verified live in the stylesheet, horizontal-scroll and
+console-error checks. Screenshots: `docs/vibe-shots/`.
+
+**Verdict first: the app is already deeply juicy** — confetti demo payoff,
+typewriter hero, dopamine checkoff pops, spring drawers, springy node map, 44px
+tap targets via `::after`, 5 `prefers-reduced-motion` blocks. This pass fixed
+the gaps rather than adding noise.
+
+### What I juiced
+
+1. **Universal press feedback (the mobile gap).** The stylesheet had **84
+   `:hover` rules but only 11 `:active`** — on a phone there is no hover, so
+   most taps landed dead. One grouped rule now gives every hover-only control
+   (card-back, history, filter, chip, edit/delete, viz toolbar, whiteboard
+   toolbar, `+ Topic`, drawer close) a quick `translateY(1px) scale(0.97)` dip.
+   Transform-only, compositor-friendly.
+2. **`touch-action: manipulation` on all controls** — kills the iOS
+   double-tap-zoom delay so every tap responds instantly.
+3. **Mobile header overlap (measured, real).** At 375px the actions cluster
+   overlapped the wordmark by 38px (first icon x=68 vs brand end x=106) — the
+   left group's Tailwind `flex-1` (basis 0%) yielded everything. Fixed the flex
+   model: brand never shrinks, title truncates, actions cluster shrinks +
+   scrolls internally. Re-measured: no overlap, cluster scrollable.
+4. **Whimsy moment:** the wordmark's accent dot does a springy little hop on
+   brand hover (`linear()` spring easing, reduced-motion guarded). Tiny, earns a
+   smile, costs nothing.
+5. **Drawer a11y/feel (found via the accessibility tree):** the history drawer
+   is only _translated_ off-screen, so its entire content sat in the Tab order +
+   screen-reader tree while invisible. Now `inert` + `aria-hidden` when closed
+   (voice drawer got `inert` too).
+
+### Flows actually driven in Playwright
+
+Home hero (typewriter + chunky slab CTA) · ✨DEMO staged loading → confetti →
+dashboard · transcript/summary/action-items cards · history drawer open/ close
+on mobile · header at both breakpoints · press-rule + touch-action + inert
+verified via `evaluate` · zero console errors after all changes.
+
+### Polish next (ranked by delight-impact)
+
+1. **Scroll hint on the mobile header cluster** — a right-edge fade when more
+   icons hide off-screen (scroll-timeline is clean for this now).
+2. **Drag-and-drop reorder on action items is already pointer-based and good** —
+   worth a haptic + drop-shadow ghost pass on a real phone.
+3. **Node-map first-render pop** — nodes could scale-in with the springy bezier
+   they already use for hover-settle.
+4. **History-item swipe-to-delete** on mobile (with the existing undo toast as
+   the safety net).
+
+Verification after vibe pass: `deno task check` ✅ · 200/200 tests ✅ ·
+`deno task build` ✅ · no horizontal scroll at 375px ✅ · zero console errors
+✅.

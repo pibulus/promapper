@@ -660,6 +660,8 @@ export default function HomeIsland() {
             role="dialog"
             aria-label="Voice panel"
             aria-hidden={!voiceDrawerOpen.value}
+            // @ts-ignore inert is valid HTML; Preact's types lag behind
+            inert={!voiceDrawerOpen.value ? true : undefined}
           >
             <button
               type="button"

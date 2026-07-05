@@ -338,11 +338,18 @@ export default function MobileHistoryMenu() {
         />
       )}
 
-      {/* Slide-out Drawer */}
+      {
+        /* Slide-out Drawer. inert while closed — it's only translated
+          off-screen, so without this its whole content stays in the Tab
+          order and screen-reader tree while invisible. */
+      }
       <div
         class={`history-drawer history-drawer-panel fixed inset-y-0 right-0 w-96 max-w-[85vw] z-40 ${
           isOpen.value ? "is-open" : "is-closed"
         }`}
+        aria-hidden={!isOpen.value}
+        // @ts-ignore inert is valid HTML; Preact's types lag behind
+        inert={!isOpen.value ? true : undefined}
       >
         {/* Header */}
         <div class="history-drawer-header">
