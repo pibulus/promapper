@@ -389,11 +389,6 @@ body {
   background: var(--surface-cream-hover);
 }
 
-/* Assignee + due-date chip buttons */
-.action-item-chip-btn:hover {
-  background: var(--surface-cream-hover);
-}
-
 /* Dropdown option rows — item-level and modal assignee lists */
 .action-dropdown-option:hover {
   background: var(--color-secondary);
@@ -410,12 +405,14 @@ body {
     color var(--transition-fast),
     transform var(--transition-fast);
 }
-/* 44px touch target without growing the 24px visual (mirrors the checkbox). */
+/* Tall tap target without growing the 24px visual. Width capped at 28px —
+   the edit button's center sits 28px away, so 44px-wide targets would
+   overlap and make the corner a coin-flip on touch. */
 .action-item-delete-btn::before {
   content: "";
   position: absolute;
   inset: 50%;
-  width: 44px;
+  width: 28px;
   height: 44px;
   transform: translate(-50%, -50%);
 }
@@ -434,11 +431,6 @@ body {
   background: color-mix(in srgb, var(--color-accent) 14%, var(--surface-cream));
   color: var(--color-accent);
   transform: scale(1.15) rotate(8deg);
-}
-
-/* Chevron button next to assignee input in the Add modal */
-.action-chevron-btn:hover {
-  color: var(--color-text);
 }
 
 /* ===================================================================
@@ -2330,6 +2322,41 @@ html::-webkit-scrollbar-thumb:hover,
   }
 }
 
+/* Rotating conic ring shown while a row is selected or being edited
+   (was a 20-line inline style block on every row). */
+.border-beam-ring {
+  position: absolute;
+  inset: -2px;
+  border-radius: 0.45rem;
+  background: conic-gradient(
+    from 0deg,
+    transparent,
+    var(--color-accent),
+    transparent,
+    var(--color-accent),
+    transparent
+  );
+  mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 2px),
+    #000 calc(100% - 2px + 1px)
+  );
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 2px),
+    #000 calc(100% - 2px + 1px)
+  );
+  animation: border-beam-spin 6s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.85;
+}
+@media (prefers-reduced-motion: reduce) {
+  .border-beam-ring {
+    animation: none;
+  }
+}
+
 .action-item-card:hover {
   transform: translateY(-2.5px);
   box-shadow: 5px 5px 0px 0px var(--soft-black);
@@ -2627,7 +2654,9 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 .action-item-checkbox-button.is-checked {
-  background: var(--color-accent);
+  /* --accent-strong, not raw accent: the white check must stay readable on
+     every theme (GOLD/LIME raw accents fail contrast with white). */
+  background: var(--accent-strong);
   border-color: var(--soft-black);
   color: white;
   box-shadow: 2px 2px 0px 0px var(--soft-black);
@@ -2939,11 +2968,12 @@ html::-webkit-scrollbar-thumb:hover,
   transition: opacity var(--transition-fast), background var(--transition-fast);
 }
 /* 44px touch target without growing the 24px visual (mirrors the checkbox). */
+/* Width capped at 28px so it can't overlap the delete button 28px away. */
 .action-item-edit-btn::before {
   content: "";
   position: absolute;
   inset: 50%;
-  width: 44px;
+  width: 28px;
   height: 44px;
   transform: translate(-50%, -50%);
 }
@@ -3013,13 +3043,6 @@ html::-webkit-scrollbar-thumb:hover,
   line-height: var(--line-height);
 }
 
-/* Form label in the add-item modal. */
-.action-form-label {
-  font-size: var(--text-size);
-  font-weight: 600;
-  color: var(--color-text);
-}
-
 /* Bordered input (2px, theme token, text-size). */
 .action-input {
   font-size: var(--text-size);
@@ -3042,15 +3065,41 @@ html::-webkit-scrollbar-thumb:hover,
   padding: 0.1rem 0.45rem;
   font-size: var(--tiny-size);
 }
-.action-date-preset--lg {
-  padding: 0.15rem 0.55rem;
-  font-size: var(--tiny-size);
+/* Filter pill active state (when aria-pressed=true). --accent-strong is the
+   "accent white text can sit on" token, so this passes contrast on every
+   theme (raw GOLD/LIME accents fail AA with white). */
+.action-filter-pill[aria-pressed="true"] {
+  background: var(--accent-strong);
+  color: #fff;
 }
 
-/* Filter pill active state (when aria-pressed=true). */
-.action-filter-pill[aria-pressed="true"] {
-  background: var(--color-accent);
-  color: #fff;
+/* Bulk text-actions under the filter pills (Complete all / Clear N done).
+   Quiet inline buttons with a full-height tap target. */
+.action-bulk-btn {
+  position: relative;
+  font-size: var(--tiny-size);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  padding: 0.15rem 0;
+  transition: color var(--transition-fast);
+}
+.action-bulk-btn::before {
+  content: "";
+  position: absolute;
+  inset: 50%;
+  width: 100%;
+  min-width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+.action-bulk-btn:hover {
+  color: var(--color-text);
+}
+.action-bulk-btn--accent {
+  color: var(--color-accent);
+}
+.action-bulk-btn--accent:hover {
+  color: var(--accent-strong);
 }
 
 /* Modal primary action (soft-black button — delete / clear-done). */
@@ -3072,12 +3121,12 @@ html::-webkit-scrollbar-thumb:hover,
   color: var(--color-text);
 }
 
-/* Progress counter inside the header band. */
+/* Progress counter inside the header band. Inherits the band's ink — a
+   hardcoded white here was dead (overridden) and wrong on pale-tint bands. */
 .header-progress {
   margin-left: 0.5rem;
   font-size: var(--tiny-size);
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
 }
 
 .topic-visualizations-shell {

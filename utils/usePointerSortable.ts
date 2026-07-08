@@ -251,7 +251,10 @@ export function usePointerSortable(options: SortableOptions) {
 
     draggingId.value = null;
 
-    const committed = s.currentIndex !== s.fromIndex;
+    // pointercancel = the browser stole the gesture (scroll/zoom/palm) — that
+    // is NOT a drop. Revert instead of committing a half-finished reorder.
+    const cancelled = event.type === "pointercancel";
+    const committed = !cancelled && s.currentIndex !== s.fromIndex;
     const finalOrder = previewOrder.value ?? orderedIds();
     const id = s.id;
     session.current = null;

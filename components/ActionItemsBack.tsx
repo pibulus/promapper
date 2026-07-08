@@ -124,7 +124,9 @@ export default function ActionItemsBack(
         {total === 0
           ? (
             <div class="empty-state">
-              <div class="empty-state-icon">📊</div>
+              <div class="empty-state-icon">
+                <i class="fa fa-chart-simple" aria-hidden="true"></i>
+              </div>
               <div class="empty-state-text">Nothing to summarize yet</div>
             </div>
           )
@@ -178,7 +180,8 @@ export default function ActionItemsBack(
                         color: "var(--color-text-secondary)",
                       }}
                     >
-                      All clear — nothing pending. 🎉
+                      All clear — nothing pending{" "}
+                      <i class="fa fa-champagne-glasses" aria-hidden="true"></i>
                     </p>
                   )
                   : (
@@ -229,7 +232,8 @@ export default function ActionItemsBack(
                   disabled={pending === 0}
                   class="card-back-btn"
                 >
-                  ✓ Mark all done{pending > 0 ? ` (${pending})` : ""}
+                  <i class="fa fa-check" aria-hidden="true"></i>{" "}
+                  Mark all done{pending > 0 ? ` (${pending})` : ""}
                 </button>
                 <button
                   type="button"
@@ -245,7 +249,8 @@ export default function ActionItemsBack(
                   disabled={done === 0}
                   class="card-back-btn is-danger"
                 >
-                  🧹 Clear done{done > 0 ? ` (${done})` : ""}
+                  <i class="fa fa-broom" aria-hidden="true"></i>{" "}
+                  Clear done{done > 0 ? ` (${done})` : ""}
                 </button>
               </div>
             </div>

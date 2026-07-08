@@ -162,7 +162,11 @@ export function normalizeStored(
     transcript: record.transcript ?? { text: "", speakers: [] },
     nodes: Array.isArray(record.nodes) ? record.nodes : [],
     edges: Array.isArray(record.edges) ? record.edges : [],
-    actionItems: Array.isArray(record.actionItems) ? record.actionItems : [],
+    // Sweep `temp-` ghosts: the old inline-create published its draft row into
+    // the store, so a reload mid-draft persisted an empty item forever.
+    actionItems: Array.isArray(record.actionItems)
+      ? record.actionItems.filter((item) => !item?.id?.startsWith?.("temp-"))
+      : [],
     statusUpdates: Array.isArray(record.statusUpdates)
       ? record.statusUpdates
       : [],

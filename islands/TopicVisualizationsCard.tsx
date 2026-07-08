@@ -37,7 +37,13 @@ export default function TopicVisualizationsCard() {
   }, []);
 
   return (
-    <div ref={cardRef} class="w-full md:col-span-2 lg:col-span-3">
+    // order-4 keeps the map BELOW the action items in the mobile single-column
+    // stack — grid items without an order default to 0 and would jump above
+    // the order-1/2/3 cards.
+    <div
+      ref={cardRef}
+      class="w-full md:col-span-2 lg:col-span-3 order-4 md:order-none"
+    >
       <div class="dashboard-card">
         <div class="dashboard-card-header">
           <h3>Topic Visualizations</h3>

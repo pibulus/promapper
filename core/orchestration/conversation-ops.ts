@@ -24,35 +24,78 @@ export function updateActionItems(
 }
 
 /**
+ * Rebuild an item without ai_checked/checked_reason and with a new status +
+ * updated_at stamp. A manual status change is the user overriding the AI, so
+ * the item must no longer count as AI-decided — otherwise a later append's
+ * status reconciliation could silently re-flip it. Every manual status
+ * mutation (single toggle, bulk complete) funnels through here so the guard
+ * can't drift between call sites.
+ */
+function withManualStatus(
+  item: ActionItem,
+  status: ActionItem["status"],
+  now: string,
+): ActionItem {
+  const { ai_checked: _ai, checked_reason: _reason, ...rest } = item as
+    & ActionItem
+    & { ai_checked?: boolean; checked_reason?: string };
+  return { ...rest, status, updated_at: now };
+}
+
+/**
+ * Toggle one action item's completed/pending status within a plain item list.
+ * List-level twin of toggleActionItemStatus for callers that hold items
+ * without the surrounding ConversationData (the card's local state).
+ */
+export function toggleActionItemInList(
+  items: ActionItem[],
+  id: string,
+  now: string,
+): ActionItem[] {
+  return items.map((item) =>
+    item.id === id
+      ? withManualStatus(
+        item,
+        item.status === "completed" ? "pending" : "completed",
+        now,
+      )
+      : item
+  );
+}
+
+/**
  * Toggle a single action item's completed/pending status by id, stamping
- * updated_at. Clears the ai_checked/checked_reason flags: a manual toggle is the
- * user overriding the AI, so the item must no longer count as AI-decided —
- * otherwise a later append's status reconciliation could silently re-flip it.
+ * updated_at and clearing the AI-attribution flags (see withManualStatus).
  */
 export function toggleActionItemStatus(
   data: ConversationData,
   id: string,
   now: string,
 ): ConversationData {
-  const actionItems = data.actionItems.map((item) => {
-    if (item.id !== id) return item;
-    // Rebuild without ai_checked/checked_reason (these are optional fields on
-    // the action item; omitting them on a manual toggle is the whole point).
-    const { ai_checked: _ai, checked_reason: _reason, ...rest } = item as
-      & typeof item
-      & {
-        ai_checked?: boolean;
-        checked_reason?: string;
-      };
-    return {
-      ...rest,
-      status: item.status === "completed"
-        ? ("pending" as const)
-        : ("completed" as const),
-      updated_at: now,
-    };
-  });
-  return { ...data, actionItems };
+  return {
+    ...data,
+    actionItems: toggleActionItemInList(data.actionItems, id, now),
+  };
+}
+
+/**
+ * Complete every pending item (bulk "Complete all" / "Mark all done").
+ * Already-completed items are untouched — their AI attribution survives.
+ */
+export function completeAllActionItems(
+  items: ActionItem[],
+  now: string,
+): ActionItem[] {
+  return items.map((item) =>
+    item.status === "pending" ? withManualStatus(item, "completed", now) : item
+  );
+}
+
+/**
+ * Drop every completed item (bulk "Clear done").
+ */
+export function clearCompletedActionItems(items: ActionItem[]): ActionItem[] {
+  return items.filter((item) => item.status !== "completed");
 }
 
 /**

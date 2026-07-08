@@ -6,6 +6,10 @@
 
 import { conversationData } from "@signals/conversationStore.ts";
 import { renameSpeaker, setActionItems } from "@signals/actionItemsStore.ts";
+import {
+  clearCompletedActionItems,
+  completeAllActionItems,
+} from "@core/orchestration/conversation-ops.ts";
 import { liveSession } from "@signals/liveSessionStore.ts";
 import { sendWhiteboardUpdate } from "@signals/partyService.ts";
 import { useEffect, useRef } from "preact/hooks";
@@ -204,8 +208,11 @@ export default function DashboardIsland() {
   // Mutations delegate to the action-items store (pure transforms in core/).
   return (
     <div>
-      {/* Grid Container - Simple CSS Grid */}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+      {
+        /* Grid Container - Simple CSS Grid. pb-28 keeps the last row's content
+          readable above the floating recording dock. */
+      }
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pb-28">
         {
           /* Mobile hierarchy: a returning user's question is "what do I do
             next" — Action Items lead the single-column stack, transcript
@@ -244,17 +251,17 @@ export default function DashboardIsland() {
             back={
               <ActionItemsBack
                 items={actionItems}
+                // Same pure ops as the front card, so both faces stamp
+                // updated_at and strip AI-attribution flags identically.
                 onMarkAllDone={() =>
                   setActionItems(
-                    actionItems.map((i) => ({
-                      ...i,
-                      status: "completed" as const,
-                    })),
+                    completeAllActionItems(
+                      actionItems,
+                      new Date().toISOString(),
+                    ),
                   )}
                 onClearDone={() =>
-                  setActionItems(
-                    actionItems.filter((i) => i.status !== "completed"),
-                  )}
+                  setActionItems(clearCompletedActionItems(actionItems))}
               />
             }
           />
@@ -265,23 +272,25 @@ export default function DashboardIsland() {
 
         {/* Card 5: Whiteboard — only in live meetings, full width */}
         {liveSession.value && (
-          <div style={{ gridColumn: "1 / -1" }} ref={whiteboardRef}>
+          <div
+            class="order-5 md:order-none"
+            style={{ gridColumn: "1 / -1" }}
+            ref={whiteboardRef}
+          >
             <div class="whiteboard-toolbar">
               <span class="whiteboard-toolbar-label">
-                ✏️ Whiteboard
+                <i class="fa fa-pen-ruler" aria-hidden="true"></i> Whiteboard
               </span>
               <div style="display: flex; gap: 0.4rem; align-items: center;">
                 <button
-                  onClick={() =>
-                    downloadBoard()}
+                  onClick={() => downloadBoard()}
                   class="whiteboard-draw-btn"
                   title="Download board as PNG"
                 >
                   ⬇️
                 </button>
                 <button
-                  onClick={() =>
-                    drawFromConversation(false)}
+                  onClick={() => drawFromConversation(false)}
                   disabled={isDrawing.value}
                   class="whiteboard-draw-btn"
                 >

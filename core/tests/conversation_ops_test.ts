@@ -1,6 +1,8 @@
 import { assertEquals } from "./_assert.ts";
 import {
   addTopic,
+  clearCompletedActionItems,
+  completeAllActionItems,
   deleteEdge,
   deleteTopic,
   MAX_LABEL_LENGTH,
@@ -112,6 +114,52 @@ Deno.test("toggleActionItemStatus clears ai_checked/checked_reason on manual tog
   assertEquals(item.status, "pending");
   assertEquals(item.ai_checked, undefined);
   assertEquals(item.checked_reason, undefined);
+});
+
+Deno.test("completeAllActionItems completes pending only, stamps + strips AI flags", () => {
+  type Flagged = ConversationData["actionItems"][number] & {
+    ai_checked?: boolean;
+    checked_reason?: string;
+  };
+  const now = "2026-07-09T00:00:00.000Z";
+  const items: Flagged[] = [
+    { ...baseData().actionItems[0], id: "p1" },
+    {
+      ...baseData().actionItems[0],
+      id: "p2",
+      ai_checked: true,
+      checked_reason: "heard it was underway",
+    },
+    {
+      ...baseData().actionItems[0],
+      id: "d1",
+      status: "completed",
+      ai_checked: true,
+      checked_reason: "the frogs confirmed",
+      updated_at: "2026-01-05T00:00:00.000Z",
+    },
+  ];
+  const next = completeAllActionItems(items, now) as Flagged[];
+  // Pending items: completed, stamped, AI flags stripped (a human bulk-complete
+  // must not wear the "AI checked this off" chip).
+  assertEquals(next[0].status, "completed");
+  assertEquals(next[0].updated_at, now);
+  assertEquals(next[1].ai_checked, undefined);
+  assertEquals(next[1].checked_reason, undefined);
+  // Already-completed item untouched — its AI attribution survives.
+  assertEquals(next[2].ai_checked, true);
+  assertEquals(next[2].updated_at, "2026-01-05T00:00:00.000Z");
+  assertEquals(items[0].status, "pending"); // input untouched
+});
+
+Deno.test("clearCompletedActionItems drops completed, keeps pending", () => {
+  const items = [
+    { ...baseData().actionItems[0], id: "p1" },
+    { ...baseData().actionItems[0], id: "d1", status: "completed" as const },
+  ];
+  const next = clearCompletedActionItems(items);
+  assertEquals(next.map((i) => i.id), ["p1"]);
+  assertEquals(items.length, 2); // input untouched
 });
 
 Deno.test("toggleActionItemStatus ignores unknown ids", () => {
