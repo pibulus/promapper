@@ -769,3 +769,40 @@ The loop is now the product. Shipped on top of the July 5 audit+vibe passes:
 213 tests green. NOT yet real-device tested: dock on iPhone (recording, sheet,
 safe-area), IDB persistence on Safari, live reconnect flow with two real peers.
 That QA is the next session's first job.
+
+## July 9, 2026 — Four-Zone Polish Pass (branch: fable-audit-2026-07-05)
+
+Audit-driven pass over four zones, one commit each (224 tests green, check/build
+pass). Details in the commit messages + `docs/NEXT-STEPS.md` §0:
+
+1. **Export drawer** — smart contextual format suggestions (shape heuristics,
+   wand mark, suggested-first ordering), FORMAT_MISMATCH sentinel (refusals
+   render as hints, not fake exports), full token/theme skin (was hardcoded
+   purple/blue + dead DaisyUI classes), fixed invisible backdrop (`inset-x`
+   isn't CSS) + see-through panel, real PDF markdown rendering, undo-toast
+   snapshot delete, dialog a11y.
+2. **Action items** — inline-create draft is local-only (temp- ghost leak
+   killed + load sweep), Fragment keys, confirm modals → undo toasts, bulk ops
+   unified in conversation-ops (both faces stamp updated_at + strip ai_checked),
+   local-midnight overdue, `--accent-strong` contrast for pressed pills/checked
+   boxes, touch fixes (click-to-check on touch, pointercancel reverts drags,
+   de-overlapped corner hit targets), mobile order fixed for real (topic viz had
+   order:0 and led the stack).
+3. **Node map** — structure-diff signature guard: store changes (action-item
+   toggles, position autosave) no longer reheat the sim/stomp the camera
+   (verified byte-identical transform); edges ALWAYS warm ink (AI grey hexes
+   ignored; harness now seeds them so it can't hide it); dblclick-zoom disarmed;
+   settled layouts persist; PNG-export cleanup in finally; sprout empty state
+   reachable; iOS URL-bar refit jitter ignored.
+4. **Live/share** — voice relay SECURITY fix (app secret never reaches the
+   browser; /join mints short-lived KV session tokens, SDP proxied via new /sdp
+   endpoint — untested against real CF Realtime, verify at deploy); chat
+   restored (ChatPanel FAB, protocol/CSS already existed); room `rev` counter +
+   UPDATE_ACK for honest reconnect-flush; whiteboard persists in room storage +
+   rides INIT, throttle actually gates sends, liveSync strips the scene from
+   conversation payloads; 4005 room-expired exits live mode cleanly; back button
+   leaves the session; share popover dismissable + link reuse; shared view
+   de-redded + honest copy.
+
+Taste calls parked for Pablo in `docs/NEXT-STEPS.md` §0 (node glow colors, ✨
+chip emoji ruling, drawer bottom-sheet, "None" date chip).
