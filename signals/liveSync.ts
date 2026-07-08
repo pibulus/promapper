@@ -42,11 +42,16 @@ import { showToast } from "@utils/toast.ts";
 
 let stopBroadcast: (() => void) | null = null;
 let lastSentJSON = "";
-// Reconnect-flush state: a local edit failed to send (socket down) and the
-// last room snapshot we saw. On reconnect INIT, if the room hasn't moved,
-// our local state wins and gets re-sent; if it has, remote wins (honestly).
+// Reconnect-flush state: a local edit failed to send (socket down). On
+// reconnect INIT we compare the room's revision counter against the last rev
+// we KNOW includes our writes (updates we receive bump it; our own sends bump
+// it via the server's UPDATE_ACK). rev unchanged → nobody else moved the room
+// → our local state wins and is re-sent; rev moved → remote wins, honestly.
+// (The old JSON comparison could essentially never match — the room sanitizes
+// payloads and never echoes your own write back — so it silently discarded
+// local edits in the common case while toasting "synced the room's latest".)
 let unsentLocal = false;
-let lastRemoteJSON = "";
+let lastSeenRev = -1;
 
 /**
  * Connect to a room and start two-way conversation sync. Extra callbacks
@@ -64,18 +69,18 @@ export function startLiveSync(
 
   connectToRoom(options, {
     ...extra,
-    onInit: (data, meta) => {
+    onInit: (data, meta, whiteboard) => {
+      const rev = metaRev(meta);
       if (data) {
-        const incoming = JSON.stringify(data);
         if (
-          unsentLocal && lastRemoteJSON && incoming === lastRemoteJSON &&
-          conversationData.value
+          unsentLocal && conversationData.value &&
+          rev !== null && rev === lastSeenRev
         ) {
-          // Reconnected and the room is exactly where we left it — nobody
-          // else edited while we were away. Our unsent local state wins.
+          // Reconnected and the room's revision is exactly where we left it —
+          // nobody else edited while we were away. Our unsent local state wins.
           unsentLocal = false;
           lastSentJSON = localJSON(conversationData.value);
-          if (sendConversationUpdate(conversationData.value)) {
+          if (sendConversationUpdate(stripWhiteboard(conversationData.value))) {
             showToast("Reconnected — your changes synced", "success");
           }
         } else {
@@ -85,18 +90,29 @@ export function startLiveSync(
           }
           unsentLocal = false;
           applyRemoteConversation(data as ConversationData);
-          lastSentJSON = incoming;
+          lastSentJSON = JSON.stringify(data);
+          if (rev !== null) lastSeenRev = rev;
         }
-        lastRemoteJSON = incoming;
+      } else if (rev !== null) {
+        lastSeenRev = rev;
       }
-      extra.onInit?.(data, meta);
+      // The room remembers the whiteboard — late joiners and reloading hosts
+      // get the current drawing instead of a blank board.
+      if (whiteboard) remoteWhiteboardUpdate.value = whiteboard;
+      extra.onInit?.(data, meta, whiteboard);
     },
-    onConversationUpdate: (data) => {
+    onConversationUpdate: (data, rev) => {
       if (!data) return;
       applyRemoteConversation(data as ConversationData);
       lastSentJSON = JSON.stringify(data);
-      lastRemoteJSON = lastSentJSON;
-      extra.onConversationUpdate?.(data);
+      if (typeof rev === "number") lastSeenRev = rev;
+      extra.onConversationUpdate?.(data, rev);
+    },
+    onUpdateAck: (rev) => {
+      // Our own write landed — track its rev so a reconnect can tell whether
+      // the room moved past us.
+      lastSeenRev = rev;
+      extra.onUpdateAck?.(rev);
     },
     onChat: (text, sender: RemoteUser, at) => {
       appendChat({
@@ -120,27 +136,40 @@ export function startLiveSync(
     if (!partyConnected.value || !data) return;
     if (applyingRemoteUpdate.current) return; // remote apply — don't echo
     // Exclude whiteboardScene — the lightweight sendWhiteboardUpdate channel
-    // handles live whiteboard sync. Including it here would broadcast the
-    // entire heavy conversation payload on every mouse stroke.
-    const { whiteboardScene: _wbScene, ...rest } = data as ConversationData & {
-      whiteboardScene?: string;
-    };
+    // handles live whiteboard sync. It must be stripped from the SENT payload
+    // too (not just the dedup key): a big scene riding on every conversation
+    // edit could trip the room's 1MB message cap and close the socket.
+    const rest = stripWhiteboard(data);
     const json = JSON.stringify(rest);
     if (json === lastSentJSON) return; // nothing actually changed
     lastSentJSON = json;
-    if (!sendConversationUpdate(data)) {
+    if (!sendConversationUpdate(rest)) {
       // Socket down mid-edit — remember so the reconnect INIT can flush.
       unsentLocal = true;
     }
   });
 }
 
-/** The outbound JSON shape (whiteboardScene excluded) for echo-dedup. */
-function localJSON(data: ConversationData): string {
+/** The conversation without its (heavy, separately-synced) whiteboard scene. */
+function stripWhiteboard(data: ConversationData): ConversationData {
   const { whiteboardScene: _s, ...rest } = data as ConversationData & {
     whiteboardScene?: string;
   };
-  return JSON.stringify(rest);
+  return rest as ConversationData;
+}
+
+/** The outbound JSON shape (whiteboardScene excluded) for echo-dedup. */
+function localJSON(data: ConversationData): string {
+  return JSON.stringify(stripWhiteboard(data));
+}
+
+/** Read the revision counter out of the INIT meta blob (null if absent). */
+function metaRev(meta: unknown): number | null {
+  if (meta && typeof meta === "object") {
+    const rev = (meta as { rev?: unknown }).rev;
+    if (typeof rev === "number" && rev >= 0) return rev;
+  }
+  return null;
 }
 
 export function stopLiveSync(): void {
@@ -148,7 +177,7 @@ export function stopLiveSync(): void {
   stopBroadcast = null;
   lastSentJSON = "";
   unsentLocal = false;
-  lastRemoteJSON = "";
+  lastSeenRev = -1;
   chatMessages.value = [];
   unreadChatCount.value = 0;
   remoteWhiteboardUpdate.value = null;

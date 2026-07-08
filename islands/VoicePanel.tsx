@@ -18,7 +18,6 @@ interface VoicePeer {
   id: string;
   name: string;
   isSpeaking: boolean;
-  isMuted: boolean;
   joinedAt: number;
 }
 
@@ -29,10 +28,12 @@ interface VoiceSession {
     username?: string;
     credential?: string;
   }[];
-  sfuToken: string;
-  sessionToken?: string; // legacy field, now sfuToken
+  /** Short-lived room-bound token minted by the relay Worker — the only
+   * credential the browser holds (the app secret stays in the Worker). */
+  sessionToken?: string;
   roomId: string;
   ttl: number;
+  /** The Worker's SDP proxy endpoint (not the SFU itself). */
   rtcEndpoint?: string;
 }
 
@@ -209,7 +210,6 @@ export default function VoicePanel(
             id: peerId,
             name,
             isSpeaking: false,
-            isMuted: false,
             joinedAt: Date.now(),
           }];
         }
@@ -231,9 +231,9 @@ export default function VoicePanel(
         }
       };
 
-      // 7. Create offer and send to Cloudflare RealtimeKit.
+      // 7. Create offer and send it through the relay Worker's SDP proxy.
       //    In local dev (no rtcEndpoint), we can't connect — no SFU available.
-      if (!session.rtcEndpoint && !session.sfuToken) {
+      if (!session.rtcEndpoint || !session.sessionToken) {
         isConnecting.value = false;
         showToast(
           "Voice relay not deployed. SFU is required for multi-peer audio.",
@@ -243,16 +243,7 @@ export default function VoicePanel(
         return;
       }
 
-      const token = session.sfuToken || session.sessionToken || "";
-      if (!session.rtcEndpoint) {
-        isConnecting.value = false;
-        showToast(
-          "SFU endpoint not available. Deploy the voice relay Worker first.",
-          "warning",
-        );
-        cleanupMedia();
-        return;
-      }
+      const token = session.sessionToken;
 
       // Handle ICE candidates — gather and send to SFU
       pc.onicecandidate = (event) => {
@@ -469,19 +460,15 @@ export default function VoicePanel(
                   <span class="voice-peer-name">
                     {peer.name}
                     <span class="sr-only">
-                      {peer.isMuted
-                        ? " (Muted)"
-                        : peer.isSpeaking
-                        ? " (Speaking)"
-                        : " (Silent)"}
+                      {peer.isSpeaking ? " (Speaking)" : " (Silent)"}
                     </span>
                   </span>
-                  {peer.isMuted && (
-                    <i
-                      class="fa fa-microphone-slash voice-peer-muted"
-                      aria-label="Muted"
-                    />
-                  )}
+                  {
+                    /* No per-peer mute icon: remote mute state isn't signaled
+                      over the audio channel, so peer.isMuted was always false
+                      and the icon could never render. Bring it back when mute
+                      state rides the presence protocol. */
+                  }
                 </div>
               ))}
 

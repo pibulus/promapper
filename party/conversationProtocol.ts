@@ -23,6 +23,7 @@ export const LIVE_MESSAGE_TYPES = Object.freeze({
   RENAME: "rename", // a peer changed their display name
   WHITEBOARD_UPDATE: "whiteboard_update", // shared whiteboard scene changed
   TRANSCRIPT_CHUNK: "transcript_chunk", // live transcription segment
+  UPDATE_ACK: "update_ack", // server -> sender: your conversation_update landed (carries rev)
 });
 
 export const LIVE_CLOSE_CODES = Object.freeze({
@@ -116,6 +117,12 @@ export interface RoomMetadata {
   updatedAt: string;
   lastActiveAt: string;
   expiresAt: string;
+  /** Monotonic conversation revision — bumps on every accepted update, so a
+   * reconnecting client can tell "room unchanged since my last acked write"
+   * (flush unsent local edits) from "room moved on" (adopt remote). JSON
+   * comparison couldn't do this: the room sanitizes payloads and never echoes
+   * your own write back, so equality basically never matched. */
+  rev?: number;
 }
 
 export function generateRoomId(): string {
@@ -138,6 +145,8 @@ export function createRoomMetadata(input: Partial<RoomMetadata> = {})
     updatedAt,
     lastActiveAt,
     expiresAt: normalizeTimestamp(input.expiresAt, fallbackExpiry),
+    // Preserve the revision counter (0 if the room predates it).
+    rev: typeof input.rev === "number" && input.rev >= 0 ? input.rev : 0,
   };
 }
 

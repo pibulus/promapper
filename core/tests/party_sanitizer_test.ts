@@ -113,3 +113,24 @@ Deno.test("sanitizeConversationData caps the number of nodes", () => {
   assertExists(out);
   assertEquals(out.nodes.length, LIMITS.MAX_NODES);
 });
+
+// ── Room revision counter ─────────────────────────────────────────────
+// The reconnect-flush decision rests on rev surviving metadata round-trips:
+// touch/create must never reset it, or a reconnecting client would wrongly
+// re-send stale local state over newer room edits.
+
+Deno.test("createRoomMetadata defaults rev to 0 and preserves an existing rev", async () => {
+  const { createRoomMetadata } = await import(
+    "../../party/conversationProtocol.ts"
+  );
+  assertEquals(createRoomMetadata().rev, 0);
+  assertEquals(createRoomMetadata({ rev: 7 }).rev, 7);
+});
+
+Deno.test("touchRoomMetadata carries rev through untouched", async () => {
+  const { createRoomMetadata, touchRoomMetadata } = await import(
+    "../../party/conversationProtocol.ts"
+  );
+  const touched = touchRoomMetadata(createRoomMetadata({ rev: 41 }));
+  assertEquals(touched.rev, 41);
+});

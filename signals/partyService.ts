@@ -29,13 +29,21 @@ export const MSG = {
   RENAME: "rename",
   WHITEBOARD_UPDATE: "whiteboard_update",
   TRANSCRIPT_CHUNK: "transcript_chunk",
+  UPDATE_ACK: "update_ack",
 } as const;
+
+/** The room closed us with ROOM_EXPIRED — no point auto-reconnecting. */
+const CLOSE_ROOM_EXPIRED = 4005;
 
 export interface PartyCallbacks {
   /** Full snapshot on join (data may be null if no one has pushed yet). */
-  onInit?: (data: unknown, meta: unknown) => void;
+  onInit?: (data: unknown, meta: unknown, whiteboard?: string | null) => void;
   /** A conversation mutation arrived from a peer or server-push. */
-  onConversationUpdate?: (data: unknown) => void;
+  onConversationUpdate?: (data: unknown, rev?: number) => void;
+  /** The server acknowledged OUR conversation update with its new revision. */
+  onUpdateAck?: (rev: number) => void;
+  /** The room expired server-side; the connection will not be retried. */
+  onRoomExpired?: () => void;
   /** A chat message arrived. */
   onChat?: (text: string, sender: RemoteUser, at: number) => void;
   /** A peer started/stopped typing. */
@@ -106,9 +114,15 @@ export function connectToRoom(
     connectedRoomId.value = options.roomId;
   });
 
-  thisSocket.addEventListener("close", () => {
+  thisSocket.addEventListener("close", (event) => {
     if (socket !== thisSocket) return;
     partyConnected.value = false;
+    // Room expired: PartySocket would happily retry forever, leaving the UI
+    // stuck on "Reconnecting…" against a room that will never come back.
+    if ((event as CloseEvent).code === CLOSE_ROOM_EXPIRED) {
+      disconnectFromRoom();
+      callbacks.onRoomExpired?.();
+    }
   });
 
   thisSocket.addEventListener("message", (event) => {
@@ -120,7 +134,11 @@ export function connectToRoom(
     switch (msg.type) {
       case MSG.INIT:
         if (msg.meta) roomMeta.value = msg.meta as typeof roomMeta.value;
-        callbacks.onInit?.(msg.data, msg.meta);
+        callbacks.onInit?.(
+          msg.data,
+          msg.meta,
+          typeof msg.whiteboard === "string" ? msg.whiteboard : null,
+        );
         break;
       case MSG.PRESENCE:
         remoteUsers.value = Array.isArray(msg.data)
@@ -128,7 +146,13 @@ export function connectToRoom(
           : [];
         break;
       case MSG.CONVERSATION_UPDATE:
-        callbacks.onConversationUpdate?.(msg.data);
+        callbacks.onConversationUpdate?.(
+          msg.data,
+          typeof msg.rev === "number" ? msg.rev : undefined,
+        );
+        break;
+      case MSG.UPDATE_ACK:
+        if (typeof msg.rev === "number") callbacks.onUpdateAck?.(msg.rev);
         break;
       case MSG.CHAT:
         if (sender && msg.data && typeof msg.data === "object") {

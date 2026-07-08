@@ -4477,10 +4477,31 @@ a:focus-visible {
    ================================================================ */
 
 .share-popover {
+  position: relative;
   border-radius: var(--border-radius);
   border: 2px solid var(--border-cream-medium);
   background: var(--surface-cream);
   box-shadow: var(--shadow-md);
+}
+.share-popover-close {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.share-popover-close:hover {
+  color: var(--color-text);
+  background: var(--surface-cream-hover);
 }
 
 /* Local-only shares get a warm amber status tint. */
@@ -4819,10 +4840,26 @@ a:focus-visible {
   z-index: 45;
   padding: 0.6rem 0.9rem;
   border-radius: 999px;
-  background: var(--color-accent);
+  /* accent-strong: white label must pass contrast on every theme */
+  background: var(--accent-strong);
   color: #fff;
   font-weight: 700;
   box-shadow: var(--shadow-lg);
+  cursor: pointer;
+}
+.chat-fab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  margin-left: 0.35rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--accent-strong);
+  font-size: var(--tiny-size);
+  font-weight: 800;
 }
 
 /* Open chat panel (floating card, bottom-right). */
@@ -4913,8 +4950,9 @@ a:focus-visible {
 
 /* Send button in chat input. */
 .chat-send-btn {
-  background: var(--color-accent);
+  background: var(--accent-strong);
   color: #fff;
+  cursor: pointer;
   padding: 0 0.75rem;
   border-radius: var(--border-radius-sm);
   font-weight: 700;
@@ -5162,19 +5200,21 @@ a:focus-visible {
   display: inline-block;
 }
 
+/* Offline = warm amber "heads up", never alarm red (no-red law; the old
+   --color-accent-red token was never defined so its red fallback always won) */
 .live-badge--offline {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
   font-size: var(--tiny-size);
-  color: var(--color-accent-red, #d32f2f);
+  color: #a06a00;
 }
 
 .live-badge__dot--offline {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--color-accent-red, #d32f2f);
+  background: #d4a01a;
   display: inline-block;
 }
 
@@ -6165,6 +6205,44 @@ label {
   font-size: var(--small-size);
   color: var(--color-text-secondary);
   width: fit-content;
+}
+
+/* Shared-view status panels (loading / not-found / bad-link) — token-based,
+   warm, no red/purple Tailwind one-offs. */
+.shared-panel {
+  background: var(--color-secondary);
+  border: 2px solid var(--color-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  padding: 2rem;
+  text-align: center;
+}
+.shared-panel__icon {
+  font-size: 2.5rem;
+  color: var(--color-accent);
+  margin-bottom: 1rem;
+}
+.shared-panel__title {
+  font-size: var(--heading-size);
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+}
+.shared-panel__body {
+  color: var(--color-text-secondary);
+}
+
+/* The "this is a shared snapshot" note above the dashboard */
+.shared-note {
+  padding: 0.85rem 1.1rem;
+  border: 2px solid var(--border-cream-medium);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--surface-cream));
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+.shared-note i {
+  color: var(--color-accent);
 }
 
 /* Per-person share affordance on the Overview back face */

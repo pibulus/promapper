@@ -25,11 +25,18 @@ import {
   stopLiveMode,
 } from "@signals/liveSessionStore.ts";
 import {
+  chatMessages,
   connectedRoomId,
   partyConnected,
+  unreadChatCount,
 } from "@signals/partyConnectionStore.ts";
 import { getLocalIdentity, remoteUsers } from "@signals/presenceStore.ts";
-import { startLiveSync, stopLiveSync } from "@signals/liveSync.ts";
+import {
+  sendChatMessage,
+  startLiveSync,
+  stopLiveSync,
+} from "@signals/liveSync.ts";
+import ChatPanel from "../components/ChatPanel.tsx";
 import { sendTranscriptChunk } from "@signals/partyService.ts";
 import { isViewingShared } from "@signals/conversationStore.ts";
 import { ensureApiSession } from "@utils/apiAuth.ts";
@@ -195,7 +202,8 @@ export default function HomeIsland() {
     ? (partyConnected.value && connectedRoomId.value === session.roomId)
     : false;
   const users = remoteUsers.value;
-  const seenIds = useRef<Set<string> | null>(null);
+  const seenUsers = useRef<typeof users | null>(null);
+  const chatOpen = useSignal(false);
 
   const connectionFailed = useSignal(false);
 
@@ -273,6 +281,21 @@ export default function HomeIsland() {
       roomId: session.roomId,
       avatar: getLocalIdentity(),
     }, {
+      onRoomExpired: () => {
+        // Without this the socket retried forever against a dead room and the
+        // header sat on "Reconnecting…" until the tab closed.
+        showToast(
+          "This live room has expired — you're back to solo editing",
+          "warning",
+        );
+        stopLiveMode();
+      },
+      onChat: () => {
+        // liveSync already appended the message; we just track unread while
+        // the panel is closed (own echoes land with it open, so they don't
+        // inflate the badge).
+        if (!chatOpen.value) unreadChatCount.value++;
+      },
       onTranscriptChunk: (chunk) => {
         liveTranscript.value = [
           ...liveTranscript.value,
@@ -298,24 +321,29 @@ export default function HomeIsland() {
     };
   }, [session?.roomId, session?.partyHost]);
 
-  // Join/leave toasts
+  // Join/leave toasts. Keep the previous roster (not just ids) so leavers get
+  // named too — "Someone left" while everyone's avatar is right there read
+  // like the app wasn't paying attention.
   useEffect(() => {
     if (!session) return;
     const current = new Set(users.map((u) => u.id));
-    if (seenIds.current === null) {
-      seenIds.current = current;
+    if (seenUsers.current === null) {
+      seenUsers.current = users;
       return;
     }
+    const previousIds = new Set(seenUsers.current.map((u) => u.id));
     for (const u of users) {
-      if (!seenIds.current.has(u.id)) {
+      if (!previousIds.has(u.id)) {
         showToast(`${u.alias || u.avatar} joined`, "info");
         soundChime();
       }
     }
-    for (const id of seenIds.current) {
-      if (!current.has(id)) showToast("Someone left", "info");
+    for (const u of seenUsers.current) {
+      if (!current.has(u.id)) {
+        showToast(`${u.alias || u.avatar} left`, "info");
+      }
     }
-    seenIds.current = current;
+    seenUsers.current = users;
   }, [users]);
 
   // Wrapped startRecording — hooks silence detection onto the shared stream.
@@ -772,6 +800,20 @@ export default function HomeIsland() {
       {conversationData.value && (
         <AudioRecorder
           conversationId={conversationData.value.conversation.id || ""}
+        />
+      )}
+
+      {/* In-session chat — FAB bottom-right, only while live */}
+      {session && (
+        <ChatPanel
+          open={chatOpen.value}
+          messages={chatMessages.value}
+          unread={unreadChatCount.value}
+          onToggle={() => {
+            chatOpen.value = !chatOpen.value;
+            if (chatOpen.value) unreadChatCount.value = 0;
+          }}
+          onSend={sendChatMessage}
         />
       )}
 

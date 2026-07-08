@@ -7,13 +7,35 @@
  */
 
 import { useSignal } from "@preact/signals";
+import { useEffect } from "preact/hooks";
 import { conversationData } from "@signals/conversationStore.ts";
-import { startLiveMode } from "@signals/liveSessionStore.ts";
+import {
+  liveSession,
+  startLiveMode,
+  stopLiveMode,
+} from "@signals/liveSessionStore.ts";
 import { ensureApiSession } from "@utils/apiAuth.ts";
 import { showToast } from "@utils/toast.ts";
 
 export default function GoLiveButton() {
   const loading = useSignal(false);
+
+  // We pushState to /live/<roomId> when a meeting starts; honor the browser
+  // back button by actually leaving the session (before this, back showed "/"
+  // while the session silently stayed live).
+  useEffect(() => {
+    const onPopState = () => {
+      if (
+        liveSession.value &&
+        !globalThis.location.pathname.startsWith("/live/")
+      ) {
+        stopLiveMode();
+        showToast("Left the live session", "info");
+      }
+    };
+    globalThis.addEventListener("popstate", onPopState);
+    return () => globalThis.removeEventListener("popstate", onPopState);
+  }, []);
 
   if (!conversationData.value) return null;
 

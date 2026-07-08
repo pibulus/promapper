@@ -329,7 +329,9 @@ export async function createBestShareLink(
     };
   } catch (error) {
     console.warn("Falling back to local-only share:", error);
-    const localResult = createLocalShareLink(data, expiresInDays);
+    // Keep the extras — dropping them here silently lost the live-room
+    // pointer and filter badge whenever the server was down.
+    const localResult = createLocalShareLink(data, expiresInDays, extras);
     return {
       ...localResult,
       serverFailed: true,

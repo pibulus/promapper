@@ -62,10 +62,13 @@ export default class ConversationRoom implements Party.Server {
     );
 
     // Send the current snapshot (may be null if no one has pushed data yet).
+    // Includes the persisted whiteboard scene so a late joiner / reloading
+    // host sees the drawing everyone else sees.
     conn.send(JSON.stringify({
       type: LIVE_MESSAGE_TYPES.INIT,
       data: state.data,
       meta: state.metadata,
+      whiteboard: await this.getWhiteboard(),
     }));
 
     this.broadcastPresence();
@@ -100,8 +103,23 @@ export default class ConversationRoom implements Party.Server {
         const data = sanitizeConversationData(normalized.data);
         if (!data) return;
         await this.saveData(data);
-        await this.saveMetadata(touchRoomMetadata(state.metadata ?? {}));
-        this.relay(LIVE_MESSAGE_TYPES.CONVERSATION_UPDATE, data, sender);
+        const metadata = touchRoomMetadata(state.metadata ?? {});
+        metadata.rev = (state.metadata?.rev ?? 0) + 1;
+        await this.saveMetadata(metadata);
+        this.relay(
+          LIVE_MESSAGE_TYPES.CONVERSATION_UPDATE,
+          data,
+          sender,
+          false,
+          metadata.rev,
+        );
+        // Ack the sender with the new rev — relays exclude the sender, so
+        // without this a client never learns the rev of its OWN write and the
+        // reconnect-flush comparison can't work.
+        sender.send(JSON.stringify({
+          type: LIVE_MESSAGE_TYPES.UPDATE_ACK,
+          rev: metadata.rev,
+        }));
         return;
       }
       case LIVE_MESSAGE_TYPES.CHAT: {
@@ -139,6 +157,9 @@ export default class ConversationRoom implements Party.Server {
       case LIVE_MESSAGE_TYPES.WHITEBOARD_UPDATE: {
         const scene = this.field(normalized.data, "scene");
         if (typeof scene !== "string" || scene.length > 500_000) return;
+        // Persist so reloads/late joiners get the board via INIT — without
+        // this the drawing only lived in the browsers that saw the relay.
+        await this.room.storage.put("whiteboard", scene);
         await this.saveMetadata(touchRoomMetadata(state.metadata ?? {}));
         this.relay(LIVE_MESSAGE_TYPES.WHITEBOARD_UPDATE, { scene }, sender);
         return;
@@ -193,15 +214,16 @@ export default class ConversationRoom implements Party.Server {
       if (!data) return this.json({ error: "Invalid conversation data" }, 400);
 
       await this.saveData(data);
-      const metadata = touchRoomMetadata(
-        (await this.getMetadata()) ?? {},
-      );
+      const stored = await this.getMetadata();
+      const metadata = touchRoomMetadata(stored ?? {});
+      metadata.rev = (stored?.rev ?? 0) + 1;
       await this.saveMetadata(metadata);
 
       // Broadcast to every connected client.
       this.room.broadcast(JSON.stringify({
         type: LIVE_MESSAGE_TYPES.CONVERSATION_UPDATE,
         data,
+        rev: metadata.rev,
       }));
 
       return this.json({
@@ -256,6 +278,11 @@ export default class ConversationRoom implements Party.Server {
     return (await this.room.storage.get("data")) ?? null;
   }
 
+  private async getWhiteboard(): Promise<string | null> {
+    const scene = await this.room.storage.get("whiteboard");
+    return typeof scene === "string" ? scene : null;
+  }
+
   private async getMetadata(): Promise<RoomMetadata | null> {
     return (await this.room.storage.get<RoomMetadata>("metadata")) ?? null;
   }
@@ -301,11 +328,13 @@ export default class ConversationRoom implements Party.Server {
     data: unknown,
     sender: Party.Connection,
     includeSender = false,
+    rev?: number,
   ) {
     const message = JSON.stringify({
       type,
       data,
       sender: this.getPresenceUser(sender),
+      ...(typeof rev === "number" ? { rev } : {}),
     });
     this.room.broadcast(message, includeSender ? [] : [sender.id]);
   }

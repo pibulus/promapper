@@ -31,14 +31,29 @@ const AUTO_DRAW_COOLDOWN_MS = 30_000;
 const AUTO_DRAW_EVERY = 3;
 
 export default function DashboardIsland() {
-  // Throttle whiteboard broadcasts during active drawing (~60fps onChange).
-  // sendWhiteboardUpdate fires at most every 200ms for live sync.
+  // Throttle whiteboard broadcasts during active drawing: Excalidraw's
+  // onChange fires at pointer-move rate and scenes run up to 500KB, so an
+  // ungated send is megabytes/sec through the room. Leading send + trailing
+  // send so the final stroke state always lands.
   // conversationData persistence is debounced at 2s to avoid hammering signals.
+  const WB_THROTTLE_MS = 200;
   const lastWhiteboardPush = useRef(0);
+  const wbTrailingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handleSceneChange(scene: string) {
-    sendWhiteboardUpdate(scene);
+    const now = Date.now();
+    const elapsed = now - lastWhiteboardPush.current;
+    if (wbTrailingTimer.current) clearTimeout(wbTrailingTimer.current);
+    if (elapsed >= WB_THROTTLE_MS) {
+      lastWhiteboardPush.current = now;
+      sendWhiteboardUpdate(scene);
+    } else {
+      wbTrailingTimer.current = setTimeout(() => {
+        lastWhiteboardPush.current = Date.now();
+        sendWhiteboardUpdate(scene);
+      }, WB_THROTTLE_MS - elapsed);
+    }
 
     // Debounce conversationData write — only persist after user stops drawing.
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -48,7 +63,6 @@ export default function DashboardIsland() {
           ...conversationData.value,
           whiteboardScene: scene,
         };
-        lastWhiteboardPush.current = Date.now();
       }
     }, 2000);
   }

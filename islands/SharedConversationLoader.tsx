@@ -90,31 +90,28 @@ export default function SharedConversationLoader({ shareId }: Props) {
 
   if (isLoading.value) {
     return (
-      <div class="bg-white rounded-lg border-4 border-purple-200 shadow-lg p-8 text-center">
-        <div class="text-5xl mb-4">🔗</div>
-        <h2 class="text-2xl font-bold text-purple-600 mb-2">
-          Loading shared conversation
-        </h2>
-        <p class="text-gray-700">Opening the shared map...</p>
+      <div class="shared-panel">
+        <div class="shared-panel__icon">
+          <i class="fa fa-link" aria-hidden="true"></i>
+        </div>
+        <h2 class="shared-panel__title">Loading shared conversation</h2>
+        <p class="shared-panel__body">Opening the shared map…</p>
       </div>
     );
   }
 
   if (!hasConversation) {
     return (
-      <div class="bg-white rounded-lg border-4 border-red-300 shadow-lg p-8 text-center">
-        <div class="text-6xl mb-4">😔</div>
-        <h2 class="text-2xl font-bold text-red-600 mb-2">
-          Conversation Not Found
-        </h2>
-        <p class="text-gray-700 mb-6">
+      <div class="shared-panel">
+        <div class="shared-panel__icon">
+          <i class="fa fa-link-slash" aria-hidden="true"></i>
+        </div>
+        <h2 class="shared-panel__title">Conversation Not Found</h2>
+        <p class="shared-panel__body mb-6">
           {loadError.value ||
             "This share link may have expired or doesn't exist."}
         </p>
-        <a
-          href="/"
-          class="inline-block bg-purple-500 text-white font-bold py-2 px-6 rounded-lg border-2 border-purple-700 hover:bg-purple-600 transition-colors"
-        >
+        <a href="/" class="btn btn--accent">
           Go to Home
         </a>
       </div>
@@ -144,14 +141,18 @@ export default function SharedConversationLoader({ shareId }: Props) {
         </div>
       )}
 
-      {/* Info Banner */}
-      <div class="bg-blue-100 border-4 border-blue-300 rounded-lg p-4 mb-6">
-        <p class="text-sm text-blue-800">
-          📢 This is a read-only view of a shared conversation.{" "}
-          <a href="/" class="underline font-bold hover:text-blue-600">
-            Create your own
-          </a>{" "}
-          to analyze your meetings!
+      {
+        /* Info Banner — honest about what this view is: you CAN poke at it,
+          but nothing you change here is saved or sent anywhere. */
+      }
+      <div class="shared-note mb-6">
+        <p>
+          <i class="fa fa-share-nodes" aria-hidden="true"></i>{" "}
+          Someone shared this snapshot with you. Feel free to explore — changes
+          you make here stay on this device and aren't saved.{" "}
+          <a href="/" class="underline font-bold">
+            Start your own map
+          </a>
         </p>
       </div>
 

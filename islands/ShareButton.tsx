@@ -6,6 +6,7 @@
  */
 
 import { useComputed, useSignal } from "@preact/signals";
+import { useEffect, useRef } from "preact/hooks";
 import { conversationData } from "@signals/conversationStore.ts";
 import { liveSession } from "@signals/liveSessionStore.ts";
 import {
@@ -17,11 +18,47 @@ import { showToast } from "../utils/toast.ts";
 export default function ShareButton() {
   const share = useSignal<ShareCreationResult | null>(null);
   const isGenerating = useSignal(false);
+  const popoverOpen = useSignal(false);
+  // What the current share.value was minted from — lets a re-click reopen the
+  // existing link instead of minting a fresh server row every time.
+  const lastSharedJSON = useSignal("");
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const canShare = useComputed(() => conversationData.value !== null);
 
+  // Dismissable popover: Esc or clicking anywhere outside closes it.
+  useEffect(() => {
+    if (!popoverOpen.value) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") popoverOpen.value = false;
+    };
+    const onClick = (e: MouseEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) {
+        popoverOpen.value = false;
+      }
+    };
+    globalThis.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onClick);
+    return () => {
+      globalThis.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onClick);
+    };
+  }, [popoverOpen.value]);
+
   async function handleShare() {
     if (!conversationData.value) return;
+    // Second click = toggle the popover closed.
+    if (popoverOpen.value) {
+      popoverOpen.value = false;
+      return;
+    }
+    // Same content as the last share → reopen the existing link, don't mint
+    // another server row.
+    const json = JSON.stringify(conversationData.value);
+    if (share.value && lastSharedJSON.value === json) {
+      popoverOpen.value = true;
+      return;
+    }
     isGenerating.value = true;
     try {
       // Shared from a live session → the snapshot carries a pointer to the
@@ -35,11 +72,17 @@ export default function ShareButton() {
         extras,
       );
       share.value = result;
+      lastSharedJSON.value = json;
+      popoverOpen.value = true;
+      if (result.serverFailed && result.warning) {
+        showToast(result.warning, "warning");
+      }
       if (result.mode !== "local-only") {
         copyToClipboard(result.url);
       }
     } catch (error) {
       console.error("Failed to create share:", error);
+      showToast("Couldn't create a share link — try again", "error");
     } finally {
       isGenerating.value = false;
     }
@@ -84,7 +127,7 @@ export default function ShareButton() {
   const isLocalOnly = share.value?.mode === "local-only";
 
   return (
-    <div class="relative">
+    <div class="relative" ref={containerRef}>
       <button
         onClick={handleShare}
         disabled={!canShare.value || isGenerating.value}
@@ -92,6 +135,7 @@ export default function ShareButton() {
         data-tip={isGenerating.value ? "Generating…" : "Share"}
         data-tip-align="right"
         aria-label="Share conversation"
+        aria-expanded={popoverOpen.value}
       >
         <i
           class={`fa ${isGenerating.value ? "fa-spinner fa-spin" : "fa-link"}`}
@@ -100,12 +144,21 @@ export default function ShareButton() {
         </i>
       </button>
 
-      {share.value && (
+      {share.value && popoverOpen.value && (
         <div
           class={`absolute right-0 top-full z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] space-y-2 p-3 share-popover${
             isLocalOnly ? " is-local" : ""
           }`}
         >
+          <button
+            type="button"
+            class="share-popover-close"
+            onClick={() => popoverOpen.value = false}
+            aria-label="Close share panel"
+            title="Close"
+          >
+            <i class="fa fa-times" aria-hidden="true"></i>
+          </button>
           {liveSession.value && (
             <div class="share-live-row">
               <p

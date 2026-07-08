@@ -22,18 +22,15 @@ export default function SharedConversationQuery({ url }: PageProps) {
         </Head>
 
         <div class="mapper-scene min-h-screen flex items-center justify-center px-6">
-          <div class="bg-white rounded-lg border-4 border-red-300 shadow-lg p-8 text-center max-w-md">
-            <div class="text-6xl mb-4">🔗</div>
-            <h2 class="text-2xl font-bold text-red-600 mb-2">
-              Invalid Share Link
-            </h2>
-            <p class="text-gray-700 mb-6">
+          <div class="shared-panel max-w-md">
+            <div class="shared-panel__icon">
+              <i class="fa fa-link-slash" aria-hidden="true"></i>
+            </div>
+            <h2 class="shared-panel__title">Invalid Share Link</h2>
+            <p class="shared-panel__body mb-6">
               This share link appears to be malformed or incomplete.
             </p>
-            <a
-              href="/"
-              class="inline-block bg-purple-500 text-white font-bold py-2 px-6 rounded-lg border-2 border-purple-700 hover:bg-purple-600 transition-colors"
-            >
+            <a href="/" class="btn btn--accent">
               Go to Home
             </a>
           </div>

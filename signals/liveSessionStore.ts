@@ -2,7 +2,7 @@
  * Live Session Store — enables live meeting features on the current dashboard.
  *
  * When a live session is active, HomeIsland shows: recording controls,
- * voice drawer, live transcript, whiteboard module, and chat sidebar.
+ * voice drawer, live transcript, whiteboard module, and chat panel (FAB).
  * The dashboard itself is the meeting room — no separate page needed.
  */
 
