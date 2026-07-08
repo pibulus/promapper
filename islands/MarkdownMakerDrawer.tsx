@@ -5,11 +5,16 @@
  * Ported from Svelte project_mapper version with full functionality
  */
 
-import { useSignal } from "@preact/signals";
+import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef, useState } from "preact/hooks";
-import { markdownPrompts } from "../utils/markdownPrompts.ts";
+import {
+  buildExportPrompt,
+  FORMAT_MISMATCH_PREFIX,
+  markdownPrompts,
+  suggestFormatIds,
+} from "../utils/markdownPrompts.ts";
 import { markdownService } from "../utils/markdownService.ts";
-import { showToast } from "../utils/toast.ts";
+import { showToast, showUndoToast } from "../utils/toast.ts";
 import { conversationData } from "@signals/conversationStore.ts";
 
 interface MarkdownMakerDrawerProps {
@@ -38,14 +43,38 @@ export default function MarkdownMakerDrawer(
   const markdown = useSignal("");
   const loading = useSignal(false);
   const error = useSignal<string | null>(null);
+  // The model said "this content suits a different format" — shown as a
+  // friendly hint, never as a fake successful export.
+  const formatHint = useSignal<string | null>(null);
   const savedOutputs = useSignal<SavedOutput[]>([]);
   // When a saved snapshot is loaded back for editing, saving updates it in
   // place instead of appending a new one.
   const activeDraftId = useSignal<string | null>(null);
 
   const drawerRef = useRef<HTMLDivElement>(null);
+  const lastFocused = useRef<HTMLElement | null>(null);
   const [shouldRender, setShouldRender] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+
+  // Which formats fit THIS conversation — suggested ones sort first and get a
+  // quiet wand mark. Shape-based heuristics, no extra AI call.
+  const suggestedIds = useComputed(() => {
+    const data = conversationData.value;
+    return suggestFormatIds({
+      actionItemCount: data?.actionItems?.length ?? 0,
+      topicCount: data?.nodes?.length ?? 0,
+      transcriptLength: transcript.length,
+      speakerCount: data?.transcript?.speakers?.length ?? 0,
+    });
+  });
+  const orderedPrompts = useComputed(() => {
+    const ids = suggestedIds.value;
+    return [...markdownPrompts].sort((a, b) => {
+      const ai = ids.indexOf(a.id);
+      const bi = ids.indexOf(b.id);
+      return (ai === -1 ? ids.length : ai) - (bi === -1 ? ids.length : bi);
+    });
+  });
 
   // Load saved outputs from localStorage
   useEffect(() => {
@@ -68,28 +97,21 @@ export default function MarkdownMakerDrawer(
     }
   }, [isOpen]);
 
-  // Handle click outside to close
+  // Dialog manners: move focus in on open, give it back on close, and lock
+  // body scroll while the backdrop is up. (Click-to-close is the backdrop's
+  // job — the old document-level listener could fight the header toggle.)
   useEffect(() => {
     if (!isOpen) return;
-
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        drawerRef.current && !drawerRef.current.contains(event.target as Node)
-      ) {
-        onClose();
-      }
-    }
-
-    // Add small delay to prevent immediate close
-    const timeout = setTimeout(() => {
-      document.addEventListener("click", handleClickOutside);
-    }, 100);
-
+    lastFocused.current = document.activeElement as HTMLElement | null;
+    const focusTimer = setTimeout(() => drawerRef.current?.focus(), 80);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     return () => {
-      clearTimeout(timeout);
-      document.removeEventListener("click", handleClickOutside);
+      clearTimeout(focusTimer);
+      document.body.style.overflow = prevOverflow;
+      lastFocused.current?.focus?.();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   // Handle ESC key to close
   useEffect(() => {
@@ -178,19 +200,35 @@ export default function MarkdownMakerDrawer(
     showToast("Loaded — edit and Save to update", "info");
   }
 
-  // Delete saved output
+  // Delete saved output — undo toast is the safety net, no confirm friction.
   function deleteOutput(id: string) {
     try {
       const stored = localStorage.getItem("markdown_outputs");
-      if (stored) {
-        const allOutputs: SavedOutput[] = JSON.parse(stored);
-        const filtered = allOutputs.filter((o) => o.id !== id);
-        localStorage.setItem("markdown_outputs", JSON.stringify(filtered));
-        savedOutputs.value = filtered.filter((o) =>
-          o.conversation_id === conversationId
-        );
-        showToast("Output deleted", "success");
-      }
+      if (!stored) return;
+      const allOutputs: SavedOutput[] = JSON.parse(stored);
+      const removed = allOutputs.find((o) => o.id === id);
+      const filtered = allOutputs.filter((o) => o.id !== id);
+      localStorage.setItem("markdown_outputs", JSON.stringify(filtered));
+      savedOutputs.value = filtered.filter((o) =>
+        o.conversation_id === conversationId
+      );
+      // Deleting the snapshot being edited: future saves become a new one.
+      if (activeDraftId.value === id) activeDraftId.value = null;
+      if (!removed) return;
+      showUndoToast("Snapshot deleted", () => {
+        try {
+          const current: SavedOutput[] = JSON.parse(
+            localStorage.getItem("markdown_outputs") ?? "[]",
+          );
+          current.push(removed);
+          localStorage.setItem("markdown_outputs", JSON.stringify(current));
+          savedOutputs.value = current.filter((o) =>
+            o.conversation_id === conversationId
+          );
+        } catch (err) {
+          console.error("Undo restore failed:", err);
+        }
+      });
     } catch (err) {
       console.error("Error deleting output:", err);
       showToast("Failed to delete output", "error");
@@ -208,24 +246,33 @@ export default function MarkdownMakerDrawer(
 
     loading.value = true;
     error.value = null;
+    formatHint.value = null;
     selectedPromptId.value = promptId;
-    activeDraftId.value = null; // fresh generation = a new snapshot
 
     try {
       const result = await markdownService.generateMarkdown(
-        promptOption.prompt,
+        buildExportPrompt(promptOption),
         transcript,
         conversationData.value ?? undefined,
       );
+      // The model can decline a bad fit — surface that as a hint, not a
+      // "success" that pretends the refusal is your export.
+      if (result.trim().startsWith(FORMAT_MISMATCH_PREFIX)) {
+        formatHint.value = result.trim()
+          .slice(FORMAT_MISMATCH_PREFIX.length).trim();
+        showToast("That format doesn't quite fit this one", "info");
+        return;
+      }
       markdown.value = result;
+      activeDraftId.value = null; // fresh generation = a new snapshot
       showToast("Markdown generated!", "success");
     } catch (err) {
+      // Keep the previous output — a failed retry shouldn't eat good work.
       error.value = err instanceof Error ? err.message : "Generation failed";
       showToast(
         err instanceof Error ? err.message : "Failed to generate markdown",
         "error",
       );
-      markdown.value = "";
     } finally {
       loading.value = false;
     }
@@ -241,8 +288,8 @@ export default function MarkdownMakerDrawer(
 
     loading.value = true;
     error.value = null;
+    formatHint.value = null;
     selectedPromptId.value = null;
-    activeDraftId.value = null; // fresh generation = a new snapshot
 
     try {
       const result = await markdownService.generateMarkdown(
@@ -251,14 +298,15 @@ export default function MarkdownMakerDrawer(
         conversationData.value ?? undefined,
       );
       markdown.value = result;
+      activeDraftId.value = null; // fresh generation = a new snapshot
       showToast("Markdown generated!", "success");
     } catch (err) {
+      // Keep the previous output — a failed retry shouldn't eat good work.
       error.value = err instanceof Error ? err.message : "Generation failed";
       showToast(
         err instanceof Error ? err.message : "Failed to generate markdown",
         "error",
       );
-      markdown.value = "";
     } finally {
       loading.value = false;
     }
@@ -294,13 +342,18 @@ export default function MarkdownMakerDrawer(
       const a = document.createElement("a");
       a.href = url;
 
-      // Generate filename from prompt type and timestamp
+      // Filename: conversation-title slug + format + date
       const promptLabel = selectedPromptId.value
         ? markdownPrompts.find((p) => p.id === selectedPromptId.value)?.label ||
           "Export"
         : "CustomExport";
+      const titleSlug = (conversationData.value?.conversation?.title ?? "")
+        .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+        .slice(0, 40);
       const timestamp = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-      a.download = `${promptLabel}-${timestamp}.md`;
+      a.download = `${
+        titleSlug ? titleSlug + "-" : ""
+      }${promptLabel}-${timestamp}.md`;
 
       document.body.appendChild(a);
       a.click();
@@ -342,17 +395,89 @@ export default function MarkdownMakerDrawer(
           .replace(/"/g, "&quot;")
           .replace(/'/g, "&#39;");
 
-      // Convert markdown line breaks to HTML (text escaped first).
-      const htmlContent = markdown.value
-        .split("\n\n")
-        .map((para) => `<p>${escapeHtml(para).replace(/\n/g, "<br>")}</p>`)
-        .join("");
+      // Mini markdown → print HTML (escaped FIRST, then structure). Handles
+      // headings, lists, code fences, and bold/italic/inline code, so a real
+      // export prints as a document instead of literal `#` and `**`.
+      const inline = (s: string) =>
+        s
+          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+          .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>")
+          .replace(/`([^`]+)`/g, "<code>$1</code>");
+      const renderPrintHtml = (md: string): string => {
+        const out: string[] = [];
+        let para: string[] = [];
+        let code: string[] = [];
+        let list: "ul" | "ol" | null = null;
+        let inCode = false;
+        const closeList = () => {
+          if (list) out.push(`</${list}>`);
+          list = null;
+        };
+        const flushPara = () => {
+          if (para.length) out.push(`<p>${inline(para.join("<br>"))}</p>`);
+          para = [];
+        };
+        for (const line of escapeHtml(md).split("\n")) {
+          if (line.trim().startsWith("```")) {
+            flushPara();
+            closeList();
+            if (inCode) {
+              out.push(`<pre>${code.join("\n")}</pre>`);
+              code = [];
+            }
+            inCode = !inCode;
+            continue;
+          }
+          if (inCode) {
+            code.push(line);
+            continue;
+          }
+          const heading = line.match(/^(#{1,4})\s+(.*)$/);
+          if (heading) {
+            flushPara();
+            closeList();
+            const level = heading[1].length;
+            out.push(`<h${level}>${inline(heading[2])}</h${level}>`);
+            continue;
+          }
+          const bullet = line.match(/^\s*[-*•]\s+(.*)$/);
+          const numbered = line.match(/^\s*\d+[.)]\s+(.*)$/);
+          if (bullet || numbered) {
+            flushPara();
+            const want = bullet ? "ul" : "ol";
+            if (list !== want) {
+              closeList();
+              out.push(`<${want}>`);
+              list = want;
+            }
+            out.push(`<li>${inline((bullet ?? numbered)![1])}</li>`);
+            continue;
+          }
+          if (!line.trim()) {
+            flushPara();
+            closeList();
+            continue;
+          }
+          para.push(line);
+        }
+        if (inCode && code.length) out.push(`<pre>${code.join("\n")}</pre>`);
+        flushPara();
+        closeList();
+        return out.join("\n");
+      };
+      const htmlContent = renderPrintHtml(markdown.value);
+
+      // Print in the active theme's accent instead of a hardcoded purple.
+      const accent = getComputedStyle(document.documentElement)
+        .getPropertyValue("--accent-strong").trim() || "#1e1714";
+      const docTitle = conversationData.value?.conversation?.title?.trim() ||
+        promptLabel;
 
       printWindow.document.write(`
         <!DOCTYPE html>
         <html>
           <head>
-            <title>${escapeHtml(promptLabel)}</title>
+            <title>${escapeHtml(docTitle)}</title>
             <style>
               @media print {
                 @page {
@@ -363,18 +488,19 @@ export default function MarkdownMakerDrawer(
               body {
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                 line-height: 1.6;
-                color: #333;
+                color: #2a221e;
                 max-width: 8.5in;
                 margin: 0 auto;
                 padding: 1rem;
               }
-              h1, h2, h3 {
-                color: #7c3aed;
+              h1, h2, h3, h4 {
+                color: ${accent};
                 margin-top: 1.5em;
               }
-              h1 { font-size: 24pt; border-bottom: 2px solid #7c3aed; padding-bottom: 0.3em; }
+              h1 { font-size: 24pt; border-bottom: 2px solid ${accent}; padding-bottom: 0.3em; }
               h2 { font-size: 18pt; }
               h3 { font-size: 14pt; }
+              h4 { font-size: 12pt; }
               p {
                 margin: 0.8em 0;
                 text-align: justify;
@@ -400,7 +526,7 @@ export default function MarkdownMakerDrawer(
                 text-align: center;
                 margin-bottom: 2em;
                 padding-bottom: 1em;
-                border-bottom: 3px solid #7c3aed;
+                border-bottom: 3px solid ${accent};
               }
               .footer {
                 margin-top: 3em;
@@ -414,10 +540,10 @@ export default function MarkdownMakerDrawer(
           </head>
           <body>
             <div class="header">
-              <h1>${escapeHtml(promptLabel)}</h1>
-              <p style="color: #6b7280; font-size: 11pt;">Generated on ${
-        new Date().toLocaleDateString()
-      }</p>
+              <h1>${escapeHtml(docTitle)}</h1>
+              <p style="color: #6b7280; font-size: 11pt;">${
+        escapeHtml(promptLabel)
+      } · ${new Date().toLocaleDateString()}</p>
             </div>
             <div>${htmlContent}</div>
             <div class="footer">
@@ -454,6 +580,10 @@ export default function MarkdownMakerDrawer(
       {/* Drawer with smooth bouncy slide (our spring — keep it) */}
       <div
         ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Export conversation"
+        tabIndex={-1}
         class={`markdown-maker-drawer export-drawer ${
           isAnimating ? "is-open" : ""
         }`}
@@ -486,23 +616,45 @@ export default function MarkdownMakerDrawer(
 
         {/* Content */}
         <div class="flex-1 overflow-y-auto p-4">
-          {/* Quick Prompt Buttons */}
-          <div class="mb-4 flex flex-wrap gap-2">
-            {markdownPrompts.map((promptOption) => (
-              <button
-                key={promptOption.id}
-                class={`btn btn-sm flex-1 min-w-[calc(50%-0.25rem)] ${
-                  selectedPromptId.value === promptOption.id
-                    ? "bg-soft-purple text-white border-purple-600"
-                    : "bg-white border-2 border-gray-300 hover:border-soft-purple"
-                }`}
-                onClick={() => generateFromPreset(promptOption.id)}
-                disabled={loading.value}
-              >
-                {promptOption.label}
-              </button>
-            ))}
+          {
+            /* Format picker — suggested-for-this-conversation formats sort
+              first and carry a wand mark */
+          }
+          <div class="mb-1 export-format-grid">
+            {orderedPrompts.value.map((promptOption) => {
+              const isSelected = selectedPromptId.value === promptOption.id;
+              const isSuggested = suggestedIds.value.includes(promptOption.id);
+              return (
+                <button
+                  key={promptOption.id}
+                  type="button"
+                  class={`btn ${
+                    isSelected ? "btn--accent" : "btn--secondary"
+                  } ${isSuggested ? "is-suggested" : ""}`}
+                  title={promptOption.description}
+                  onClick={() => generateFromPreset(promptOption.id)}
+                  disabled={loading.value}
+                >
+                  <i class={`fa ${promptOption.icon}`} aria-hidden="true"></i>
+                  <span>{promptOption.label}</span>
+                  {isSuggested && (
+                    <i
+                      class="fa fa-wand-magic-sparkles export-suggest-mark"
+                      title="Suggested for this conversation"
+                      aria-label="Suggested for this conversation"
+                    >
+                    </i>
+                  )}
+                </button>
+              );
+            })}
           </div>
+          {/* One quiet line describing the selected (or best-fit) format */}
+          <p class="export-format-hint mb-3">
+            {(markdownPrompts.find((p) =>
+              p.id === (selectedPromptId.value ?? suggestedIds.value[0])
+            ))?.description ?? ""}
+          </p>
 
           {/* Custom Prompt Input */}
           <div class="mb-4">
@@ -514,8 +666,9 @@ export default function MarkdownMakerDrawer(
             </label>
             <textarea
               id="custom-prompt-input"
-              class="w-full h-24 border-2 border-gray-300 rounded px-3 py-2 text-sm focus:border-soft-purple focus:outline-none"
+              class="export-textarea h-24"
               placeholder="Type your own custom prompt here..."
+              maxLength={5000}
               value={customPrompt.value}
               onInput={(e) =>
                 customPrompt.value = (e.target as HTMLTextAreaElement).value}
@@ -524,7 +677,8 @@ export default function MarkdownMakerDrawer(
 
           {/* Generate Custom Button */}
           <button
-            class="btn w-full bg-soft-purple text-white border-purple-600 hover:bg-purple-500 mb-4"
+            type="button"
+            class="btn btn--accent w-full mb-4"
             onClick={generateFromCustom}
             disabled={loading.value || !customPrompt.value.trim() ||
               !transcript.trim()}
@@ -553,21 +707,34 @@ export default function MarkdownMakerDrawer(
             </div>
           )}
 
-          {/* Error Display */}
+          {/* Error Display — warm rose wash, never alarm-red */}
           {error.value && (
-            <div class="alert alert-error mb-4">
-              <span class="text-sm">{error.value}</span>
+            <div class="export-note export-note--error mb-4" role="alert">
+              <i class="fa fa-circle-exclamation" aria-hidden="true"></i>
+              <span>{error.value}</span>
+            </div>
+          )}
+
+          {
+            /* Format-mismatch hint — the model suggesting a better-fitting
+              format, presented as advice instead of a fake export */
+          }
+          {formatHint.value && (
+            <div class="export-note export-note--hint mb-4">
+              <i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i>
+              <span>{formatHint.value}</span>
             </div>
           )}
 
           {/* Markdown Preview */}
           {markdown.value && (
-            <div class="border-4 border-soft-blue rounded-lg shadow-brutal-sm overflow-hidden mb-4">
-              <div class="bg-soft-blue px-4 py-2 border-b-4 border-blue-600 flex justify-between items-center">
-                <span class="font-bold text-white">Preview</span>
-                <div class="flex gap-2">
+            <div class="export-preview mb-4">
+              <div class="export-preview-bar">
+                <span>Preview</span>
+                <div class="flex gap-1">
                   <button
-                    class="text-white hover:text-gray-200 cursor-pointer transition-colors"
+                    type="button"
+                    class="btn btn--ghost btn--compact btn--icon"
                     onClick={copyToClipboard}
                     title="Copy to clipboard"
                     aria-label="Copy to clipboard"
@@ -575,7 +742,8 @@ export default function MarkdownMakerDrawer(
                     <i class="fa fa-copy" aria-hidden="true"></i>
                   </button>
                   <button
-                    class="text-white hover:text-gray-200 cursor-pointer transition-colors"
+                    type="button"
+                    class="btn btn--ghost btn--compact btn--icon"
                     onClick={downloadMarkdown}
                     title="Download as .md file"
                     aria-label="Download as Markdown file"
@@ -583,7 +751,8 @@ export default function MarkdownMakerDrawer(
                     <i class="fa fa-download" aria-hidden="true"></i>
                   </button>
                   <button
-                    class="text-white hover:text-gray-200 cursor-pointer transition-colors"
+                    type="button"
+                    class="btn btn--ghost btn--compact btn--icon"
                     onClick={downloadPDF}
                     title="Download as PDF"
                     aria-label="Download as PDF"
@@ -591,16 +760,17 @@ export default function MarkdownMakerDrawer(
                     <i class="fa fa-file-pdf" aria-hidden="true"></i>
                   </button>
                   <button
-                    class="text-white hover:text-gray-200 cursor-pointer transition-colors"
+                    type="button"
+                    class="btn btn--ghost btn--compact btn--icon"
                     onClick={saveOutput}
-                    title="Save to localStorage"
-                    aria-label="Save export"
+                    title="Save snapshot"
+                    aria-label="Save snapshot"
                   >
                     <i class="fa fa-save" aria-hidden="true"></i>
                   </button>
                 </div>
               </div>
-              <div class="p-4 max-h-96 overflow-y-auto">
+              <div class="export-preview-body">
                 {/* Editable — tweak the AI output before copying / saving. */}
                 <textarea
                   value={markdown.value}
@@ -608,14 +778,7 @@ export default function MarkdownMakerDrawer(
                     markdown.value = (e.target as HTMLTextAreaElement).value}
                   spellcheck={false}
                   aria-label="Generated markdown (editable)"
-                  class="w-full text-sm whitespace-pre-wrap font-mono rounded p-2 focus:outline-none"
-                  style={{
-                    minHeight: "12rem",
-                    resize: "vertical",
-                    background: "var(--surface-cream)",
-                    border: "2px solid var(--color-border)",
-                    color: "var(--color-text)",
-                  }}
+                  class="export-textarea export-preview-editor"
                 />
               </div>
             </div>
@@ -623,76 +786,64 @@ export default function MarkdownMakerDrawer(
 
           {/* Saved snapshots */}
           {savedOutputs.value.length > 0 && (
-            <div
-              class="pt-4 mt-4"
-              style={{ borderTop: "2px solid var(--color-border)" }}
-            >
-              <h4 class="font-bold text-sm mb-3">💾 Saved snapshots</h4>
+            <div class="export-snaps pt-4 mt-4">
+              <h4 class="font-bold text-sm mb-3">
+                <i class="fa fa-box-archive mr-2" aria-hidden="true"></i>
+                Saved snapshots
+              </h4>
               <div class="space-y-2">
                 {savedOutputs.value.map((output) => {
                   const isActive = activeDraftId.value === output.id;
                   return (
                     <div
                       key={output.id}
-                      class="rounded-lg p-3"
-                      style={{
-                        background: "var(--surface-cream)",
-                        border: `2px solid ${
-                          isActive
-                            ? "var(--color-accent)"
-                            : "var(--color-border)"
-                        }`,
-                      }}
+                      class={`export-snap ${isActive ? "is-active" : ""}`}
                     >
                       <div class="flex justify-between items-start mb-2">
                         <div class="flex-1 min-w-0">
-                          <p
-                            class="font-semibold text-sm"
-                            style={{ color: "var(--color-accent)" }}
-                          >
+                          <p class="export-snap-label">
                             {output.prompt}
                             {isActive ? " · editing" : ""}
                           </p>
-                          <p
-                            class="text-xs"
-                            style={{ color: "var(--color-text-secondary)" }}
-                          >
+                          <p class="export-snap-date">
                             {new Date(output.created_at).toLocaleString()}
                           </p>
                         </div>
                         <div class="flex gap-1 ml-2">
                           <button
-                            class="btn btn-ghost btn-xs"
+                            type="button"
+                            class="btn btn--ghost btn--compact btn--icon"
                             onClick={() => loadDraft(output)}
                             title="Load to edit"
                             aria-label="Load snapshot to edit"
                           >
-                            <i class="fa fa-pen text-xs"></i>
+                            <i class="fa fa-pen" aria-hidden="true"></i>
                           </button>
                           <button
-                            class="btn btn-ghost btn-xs"
+                            type="button"
+                            class="btn btn--ghost btn--compact btn--icon"
                             onClick={() => copySavedOutput(output.content)}
                             title="Copy"
                             aria-label="Copy snapshot"
                           >
-                            <i class="fa fa-copy text-xs"></i>
+                            <i class="fa fa-copy" aria-hidden="true"></i>
                           </button>
+                          {/* Recessive delete — the undo toast is the safety */}
                           <button
-                            class="btn btn-ghost btn-xs"
-                            style={{ color: "var(--color-danger)" }}
+                            type="button"
+                            class="btn btn--ghost btn--compact btn--icon"
                             onClick={() => deleteOutput(output.id)}
-                            title="Delete"
+                            title="Delete (undoable)"
                             aria-label="Delete snapshot"
                           >
-                            <i class="fa fa-trash text-xs"></i>
+                            <i class="fa fa-trash" aria-hidden="true"></i>
                           </button>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => loadDraft(output)}
-                        class="text-xs line-clamp-3 text-left w-full cursor-pointer"
-                        style={{ color: "var(--color-text-secondary)" }}
+                        class="export-snap-body line-clamp-3"
                         title="Load to edit"
                       >
                         {output.content.substring(0, 150)}...

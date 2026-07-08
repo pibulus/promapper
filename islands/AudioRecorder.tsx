@@ -18,7 +18,6 @@ import { conversationData } from "@signals/conversationStore.ts";
 import { liveSession } from "@signals/liveSessionStore.ts";
 import { reconcileAppendResult } from "@core/orchestration/append-reconcile.ts";
 import {
-  type AppendReceipt,
   computeAppendReceipt,
   formatAppendReceipt,
 } from "@core/orchestration/append-receipt.ts";

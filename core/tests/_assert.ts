@@ -2,6 +2,12 @@
  * Minimal assert helpers — no external deps.
  */
 
+export function assert(condition: boolean, msg?: string): void {
+  if (!condition) {
+    throw new Error(msg ?? "assert failed");
+  }
+}
+
 export function assertEquals<T>(actual: T, expected: T, msg?: string): void {
   const actualStr = JSON.stringify(actual);
   const expectedStr = JSON.stringify(expected);

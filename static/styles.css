@@ -5336,7 +5336,10 @@ a:focus-visible {
 /* Export drawer backdrop & container */
 .export-drawer-backdrop {
   position: fixed;
-  inset-x: 0;
+  /* left/right, not the Tailwind-ism `inset-x` — that isn't CSS, so the
+     backdrop rendered 0px wide (never dimmed, never click-closable) */
+  left: 0;
+  right: 0;
   bottom: 0;
   z-index: calc(var(--z-drawer) - 10);
   top: var(--header-height);
@@ -5362,7 +5365,10 @@ a:focus-visible {
   overflow: hidden;
   top: var(--header-height);
   border-left: var(--border-width) solid var(--color-border);
+  /* Glass surface needs the card blur or the dashboard bleeds through */
   background: var(--color-secondary);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
   box-shadow: var(--shadow-lifted);
   transform: translateX(100%);
   transition: transform 400ms cubic-bezier(0.4, 0, 1, 1);
@@ -5392,6 +5398,141 @@ a:focus-visible {
 .export-drawer-close-btn:hover {
   color: var(--color-accent);
   transform: scale(1.1);
+}
+
+/* Export drawer content — token-based, theme-reactive (replaces the dead
+   DaisyUI btn/alert classes and hardcoded purple/blue this drawer shipped with) */
+.export-format-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+.export-format-grid .btn {
+  justify-content: flex-start;
+  gap: 0.45rem;
+  padding: 0 0.7rem;
+}
+/* Suggested-for-this-conversation formats get a quiet accent ring + wand */
+.btn.is-suggested {
+  border-color: color-mix(
+    in srgb,
+    var(--color-accent) 55%,
+    var(--border-cream-medium)
+  );
+}
+.export-suggest-mark {
+  margin-left: auto;
+  font-size: 0.7em;
+  color: var(--color-accent);
+}
+.btn--accent .export-suggest-mark {
+  color: white;
+}
+.export-format-hint {
+  font-size: var(--tiny-size);
+  color: var(--color-text-secondary);
+  margin: 0.35rem 0 0;
+  min-height: 1.1em;
+}
+
+/* Inline note boxes — warm, never alarm-red (error = rose wash per danger law) */
+.export-note {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  font-size: var(--font-size-sm);
+  border: 2px solid;
+  color: var(--color-text);
+}
+.export-note--error {
+  background: var(--accent-rose-wash);
+  border-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
+}
+.export-note--hint {
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--surface-cream));
+  border-color: var(--border-cream-medium);
+}
+.export-note i {
+  margin-top: 0.15rem;
+  color: var(--color-accent);
+}
+
+/* Preview frame — themed bar the ghost icon buttons read white against */
+.export-preview {
+  border: 2px solid var(--color-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.export-preview-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem 0.45rem 1rem;
+  background: var(--accent-strong);
+  color: white;
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+}
+.export-preview-body {
+  padding: 1rem;
+  max-height: 24rem;
+  overflow-y: auto;
+}
+
+/* Shared textarea skin (custom prompt + editable preview) */
+.export-textarea {
+  width: 100%;
+  border: 2px solid var(--border-cream-medium);
+  border-radius: 12px;
+  padding: 0.5rem 0.75rem;
+  font-size: var(--font-size-sm);
+  background: var(--surface-cream);
+  color: var(--color-text);
+  transition: border-color var(--transition-fast);
+}
+.export-textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+.export-preview-editor {
+  font-family: var(--font-mono);
+  white-space: pre-wrap;
+  min-height: 12rem;
+  resize: vertical;
+}
+
+/* Saved snapshots */
+.export-snaps {
+  border-top: 2px solid var(--color-border);
+}
+.export-snap {
+  background: var(--surface-cream);
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+.export-snap.is-active {
+  border-color: var(--color-accent);
+}
+.export-snap-label {
+  color: var(--color-accent);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+.export-snap-date {
+  color: var(--color-text-secondary);
+  font-size: var(--tiny-size);
+}
+.export-snap-body {
+  color: var(--color-text-secondary);
+  font-size: var(--tiny-size);
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
 }
 
 /* History drawer additions */
