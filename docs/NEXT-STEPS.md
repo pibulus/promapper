@@ -23,11 +23,16 @@ New QA this adds:
   UNTESTED against real Cloudflare Realtime — needs a deploy + two browsers. The
   Calls API payload shape (`sessionDescription` in/out of `/sessions/new`)
   should be verified against current CF docs at deploy time.
-- **Reconnect flush**: retest the two-tab scenario in §2 — the decision is now
-  rev-based (server acks your writes), the toast wording is unchanged.
-- **Chat**: in a live room, FAB bottom-right → panel; unread badge increments
-  only while closed; Enter sends; own message echoes back into the log.
-- **Whiteboard**: draw, reload the host tab → board should come back via INIT.
+- ✅ **Two-tab live drill RUN (July 9, commit `ec5ae2e`)** — partykit dev + two
+  browser tabs: presence, INIT seeding, two-way item sync, chat (send/echo/
+  unread badge/sender names), offline badge, offline edit → reconnect → flush →
+  room rev bump → peer convergence all verified. Three launch bugs found+fixed
+  in the process: scheme-less party host 502'd room creation; Excalidraw had
+  NEVER mounted (process shim + React interop); a flappy reconnect's second INIT
+  rolled the flusher back to stale data. Remaining from §2: the "Reconnected…"
+  toast wasn't captured by automation (likely sampling, eyeball it), and
+  whiteboard DRAW→reload persistence still wants a human hand.
+- **Chat**: verified in the drill; give it a human once-over on a phone.
 - **Export drawer**: suggested formats (wand mark) lead the picker; a format
   that doesn't fit shows a hint instead of a fake export; failed generation
   keeps the previous output; backdrop click closes.
