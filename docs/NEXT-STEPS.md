@@ -35,6 +35,13 @@ New QA this adds:
   and sat ABOVE action items in the stack (July 6 note claimed otherwise).
   Re-verify on a real phone: Action Items first, map after, transcript last.
 
+A follow-up sizing pass (commit `a2d0ea8`) found the corner edit/delete buttons
+had NEVER rendered in the corner — their CSS `position: relative` out-cascaded
+the markup's `absolute`, so they sat invisibly in flow adding ~44–92px of ghost
+height to every action item card. On-device QA of the item cards should
+re-confirm: buttons in the top-right on touch, description clear of them, chips
+on one row for short names.
+
 Taste calls parked for Pablo (each is a 1-line change, all currently OFF):
 
 1. Node-pad glows use the theme accent for every node; the nodemap memory says
@@ -46,6 +53,11 @@ Taste calls parked for Pablo (each is a 1-line change, all currently OFF):
    decision.
 4. Per-item date chip shows "None" when an item has an assignee but no due date
    — functional (tap to set) but reads as noise. Hide-until-hover is an option.
+5. The floating recording dock (fixed bottom-center) sits on top of the node map
+   whenever the map fills the lower viewport — it can cover nodes. Options if it
+   bugs him: fade it while the pointer is over the map canvas, or dock it
+   bottom-left. It already hides during live sessions; page-end content is
+   protected by the grid's pb-28.
 
 Rules for the executor: work on THIS branch, run
 `deno fmt && deno task check
