@@ -72,17 +72,25 @@ export function startLiveSync(
     onInit: (data, meta, whiteboard) => {
       const rev = metaRev(meta);
       if (data) {
-        if (
-          unsentLocal && conversationData.value &&
-          rev !== null && rev === lastSeenRev
-        ) {
-          // Reconnected and the room's revision is exactly where we left it —
-          // nobody else edited while we were away. Our unsent local state wins.
+        // "Not ahead of us": the room's revision is at (or behind) the last
+        // rev we know includes our writes. <= not ===: a dev-server restart
+        // can hand back an even older room, and healing it with our state is
+        // the right move there too.
+        const roomNotAhead = rev !== null && rev <= lastSeenRev;
+        if (unsentLocal && conversationData.value && roomNotAhead) {
+          // Reconnected and nobody else moved the room while we were away —
+          // our unsent local state wins.
           unsentLocal = false;
           lastSentJSON = localJSON(conversationData.value);
           if (sendConversationUpdate(stripWhiteboard(conversationData.value))) {
             showToast("Reconnected — your changes synced", "success");
           }
+        } else if (roomNotAhead && conversationData.value) {
+          // Nothing new in this snapshot — do NOT re-apply it. A flappy
+          // reconnect can deliver a second INIT that races our just-flushed
+          // update; applying it rolled the tab back to the pre-flush state
+          // (found live: room+peer had the flushed edit, the flusher didn't).
+          unsentLocal = false;
         } else {
           if (unsentLocal) {
             // The room moved on while we were offline — remote wins, say so.
@@ -91,7 +99,7 @@ export function startLiveSync(
           unsentLocal = false;
           applyRemoteConversation(data as ConversationData);
           lastSentJSON = JSON.stringify(data);
-          if (rev !== null) lastSeenRev = rev;
+          if (rev !== null) lastSeenRev = Math.max(lastSeenRev, rev);
         }
       } else if (rev !== null) {
         lastSeenRev = rev;

@@ -64,11 +64,31 @@ export default function SharedWhiteboard(
     let cancelled = false;
 
     async function mount() {
-      const [React, { createRoot }, { Excalidraw }] = await Promise.all([
+      // Excalidraw's browser bundle reads `process.env` at module init and
+      // the esbuild pipeline doesn't shim Node globals — without this the
+      // import throws "process is not defined" and the board never mounts.
+      const g = globalThis as typeof globalThis & {
+        process?: { env: Record<string, string> };
+      };
+      g.process ??= { env: {} };
+      const [reactMod, reactDomMod, excalidrawMod] = await Promise.all([
         import("react"),
         import("react-dom/client"),
         import("@excalidraw/excalidraw"),
       ]);
+      // CJS/ESM interop: React's API lands on `.default` of the namespace
+      // object here, so `React.createElement` on the namespace was undefined
+      // and the board never mounted.
+      // deno-lint-ignore no-explicit-any
+      const React = ((reactMod as any).default ?? reactMod) as typeof reactMod;
+      // deno-lint-ignore no-explicit-any
+      const createRoot = (reactDomMod as any).createRoot ??
+        // deno-lint-ignore no-explicit-any
+        (reactDomMod as any).default?.createRoot;
+      // deno-lint-ignore no-explicit-any
+      const Excalidraw = (excalidrawMod as any).Excalidraw ??
+        // deno-lint-ignore no-explicit-any
+        (excalidrawMod as any).default?.Excalidraw;
 
       if (cancelled || !containerRef.current) return;
 

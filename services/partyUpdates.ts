@@ -39,7 +39,15 @@ export async function pushSnapshotToRoom(
   const host = partyHost();
   if (!host) return false; // PartyKit not configured.
 
-  const base = host.replace(/\/+$/, "");
+  // The documented config is scheme-less (`PUBLIC_PARTYKIT_HOST=localhost:1999`
+  // — PartySocket accepts that), but server-side fetch() needs a real URL, so
+  // add the scheme here: plain http for local dev, https for anything else.
+  const bare = host.replace(/\/+$/, "");
+  const base = /^https?:\/\//.test(bare)
+    ? bare
+    : `${
+      /^(localhost|127\.0\.0\.1)(:|$)/.test(bare) ? "http" : "https"
+    }://${bare}`;
   const url = `${base}/parties/conversation/${encodeURIComponent(roomId)}`;
   const token = Deno.env.get("PARTYKIT_UPDATE_TOKEN")?.trim();
 
