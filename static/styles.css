@@ -394,9 +394,13 @@ body {
   background: var(--color-secondary);
 }
 
-/* Delete button (top-right corner of each card) */
+/* Delete button (top-right corner of each card).
+   position must be ABSOLUTE here: this rule loads after the Tailwind
+   utilities, so a `relative` would override the markup's `absolute` and drop
+   the button into flow — it then stacked (invisibly, opacity 0) below the
+   card content, adding ~44px of ghost height to every card. */
 .action-item-delete-btn {
-  position: relative;
+  position: absolute;
   background: var(--soft-cream-dark);
   opacity: 0;
   transition:
@@ -2479,6 +2483,11 @@ html::-webkit-scrollbar-thumb:hover,
 /* Date presets quiet at rest, revealed on row hover/focus — keeps rows calm. */
 .action-item-date-presets {
   max-height: 0;
+  /* Collapse WIDTH as well as height: even invisible, the Today/Tmrw row's
+     ~105px intrinsic width stretched the date wrapper past the "None" chip
+     and pushed the assignee+date pair to wrap into two stacked rows. The
+     width snap is invisible (opacity 0 while it happens). */
+  max-width: 0;
   opacity: 0;
   overflow: hidden;
   font-size: var(--tiny-size);
@@ -2490,12 +2499,14 @@ html::-webkit-scrollbar-thumb:hover,
 .action-item-card:hover .action-item-date-presets,
 .action-item-card:focus-within .action-item-date-presets {
   max-height: 3rem;
+  max-width: none;
   opacity: 1;
 }
 
 @media (hover: none) {
   .action-item-date-presets {
     max-height: 3rem;
+    max-width: none;
     opacity: 1;
   }
 }
@@ -2960,9 +2971,11 @@ html::-webkit-scrollbar-thumb:hover,
    ACTION ITEMS CARD — Edit button, quick-add, focus ring, overdue
    ================================================================ */
 
-/* Edit button — hover-reveal on desktop, always visible on touch */
+/* Edit button — hover-reveal on desktop, always visible on touch.
+   ABSOLUTE for the same reason as the delete button above: `relative` here
+   out-cascaded the markup's `absolute` and pushed the button into flow. */
 .action-item-edit-btn {
-  position: relative;
+  position: absolute;
   background: var(--soft-cream-dark);
   opacity: 0;
   transition: opacity var(--transition-fast), background var(--transition-fast);
@@ -2988,10 +3001,21 @@ html::-webkit-scrollbar-thumb:hover,
   .action-item-edit-btn {
     opacity: 1;
   }
+  /* Both corner buttons are always visible on touch — keep the first line of
+     the description from running underneath them. */
+  .action-item-description {
+    padding-right: 3.6rem;
+  }
 }
 .action-item-edit-btn:hover {
   background: var(--surface-cream-hover);
   color: var(--color-accent);
+}
+
+/* Vertical list — sideways overflow (sub-pixel rounding, the selected card's
+   -2px beam ring) must never grow a horizontal scrollbar under the items. */
+.action-items-scroll {
+  overflow-x: hidden;
 }
 
 /* Focus ring for the list container */
@@ -3257,8 +3281,10 @@ html::-webkit-scrollbar-thumb:hover,
   gap: 0.4rem;
   padding: 0 0.7rem;
   font-weight: 700;
-  border-color: var(--color-accent);
-  background: var(--color-accent);
+  /* accent-strong: white label must pass contrast on every theme (raw
+     GOLD/LIME accents fail AA with white) */
+  border-color: var(--accent-strong);
+  background: var(--accent-strong);
   color: #fff;
 }
 
@@ -5775,10 +5801,13 @@ label {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.55rem 1.15rem;
+  padding: 0 1.15rem;
+  height: 2.7rem;
   border: 2px solid var(--soft-black);
   border-radius: 999px;
-  background: var(--color-accent);
+  /* accent-strong: white label must pass contrast on every theme (raw GOLD/
+     LIME accents fail AA with white — same law as pills/checkboxes) */
+  background: var(--accent-strong);
   color: white;
   font-weight: 800;
   font-size: var(--small-size);
@@ -5813,7 +5842,10 @@ label {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.5rem 0.85rem;
+  padding: 0 0.85rem;
+  /* Both dock buttons share one explicit height — padding math left the takes
+     chip 2px shorter than Record, a visibly misaligned pair inside one pill. */
+  height: 2.7rem;
   border: 2px solid var(--color-border);
   border-radius: 999px;
   background: var(--surface-cream);

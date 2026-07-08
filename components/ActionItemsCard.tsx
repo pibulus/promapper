@@ -611,7 +611,9 @@ export default function ActionItemsCard(
               }}
               placeholder="Search"
               aria-label="Search action items"
-              class="w-full rounded px-2 py-1 focus:outline-none action-input--xs font-mono"
+              // rounded-lg + py-1.5 — same corner family and input rhythm as
+              // the quick-add bar (this was the card's one 4px-radius input)
+              class="w-full rounded-lg px-2.5 py-1.5 focus:outline-none action-input--xs font-mono"
             />
             {/* Filter pills — reduce the list (sort only reorders) */}
             <div class="flex gap-2 mt-2">
@@ -1097,7 +1099,7 @@ export default function ActionItemsCard(
                                       {/* Metadata row - assignee & due date */}
                                       {(!item.assignee && !item.due_date)
                                         ? (
-                                          <div class="action-item-meta flex items-center gap-3 flex-wrap">
+                                          <div class="action-item-meta flex items-center gap-2 flex-wrap">
                                             <button
                                               onClick={() =>
                                                 startEditing(
@@ -1106,14 +1108,14 @@ export default function ActionItemsCard(
                                                   item.assignee,
                                                   item.due_date,
                                                 )}
-                                              class="action-item-chip action-item-chip--add px-3 py-1.5 rounded text-xs font-mono"
+                                              class="action-item-chip action-item-chip--add px-2.5 py-1 rounded text-xs font-mono"
                                             >
                                               + add details
                                             </button>
                                           </div>
                                         )
                                         : (
-                                          <div class="action-item-meta flex items-center gap-3 flex-wrap">
+                                          <div class="action-item-meta flex items-center gap-2 flex-wrap">
                                             {/* Assignee selector */}
                                             <div class="relative assignee-dropdown-container">
                                               <button
@@ -1124,7 +1126,7 @@ export default function ActionItemsCard(
                                                         item.id
                                                       ? null
                                                       : item.id}
-                                                class={`action-item-chip action-item-chip--btn flex items-center gap-2 px-3 py-1.5 rounded text-xs transition-colors${
+                                                class={`action-item-chip action-item-chip--btn flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors${
                                                   item.assignee
                                                     ? " has-value"
                                                     : ""
@@ -1276,7 +1278,7 @@ export default function ActionItemsCard(
                                                     }
                                                   }
                                                 }}
-                                                class={`action-item-chip action-item-chip--btn flex items-center gap-2 px-3 py-1.5 rounded text-xs transition-colors${
+                                                class={`action-item-chip action-item-chip--btn flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors${
                                                   item.due_date
                                                     ? " has-value"
                                                     : ""
