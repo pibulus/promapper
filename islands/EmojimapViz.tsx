@@ -6,20 +6,13 @@
  */
 
 import { useComputed } from "@preact/signals";
-import { conversationData, isProcessing } from "@signals/conversationStore.ts";
+import { isProcessing } from "@signals/conversationStore.ts";
 import ForceDirectedGraph from "./ForceDirectedGraph.tsx";
 
 export default function EmojimapViz() {
-  const nodes = useComputed(() => conversationData.value?.nodes || []);
   const loading = useComputed(() => isProcessing.value);
 
-  if (!conversationData.value || nodes.value.length === 0) {
-    return (
-      <div class="text-center py-12 text-gray-500 italic">
-        No topic map yet. Upload a conversation to see the emoji visualization.
-      </div>
-    );
-  }
-
+  // No zero-node gate here — ForceDirectedGraph owns the warm 🌱 empty state.
+  // The old grey "No topic map yet" text shadowed it for everyone.
   return <ForceDirectedGraph loading={loading.value} />;
 }

@@ -82,6 +82,9 @@ export function createZoomBehavior(
       g.attr("transform", event.transform.toString());
     });
   svg.call(zoom);
+  // Disarm d3's built-in double-click zoom: node dbl-click is focus mode and
+  // background dbl-click was a surprise camera lurch that fought fitAllIcons.
+  svg.on("dblclick.zoom", null);
   return zoom;
 }
 
@@ -288,10 +291,17 @@ export function updateElements({
           // audio drops a new topic onto the map. We let CSS own the tween —
           // d3 and CSS must not both animate the same transform or they fight.
           .classed("is-entering", true);
-        // Force a reflow so the browser registers the start state, then release
-        // the class on the next frame to trigger the transition.
+        // Make the browser commit the start state before releasing the class:
+        // read layout (getBBox forces style/layout flush), then wait a frame.
+        // A single bare rAF could fire before the start styles were committed,
+        // so new nodes sometimes popped instead of blooming.
+        g.each(function () {
+          (this as SVGGElement).getBBox();
+        });
         requestAnimationFrame(() => {
-          g.classed("is-entering", false);
+          requestAnimationFrame(() => {
+            g.classed("is-entering", false);
+          });
         });
         return g;
       },

@@ -7,8 +7,8 @@
  * Graph gestures:
  *   click         → select node / edge (detail panel: rename/delete/unlink)
  *   double-click  → focus mode (isolate node + neighbors, dim the rest)
- *   right-click   → delete node (window.confirm)
- *   drag-to-node  → merge when released within ~45 SVG units (live preview)
+ *   right-click   → delete node (confirm modal)
+ *   drag-to-node  → merge when released within MERGE_THRESHOLD (live preview)
  *   layout toggle → organic (loose physics) vs readable (spread out)
  */
 
@@ -168,15 +168,21 @@ export default function ForceDirectedGraph(
     const height = rect.height || container.offsetHeight ||
       Math.min(800, window.innerHeight * 0.6);
 
-    // Map edges to correct format. Default to a warm dark ink (never grey —
-    // Pablo's call), so connections read as confident lines, not washed-out
-    // cobwebs. A specific edge can still override via rel.color.
+    // Map edges to correct format. Edges are ALWAYS the warm dark ink (never
+    // grey — Pablo's call). The AI emits "muted modern hex" edge colors, so
+    // honoring rel.color here painted every real conversation as the exact
+    // washed-out cobweb this ink was chosen to kill (the dev harness seeds
+    // empty colors, which is why it looked right there).
     const edges = relationships.value.map((rel, index) => ({
       id: getRelationshipId(rel, index),
       source: rel.source_topic_id,
       target: rel.target_topic_id,
-      color: rel.color || EDGE_INK,
+      color: EDGE_INK,
     }));
+
+    // A fresh init consumed the current structure — stamp the signature so the
+    // update effect doesn't immediately re-run update() over the same data.
+    lastGraphSigRef.current = computeGraphSig();
 
     // Initialize emojimap
     emojimapHandleRef.current = forceDirectedEmojimap(container, {
@@ -266,9 +272,13 @@ export default function ForceDirectedGraph(
       : svgContainerRef.current;
     if (!container) return;
 
+    // Declared outside the try so the finally can ALWAYS restore the UI — a
+    // failed toPng used to leave every control hidden and the overlay stuck.
+    let header: HTMLDivElement | null = null;
+    let buttons: NodeListOf<HTMLButtonElement> | null = null;
     try {
       // Create header overlay
-      const header = document.createElement("div");
+      header = document.createElement("div");
       header.style.position = "absolute";
       header.style.top = "20px";
       header.style.left = "20px";
@@ -294,17 +304,13 @@ export default function ForceDirectedGraph(
       container.appendChild(header);
 
       // Hide control buttons during export
-      const buttons = container.querySelectorAll("button");
+      buttons = container.querySelectorAll("button");
       buttons.forEach((btn) => (btn.style.display = "none"));
 
       // Generate PNG
       const dataUrl = await htmlToImage.toPng(container, {
         backgroundColor: "#ffffff",
       });
-
-      // Restore UI
-      buttons.forEach((btn) => (btn.style.display = ""));
-      container.removeChild(header);
 
       // Download
       const link = document.createElement("a");
@@ -317,6 +323,10 @@ export default function ForceDirectedGraph(
     } catch (error) {
       console.error("Error exporting as PNG:", error);
       showToast("Failed to export PNG. Please try again.", "error");
+    } finally {
+      // Restore the UI whether the export worked or not.
+      buttons?.forEach((btn) => (btn.style.display = ""));
+      if (header?.parentNode === container) container.removeChild(header);
     }
   }
 
@@ -350,12 +360,10 @@ export default function ForceDirectedGraph(
   // LIFECYCLE
   // ===================================================================
 
-  // Initialize on mount
+  // Cleanup on unmount. (Initialization happens in the fullscreen effect
+  // below, which also runs at mount — having BOTH init used to build the sim
+  // twice per mount, 50ms apart.)
   useEffect(() => {
-    if (topics.value.length > 0 && svgContainerRef.current) {
-      initializeVisualization();
-    }
-
     return () => {
       clearTimeout(positionDebounceTimerRef.current);
       if (emojimapHandleRef.current) {
@@ -364,14 +372,39 @@ export default function ForceDirectedGraph(
     };
   }, []);
 
-  // Update when data or params change
+  // Structural signature of what the sim actually consumes: node identity/
+  // look + edge topology + physics params. Positions are EXCLUDED on purpose —
+  // the 400ms drag autosave writes positions back to the store, and without
+  // this guard that write re-triggered update() → alpha restart → seconds of
+  // ticks → fit-on-settle yanking the user's camera. Same for every unrelated
+  // store change (checking an action item reheated the whole map).
+  function computeGraphSig(): string {
+    return JSON.stringify([
+      topics.value.map((t) => [t.id, t.label, t.emoji, t.color]),
+      relationships.value.map((r) => [
+        r.id,
+        r.source_topic_id,
+        r.target_topic_id,
+      ]),
+      linkDistance.value,
+      chargeStrength.value,
+      collisionRadius.value,
+    ]);
+  }
+  const lastGraphSigRef = useRef<string>("");
+
+  // Update when the graph STRUCTURE or physics params change
   useEffect(() => {
     if (topics.value.length > 0 && emojimapHandleRef.current) {
+      const sig = computeGraphSig();
+      if (sig === lastGraphSigRef.current) return;
+      lastGraphSigRef.current = sig;
+
       const edges = relationships.value.map((rel, index) => ({
         id: getRelationshipId(rel, index),
         source: rel.source_topic_id,
         target: rel.target_topic_id,
-        color: rel.color || EDGE_INK,
+        color: EDGE_INK, // always warm ink, see initializeVisualization
       }));
 
       emojimapHandleRef.current.update({
@@ -738,7 +771,7 @@ export default function ForceDirectedGraph(
       <div
         ref={svgContainerRef}
         class="topic-map-canvas topic-map-canvas--bleed w-full overflow-hidden"
-        style="height: clamp(360px, 56vh, 560px);"
+        style="height: clamp(360px, 56vh, 560px); height: clamp(360px, 56svh, 560px);"
       />
 
       {renderNodeDetail()}
@@ -766,7 +799,7 @@ export default function ForceDirectedGraph(
                 placeholder="✨"
                 // 16 not 4 — maxLength counts UTF-16 units, and a single ZWJ
                 // emoji (👨‍👩‍👧‍👦, flags) is up to ~11 units. 4 truncated them into
-                // mojibake. The renderer keeps just the first glyph anyway.
+                // mojibake.
                 maxLength={16}
               />
             </label>

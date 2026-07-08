@@ -221,9 +221,19 @@ export function forceDirectedEmojimap(
     simulation,
   });
 
-  // Resize handling with debounced fit
+  // Resize handling with debounced fit. Height-only wobbles under ~120px are
+  // ignored: iOS shows/hides its URL bar while you scroll, which resizes the
+  // vh-sized canvas and would otherwise refit — stomping a pinch-zoom mid-read.
   const debouncedFit = debounce(() => fitAllIcons(svg, zoom, node, nodes), 200);
+  let lastObservedW = 0;
+  let lastObservedH = 0;
   const resizeObserver = new ResizeObserver(() => {
+    const rect = node.getBoundingClientRect();
+    const widthChanged = Math.abs(rect.width - lastObservedW) > 1;
+    const heightDelta = Math.abs(rect.height - lastObservedH);
+    if (!widthChanged && heightDelta < 120) return;
+    lastObservedW = rect.width;
+    lastObservedH = rect.height;
     debouncedFit();
   });
   resizeObserver.observe(node);
@@ -245,6 +255,18 @@ export function forceDirectedEmojimap(
       }
       simulation.stop();
       fitAllIcons(svg, zoom, node, nodes);
+      // Persist the settled layout — before this, positions only saved on drag
+      // end, so a never-dragged map re-scattered on every reload. (The island
+      // diffs structure before calling update(), so this write can't loop.)
+      if (mergedConfig.onPositionsChange) {
+        const positions: Record<string, { x: number; y: number }> = {};
+        for (const n of nodes) {
+          if (n.id && Number.isFinite(n.x) && Number.isFinite(n.y)) {
+            positions[n.id] = { x: n.x as number, y: n.y as number };
+          }
+        }
+        mergedConfig.onPositionsChange(positions);
+      }
     });
 
   // Public API
@@ -283,6 +305,13 @@ export function forceDirectedEmojimap(
           "[Emojimap] Update skipped: no nodes.",
         );
         return;
+      }
+
+      // Prune remembered positions for nodes that no longer exist (delete/
+      // merge) so the map can't grow without bound across a long session.
+      const liveIds = new Set(nodes.map((n) => n.id));
+      for (const id of [...livePositions.keys()]) {
+        if (!liveIds.has(id)) livePositions.delete(id);
       }
 
       // LIVING APPEND — the heart of Phase 3.

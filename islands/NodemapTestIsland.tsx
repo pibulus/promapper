@@ -39,42 +39,46 @@ const SEED_NODES: SeedNode[] = [
   { id: "tape-hiss", label: "tape hiss", emoji: "📼", color: POPS[5] },
 ];
 
+// Edge colors are deliberately AI-ish muted greys — production data carries
+// these (the topic prompt asks for "muted modern hex"), and the harness used
+// to seed "" which hid how real conversations rendered. The map must ignore
+// them (always EDGE_INK); if grey cobwebs ever show up here, that guard broke.
 const SEED_EDGES: SeedEdge[] = [
   {
     id: "e1",
     source_topic_id: "swamp-radio",
     target_topic_id: "frog-choir",
-    color: "",
+    color: "#8A8F98",
   },
   {
     id: "e2",
     source_topic_id: "swamp-radio",
     target_topic_id: "tape-hiss",
-    color: "",
+    color: "#6B7280",
   },
   {
     id: "e3",
     source_topic_id: "frog-choir",
     target_topic_id: "moon-shed",
-    color: "",
+    color: "#9CA3AF",
   },
   {
     id: "e4",
     source_topic_id: "moon-shed",
     target_topic_id: "seed-jars",
-    color: "",
+    color: "#8A8F98",
   },
   {
     id: "e5",
     source_topic_id: "night-shift",
     target_topic_id: "swamp-radio",
-    color: "",
+    color: "#7C8590",
   },
   {
     id: "e6",
     source_topic_id: "night-shift",
     target_topic_id: "moon-shed",
-    color: "",
+    color: "#6B7280",
   },
 ];
 
@@ -95,19 +99,19 @@ const APPEND_BATCHES: { nodes: SeedNode[]; edges: SeedEdge[] }[] = [
         id: "a1",
         source_topic_id: "tape-hiss",
         target_topic_id: "static-ghost",
-        color: "",
+        color: "#9CA3AF",
       },
       {
         id: "a2",
         source_topic_id: "moon-shed",
         target_topic_id: "lost-sock",
-        color: "",
+        color: "#8A8F98",
       },
       {
         id: "a3",
         source_topic_id: "static-ghost",
         target_topic_id: "frog-choir",
-        color: "",
+        color: "#8A8F98",
       },
     ],
   },
@@ -127,25 +131,25 @@ const APPEND_BATCHES: { nodes: SeedNode[]; edges: SeedEdge[] }[] = [
         id: "b1",
         source_topic_id: "seed-jars",
         target_topic_id: "compost-king",
-        color: "",
+        color: "#6B7280",
       },
       {
         id: "b2",
         source_topic_id: "compost-king",
         target_topic_id: "rain-barrel",
-        color: "",
+        color: "#9CA3AF",
       },
       {
         id: "b3",
         source_topic_id: "ham-radio",
         target_topic_id: "swamp-radio",
-        color: "",
+        color: "#8A8F98",
       },
       {
         id: "b4",
         source_topic_id: "ham-radio",
         target_topic_id: "night-shift",
-        color: "",
+        color: "#7C8590",
       },
     ],
   },
@@ -206,14 +210,14 @@ function makeBigSeed(): ConversationData {
       id: `bm-${i}a`,
       source_topic_id: nodes[i].id,
       target_topic_id: nodes[Math.floor(i / 2)].id,
-      color: "",
+      color: "#6B7280",
     });
     if (i > 3 && i % 3 === 0) {
       edges.push({
         id: `bm-${i}b`,
         source_topic_id: nodes[i].id,
         target_topic_id: nodes[i - 3].id,
-        color: "",
+        color: "#9CA3AF",
       });
     }
   }
@@ -241,7 +245,7 @@ function makeTwoClusterSeed(): ConversationData {
     id: `tc-${i}`,
     source_topic_id: a,
     target_topic_id: b,
-    color: "",
+    color: "#8A8F98",
   });
   const edges: SeedEdge[] = [
     link("w1", "w2", 0),

@@ -3211,6 +3211,7 @@ html::-webkit-scrollbar-thumb:hover,
 .topic-map-ctrl {
   width: 2.4rem;
   height: 2.4rem;
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3226,6 +3227,18 @@ html::-webkit-scrollbar-thumb:hover,
     box-shadow 160ms ease,
     border-color 160ms ease,
     color 160ms ease;
+}
+
+/* 44px tap target on touch devices — the 38px visual stays compact. */
+@media (pointer: coarse) {
+  .topic-map-ctrl::before {
+    content: "";
+    position: absolute;
+    inset: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
 }
 
 .topic-map-ctrl:hover,
@@ -3352,36 +3365,19 @@ html::-webkit-scrollbar-thumb:hover,
   touch-action: none;
 }
 
-.topic-map-canvas .links path {
-  transition: stroke-opacity 160ms ease, stroke-width 160ms ease;
-}
-
+/* Selected/hovered edge glow — theme accent, not a hardcoded rose (wrong on
+   SKY/LIME/GOLD). The .node-halo rules that used to live here targeted an
+   element the renderer no longer creates and duplicated the newer NODE MAP
+   transition block below — deleted. */
 .topic-map-canvas .links path.is-hovered,
 .topic-map-canvas .links path.is-selected,
 .topic-map-canvas .links path.is-connected {
-  filter: drop-shadow(0 0 5px rgba(232, 131, 156, 0.42));
-}
-
-.topic-map-canvas .node-group {
-  transition: opacity 160ms ease, filter 160ms ease;
-}
-
-.topic-map-canvas .node-halo {
-  filter: drop-shadow(0 7px 10px rgba(30, 23, 20, 0.13));
-  transition:
-    r 160ms ease,
-    stroke-width 160ms ease,
-    fill 160ms ease,
-    filter 160ms ease;
-}
-
-.topic-map-canvas .node-group:hover .node-halo,
-.topic-map-canvas .node-group.is-selected .node-halo,
-.topic-map-canvas .node-group.is-connected .node-halo {
-  r: 31px;
-  stroke-width: 3px;
-  fill: rgba(255, 255, 255, 0.96);
-  filter: drop-shadow(0 10px 16px rgba(30, 23, 20, 0.18));
+  filter: drop-shadow(
+    0
+    0
+    5px
+    color-mix(in srgb, var(--color-accent) 42%, transparent)
+  );
 }
 
 .topic-map-canvas .node-group.is-selected .label,

@@ -65,8 +65,9 @@ export interface Config {
     positions: Record<string, { x: number; y: number }>,
   ) => void;
   /**
-   * Called when a dragged node is released within ~45 SVG units of another
-   * node. The caller should merge sourceId into targetId.
+   * Called when a dragged node is released within MERGE_THRESHOLD (drag.ts,
+   * 60 SVG units) of another node. The caller should merge sourceId into
+   * targetId.
    */
   onMergeNodes?: (sourceId: string, targetId: string) => void;
 }
