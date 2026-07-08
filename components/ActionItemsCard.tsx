@@ -555,7 +555,7 @@ export default function ActionItemsCard(
   return (
     <>
       <Confetti trigger={triggerConfetti.value} />
-      <div class="w-full">
+      <div class="w-full h-full">
         <div class="dashboard-card">
           <div class="dashboard-card-header">
             <h3>
@@ -1238,7 +1238,7 @@ export default function ActionItemsCard(
                                             </div>
 
                                             {/* Due date selector */}
-                                            <div class="relative font-mono">
+                                            <div class="relative font-mono action-item-date-wrap">
                                               <input
                                                 type="date"
                                                 id={`date-${item.id}`}

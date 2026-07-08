@@ -52,7 +52,7 @@ export default function SummaryCard(
   { summary, nodes, conversationSource }: SummaryCardProps,
 ) {
   return (
-    <div class="w-full">
+    <div class="w-full h-full">
       <div class="dashboard-card">
         <div class="dashboard-card-header">
           <h3>Summary</h3>

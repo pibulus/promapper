@@ -2132,6 +2132,25 @@ body {
   overflow-y: auto;
 }
 
+/* Equal-height rows (side-by-side layouts only): every card is a flex column
+   whose scroll body FILLS the grid cell instead of stopping at its own cap —
+   so Transcript/Summary rise to meet the Action Items card instead of leaving
+   a ragged gap under the row. `height: 0` zeroes the body's intrinsic size
+   (a 5000-word transcript must never dictate the row height); the min-height
+   floor is what the card asks for when it's the tallest thing in its row. */
+@media (min-width: 768px) {
+  .dashboard-card {
+    display: flex;
+    flex-direction: column;
+  }
+  .dashboard-card-body {
+    flex: 1 1 auto;
+    height: 0;
+    min-height: 26rem;
+    max-height: none;
+  }
+}
+
 /* App-wide on-brand scrollbar — slim, rounded, theme-accent thumb on a quiet
    track. Applies to the whole document + the main scroll area + the reader, so
    nowhere shows the default chunky grey bar. */
@@ -2481,35 +2500,43 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 /* Date presets quiet at rest, revealed on row hover/focus — keeps rows calm. */
+/* Today/Tmrw quick presets — an absolute OVERLAY under the date chip, shown
+   only while you're actually on the date control. The old version revealed on
+   whole-card hover and expanded in-flow: the card grew, the chips lurched out
+   of alignment, and its invisible width stacked the chip pair. */
 .action-item-date-presets {
-  max-height: 0;
-  /* Collapse WIDTH as well as height: even invisible, the Today/Tmrw row's
-     ~105px intrinsic width stretched the date wrapper past the "None" chip
-     and pushed the assignee+date pair to wrap into two stacked rows. The
-     width snap is invisible (opacity 0 while it happens). */
-  max-width: 0;
-  opacity: 0;
-  overflow: hidden;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 30;
+  margin-top: 0.25rem;
+  flex-wrap: nowrap;
+  white-space: nowrap;
   font-size: var(--tiny-size);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-2px);
   transition:
     opacity var(--transition-fast),
-    max-height var(--transition-medium);
+    transform var(--transition-fast),
+    visibility var(--transition-fast);
+}
+.action-item-date-presets .action-filter-pill {
+  /* Solid pills — they float over card content */
+  background: var(--surface-cream);
+  box-shadow: 1px 1px 0 0 var(--color-border);
 }
 
-.action-item-card:hover .action-item-date-presets,
-.action-item-card:focus-within .action-item-date-presets {
-  max-height: 3rem;
-  max-width: none;
+.action-item-date-wrap:hover .action-item-date-presets,
+.action-item-date-wrap:focus-within .action-item-date-presets {
   opacity: 1;
+  visibility: visible;
+  transform: none;
 }
 
-@media (hover: none) {
-  .action-item-date-presets {
-    max-height: 3rem;
-    max-width: none;
-    opacity: 1;
-  }
-}
+/* Touch devices skip the preset overlay entirely — tapping the date chip
+   opens the OS date picker, which is the better flow there anyway. (The old
+   always-visible presets were a big part of the card's clutter.) */
 
 @media (prefers-reduced-motion: reduce) {
   .action-item-date-presets {
@@ -2591,11 +2618,13 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 .action-item-chip--btn:hover {
+  /* Accent border only — border AND accent shadow together read as a fat
+     pink ring that matched nothing else on the card. */
   border-color: var(--color-accent);
   color: var(--color-text);
   background: var(--surface-card-deep);
   transform: translateY(-1.5px);
-  box-shadow: 2px 2px 0px 0px var(--color-accent);
+  box-shadow: 2px 2px 0px 0px var(--soft-black);
 }
 
 .action-item-chip.has-value {
@@ -2607,7 +2636,7 @@ html::-webkit-scrollbar-thumb:hover,
 
 .action-item-chip.has-value:hover {
   border-color: var(--color-accent);
-  box-shadow: 2.5px 2.5px 0px 0px var(--color-accent);
+  box-shadow: 2.5px 2.5px 0px 0px var(--soft-black);
 }
 
 .action-item-chip.is-overdue {
@@ -2728,10 +2757,8 @@ html::-webkit-scrollbar-thumb:hover,
   }
 }
 
-.action-item-delete {
-  box-shadow: 2px 2px 0px 0px var(--soft-black);
-  border: 1.5px solid var(--soft-black);
-}
+/* (No extra border/slab on the delete button — it must match the edit pencil
+   next to it. The old dark ring made the pair read as two different systems.) */
 
 /* Dropdown System (Soft Neo-Toybrut) */
 .action-dropdown-menu {
@@ -3001,11 +3028,17 @@ html::-webkit-scrollbar-thumb:hover,
   .action-item-edit-btn {
     opacity: 1;
   }
-  /* Both corner buttons are always visible on touch — keep the first line of
-     the description from running underneath them. */
-  .action-item-description {
-    padding-right: 3.6rem;
-  }
+}
+
+/* First-line clearance for the corner edit/delete buttons: a right-float
+   spacer shortens ONLY line one of the description, so hover-revealed (or
+   touch-visible) buttons never sit on top of the text — without wasting a
+   full padding column on every wrapped line. */
+.action-item-description::before {
+  content: "";
+  float: right;
+  width: 3.4rem;
+  height: 1.2em;
 }
 .action-item-edit-btn:hover {
   background: var(--surface-cream-hover);
@@ -3016,6 +3049,18 @@ html::-webkit-scrollbar-thumb:hover,
    -2px beam ring) must never grow a horizontal scrollbar under the items. */
 .action-items-scroll {
   overflow-x: hidden;
+}
+
+/* Same equal-height treatment as .dashboard-card-body: the list fills the
+   card (quick-add stays pinned to the bottom) while its intrinsic size stays
+   capped so a 40-item list can't inflate the whole row. */
+@media (min-width: 768px) {
+  .action-items-scroll {
+    flex: 1 1 auto;
+    height: 0;
+    min-height: 24rem;
+    max-height: none;
+  }
 }
 
 /* Focus ring for the list container */

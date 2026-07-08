@@ -46,7 +46,7 @@ export default function TranscriptCard(
   }
 
   return (
-    <div class="w-full">
+    <div class="w-full h-full">
       <div class="dashboard-card">
         <div class="dashboard-card-header">
           <h3>Transcript</h3>
