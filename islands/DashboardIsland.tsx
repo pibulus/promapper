@@ -272,11 +272,8 @@ export default function DashboardIsland() {
   // Mutations delegate to the action-items store (pure transforms in core/).
   return (
     <div>
-      {
-        /* Grid Container - Simple CSS Grid. pb-28 keeps the last row's content
-          readable above the floating recording dock. */
-      }
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pb-28">
+      {/* Grid Container - Simple CSS Grid */}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pb-8">
         {
           /* Mobile hierarchy: a returning user's question is "what do I do
             next" — Action Items lead the single-column stack, transcript
@@ -336,6 +333,7 @@ export default function DashboardIsland() {
               <ActionItemsCard
                 actionItems={actionItems}
                 conversationId={conversation.id ?? ""}
+                speakers={transcript?.speakers ?? []}
                 onUpdateItems={setActionItems}
               />
             }

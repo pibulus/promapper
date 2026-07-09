@@ -372,17 +372,84 @@ export default function AudioRecorder(
     return () => window.removeEventListener("keydown", handleEscape);
   }, [takesOpen.value, isRecording.value]);
 
-  const capProgress = Math.min(
-    100,
-    (recordingTime.value / MAX_RECORDING_TIME) * 100,
-  );
-
   return (
-    <div class={`recording-dock${liveSession.value ? " is-hidden" : ""}`}>
-      {/* Takes timeline sheet */}
+    <div
+      class={`recording-hub relative${liveSession.value ? " is-hidden" : ""}`}
+    >
+      {
+        /* The mic — record/stop/processing states in one header button.
+          While recording: pulsing dot + live mm:ss timer (amber when the
+          10-minute cap is near); click again to stop. */
+      }
+      {isRecording.value
+        ? (
+          <button
+            type="button"
+            class="header-icon-btn is-live"
+            onClick={stopRecording}
+            aria-label={`Stop recording (${formatTime(recordingTime.value)})`}
+            title={showTimeWarning.value
+              ? `Auto-stop in ${formatTime(timeRemaining.value)}`
+              : "Stop and map this take"}
+          >
+            <span class="recording-hub__pulse" aria-hidden="true" />
+            <span
+              class={`recording-hub__time${
+                showTimeWarning.value ? " is-warning" : ""
+              }`}
+            >
+              {formatTime(recordingTime.value)}
+            </span>
+            <i class="fa fa-stop" aria-hidden="true" />
+          </button>
+        )
+        : isProcessing.value
+        ? (
+          <button
+            type="button"
+            class="header-icon-btn"
+            disabled
+            aria-label="Mapping your words"
+            data-tip="Mapping your words…"
+            data-tip-align="right"
+          >
+            <i class="fa fa-spinner fa-spin" aria-hidden="true" />
+          </button>
+        )
+        : (
+          <button
+            type="button"
+            class="header-icon-btn"
+            onClick={startRecording}
+            aria-label="Record a new take"
+            data-tip="New take"
+            data-tip-align="right"
+          >
+            <i class="fa fa-microphone" aria-hidden="true" />
+          </button>
+        )}
+
+      {/* Takes pulldown — listen back, download, delete */}
+      <button
+        type="button"
+        class="header-icon-btn"
+        onClick={() => takesOpen.value = !takesOpen.value}
+        aria-expanded={takesOpen.value}
+        aria-label={`${takes.value.length} recorded take${
+          takes.value.length === 1 ? "" : "s"
+        }`}
+        data-tip="Takes"
+        data-tip-align="right"
+      >
+        <i class="fa fa-headphones" aria-hidden="true" />
+        {takes.value.length > 0 && (
+          <span class="recording-hub__count">{takes.value.length}</span>
+        )}
+      </button>
+
       {takesOpen.value && (
         <div
-          class="recording-dock__sheet"
+          class="recording-dock__sheet recording-hub__panel"
           role="dialog"
           aria-label="Recorded takes"
         >
@@ -398,10 +465,21 @@ export default function AudioRecorder(
             </button>
           </div>
           <div class="recording-dock__sheet-body">
+            {retryRecordingReady.value && (
+              <button
+                type="button"
+                class="recording-hub__retry"
+                onClick={retryLastRecording}
+                disabled={isProcessing.value}
+              >
+                <i class="fa fa-rotate-left" aria-hidden="true" />{" "}
+                Retry mapping the last take
+              </button>
+            )}
             {takes.value.length === 0
               ? (
                 <p class="recording-dock__empty">
-                  No takes yet — hit record and keep talking. Each take lands
+                  No takes yet — hit the mic and keep talking. Each take lands
                   here so you can listen back.
                 </p>
               )
@@ -469,83 +547,6 @@ export default function AudioRecorder(
           </div>
         </div>
       )}
-
-      {/* The pill */}
-      <div
-        class={`recording-dock__pill${
-          isRecording.value ? " is-recording" : ""
-        }`}
-      >
-        {isRecording.value
-          ? (
-            <>
-              <span class="recording-dock__pulse" aria-hidden="true" />
-              <span class="recording-dock__timer">
-                {formatTime(recordingTime.value)}
-              </span>
-              <span class="recording-dock__cap" aria-hidden="true">
-                <span
-                  class="recording-dock__cap-fill"
-                  style={{ width: `${capProgress}%` }}
-                />
-              </span>
-              {showTimeWarning.value && (
-                <span class="recording-dock__warning">
-                  Auto-stop in {formatTime(timeRemaining.value)}
-                </span>
-              )}
-              <button
-                type="button"
-                class="recording-dock__stop"
-                onClick={stopRecording}
-              >
-                <i class="fa fa-stop" aria-hidden="true" /> Stop
-              </button>
-            </>
-          )
-          : isProcessing.value
-          ? (
-            <span class="recording-dock__processing">
-              <span class="animate-spin" aria-hidden="true">⚡</span>
-              Mapping your words…
-            </span>
-          )
-          : (
-            <>
-              <button
-                type="button"
-                class="recording-dock__record"
-                onClick={startRecording}
-                aria-label="Record another take"
-              >
-                <span class="recording-dock__record-dot" aria-hidden="true" />
-                Record
-              </button>
-              <button
-                type="button"
-                class="recording-dock__takes-chip"
-                onClick={() => takesOpen.value = !takesOpen.value}
-                aria-expanded={takesOpen.value}
-                aria-label={`${takes.value.length} recorded take${
-                  takes.value.length === 1 ? "" : "s"
-                }`}
-              >
-                <i class="fa fa-headphones" aria-hidden="true" />
-                {takes.value.length}
-              </button>
-              {retryRecordingReady.value && (
-                <button
-                  type="button"
-                  class="recording-dock__retry"
-                  onClick={retryLastRecording}
-                  disabled={isProcessing.value}
-                >
-                  Retry last
-                </button>
-              )}
-            </>
-          )}
-      </div>
     </div>
   );
 }

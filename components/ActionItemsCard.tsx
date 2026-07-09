@@ -22,6 +22,7 @@ import {
 import { showUndoToast } from "@utils/toast.ts";
 import { canUndo, undoLastMutation } from "@signals/conversationStore.ts";
 import { localDateISO } from "@core/storage/dates.ts";
+import { speakerColor } from "@core/theme/speakerColors.ts";
 import Confetti from "./Confetti.tsx";
 
 interface ActionItem {
@@ -38,6 +39,8 @@ interface ActionItem {
 interface ActionItemsCardProps {
   actionItems: ActionItem[];
   conversationId: string;
+  /** Conversation speakers — anchors each assignee's stable dot color. */
+  speakers?: string[];
   onUpdateItems: (items: ActionItem[]) => void;
 }
 
@@ -85,7 +88,8 @@ function formatFriendlyDate(dateString: string): string {
 const DRAFT_ID = "draft-new";
 
 export default function ActionItemsCard(
-  { actionItems, conversationId, onUpdateItems }: ActionItemsCardProps,
+  { actionItems, conversationId, speakers = [], onUpdateItems }:
+    ActionItemsCardProps,
 ) {
   // State
   const visibleItems = useSignal<ActionItem[]>(actionItems);
@@ -132,6 +136,10 @@ export default function ActionItemsCard(
   // Search lives behind a header button — the input only exists while open,
   // and closing it clears the filter (no stale invisible query).
   const searchOpen = useSignal(false);
+  // One pulldown for sort + filters (side-by-side pills were chrome bloat).
+  const optionsOpen = useSignal(false);
+  // Rows are clamped to two lines; tapping the text expands one at a time.
+  const expandedItemId = useSignal<string | null>(null);
   const showAssigneeDropdown = useSignal(false);
   const activeAssigneeDropdown = useSignal<string | null>(null);
   // True while the inline-create draft row is showing (local only, see DRAFT_ID)
@@ -169,6 +177,24 @@ export default function ActionItemsCard(
     visibleItems.value = actionItems;
   }, [actionItems]);
 
+  // Click outside closes the sort/filter pulldown.
+  useEffect(() => {
+    if (!optionsOpen.value) return;
+    const close = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest(".action-options-wrap")) {
+        optionsOpen.value = false;
+      }
+    };
+    const t = setTimeout(
+      () => document.addEventListener("mousedown", close),
+      10,
+    );
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener("mousedown", close);
+    };
+  }, [optionsOpen.value]);
+
   // Click outside to close item-level assignee dropdown.
   // Store the timeout so we can cancel it on cleanup and avoid a listener leak.
   useEffect(() => {
@@ -198,14 +224,6 @@ export default function ActionItemsCard(
       .length;
     return { total, done };
   });
-
-  const sortLabel = useComputed(() =>
-    sortMode.value === "manual"
-      ? "Manual"
-      : sortMode.value === "assignee"
-      ? "By person"
-      : "By date"
-  );
 
   // Self-populating assignee suggestions from existing items + "Me" always first
   const assigneeSuggestions = useComputed(() => {
@@ -515,16 +533,6 @@ export default function ActionItemsCard(
     }
   }
 
-  function cycleSortMode() {
-    const modes: Array<"manual" | "assignee" | "date"> = [
-      "manual",
-      "assignee",
-      "date",
-    ];
-    const currentIndex = modes.indexOf(sortMode.value);
-    sortMode.value = modes[(currentIndex + 1) % modes.length];
-  }
-
   // ===================================================================
   // RENDER
   // ===================================================================
@@ -556,8 +564,11 @@ export default function ActionItemsCard(
             <h3>
               Action Items
               {progress.value.total > 0 && (
-                <span class="header-progress">
-                  {progress.value.done} of {progress.value.total} done
+                <span
+                  class="header-progress"
+                  title={`${progress.value.done} of ${progress.value.total} done`}
+                >
+                  {progress.value.done}/{progress.value.total}
                 </span>
               )}
             </h3>
@@ -572,82 +583,98 @@ export default function ActionItemsCard(
                 <i class="fa fa-magnifying-glass" aria-hidden="true"></i>
               </button>
               {
-                /* Icon-only (the icon itself changes per mode) — a text label
-                  here collided with the flip button in the corner */
+                /* ONE pulldown for sort + filters — same-context options
+                  never sit side by side */
               }
-              <button
-                onClick={cycleSortMode}
-                class="btn btn--ghost btn--icon btn--compact"
-                aria-label={`Sort: ${sortLabel.value}. Click to change.`}
-                title={`Sort: ${sortLabel.value}`}
-              >
-                <i
-                  class={`fa ${
-                    sortMode.value === "manual"
-                      ? "fa-arrow-up-wide-short"
-                      : sortMode.value === "assignee"
-                      ? "fa-user"
-                      : "fa-calendar"
-                  }`}
-                  aria-hidden="true"
+              <div class="relative action-options-wrap">
+                <button
+                  onClick={() => optionsOpen.value = !optionsOpen.value}
+                  class="btn btn--ghost btn--icon btn--compact"
+                  aria-label="Sort and filter"
+                  aria-expanded={optionsOpen.value}
+                  title="Sort & filter"
                 >
-                </i>
-              </button>
+                  <i class="fa fa-sliders" aria-hidden="true"></i>
+                </button>
+                {optionsOpen.value && (
+                  <div class="action-dropdown-menu action-options-menu font-mono">
+                    <div class="action-options-label">Sort</div>
+                    {([
+                      ["manual", "Manual"],
+                      ["assignee", "By person"],
+                      ["date", "By date"],
+                    ] as const).map(([mode, label]) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        class={`action-dropdown-option${
+                          sortMode.value === mode ? " is-active" : ""
+                        }`}
+                        onClick={() => {
+                          sortMode.value = mode;
+                          optionsOpen.value = false;
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                    <div class="action-options-label">Show</div>
+                    <button
+                      type="button"
+                      class={`action-dropdown-option${
+                        filterMine.value ? " is-active" : ""
+                      }`}
+                      onClick={() => {
+                        filterMine.value = !filterMine.value;
+                        soundToggle(filterMine.value);
+                      }}
+                    >
+                      Mine only
+                    </button>
+                    <button
+                      type="button"
+                      class={`action-dropdown-option${
+                        hideDone.value ? " is-active" : ""
+                      }`}
+                      onClick={() => {
+                        hideDone.value = !hideDone.value;
+                        soundToggle(hideDone.value);
+                      }}
+                    >
+                      Hide done
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
           {
-            /* ONE chrome row. Filters at rest; the search input takes the row
-              over when the header search button is toggled (Esc closes).
-              Bulk actions live on the flip side — not duplicated here. */
+            /* Search input — only exists while open (filters + sort live in
+              the header pulldown; no permanent chrome row at all) */
           }
-          <div
-            class="action-items-search"
-            style={{ padding: "0.6rem var(--card-padding) 0.25rem" }}
-          >
-            {searchOpen.value
-              ? (
-                <input
-                  type="text"
-                  value={searchQuery.value}
-                  onInput={(e) => {
-                    searchQuery.value = (e.target as HTMLInputElement).value;
-                    soundTick(); // play typing sound
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") toggleSearch();
-                  }}
-                  placeholder="Search tasks…"
-                  aria-label="Search action items"
-                  autoFocus
-                  class="w-full rounded-lg px-2.5 py-1.5 focus:outline-none action-input--xs font-mono"
-                />
-              )
-              : (
-                <div class="flex gap-2">
-                  <button
-                    onClick={() => {
-                      filterMine.value = !filterMine.value;
-                      soundToggle(filterMine.value);
-                    }}
-                    class="action-filter-pill"
-                    aria-pressed={filterMine.value}
-                  >
-                    Mine
-                  </button>
-                  <button
-                    onClick={() => {
-                      hideDone.value = !hideDone.value;
-                      soundToggle(hideDone.value);
-                    }}
-                    class="action-filter-pill"
-                    aria-pressed={hideDone.value}
-                  >
-                    Hide done
-                  </button>
-                </div>
-              )}
-          </div>
+          {searchOpen.value && (
+            <div
+              class="action-items-search"
+              style={{ padding: "0.6rem var(--card-padding) 0.25rem" }}
+            >
+              <input
+                type="text"
+                value={searchQuery.value}
+                onInput={(e) => {
+                  searchQuery.value = (e.target as HTMLInputElement).value;
+                  soundTick(); // play typing sound
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") toggleSearch();
+                }}
+                placeholder="Search tasks…"
+                aria-label="Search action items"
+                autoFocus
+                class="w-full rounded-lg px-2.5 py-1.5 focus:outline-none action-input--xs font-mono"
+              />
+            </div>
+          )}
 
           {/* List */}
           <div
@@ -1066,12 +1093,26 @@ export default function ActionItemsCard(
                                   )
                                   : (
                                     <>
+                                      {
+                                        /* Two-line clamp keeps every row the
+                                          same shape; tap the text to expand,
+                                          double-tap to edit */
+                                      }
                                       <p
                                         class={`action-item-description leading-relaxed${
                                           item.status === "completed"
                                             ? " is-completed"
                                             : ""
+                                        }${
+                                          expandedItemId.value === item.id
+                                            ? " is-expanded"
+                                            : ""
                                         }`}
+                                        onClick={() =>
+                                          expandedItemId.value =
+                                            expandedItemId.value === item.id
+                                              ? null
+                                              : item.id}
                                         onDblClick={() =>
                                           startEditing(
                                             item.id,
@@ -1079,32 +1120,20 @@ export default function ActionItemsCard(
                                             item.assignee,
                                             item.due_date,
                                           )}
-                                        title="Double-click to edit"
+                                        title="Tap to expand · double-tap to edit"
                                       >
                                         {item.description}
                                       </p>
 
-                                      {/* Metadata row - assignee & due date */}
-                                      {(!item.assignee && !item.due_date)
-                                        ? (
-                                          <div class="action-item-meta flex items-center gap-2 flex-wrap">
-                                            <button
-                                              onClick={() =>
-                                                startEditing(
-                                                  item.id,
-                                                  item.description,
-                                                  item.assignee,
-                                                  item.due_date,
-                                                )}
-                                              class="action-item-chip action-item-chip--add px-2.5 py-1 rounded text-xs font-mono"
-                                            >
-                                              + add details
-                                            </button>
-                                          </div>
-                                        )
-                                        : (
-                                          <div class="action-item-meta flex items-center gap-2 flex-wrap">
-                                            {/* Assignee selector */}
+                                      {
+                                        /* Metadata — only what EXISTS renders:
+                                          the assignee's color dot, the date
+                                          when set. Empty slots show nothing
+                                          (the edit pencil holds the forms). */
+                                      }
+                                      {(item.assignee || item.due_date) && (
+                                        <div class="action-item-meta flex items-center gap-2 flex-wrap">
+                                          {item.assignee && (
                                             <div class="relative assignee-dropdown-container">
                                               <button
                                                 onClick={() =>
@@ -1114,17 +1143,19 @@ export default function ActionItemsCard(
                                                         item.id
                                                       ? null
                                                       : item.id}
-                                                class={`action-item-chip action-item-chip--btn flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors${
-                                                  item.assignee
-                                                    ? " has-value"
-                                                    : ""
-                                                }`}
+                                                class="speaker-dot-btn"
+                                                title={`${item.assignee} — change`}
+                                                aria-label={`Assigned to ${item.assignee}. Click to change.`}
                                               >
-                                                <i class="fa fa-user text-xs">
-                                                </i>
-                                                <span class="font-mono">
-                                                  {item.assignee || "None"}
-                                                </span>
+                                                <span
+                                                  class="speaker-dot"
+                                                  style={{
+                                                    background: speakerColor(
+                                                      item.assignee,
+                                                      speakers,
+                                                    ),
+                                                  }}
+                                                />
                                               </button>
                                               {activeAssigneeDropdown.value ===
                                                   item.id && (
@@ -1224,8 +1255,9 @@ export default function ActionItemsCard(
                                                 </div>
                                               )}
                                             </div>
+                                          )}
 
-                                            {/* Due date selector */}
+                                          {item.due_date && (
                                             <div class="relative font-mono action-item-date-wrap">
                                               <input
                                                 type="date"
@@ -1266,25 +1298,17 @@ export default function ActionItemsCard(
                                                     }
                                                   }
                                                 }}
-                                                class={`action-item-chip action-item-chip--btn flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors${
-                                                  item.due_date
-                                                    ? " has-value"
-                                                    : " is-empty"
-                                                }${
+                                                class={`action-item-chip action-item-chip--btn flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors has-value${
                                                   isOverdue ? " is-overdue" : ""
                                                 }`}
-                                                title={item.due_date
-                                                  ? "Change due date"
-                                                  : "Set a due date"}
+                                                title="Change due date"
                                               >
                                                 <i class="fa fa-calendar text-xs">
                                                 </i>
                                                 <span class="font-mono">
-                                                  {item.due_date
-                                                    ? formatFriendlyDate(
-                                                      item.due_date,
-                                                    )
-                                                    : "date"}
+                                                  {formatFriendlyDate(
+                                                    item.due_date,
+                                                  )}
                                                 </span>
                                               </button>
                                               <div class="action-item-date-presets flex gap-1 mt-1 flex-wrap">
@@ -1322,8 +1346,9 @@ export default function ActionItemsCard(
                                                 )}
                                               </div>
                                             </div>
-                                          </div>
-                                        )}
+                                          )}
+                                        </div>
+                                      )}
 
                                       {
                                         /* AI self-checkoff — make the magic take

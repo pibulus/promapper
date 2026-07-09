@@ -55,7 +55,10 @@ export default function TranscriptCard(
               onClick={() =>
                 transcript?.text && openReader({
                   title: "Transcript",
-                  html: formatTranscriptSafe(transcript.text),
+                  html: formatTranscriptSafe(
+                    transcript.text,
+                    transcript.speakers ?? [],
+                  ),
                   mono: true,
                 })}
               class="cursor-pointer"
@@ -93,7 +96,10 @@ export default function TranscriptCard(
                 <div
                   class="whitespace-pre-wrap leading-relaxed transcript-content"
                   dangerouslySetInnerHTML={{
-                    __html: formatTranscriptSafe(transcript.text),
+                    __html: formatTranscriptSafe(
+                      transcript.text,
+                      transcript.speakers ?? [],
+                    ),
                   }}
                 />
 

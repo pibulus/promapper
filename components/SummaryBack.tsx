@@ -51,6 +51,25 @@ export default function SummaryBack(
     <div class="dashboard-card">
       <div class="dashboard-card-header">
         <h3>Pulse</h3>
+        <div class="card-header-actions">
+          <button
+            onClick={() => summary && copyToClipboard(summary)}
+            class="cursor-pointer"
+            title="Copy summary"
+            aria-label="Copy summary"
+            disabled={!summary}
+          >
+            <i class="fa fa-copy text-sm"></i>
+          </button>
+          <button
+            onClick={onBackup}
+            class="cursor-pointer"
+            title="Back up all projects"
+            aria-label="Back up all projects"
+          >
+            <i class="fa fa-download text-sm"></i>
+          </button>
+        </div>
       </div>
       <div class="dashboard-card-body">
         <div class="card-back-sections">
@@ -117,26 +136,6 @@ export default function SummaryBack(
                   })}
                 </div>
               )}
-          </div>
-
-          {/* Saving story */}
-          <div class="card-back-actions">
-            <button
-              type="button"
-              onClick={() => summary && copyToClipboard(summary)}
-              disabled={!summary}
-              class="card-back-btn"
-            >
-              <i class="fa fa-clipboard" aria-hidden="true"></i> Copy summary
-            </button>
-            <button
-              type="button"
-              onClick={onBackup}
-              class="card-back-btn"
-            >
-              <i class="fa fa-download" aria-hidden="true"></i>{" "}
-              Back up all projects
-            </button>
           </div>
         </div>
       </div>

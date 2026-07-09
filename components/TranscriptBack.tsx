@@ -9,6 +9,7 @@ import {
   computeTalkShare,
   transcriptWordCount,
 } from "@core/orchestration/talk-share.ts";
+import { speakerColor } from "@core/theme/speakerColors.ts";
 import { copyToClipboard } from "../utils/toast.ts";
 
 interface TranscriptBackProps {
@@ -29,6 +30,17 @@ export default function TranscriptBack(
     <div class="dashboard-card">
       <div class="dashboard-card-header">
         <h3>Voices</h3>
+        <div class="card-header-actions">
+          <button
+            onClick={() => text && copyToClipboard(text)}
+            class="cursor-pointer"
+            title="Copy transcript"
+            aria-label="Copy transcript"
+            disabled={!text}
+          >
+            <i class="fa fa-copy text-sm"></i>
+          </button>
+        </div>
       </div>
       <div class="dashboard-card-body">
         {words === 0
@@ -90,6 +102,7 @@ export default function TranscriptBack(
                                   ? 0
                                   : Math.round((s.words / maxWords) * 100)
                               }%`,
+                              background: speakerColor(s.speaker, speakers),
                             }}
                           />
                         </div>
@@ -98,18 +111,6 @@ export default function TranscriptBack(
                   </div>
                 </div>
               )}
-
-              {/* Actions */}
-              <div class="card-back-actions">
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(text)}
-                  class="card-back-btn"
-                >
-                  <i class="fa fa-clipboard" aria-hidden="true"></i>{" "}
-                  Copy transcript
-                </button>
-              </div>
             </div>
           )}
       </div>

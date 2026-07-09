@@ -568,6 +568,12 @@ export default function HomeIsland() {
                   </button>
 
                   {/* Go Live + Share + sound mute */}
+                  {conversationData.value && (
+                    <AudioRecorder
+                      conversationId={conversationData.value.conversation.id ??
+                        ""}
+                    />
+                  )}
                   <GoLiveButton />
                   <ShareButton />
                   <SoundToggle />
@@ -791,18 +797,6 @@ export default function HomeIsland() {
       </div>
 
       {/* Auth modal — triggered by requestAuthToken() from anywhere */}
-      {
-        /* Recording dock — the "talk again" loop, front and center. Mounted
-          whenever a conversation exists (NOT gated on liveSession: unmounting
-          mid-recording would kill the take without onStop — the dock hides
-          itself via CSS and stops gracefully when live mode starts). */
-      }
-      {conversationData.value && (
-        <AudioRecorder
-          conversationId={conversationData.value.conversation.id || ""}
-        />
-      )}
-
       {/* In-session chat — FAB bottom-right, only while live */}
       {session && (
         <ChatPanel

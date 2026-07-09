@@ -6,6 +6,7 @@
  */
 
 import { Marked } from "marked";
+import { speakerColor } from "@core/theme/speakerColors.ts";
 
 /**
  * Escape HTML entities to prevent XSS
@@ -23,10 +24,19 @@ export function escapeHtml(text: string): string {
 }
 
 /**
- * Sanitize and format transcript with speaker highlighting
- * Returns safe HTML string with only allowed tags
+ * Sanitize and format transcript with speaker highlighting.
+ * Returns safe HTML string with only allowed tags.
+ *
+ * When the conversation's speaker list is provided, each KNOWN speaker's name
+ * is tinted with their stable palette color (the same color that identifies
+ * them in Voices bars and action-item dots). The injected color is always one
+ * of our own palette constants, and the text is escaped before any HTML is
+ * added — both XSS-safe by construction.
  */
-export function formatTranscriptSafe(text: string): string {
+export function formatTranscriptSafe(
+  text: string,
+  speakers: readonly string[] = [],
+): string {
   if (!text) return "";
 
   // Escape all HTML first
@@ -35,10 +45,28 @@ export function formatTranscriptSafe(text: string): string {
   // Convert newlines to <br/>
   let formatted = escaped.replace(/\n/g, "<br/>");
 
-  // Highlight speaker names (safe because content is already escaped)
+  // Known speakers first — exact (escaped) names, each in their own color.
+  for (const speaker of speakers) {
+    const name = speaker.trim();
+    if (!name) continue;
+    const escapedName = escapeHtml(name);
+    const pattern = new RegExp(
+      `(^|<br/>)(${escapedName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}):`,
+      "g",
+    );
+    const color = speakerColor(name, speakers);
+    formatted = formatted.replace(
+      pattern,
+      `$1<span style="font-weight: 600; color: ${color}; margin-right: 0.5rem;">$2:</span>`,
+    );
+  }
+
+  // Fallback highlight for name-ish prefixes not in the speakers list.
+  // (Names already wrapped above no longer sit directly after ^ or <br/>,
+  // so they can't double-match here.)
   formatted = formatted.replace(
-    /(Speaker\s*\d+|[A-Z][a-z]+):/g,
-    '<span style="font-weight: 600; color: var(--color-accent); margin-right: 0.5rem;">$1:</span>',
+    /(^|<br\/>)(Speaker\s*\d+|[A-Z][a-z]+):/g,
+    '$1<span style="font-weight: 600; color: var(--color-accent); margin-right: 0.5rem;">$2:</span>',
   );
 
   return formatted;

@@ -1963,6 +1963,11 @@ body {
     overflow-wrap: anywhere;
   }
 
+  .action-item-description.is-expanded {
+    -webkit-line-clamp: unset;
+    display: block;
+  }
+
   .action-item-description.is-completed {
     opacity: 0.6;
     text-decoration-thickness: 2px;
@@ -2040,6 +2045,13 @@ body {
 
 .flip-card-inner.is-flipped {
   transform: rotateY(180deg);
+}
+
+/* Every flipped card's header must reserve the corner the flip button owns —
+   without this, header action icons (sliders, copy, backup…) sit underneath
+   the flip circle and become unclickable. */
+.flip-card-face .dashboard-card-header {
+  padding-right: 3.2rem;
 }
 
 .flip-card-face {
@@ -2593,12 +2605,23 @@ html::-webkit-scrollbar-thumb:hover,
      body copy — rows come out uniform instead of headline-vs-chip soup. */
   font-size: var(--small-size);
   line-height: 1.5;
+  /* Uniform rows: clamp to two lines; tapping the text expands one item. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  cursor: pointer;
   overflow-wrap: anywhere;
   transition:
     opacity 400ms ease,
     color 400ms ease,
     text-decoration-color 400ms ease;
   text-decoration: line-through transparent 1.5px;
+}
+
+.action-item-description.is-expanded {
+  -webkit-line-clamp: unset;
+  display: block;
 }
 
 .action-item-description.is-completed {
@@ -2631,20 +2654,6 @@ html::-webkit-scrollbar-thumb:hover,
     box-shadow 180ms ease;
 }
 
-.action-item-chip--add {
-  border: 2px dashed var(--color-border);
-  background: transparent;
-  box-shadow: none;
-  cursor: pointer;
-}
-
-.action-item-chip--add:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-  background: var(--surface-card-deep);
-  transform: translateY(-1.5px);
-}
-
 .action-item-chip--btn {
   cursor: pointer;
 }
@@ -2659,20 +2668,39 @@ html::-webkit-scrollbar-thumb:hover,
   box-shadow: 2px 2px 0px 0px var(--soft-black);
 }
 
-/* Empty slot (no assignee / no due date): a dashed ADD-affordance like the
-   "+ add details" chip — the old solid grey "None" read like broken data. */
-.action-item-chip.is-empty {
-  border-style: dashed;
+/* Speaker dot — the assignee, as their stable palette color. Tooltip and
+   aria carry the name; the dot IS the identity (same color as their
+   transcript name + Voices bar). */
+.speaker-dot-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border: none;
   background: transparent;
-  box-shadow: none;
-  color: var(--color-text-secondary);
+  cursor: pointer;
 }
-.action-item-chip.is-empty:hover {
-  border-style: dashed;
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-  background: var(--surface-card-deep);
-  box-shadow: none;
+.speaker-dot-btn::before {
+  content: "";
+  position: absolute;
+  inset: 50%;
+  width: 40px;
+  height: 40px;
+  transform: translate(-50%, -50%);
+}
+.speaker-dot {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  border: 2px solid var(--soft-black);
+  box-shadow: 1px 1px 0 0 var(--soft-black);
+  transition: transform var(--transition-fast);
+}
+.speaker-dot-btn:hover .speaker-dot,
+.speaker-dot-btn:focus-visible .speaker-dot {
+  transform: scale(1.25);
 }
 
 .action-item-chip.has-value {
@@ -2809,6 +2837,21 @@ html::-webkit-scrollbar-thumb:hover,
 
 /* (No extra border/slab on the delete button — it must match the edit pencil
    next to it. The old dark ring made the pair read as two different systems.) */
+
+/* Sort + filter pulldown (header) */
+.action-options-menu {
+  right: 0;
+  left: auto;
+  min-width: 10.5rem;
+}
+.action-options-label {
+  padding: 0.45rem 0.75rem 0.15rem;
+  font-size: var(--tiny-size);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
 
 /* Dropdown System (Soft Neo-Toybrut) */
 .action-dropdown-menu {
@@ -3081,15 +3124,10 @@ html::-webkit-scrollbar-thumb:hover,
   }
 }
 
-/* First-line clearance for the corner edit/delete buttons: a right-float
-   spacer shortens ONLY line one of the description, so hover-revealed (or
-   touch-visible) buttons never sit on top of the text — without wasting a
-   full padding column on every wrapped line. */
-.action-item-description::before {
-  content: "";
-  float: right;
-  width: 3.4rem;
-  height: 1.2em;
+/* Corner clearance for the edit/delete buttons (a float spacer can't work
+   inside the -webkit-box used for line clamping). */
+.action-item-description {
+  padding-right: 3.4rem;
 }
 .action-item-edit-btn:hover {
   background: var(--surface-cream-hover);
@@ -5904,6 +5942,88 @@ label {
    below drawers (40) and their backdrops (30 - 1 covers... dock uses 28).
    ═══════════════════════════════════════════════════════════════════ */
 
+/* Recording hub — the mic lives in the app header now (the old floating
+   bottom-center dock covered the node map). Recording feedback: the button
+   goes accent with a pulsing dot + live timer; the takes pulldown drops from
+   the header like the share popover. */
+.recording-hub {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.recording-hub.is-hidden {
+  display: none;
+}
+.header-icon-btn.is-live {
+  width: auto;
+  padding: 0 0.6rem;
+  gap: 0.4rem;
+  background: var(--accent-strong);
+  color: #fff;
+}
+.recording-hub__pulse {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #fff;
+  animation: dock-breathe 2.4s ease-in-out infinite;
+}
+.recording-hub__time {
+  font-family: var(--font-mono);
+  font-size: var(--tiny-size);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.recording-hub__time.is-warning {
+  color: #ffd28a;
+}
+.recording-hub__count {
+  position: absolute;
+  top: -0.2rem;
+  right: -0.2rem;
+  min-width: 0.95rem;
+  height: 0.95rem;
+  padding: 0 0.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--accent-strong);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 800;
+}
+.recording-hub .recording-dock__sheet.recording-hub__panel {
+  bottom: auto;
+  top: calc(100% + 0.6rem);
+  left: auto;
+  right: 0;
+  transform: none;
+  width: min(24rem, calc(100vw - 1.5rem));
+  z-index: 60;
+}
+.recording-hub__retry {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+  padding: 0.5rem;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--border-radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--small-size);
+  cursor: pointer;
+}
+.recording-hub__retry:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* (Legacy floating dock shell — superseded by .recording-hub; the sheet/take
+   inner classes below are still live inside the hub's pulldown.) */
 .recording-dock {
   position: fixed;
   bottom: calc(1.1rem + env(safe-area-inset-bottom, 0px));

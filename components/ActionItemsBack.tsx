@@ -119,6 +119,35 @@ export default function ActionItemsBack(
     <div class="dashboard-card">
       <div class="dashboard-card-header">
         <h3>Overview</h3>
+        <div class="card-header-actions">
+          <button
+            onClick={onMarkAllDone}
+            class="cursor-pointer"
+            title="Mark all done"
+            aria-label="Mark all done"
+            disabled={pending === 0}
+          >
+            <i class="fa fa-check-double text-sm"></i>
+          </button>
+          <button
+            onClick={() => copyToClipboard(buildSummary(items))}
+            class="cursor-pointer"
+            title="Copy task summary"
+            aria-label="Copy task summary"
+            disabled={total === 0}
+          >
+            <i class="fa fa-copy text-sm"></i>
+          </button>
+          <button
+            onClick={onClearDone}
+            class="cursor-pointer"
+            title="Clear done"
+            aria-label="Clear done"
+            disabled={done === 0}
+          >
+            <i class="fa fa-broom text-sm"></i>
+          </button>
+        </div>
       </div>
       <div class="dashboard-card-body">
         {total === 0
@@ -222,36 +251,6 @@ export default function ActionItemsBack(
                       ))}
                     </div>
                   )}
-              </div>
-
-              {/* Bulk actions */}
-              <div class="card-back-actions">
-                <button
-                  type="button"
-                  onClick={onMarkAllDone}
-                  disabled={pending === 0}
-                  class="card-back-btn"
-                >
-                  <i class="fa fa-check" aria-hidden="true"></i>{" "}
-                  Mark all done{pending > 0 ? ` (${pending})` : ""}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => copyToClipboard(buildSummary(items))}
-                  class="card-back-btn"
-                >
-                  <i class="fa fa-clipboard" aria-hidden="true"></i>{" "}
-                  Copy summary
-                </button>
-                <button
-                  type="button"
-                  onClick={onClearDone}
-                  disabled={done === 0}
-                  class="card-back-btn is-danger"
-                >
-                  <i class="fa fa-broom" aria-hidden="true"></i>{" "}
-                  Clear done{done > 0 ? ` (${done})` : ""}
-                </button>
               </div>
             </div>
           )}
