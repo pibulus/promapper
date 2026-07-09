@@ -23,13 +23,34 @@
 
 import type { Theme } from "@core/theme/types.ts";
 
-/** Allowed hue arc [start, end] in degrees — butter/gold → green → sky →
- * purple → pink/magenta. Only the red/coral/brown band (340–40) is excluded:
- * with contrast carried by the solved deep companion (not the accent itself),
- * every other family is readable by construction, so the arc is taste, not
- * math — reds go alarm/mud, everything else stays fresh. */
-export const HUE_ARCS: ReadonlyArray<readonly [number, number]> = [
-  [40, 340],
+/** CURATED PAIRS — the dice picks between DESIGNED couples, not raw hues.
+ * Free random pairing kept rolling combos nobody would choose (mint on baby
+ * pink = kids' party). Each pair is a ground family + a PUNK accent arc from
+ * Pablo's own palette language (BRAND docs): "pastel backgrounds with punk
+ * accents" — Miami Gradient (#FFD700→#FF6B6B→#4ECDC4), Sunset Spectrum,
+ * riso fluoro pink #FF48B0, rebel purple #9B59B6, zombie-sheriff
+ * orchid+coral. Grounds: sunrise coral/peach, orchid/magenta, aqua.
+ * Accents: teal, cobalt, rebel purple, coral-red, hot pink — never mint,
+ * never yellow, never baby pink. */
+export const CURATED_PAIRS: ReadonlyArray<{
+  readonly name: string;
+  readonly ground: readonly [number, number];
+  readonly accent: readonly [number, number];
+}> = [
+  // salmon sunrise ground × teal spark (Miami gradient)
+  { name: "miami", ground: [12, 28], accent: [170, 186] },
+  // sunrise × cornflower/cobalt (#5C9DD5 / #5B8DEF register)
+  { name: "sunset-cobalt", ground: [12, 28], accent: [208, 228] },
+  // coral glow × orchid punch (#9D50BB register)
+  { name: "coral-orchid", ground: [8, 24], accent: [278, 298] },
+  // orchid dusk × juicy coral (#FF6B6B — the zombie-sheriff look)
+  { name: "dusk-coral", ground: [288, 314], accent: [8, 20] },
+  // lagoon × coral pop (Miami inverted)
+  { name: "lagoon-coral", ground: [172, 190], accent: [8, 20] },
+  // aqua pool × raspberry (#E85D8F — the historic beloved accent)
+  { name: "poolside", ground: [168, 188], accent: [328, 346] },
+  // orchid dusk × aqua spark
+  { name: "dusk-aqua", ground: [288, 312], accent: [170, 186] },
 ];
 
 export function hslToHex(h: number, s: number, l: number): string {
@@ -94,18 +115,10 @@ export function deriveStrong(hue: number, sat: number): string {
 
 const wrap = (h: number) => ((h % 360) + 360) % 360;
 
-/** The families the background is allowed to live in — blush coral, peach
- * (the original), apricot butter, orchid/mauve (the zombie-sheriff magenta),
- * petal pink. Warm and classy by construction; the roll picks the one
- * farthest from the accent hue so ground and accent always play off each
- * other. */
-export const WARM_FAMILIES: ReadonlyArray<readonly [number, number]> = [
-  [6, 18],
-  [18, 36],
-  [36, 50],
-  [296, 318],
-  [330, 352],
-];
+/** Ground families, derived from the curated pairs (kept as an export for
+ * the test sweeps). */
+export const WARM_FAMILIES: ReadonlyArray<readonly [number, number]> =
+  CURATED_PAIRS.map((p) => p.ground);
 
 export interface ShuffleParts {
   hue: number;
@@ -135,13 +148,15 @@ const VIBES = [
 export function generateThemeParts(
   rand: () => number = Math.random,
 ): ShuffleParts {
-  const arc = HUE_ARCS[Math.floor(rand() * HUE_ARCS.length) % HUE_ARCS.length];
-  const hue = arc[0] + rand() * (arc[1] - arc[0]);
-  // Mother-3 energy: accents are ACCENTED — saturated and present (bold soft
-  // tones like coral/teal/mustard), never a whisper-pastel and never the dark
-  // corporate band. Contrast still rides the solved deep companion.
-  const saturation = 76 + rand() * 18; // 76–94
-  const lightness = 63 + rand() * 9; // 63–72
+  const pair = CURATED_PAIRS[
+    Math.floor(rand() * CURATED_PAIRS.length) % CURATED_PAIRS.length
+  ];
+  const hue = pair.accent[0] + rand() * (pair.accent[1] - pair.accent[0]);
+  // PUNK accents ("pastel backgrounds with punk accents" — the BRAND law):
+  // saturated mid-tones in #FF6B6B / #4ECDC4 / #9B59B6 territory. Never a
+  // whisper-pastel, never muted. Ink contrast rides the solved companion.
+  const saturation = 68 + rand() * 24; // 68–92
+  const lightness = 54 + rand() * 10; // 54–64
 
   const accent = hslToHex(hue, saturation, lightness);
   const strong = deriveStrong(hue, saturation);
@@ -149,20 +164,9 @@ export function generateThemeParts(
   const text = hslToHex(hue, 16 + rand() * 8, 16 + rand() * 4);
   const textSecondary = hslToHex(hue, 10 + rand() * 6, 46 + rand() * 6);
 
-  // Background: ALWAYS one of the warm families (airy, classy, gradientish —
-  // the original peach wash energy), never the accent's own family. We pick
-  // the warm family FARTHEST from the accent hue so the header bands play
-  // against the space instead of dissolving into it: sky accent → the classic
-  // peach, pink accent → apricot butter, mint accent → petal pink.
-  const mid = ([lo, hi]: readonly [number, number]) => (lo + hi) / 2;
-  const circDist = (a: number, b: number) => {
-    const d = Math.abs(wrap(a) - wrap(b));
-    return Math.min(d, 360 - d);
-  };
-  const family = WARM_FAMILIES.reduce((best, f) =>
-    circDist(hue, mid(f)) > circDist(hue, mid(best)) ? f : best
-  );
-  const bgHue = family[0] + rand() * (family[1] - family[0]);
+  // Ground comes from the SAME curated pair — the couple was designed
+  // together, so ground and accent always play off each other on purpose.
+  const bgHue = pair.ground[0] + rand() * (pair.ground[1] - pair.ground[0]);
 
   // Two rich family washes + one pastelized accent-family glow in the low
   // corner (the interplay). Never pigment-mix complementary pastels — sRGB
@@ -174,9 +178,9 @@ export function generateThemeParts(
   // (figure/ground separation is the whole game).
   const j = () => rand() * 12 - 6;
   const washes = [
-    hslToHex(wrap(bgHue - 8), 84 + rand() * 14, 80 + rand() * 3),
-    hslToHex(wrap(bgHue + 10), 82 + rand() * 16, 81 + rand() * 3),
-    hslToHex(hue, 74 + rand() * 14, 82 + rand() * 3),
+    hslToHex(wrap(bgHue - 8), 88 + rand() * 12, 80 + rand() * 3),
+    hslToHex(wrap(bgHue + 10), 86 + rand() * 14, 81 + rand() * 3),
+    hslToHex(hue, 78 + rand() * 14, 82 + rand() * 3),
   ];
   const washAlphas = [0.9, 0.85, 0.6];
   const positions: Array<[number, number]> = [

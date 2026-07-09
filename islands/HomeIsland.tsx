@@ -523,8 +523,10 @@ export default function HomeIsland() {
           {conversationData.value
             ? (
               // Conversation header — wordmark (= home) · project title · actions.
+              // On mobile the lockup unwraps (display:contents): wordmark +
+              // icons share row one, the conversation title gets row two.
               <>
-                <div class="flex items-center gap-2 flex-1 min-w-0">
+                <div class="app-header__lockup flex items-center gap-2 flex-1 min-w-0">
                   {/* ProMapper stays for branding; clicking it returns home. */}
                   <a
                     href="/"

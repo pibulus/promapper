@@ -662,7 +662,9 @@ body {
   font-weight: 600;
   color: var(--color-text-secondary);
   letter-spacing: -0.01em;
-  line-height: 1;
+  /* 1.35, not 1: with overflow:hidden a 1.0 line box CLIPS descenders
+     ("Dusty Gulch" lost the tail of its g/y). */
+  line-height: 1.35;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1082,8 +1084,7 @@ body {
 .mapper-block-pill {
   font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: rgba(0, 0, 0, 0.45);
 }
 
@@ -1316,8 +1317,7 @@ body {
 
 .mapper-record-label {
   font-size: 0.75rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: rgba(255, 255, 255, 0.7);
 }
 
@@ -1360,8 +1360,7 @@ body {
   color: white;
   font-size: 0.92rem;
   font-weight: 800;
-  letter-spacing: 0.1em; /* slightly more tracking for readability */
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   /* 3D toy-style offset shadow for playful neo-brutalism */
   box-shadow:
     4px 4px 0 0 rgba(30, 23, 20, 0.25),
@@ -1497,8 +1496,7 @@ body {
 .mapper-info-note {
   font-size: 0.82rem;
   color: rgba(0, 0, 0, 0.65);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
 }
 
 .mapper-upload-drop {
@@ -1698,6 +1696,42 @@ body {
     --header-height: 68px;
   }
 
+  /* Header restack: wordmark + action icons INLINE on row one, the
+     conversation title on its own line below — the single-row squeeze left
+     all three fighting for 390px. display:contents unwraps the lockup so
+     its children become grid items. (.app-header-glass prefix: the base
+     container rules live LATER in the file and would win a same-specificity
+     cascade.) */
+  .app-header-glass .app-header__container {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    row-gap: 0.05rem;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    height: 100%;
+  }
+  .app-header-glass .app-header__lockup {
+    display: contents;
+  }
+  .app-header-glass .app-header__divider {
+    display: none;
+  }
+  .app-header-glass .app-header__brand {
+    grid-row: 1;
+    grid-column: 1;
+    justify-self: start;
+  }
+  .app-header-glass .app-header__actions {
+    grid-row: 1;
+    grid-column: 2;
+  }
+  .app-header-glass .app-header__title {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    font-size: 0.8rem;
+  }
+
   .mapper-stage {
     min-height: unset;
     padding: 1rem 0 1.2rem;
@@ -1808,14 +1842,17 @@ body {
   }
 
   .mapper-hero-desc {
-    font-size: 0.93rem;
-    line-height: 1.42;
-    max-width: 18rem;
+    /* Calmer on a phone: near-title boldness at near-caption size read as
+       three competing voices stacked in one column. */
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.5;
+    max-width: 22rem;
   }
 
   .mapper-hero-caption {
-    font-size: 0.8rem;
-    line-height: 1.35;
+    font-size: 0.82rem;
+    line-height: 1.4;
   }
 
   .mapper-card__panel {
@@ -1862,6 +1899,16 @@ body {
   .mapper-capture-actions {
     margin-top: 1rem;
     gap: 0.55rem;
+    /* One column of full-width CTAs — the side-by-side row wrapped into a
+       ragged half-width DEMO orphan. Inline flex/width on the record slab
+       need the !important. */
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mapper-capture-actions > button {
+    width: 100% !important;
+    flex: none !important;
   }
 
   .dashboard-card {
@@ -2022,8 +2069,17 @@ body {
     height: 28px;
   }
 
-  .action-item-card .fa-grip-vertical {
-    font-size: 0.95rem !important;
+  /* The drag handle is desktop chrome — touch sorting rides the long-press
+     on the row itself. Reclaim its column for the words. */
+  .action-item-card .drag-handle {
+    display: none;
+  }
+
+  /* Words first on a phone: wrap to two lines instead of amputating at one
+     ("Sheriff…" tells nobody anything). Tap still expands the full text.
+     (.action-item-card prefix outranks the later base clamp:1 rule.) */
+  .action-item-card .action-item-description {
+    -webkit-line-clamp: 2;
   }
 
   .topic-visualizations-shell,
@@ -2112,9 +2168,11 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: var(--border-radius-sm);
-  border: var(--border-width) solid var(--color-border);
-  background: var(--surface-cream);
-  color: var(--color-text-secondary);
+  /* GHOST like its header-action siblings — the cream slab version read as
+     a different button species sitting in the same row. */
+  border: none;
+  background: transparent;
+  color: var(--header-band-ink);
   cursor: pointer;
   transition:
     background var(--transition-fast),
@@ -2157,11 +2215,11 @@ body {
 }
 
 .dashboard-card-header h3 {
-  /* The ORIGINAL header presentation (Inter 700 caps) — restored by decree. */
+  /* Inter 700, SENTENCE CASE — all-caps is banned everywhere (July 9
+     decree: "nobody likes all capitals"). */
   font-size: var(--small-size);
   font-weight: 700;
   letter-spacing: 0.01em;
-  text-transform: uppercase;
   color: var(--header-band-ink);
   margin: 0;
 }
@@ -2885,8 +2943,7 @@ html::-webkit-scrollbar-thumb:hover,
   padding: 0.45rem 0.75rem 0.15rem;
   font-size: var(--tiny-size);
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.02em;
   color: var(--color-text-secondary);
 }
 
@@ -2974,7 +3031,6 @@ html::-webkit-scrollbar-thumb:hover,
   font-size: var(--tiny-size);
   font-weight: 600;
   letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--color-text-secondary);
   opacity: 0.85;
 }
@@ -3969,16 +4025,12 @@ a:focus-visible {
    MOBILE & ACCESSIBILITY IMPROVEMENTS
    ================================================================ */
 
-/* Touch targets - minimum 44x44px for accessibility */
+/* Touch targets: NO blanket 44px min on every button/anchor — that blunt
+   rule bloated every dense control on mobile (checkboxes, header actions,
+   dials, flip buttons) and squeezed the text they sit beside. Small controls
+   carry invisible 44px ::before/::after tap boxes instead (checkbox, filter
+   pills, header-icon-btn, edit/delete corners) — ergonomics without bulk. */
 @media (max-width: 768px) {
-  button,
-  a,
-  input[type="checkbox"],
-  input[type="radio"] {
-    min-height: 44px;
-    min-width: 44px;
-  }
-
   /* Ensure touch-friendly padding */
   .mode-tab {
     padding: 0.75rem 1.25rem;
@@ -4600,8 +4652,7 @@ a:focus-visible {
 .history-date-group {
   font-size: var(--tiny-size);
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.02em;
   color: var(--color-text-secondary);
   padding: 0.5rem 0 0.25rem;
 }
@@ -5437,7 +5488,6 @@ a:focus-visible {
   font-weight: 700;
   color: var(--accent-ink);
   margin-bottom: 0.5rem;
-  text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
@@ -6155,8 +6205,7 @@ label {
   color: white;
   font-weight: 800;
   font-size: var(--small-size);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   cursor: pointer;
   box-shadow: 2px 2px 0 var(--soft-black);
   transition:
@@ -6283,8 +6332,7 @@ label {
   color: var(--soft-cream);
   font-weight: 800;
   font-size: var(--small-size);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   cursor: pointer;
   box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.25);
 }
@@ -6347,7 +6395,6 @@ label {
   font-size: var(--text-size);
   font-weight: 800;
   letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--color-text);
 }
 

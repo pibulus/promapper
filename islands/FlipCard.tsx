@@ -57,7 +57,7 @@ export default function FlipCard({ front, back, label }: FlipCardProps) {
             type="button"
             onClick={toggle}
             class="flip-card-btn"
-            title={label ? `${label} — flip` : "Flip card"}
+            data-tip="Flip"
             aria-label={label ? `${label} — flip` : "Flip card"}
           >
             <i class="fa fa-rotate" aria-hidden="true"></i>

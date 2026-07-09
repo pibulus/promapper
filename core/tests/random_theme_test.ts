@@ -11,9 +11,9 @@
 import { assert } from "./_assert.ts";
 import {
   contrast,
+  CURATED_PAIRS,
   generateThemeParts,
   hslToHex,
-  HUE_ARCS,
   mixHex,
   SURFACE_CREAM,
   WARM_FAMILIES,
@@ -28,25 +28,29 @@ function seededRand(seed: number): () => number {
   };
 }
 
-Deno.test("rolls stay inside the pastel hue arc (no red, no mud)", () => {
+Deno.test("accents come from a curated pair's punk arc — never mint, yellow, or baby pink", () => {
   const rand = seededRand(28);
   for (let i = 0; i < 300; i++) {
     const { hue } = generateThemeParts(rand);
-    const inArc = HUE_ARCS.some(([lo, hi]) => hue >= lo && hue <= hi);
-    assert(inArc, `hue ${hue} escaped the arcs`);
-    assert(hue >= 40 && hue <= 340, `hue in the red/mud band: ${hue}`);
+    const inArc = CURATED_PAIRS.some(({ accent: [lo, hi] }) =>
+      hue >= lo && hue <= hi
+    );
+    assert(inArc, `accent hue ${hue} escaped every curated pair`);
+    // The banned zones from the live taste session:
+    assert(!(hue > 24 && hue < 168), `yellow/green/mint accent: ${hue}`);
+    assert(!(hue > 346 || hue < 8), `alarm-red/baby-pink accent: ${hue}`);
   }
 });
 
-Deno.test("accents are bold-fresh — saturated, present, never dusty or dark", () => {
+Deno.test("accents are PUNK — saturated mid-tones, never muted or pastel", () => {
   const rand = seededRand(505);
   for (let i = 0; i < 300; i++) {
     const { saturation, lightness } = generateThemeParts(rand);
     assert(
-      lightness >= 63 && lightness <= 72,
-      `outside the bold-soft band: L${lightness}`,
+      lightness >= 54 && lightness <= 64,
+      `outside the punk mid-tone band: L${lightness}`,
     );
-    assert(saturation >= 76, `dusty grandma pastel: S${saturation}`);
+    assert(saturation >= 68, `muted accent: S${saturation}`);
   }
 });
 

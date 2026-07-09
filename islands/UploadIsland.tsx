@@ -564,8 +564,7 @@ export default function UploadIsland(
                 boxShadow:
                   "4px 4px 0 0 rgba(30, 23, 20, 0.25), 0 3px 8px rgba(30, 23, 20, 0.14)",
                 fontWeight: 800,
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
+                letterSpacing: "0.01em",
                 background: "var(--surface-cream, #fffaf6)",
                 color: "var(--color-text, #1e1714)",
                 cursor: "pointer",

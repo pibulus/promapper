@@ -87,7 +87,7 @@ var parsed=JSON.parse(saved);
 var name=parsed&&parsed.name;
 if(!name)return;
 if(name==="SHUFFLE"){
-if(parsed.v!==2||!parsed.custom||!parsed.custom.vars)return;
+if(parsed.v!==4||!parsed.custom||!parsed.custom.vars)return;
 var cv=parsed.custom.vars;
 for(var ck in cv){document.documentElement.style.setProperty(ck,cv[ck]);}
 return;}
