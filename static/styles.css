@@ -2099,6 +2099,165 @@ body {
   box-shadow: var(--shadow-slab);
 }
 
+/* ===================================================================
+   MODULES — optional cards that plug into the dashboard grid.
+   Three sizes and one rule (docs/MODULES.md): small tucks into leftover
+   cells, standard matches the core cards, wide spans the row. The grid
+   packs dense so holes get filled instead of gaping.
+   ================================================================ */
+/* Dense packing: later small/standard cards slide backward into holes left
+   by wide cards, so a 5-module board never gapes. */
+.dashboard-grid {
+  grid-auto-flow: dense;
+}
+
+.module-cell--small {
+  align-self: start;
+}
+.module-cell--small .dashboard-card {
+  height: auto;
+}
+.module-cell--small .dashboard-card-body {
+  max-height: 9rem;
+}
+@media (min-width: 768px) {
+  .module-cell--small .dashboard-card-body {
+    min-height: 0;
+    height: auto;
+    flex: none;
+  }
+}
+
+/* The rack tile — same ghost language as the action add-row: an invitation,
+   not a demand. */
+.module-rack-tile {
+  width: 100%;
+  min-height: 5.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--border-radius-lg);
+  background: color-mix(in srgb, var(--color-accent) 4%, transparent);
+  color: var(--color-text-secondary);
+  font-size: var(--small-size);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    transform var(--transition-fast);
+}
+.module-rack-tile:hover {
+  color: var(--accent-ink);
+  border-color: color-mix(in srgb, var(--accent-ink) 45%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  transform: translateY(-1.5px);
+}
+.module-rack-tile:active {
+  transform: translateY(1px);
+}
+.module-rack-tile i {
+  font-size: 1.1rem;
+}
+
+/* The rack modal rows. */
+.module-rack-title {
+  font-size: var(--heading-size);
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+.module-rack-sub {
+  font-size: var(--small-size);
+  color: var(--color-text-secondary);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+.module-rack-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.module-rack-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  background: color-mix(in srgb, var(--color-accent) 4%, var(--surface-card));
+}
+.module-rack-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--border-radius-sm);
+  background: var(--header-band);
+  color: var(--header-band-ink);
+  flex-shrink: 0;
+}
+.module-rack-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  flex: 1;
+}
+.module-rack-name {
+  font-weight: 700;
+  font-size: var(--small-size);
+}
+.module-rack-tagline {
+  font-size: var(--tiny-size);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+.module-rack-toggle {
+  flex-shrink: 0;
+  min-width: 3.25rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--btn-radius-pill);
+  border: 2px solid var(--color-border);
+  background: var(--surface-cream);
+  color: var(--color-text-secondary);
+  font-size: var(--tiny-size);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+.module-rack-toggle.is-on {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: #fff;
+}
+
+/* Notes module — a calm page inside the card. */
+.notes-module-textarea {
+  width: 100%;
+  min-height: 14rem;
+  height: 100%;
+  resize: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--text-size);
+  line-height: var(--line-height);
+}
+.notes-module-textarea::placeholder {
+  color: var(--color-text-secondary);
+  opacity: 0.7;
+}
+
 .dashboard-card {
   /* SOLID themed surface — glass let the ground bleed through and the cards
      read as having "no background colour". A whisper of the accent keeps

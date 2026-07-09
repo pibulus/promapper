@@ -31,6 +31,7 @@ import * as $GoLiveButton from "./islands/GoLiveButton.tsx";
 import * as $HomeIsland from "./islands/HomeIsland.tsx";
 import * as $MarkdownMakerDrawer from "./islands/MarkdownMakerDrawer.tsx";
 import * as $MobileHistoryMenu from "./islands/MobileHistoryMenu.tsx";
+import * as $ModuleRack from "./islands/ModuleRack.tsx";
 import * as $NodemapTestIsland from "./islands/NodemapTestIsland.tsx";
 import * as $ReaderModal from "./islands/ReaderModal.tsx";
 import * as $ShareButton from "./islands/ShareButton.tsx";
@@ -42,6 +43,8 @@ import * as $TopicVisualizationsCard from "./islands/TopicVisualizationsCard.tsx
 import * as $UploadIsland from "./islands/UploadIsland.tsx";
 import * as $VisualizationSelector from "./islands/VisualizationSelector.tsx";
 import * as $VoicePanel from "./islands/VoicePanel.tsx";
+import * as $modules_NotesModule from "./islands/modules/NotesModule.tsx";
+import * as $modules_moduleRegistry from "./islands/modules/moduleRegistry.ts";
 import * as $useRecorder from "./islands/useRecorder.ts";
 import * as $vizRegistry from "./islands/vizRegistry.ts";
 import type { Manifest } from "$fresh/server.ts";
@@ -79,6 +82,7 @@ const manifest = {
     "./islands/HomeIsland.tsx": $HomeIsland,
     "./islands/MarkdownMakerDrawer.tsx": $MarkdownMakerDrawer,
     "./islands/MobileHistoryMenu.tsx": $MobileHistoryMenu,
+    "./islands/ModuleRack.tsx": $ModuleRack,
     "./islands/NodemapTestIsland.tsx": $NodemapTestIsland,
     "./islands/ReaderModal.tsx": $ReaderModal,
     "./islands/ShareButton.tsx": $ShareButton,
@@ -90,6 +94,8 @@ const manifest = {
     "./islands/UploadIsland.tsx": $UploadIsland,
     "./islands/VisualizationSelector.tsx": $VisualizationSelector,
     "./islands/VoicePanel.tsx": $VoicePanel,
+    "./islands/modules/NotesModule.tsx": $modules_NotesModule,
+    "./islands/modules/moduleRegistry.ts": $modules_moduleRegistry,
     "./islands/useRecorder.ts": $useRecorder,
     "./islands/vizRegistry.ts": $vizRegistry,
   },

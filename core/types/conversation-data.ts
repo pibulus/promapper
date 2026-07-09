@@ -39,4 +39,6 @@ export interface ConversationData {
   warnings?: string[];
   /** The Excalidraw scene (serialised JSON). Survives browser restarts. */
   whiteboardScene?: string;
+  /** Human scratch space (Notes module). Rides saves, shares, and backups. */
+  notes?: string;
 }

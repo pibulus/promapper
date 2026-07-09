@@ -32,6 +32,9 @@ import TopicVisualizationsCard from "./TopicVisualizationsCard.tsx";
 import SharedWhiteboard from "./SharedWhiteboard.tsx";
 import FlipCard from "./FlipCard.tsx";
 import ReaderModal from "./ReaderModal.tsx";
+import ModuleRack from "./ModuleRack.tsx";
+import { moduleRegistry } from "./modules/moduleRegistry.ts";
+import { enabledModules } from "@signals/moduleStore.ts";
 
 /** Minimum seconds between auto-draws so it doesn't fire too often. */
 const AUTO_DRAW_COOLDOWN_MS = 30_000;
@@ -273,7 +276,7 @@ export default function DashboardIsland() {
   return (
     <div class="dashboard-shell">
       {/* Grid Container - Simple CSS Grid */}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+      <div class="dashboard-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {
           /* Mobile hierarchy: a returning user's question is "what do I do
             next" — Action Items lead the single-column stack, transcript
@@ -352,6 +355,28 @@ export default function DashboardIsland() {
 
         {/* Card 4: Topic Visualizations - FULL WIDTH (spans all columns) */}
         <TopicVisualizationsCard />
+
+        {
+          /* Optional modules — registry order (the board stays arranged),
+            switched on in the rack. Sizes: small tucks into leftover cells,
+            standard matches core cards, wide spans the row. */
+        }
+        {moduleRegistry
+          .filter((m) => enabledModules.value.includes(m.id))
+          .map((m) => (
+            <div
+              key={m.id}
+              class={`order-6 md:order-none min-w-0 module-cell module-cell--${m.size}`}
+              style={m.size === "wide" ? { gridColumn: "1 / -1" } : undefined}
+            >
+              <m.component />
+            </div>
+          ))}
+
+        {/* The rack — ghost tile, always last. */}
+        <div class="order-last md:order-none min-w-0 module-cell module-cell--small">
+          <ModuleRack />
+        </div>
 
         {/* Card 5: Whiteboard — only in live meetings, full width */}
         {liveSession.value && (
