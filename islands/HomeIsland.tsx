@@ -160,6 +160,11 @@ export default function HomeIsland() {
         smartBackspace: false,
         showCursor: true,
         cursorChar: "▌",
+        // The cursor is typewriter charm WHILE typing; afterwards it lingers
+        // as a stray grey block on the hero. Fade it out on completion.
+        onComplete: (self: { cursor?: HTMLElement }) => {
+          if (self.cursor) self.cursor.style.display = "none";
+        },
         contentType: "html",
         loop: false,
       });

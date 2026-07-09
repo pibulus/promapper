@@ -571,7 +571,17 @@ export default function UploadIsland(
                 transition: "transform 120ms ease, box-shadow 120ms ease",
               }}
             >
-              {demoLoading ? "Loading…" : "✨ Demo"}
+              {demoLoading ? "Loading…" : (
+                <>
+                  <i
+                    class="fa fa-wand-magic-sparkles"
+                    aria-hidden="true"
+                    style={{ marginRight: "0.4rem" }}
+                  >
+                  </i>
+                  Demo
+                </>
+              )}
             </button>
           )}
 

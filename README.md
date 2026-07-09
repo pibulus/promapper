@@ -11,6 +11,19 @@ markdown docs.
 The useful part is that a project map can keep growing. Add more audio or text
 later and ProMapper folds the new material into the same project memory.
 
+## 📸 A look around
+
+|                                       The front door                                        |                                  The living dashboard                                   |
+| :-----------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------: |
+| ![Front page — talk it out, paste a rant, or drop a recording](static/promo/front-page.png) | ![Dashboard — transcript, summary, action items, topic map](static/promo/dashboard.png) |
+
+|                              The module rack                               |                           In a pocket                           |
+| :------------------------------------------------------------------------: | :-------------------------------------------------------------: |
+| ![Modules — Notes, Bishop, Radio, Tones, Canvas](static/promo/modules.png) | ![Mobile — the same board, one column](static/promo/mobile.png) |
+
+Every roll of the dice re-tints the whole app from curated color pairs — your
+screenshots may be wearing a different sky.
+
 ## ✨ Key Features
 
 ### 🎤 Capture → Shape
