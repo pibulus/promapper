@@ -48,7 +48,10 @@ formats.
 5. **Server work goes through the existing seams.** AI calls: a guarded route
    (`requestGuard`) calling the `AIService` — never a key in an island.
    Audio/files: the existing pipeline routes.
-6. **Small modules are habitat.** Ambient/delight modules (radio, palette, a
+6. **Modules can FLIP.** Wrap your own card in `FlipCard` (front/back are
+   closures over the same signals — state sharing is free). Radio's back is its
+   station dial; the pattern is yours.
+7. **Small modules are habitat.** Ambient/delight modules (radio, palette, a
    cat) should be `small` — they exist to make leftover grid cells feel
    intentional.
 
@@ -59,6 +62,7 @@ formats.
 | Notes  | standard | Scratch pad stored in the conversation JSON.  |
 | Bishop | standard | Ask your memory — guarded AI over this convo. |
 | Radio  | small    | KPAB + SomaFM tile; born gap-filler.          |
+| Tones  | small    | WebAudio moods — focus, rain, warm, deep.     |
 | Canvas | wide     | The whiteboard outside meetings; same scene.  |
 
 ## On deck (from the July 10 riff)

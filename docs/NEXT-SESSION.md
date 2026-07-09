@@ -31,6 +31,19 @@ Dev: `DENO_ENV=development deno task dev` (8003).
 - Also fixed live: Excalidraw crashed restoring persisted scenes (collaborators
   Map → plain object after JSON round-trip; stripped).
 
+## The second wind (Pablo stayed up — `5529d87..94a19f7`)
+
+- **Tones** — the tone box he riffed: four WebAudio moods (focus/rain/
+  warm/deep), pure synth, no network. Small tile, sibling to Radio.
+- **Radio flips** — back face is the station dial (modules own their flips via
+  FlipCard; state shares free). KPAB parked while the Pi stream is down (comment
+  marks the restore spot); SomaFM five-pack, Groove Salad first. Fixed a latent
+  stale-closure skip bug.
+- Drawer slide got a springy settle; Export/Import + chat FAB went icon-only;
+  Demo's ✨ → fa-wand-magic-sparkles; typed.js cursor no longer lingers on the
+  hero.
+- **static/promo/** — four screenshots wired into a README gallery.
+
 ## Morning taste calls (parked for Pablo, in order)
 
 1. **Canvas as the node map's flip** — the module works; the flip unification
