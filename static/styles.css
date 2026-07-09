@@ -398,9 +398,12 @@ body {
    position must be ABSOLUTE here: this rule loads after the Tailwind
    utilities, so a `relative` would override the markup's `absolute` and drop
    the button into flow — it then stacked (invisibly, opacity 0) below the
-   card content, adding ~44px of ghost height to every card. */
+   card content, adding ~44px of ghost height to every card.
+   z-index must beat the content grid's z-[2]: without it the description's
+   (transparent) box sat ON TOP and swallowed every click on these buttons. */
 .action-item-delete-btn {
   position: absolute;
+  z-index: 5;
   background: var(--soft-cream-dark);
   opacity: 0;
   transition:
@@ -1954,7 +1957,7 @@ body {
   }
 
   .action-item-description {
-    font-size: 0.92rem !important;
+    /* Same small mono size as desktop now — one density everywhere. */
     line-height: 1.45 !important;
     /* Wrap long words so the description can't overflow the narrow grid track. */
     overflow-wrap: anywhere;
@@ -2405,15 +2408,23 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 .action-item-card.is-completed {
-  opacity: 0.65;
+  /* Fade away: done items recede hard — ghostly, smaller, slow soft exhale
+     (the 400ms opacity ride makes checking off feel like a release). */
+  opacity: 0.45;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--color-accent) 8%, transparent) 0%,
     var(--surface-card) 100%
   );
   border-color: var(--color-border);
-  box-shadow: 1px 1px 0px 0px rgba(30, 23, 20, 0.1);
-  transform: scale(0.98);
+  box-shadow: none;
+  transform: scale(0.97);
+  transition:
+    opacity 400ms ease,
+    transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 400ms ease,
+    background 400ms ease,
+    border-color 400ms ease;
 }
 
 .action-item-card.is-completed:hover {
@@ -2578,11 +2589,15 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 .action-item-description {
+  /* List density: task text reads at the card's small mono size, not 16px
+     body copy — rows come out uniform instead of headline-vs-chip soup. */
+  font-size: var(--small-size);
+  line-height: 1.5;
   overflow-wrap: anywhere;
   transition:
-    opacity 180ms ease,
-    color 180ms ease,
-    text-decoration-color 180ms ease;
+    opacity 400ms ease,
+    color 400ms ease,
+    text-decoration-color 400ms ease;
   text-decoration: line-through transparent 1.5px;
 }
 
@@ -3038,6 +3053,7 @@ html::-webkit-scrollbar-thumb:hover,
    out-cascaded the markup's `absolute` and pushed the button into flow. */
 .action-item-edit-btn {
   position: absolute;
+  z-index: 5;
   background: var(--soft-cream-dark);
   opacity: 0;
   transition: opacity var(--transition-fast), background var(--transition-fast);
@@ -3104,16 +3120,32 @@ html::-webkit-scrollbar-thumb:hover,
   outline-offset: -2px;
 }
 
-/* Quick-add input */
-.action-quick-add {
+/* Ghost add-row — the end of the pending list IS the add affordance: click
+   it and the inline draft opens in its place. Dashed = invitation, same
+   grammar as the empty chips. */
+.action-add-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
   border: 2px dashed var(--color-border);
-  border-radius: 8px;
-  transition: border-color var(--transition-fast);
+  border-radius: var(--border-radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--small-size);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    background var(--transition-fast);
 }
-.action-quick-add:focus {
+.action-add-row:hover,
+.action-add-row:focus-visible {
   border-color: var(--color-accent);
-  border-style: solid;
-  outline: none;
+  color: var(--color-accent);
+  background: var(--surface-card-deep);
 }
 
 /* ── ACTION ITEMS — modal & form shared styles ──────────────────── */
@@ -3175,35 +3207,6 @@ html::-webkit-scrollbar-thumb:hover,
 .action-filter-pill[aria-pressed="true"] {
   background: var(--accent-strong);
   color: #fff;
-}
-
-/* Bulk text-actions under the filter pills (Complete all / Clear N done).
-   Quiet inline buttons with a full-height tap target. */
-.action-bulk-btn {
-  position: relative;
-  font-size: var(--tiny-size);
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  padding: 0.15rem 0;
-  transition: color var(--transition-fast);
-}
-.action-bulk-btn::before {
-  content: "";
-  position: absolute;
-  inset: 50%;
-  width: 100%;
-  min-width: 44px;
-  height: 44px;
-  transform: translate(-50%, -50%);
-}
-.action-bulk-btn:hover {
-  color: var(--color-text);
-}
-.action-bulk-btn--accent {
-  color: var(--color-accent);
-}
-.action-bulk-btn--accent:hover {
-  color: var(--accent-strong);
 }
 
 /* Modal primary action (soft-black button — delete / clear-done). */

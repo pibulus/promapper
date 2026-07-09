@@ -8,7 +8,6 @@ import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import {
   clearCompletedActionItems,
-  completeAllActionItems,
   toggleActionItemInList,
 } from "@core/orchestration/conversation-ops.ts";
 import { usePointerSortable } from "@utils/usePointerSortable.ts";
@@ -130,11 +129,13 @@ export default function ActionItemsCard(
   const editingDueDate = useSignal("");
   const triggerConfetti = useSignal(false);
   const searchQuery = useSignal("");
+  // Search lives behind a header button — the input only exists while open,
+  // and closing it clears the filter (no stale invisible query).
+  const searchOpen = useSignal(false);
   const showAssigneeDropdown = useSignal(false);
   const activeAssigneeDropdown = useSignal<string | null>(null);
   // True while the inline-create draft row is showing (local only, see DRAFT_ID)
   const creatingDraft = useSignal(false);
-  const quickAddText = useSignal("");
   // Transient "just checked off" id — drives a one-shot checkbox pop. Kept
   // separate from the persistent completed state so it never replays on
   // re-render (scroll/filter/append); cleared after the animation.
@@ -150,7 +151,6 @@ export default function ActionItemsCard(
   // flick that starts on the checkbox must not check it).
   const checkboxHandledByPointer = useRef(false);
   const listContainerRef = useRef<HTMLDivElement>(null);
-  const quickAddRef = useRef<HTMLInputElement>(null);
 
   // Arrow key handler ref — always points to the current closure so the effect
   // only registers once but never goes stale.
@@ -290,7 +290,8 @@ export default function ActionItemsCard(
         updated_at: "",
       }]
       : [];
-    return [...draftRow, ...orderedPending, ...sortGroup(completed)];
+    // Draft sits where the ghost add-row lives: after pending, before done.
+    return [...orderedPending, ...draftRow, ...sortGroup(completed)];
   });
 
   // Reset keyboard selection when list length changes
@@ -438,7 +439,7 @@ export default function ActionItemsCard(
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      publishItems([newItem, ...visibleItems.value]);
+      publishItems([...visibleItems.value, newItem]);
       soundBloom();
     } else {
       publishItems(
@@ -497,15 +498,13 @@ export default function ActionItemsCard(
     }
   }
 
-  // Bulk ops go through the same pure transforms as the back face, so both
-  // faces stamp updated_at + strip AI flags identically.
-  function completeAll() {
-    publishItems(
-      completeAllActionItems(visibleItems.value, new Date().toISOString()),
-    );
-    soundBloom();
+  function toggleSearch() {
+    searchOpen.value = !searchOpen.value;
+    if (!searchOpen.value) searchQuery.value = "";
   }
 
+  // Bulk complete/clear live on the flip side (Overview back) — the front
+  // keeps only the contextual Clear on the done divider, via this shared op.
   function clearDone() {
     const clearedCount =
       visibleItems.value.filter((i) => i.status === "completed").length;
@@ -514,23 +513,6 @@ export default function ActionItemsCard(
     if (canUndo()) {
       showUndoToast(`Cleared ${clearedCount} done`, undoLastMutation);
     }
-  }
-
-  function quickAddItem(description: string) {
-    if (!description.trim()) return;
-    hapticTap();
-    const newItem: ActionItem = {
-      id: crypto.randomUUID(),
-      conversation_id: conversationId ||
-        visibleItems.value[0]?.conversation_id || "",
-      description: description.trim(),
-      assignee: null,
-      due_date: null,
-      status: "pending",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    publishItems([...visibleItems.value, newItem]);
   }
 
   function cycleSortMode() {
@@ -552,6 +534,19 @@ export default function ActionItemsCard(
     i.status === "completed"
   );
 
+  // Ghost add-row: sits at the end of the pending items and BECOMES the task
+  // when clicked (the inline draft opens in its place). Hidden while a draft
+  // is open or a search is filtering the list.
+  const addGhostRow = !creatingDraft.value && !searchQuery.value && (
+    <button
+      type="button"
+      class="action-add-row font-mono"
+      onClick={startCreatingInline}
+    >
+      <i class="fa fa-plus" aria-hidden="true"></i> Add a task
+    </button>
+  );
+
   return (
     <>
       <Confetti trigger={triggerConfetti.value} />
@@ -568,8 +563,21 @@ export default function ActionItemsCard(
             </h3>
             <div class="flex gap-1 items-center">
               <button
+                onClick={toggleSearch}
+                class="btn btn--ghost btn--icon btn--compact"
+                aria-label={searchOpen.value ? "Close search" : "Search tasks"}
+                aria-pressed={searchOpen.value}
+                title="Search"
+              >
+                <i class="fa fa-magnifying-glass" aria-hidden="true"></i>
+              </button>
+              {
+                /* Icon-only (the icon itself changes per mode) — a text label
+                  here collided with the flip button in the corner */
+              }
+              <button
                 onClick={cycleSortMode}
-                class="btn btn--ghost btn--compact"
+                class="btn btn--ghost btn--icon btn--compact"
                 aria-label={`Sort: ${sortLabel.value}. Click to change.`}
                 title={`Sort: ${sortLabel.value}`}
               >
@@ -584,86 +592,61 @@ export default function ActionItemsCard(
                   aria-hidden="true"
                 >
                 </i>
-                <span class="hidden sm:inline">{sortLabel.value}</span>
-              </button>
-              <button
-                onClick={startCreatingInline}
-                class="btn btn--ghost btn--icon btn--compact"
-                aria-label="Add action item"
-                title="Add new item"
-              >
-                <i class="fa fa-plus" aria-hidden="true"></i>
               </button>
             </div>
           </div>
 
-          {/* Search bar */}
+          {
+            /* ONE chrome row. Filters at rest; the search input takes the row
+              over when the header search button is toggled (Esc closes).
+              Bulk actions live on the flip side — not duplicated here. */
+          }
           <div
             class="action-items-search"
-            style={{ padding: "0.75rem var(--card-padding) 0.25rem" }}
+            style={{ padding: "0.6rem var(--card-padding) 0.25rem" }}
           >
-            <input
-              type="text"
-              value={searchQuery.value}
-              onInput={(e) => {
-                searchQuery.value = (e.target as HTMLInputElement).value;
-                soundTick(); // play typing sound
-              }}
-              placeholder="Search"
-              aria-label="Search action items"
-              // rounded-lg + py-1.5 — same corner family and input rhythm as
-              // the quick-add bar (this was the card's one 4px-radius input)
-              class="w-full rounded-lg px-2.5 py-1.5 focus:outline-none action-input--xs font-mono"
-            />
-            {
-              /* One composed chrome row: filters left, bulk actions right —
-                (was two stacked rows of small text) */
-            }
-            <div class="flex items-center justify-between gap-2 mt-2 flex-wrap">
-              <div class="flex gap-2">
-                <button
-                  onClick={() => {
-                    filterMine.value = !filterMine.value;
-                    soundToggle(filterMine.value);
+            {searchOpen.value
+              ? (
+                <input
+                  type="text"
+                  value={searchQuery.value}
+                  onInput={(e) => {
+                    searchQuery.value = (e.target as HTMLInputElement).value;
+                    soundTick(); // play typing sound
                   }}
-                  class="action-filter-pill"
-                  aria-pressed={filterMine.value}
-                >
-                  Mine
-                </button>
-                <button
-                  onClick={() => {
-                    hideDone.value = !hideDone.value;
-                    soundToggle(hideDone.value);
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") toggleSearch();
                   }}
-                  class="action-filter-pill"
-                  aria-pressed={hideDone.value}
-                >
-                  Hide done
-                </button>
-              </div>
-              {progress.value.total > 0 && (
-                <div class="flex gap-3 font-mono">
-                  {!hideDone.value &&
-                    progress.value.total > progress.value.done && (
-                    <button
-                      onClick={completeAll}
-                      class="action-bulk-btn action-bulk-btn--accent"
-                    >
-                      Complete all
-                    </button>
-                  )}
-                  {!hideDone.value && progress.value.done > 0 && (
-                    <button
-                      onClick={clearDone}
-                      class="action-bulk-btn"
-                    >
-                      Clear {progress.value.done} done
-                    </button>
-                  )}
+                  placeholder="Search tasks…"
+                  aria-label="Search action items"
+                  autoFocus
+                  class="w-full rounded-lg px-2.5 py-1.5 focus:outline-none action-input--xs font-mono"
+                />
+              )
+              : (
+                <div class="flex gap-2">
+                  <button
+                    onClick={() => {
+                      filterMine.value = !filterMine.value;
+                      soundToggle(filterMine.value);
+                    }}
+                    class="action-filter-pill"
+                    aria-pressed={filterMine.value}
+                  >
+                    Mine
+                  </button>
+                  <button
+                    onClick={() => {
+                      hideDone.value = !hideDone.value;
+                      soundToggle(hideDone.value);
+                    }}
+                    class="action-filter-pill"
+                    aria-pressed={hideDone.value}
+                  >
+                    Hide done
+                  </button>
                 </div>
               )}
-            </div>
           </div>
 
           {/* List */}
@@ -729,6 +712,8 @@ export default function ActionItemsCard(
 
                       return (
                         <Fragment key={item.id}>
+                          {/* Ghost add-row closes out the pending group */}
+                          {index === firstCompletedIndex && addGhostRow}
                           {/* "Clear done" divider — shown once before the first completed item */}
                           {progress.value.done > 0 &&
                             index === firstCompletedIndex && (
@@ -885,7 +870,7 @@ export default function ActionItemsCard(
                               </div>
 
                               {/* Content */}
-                              <div class="flex flex-col gap-3 min-w-0 w-full">
+                              <div class="flex flex-col gap-2 min-w-0 w-full">
                                 {editingItemId.value === item.id
                                   ? (
                                     <div class="space-y-3 font-mono">
@@ -1424,40 +1409,17 @@ export default function ActionItemsCard(
                       );
                     });
                   })()}
+                  {/* No completed items → the pending group runs to the end */}
+                  {firstCompletedIndex === -1 && addGhostRow}
                 </div>
               )}
           </div>
 
-          {/* Quick-add bar */}
-          <div
-            style={{
-              padding: "0.5rem var(--card-padding) var(--card-padding)",
-            }}
-          >
-            <input
-              ref={quickAddRef}
-              type="text"
-              value={quickAddText.value}
-              onInput={(e) => {
-                quickAddText.value = (e.target as HTMLInputElement).value;
-                soundTick(); // play typing sound
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  if (quickAddText.value.trim()) {
-                    quickAddItem(quickAddText.value);
-                    quickAddText.value = "";
-                    (e.target as HTMLInputElement).value = "";
-                    quickAddRef.current?.focus();
-                  }
-                }
-              }}
-              placeholder="Add a task…"
-              aria-label="Quick add task"
-              class="action-quick-add w-full rounded px-3 py-2 action-input--sm font-mono"
-            />
-          </div>
+          {
+            /* No separate quick-add box: the ghost row at the end of the list
+              IS the add — click it and the task is written in place (the same
+              inline draft the header + used to open). One idea, one spot. */
+          }
         </div>
       </div>
 
