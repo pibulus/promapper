@@ -78,13 +78,19 @@ export default function AudioRecorder(
     onStop: async (blob) => {
       lastRecordingBlobRef.current = blob;
       retryRecordingReady.value = true;
+      // Number from the highest existing "Take N", not the list length —
+      // after deleting a take, length+1 minted duplicate names.
+      const nextTakeNumber = takes.value.reduce((max, t) => {
+        const m = /^Take (\d+)$/.exec(t.fileName ?? "");
+        return m ? Math.max(max, Number(m[1])) : max;
+      }, 0) + 1;
       // Persist the take FIRST — the audio must survive a failed AI pipeline.
       const take: StoredRecording = {
         id: crypto.randomUUID(),
         conversationId,
         data: blob,
         mimeType: blob.type || "audio/webm",
-        fileName: `Take ${takes.value.length + 1}`,
+        fileName: `Take ${nextTakeNumber}`,
         createdAt: new Date().toISOString(),
         durationSec: recordingTime.value,
       };
@@ -100,7 +106,7 @@ export default function AudioRecorder(
           console.warn("Failed to auto-save recording backup:", error);
         }
       }
-      await processAudioAppend(blob);
+      await processAudioAppend(blob, take.id);
     },
   });
 
@@ -137,7 +143,13 @@ export default function AudioRecorder(
 
   async function retryLastRecording() {
     if (!lastRecordingBlobRef.current) return;
-    await processAudioAppend(lastRecordingBlobRef.current);
+    // Pass the take id PAIRED with this blob — reading lastTakeIdRef at
+    // completion time could stamp the receipt onto a different take if the
+    // user recorded another one between the failure and the retry.
+    await processAudioAppend(
+      lastRecordingBlobRef.current,
+      lastTakeIdRef.current,
+    );
   }
 
   function formatDate(dateString: string): string {
@@ -149,8 +161,9 @@ export default function AudioRecorder(
     });
   }
 
-  // Process audio and append to conversation
-  async function processAudioAppend(audioBlob: Blob) {
+  // Process audio and append to conversation. `takeId` is the take this blob
+  // was captured as — the receipt is stamped onto exactly that take.
+  async function processAudioAppend(audioBlob: Blob, takeId: string | null) {
     // Prevent concurrent appends within the same tab.
     if (isProcessing.value) return;
     isProcessing.value = true;
@@ -243,7 +256,6 @@ export default function AudioRecorder(
 
       // Stamp the take with its receipt — what this recording actually changed.
       const receipt = computeAppendReceipt(base, reconciled);
-      const takeId = lastTakeIdRef.current;
       if (takeId) {
         updateRecording(takeId, { receipt });
         takes.value = takes.value.map((t) =>
