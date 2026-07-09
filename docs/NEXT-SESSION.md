@@ -1,49 +1,39 @@
-# NEXT-SESSION — state after the pastel-shuffle session (July 9, 2026, evening)
+# NEXT-SESSION — after the color-contract marathon (July 9, 2026, late)
 
-Branch `fable-audit-2026-07-05`, all committed through `a8afbd5`, gates green
-(`deno fmt/lint/check/test` — 242 tests). Dev:
-`DENO_ENV=development deno task dev` (8003); demo convo lives in the Playwright
-browser profile, or hit ✨DEMO.
+Branch `fable-audit-2026-07-05`, committed through `2dc898a`, gates green
+(243 tests, check + build pass). Dev: `DENO_ENV=development deno task dev`
+(8003). Read the promapper-visual-language memory FIRST — it now carries the
+definitive color contract, live-tuned through five rounds of Pablo feedback.
 
-## What shipped tonight (three commits, live-tuned with Pablo)
+## Where the design system landed (commits 350bbf6 → 2dc898a)
 
-1. **`350bbf6` pastel shuffle** — the July 9 morning brief's #1 + #2, plus
-   Pablo's live feedback baked in:
-   - Accents are sorbet pastels (S68–92, L78–86, hue 40–340 — no red/mud).
-     Contrast lives in a per-roll deep companion solved against cream:
-     `--accent-strong` / `--accent-ink` (text/borders) / `--accent-fill`
-     (white-ink solids). Named themes resolve the indirections to the raw accent
-     — pixel-identical to before.
-   - Background re-tints per roll but ONLY inside warm families (blush coral /
-     peach / apricot butter / petal pink), picking the family FARTHEST from the
-     accent hue — bands play against the space (sky→peach, pink→butter,
-     mint→petal). Pastelized accent glow bottom corner; never pigment-mix
-     complementary pastels (grey).
-   - ONE font: Plus Jakarta Sans everywhere (`--font-mono` aliases it; one line
-     to flip back). Card headers 600/0.07em/13px — cozy caps.
-2. **`54bc233` summary + footer + drawer + tooltips** — paragraphizer breaks
-   wall-of-text summaries into 2-sentence beats (honorific-safe, structured
-   summaries pass through; `utils/summaryFormat.ts` + 5 tests); footer is a
-   hairline sign-off (dock padding moved off `<main>`); history drawer ✕/☆/🗑️ →
-   FontAwesome; done-divider gone (bulk clear = Overview back); tooltips escape
-   stacking traps (footer context removed, card-header tips right-anchored,
-   `:has()` card lift).
-3. **`a8afbd5` history in the header** — landing page's floating History pill
-   (collided with footer dials) replaced by a header-icon-btn in the landing
-   header.
+- **"Pastel backgrounds with punk accents"** (Pablo's BRAND doc, now law):
+  saturated light grounds (S80–100 L79–87), saturated MID-TONE accents
+  (S68–92 L54–64). The dice picks between 7 CURATED_PAIRS in
+  core/theme/randomTheme.ts — designed couples only, no random hue math.
+  Banned: mint/green accents (teal ok), yellow, baby pink, butter grounds.
+- One recipe set: 55% header hats, solved deep companions
+  (--accent-ink/--accent-fill/--accent-strong), same statics for named
+  themes + rolls. SHUFFLE_SCHEMA_VERSION=4 kills stale saved rolls.
+- Inter everywhere; ALL CAPS banned app-wide; summary paragraphizer;
+  chip-only tooltips (::after = touch boxes; NO blanket 44px mobile rule);
+  footer = full-bleed sticky chrome; mobile header two-row lockup; mobile
+  action items compacted (28px checkbox, no drag handle, 2-line wrap).
 
 ## For the next session
 
-- **Pablo's eyeball pass**: roll the dice a bunch — kill any family pairing that
-  reads yucky (WARM_FAMILIES + the pairing rule live in
-  core/theme/randomTheme.ts, trivially tunable). Judge gold-hue strongs (deep
-  amber can lean olive) and the summary lead-paragraph treatment.
-- **Real-device iPhone QA still virgin** (NEXT-STEPS §1 — dock, IDB persistence,
-  safe-area). The recording dock did NOT render in headless Playwright
-  (dockInDom: false even with a conversation open) — possibly just missing
-  MediaRecorder in headless; verify on a real device first.
-- NEXT-STEPS §0 taste calls still parked (node glow colors, ✨ chip ruling,
-  export drawer bottom-sheet, "None" date chip).
-- History drawer's topic/item count chips are raw blue/green — pre-existing
-  palette-law violation, untouched tonight; candidate for an accent-tint pass.
-- HORIZON.md offline stages unchanged.
+- **Pablo's pair audit**: roll the dice a lot; kill/tune any CURATED_PAIRS
+  entry that misses (each is 1 line). Candidates to consider adding: peach ×
+  raspberry (the miner's "Peach Cream × Raspberry" — historic default vibe).
+- The named themes (BUBBLEGUM/SKY/GRAPE/LIME/GOLD) predate the pair system —
+  LIME + GOLD accents likely violate the new taste law; consider re-curating
+  the named list to match the pairs (FOUC map must mirror).
+- Tooltips on in-scroll-area controls (item corner buttons) still native
+  title= on purpose (chips would clip in overflow) — fine unless Pablo says
+  otherwise.
+- Real-device iPhone QA still virgin (NEXT-STEPS §1) + dock never renders in
+  headless Playwright (likely MediaRecorder missing).
+- Playwright note: if screenshots hang "waiting for fonts" with rAF frozen,
+  the browser compositor is wedged — browser_close + reopen fixes it.
+- Tone-mining workflow results (60 exact hexes from donor apps) are in the
+  wf_060f9840-718 journal if more pairs are wanted.
