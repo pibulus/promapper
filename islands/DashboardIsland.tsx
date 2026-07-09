@@ -304,13 +304,7 @@ export default function DashboardIsland() {
         <div class="order-2 md:order-none min-w-0">
           <FlipCard
             label="Project pulse"
-            front={
-              <SummaryCard
-                summary={summary ?? null}
-                nodes={nodes}
-                conversationSource={conversation.source}
-              />
-            }
+            front={<SummaryCard summary={summary ?? null} />}
             back={
               <SummaryBack
                 summary={summary ?? ""}

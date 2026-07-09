@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -68,8 +68,10 @@
   --border-radius-xl: 32px;
 
   /* Typography */
+  /* ONE font, committed: JetBrains Mono is the app's voice — the machine-
+     text honesty of the transcript, everywhere, at every weight. */
   --font-family:
-    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --font-mono:
     "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --heading-size: 1.125rem;
@@ -1296,7 +1298,7 @@ body {
 
 .mapper-record-time {
   font-size: clamp(2rem, 6vw, 2.6rem);
-  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, monospace;
+  font-family: var(--font-mono);
   font-weight: 700;
   color: #fff;
 }
@@ -2680,14 +2682,8 @@ html::-webkit-scrollbar-thumb:hover,
   box-shadow: 2px 2px 0px 0px var(--soft-black);
 }
 
-/* Corner slot for the assignee dot (top-right of each item card). */
-.action-item-corner-dot {
-  position: absolute;
-  top: 0.45rem;
-  right: 0.45rem;
-  z-index: 5;
-}
-.action-item-corner-dot .action-dropdown-menu {
+/* Inline dot cell (sits between text and checkbox). */
+.action-item-dot-cell .action-dropdown-menu {
   right: 0;
   left: auto;
 }
@@ -2700,8 +2696,8 @@ html::-webkit-scrollbar-thumb:hover,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.35rem;
-  height: 1.35rem;
+  width: 1rem;
+  height: 1rem;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -2715,11 +2711,10 @@ html::-webkit-scrollbar-thumb:hover,
   transform: translate(-50%, -50%);
 }
 .speaker-dot {
-  width: 0.85rem;
-  height: 0.85rem;
+  width: 0.55rem;
+  height: 0.55rem;
   border-radius: 50%;
-  border: 2px solid var(--soft-black);
-  box-shadow: 1px 1px 0 0 var(--soft-black);
+  border: 1.5px solid rgba(30, 23, 20, 0.35);
   transition: transform var(--transition-fast);
 }
 .speaker-dot-btn:hover .speaker-dot,
@@ -2976,6 +2971,7 @@ html::-webkit-scrollbar-thumb:hover,
   color: var(--color-text);
 }
 .card-back-stat-value {
+  font-variant-numeric: tabular-nums;
   flex-shrink: 0;
   font-weight: 700;
   color: var(--color-text-secondary);
@@ -3055,6 +3051,9 @@ html::-webkit-scrollbar-thumb:hover,
 /* The "Done · N" divider label reuses the shared card-back label, plus a
    flex-shrink guard so the dashed rules give it room. */
 .action-done-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   flex-shrink: 0;
 }
 
@@ -3183,16 +3182,33 @@ html::-webkit-scrollbar-thumb:hover,
   outline-offset: -2px;
 }
 
+.action-done-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.action-done-clear:hover {
+  color: var(--color-accent);
+  background: var(--surface-cream-hover);
+}
+
 /* Ghost add-row — the end of the pending list IS the add affordance: click
-   it and the inline draft opens in its place. Dashed = invitation, same
-   grammar as the empty chips. */
+   it and the inline draft opens in its place. Icon only, slim. */
 .action-add-row {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.55rem 0.85rem;
+  padding: 0.3rem 0.85rem;
   border: 2px dashed var(--color-border);
   border-radius: var(--border-radius-sm);
   background: transparent;
@@ -5480,6 +5496,15 @@ a:focus-visible {
 }
 
 /* TranscriptCard components */
+.transcript-speaker {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background var(--transition-fast);
+}
+.transcript-speaker:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
 .transcript-content {
   font-family: var(--font-mono);
   font-size: var(--small-size);
@@ -5582,17 +5607,42 @@ a:focus-visible {
    DRAWER STYLE OVERHAULS - Export & History Drawer Polish
    ================================================================ */
 
-/* App footer — one quiet line; the heart is the only pop. */
+/* App footer — a real bar (talktype-style): brand + heart left, ambient
+   controls right (theme dice, sound, shortcuts, backup live here now — the
+   header stays for verbs, the footer holds the dials). */
 .app-footer {
-  padding: 2.2rem 1rem 1.6rem;
-  text-align: center;
+  margin-top: 2.5rem;
+  padding: 0.9rem 1.4rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  border-top: 2px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-accent) 4%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   font-family: var(--font-mono);
   font-size: var(--tiny-size);
   color: var(--color-text-secondary);
 }
-.app-footer i {
+.app-footer__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.app-footer__brand i {
   color: var(--footer-heart);
-  margin: 0 0.15rem;
+}
+.app-footer__controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+@media (max-width: 640px) {
+  .app-footer {
+    justify-content: center;
+  }
 }
 
 /* Export drawer backdrop & container */

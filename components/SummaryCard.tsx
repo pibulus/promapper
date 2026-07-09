@@ -9,8 +9,6 @@ import { openReader } from "../signals/readerStore.ts";
 
 interface SummaryCardProps {
   summary: string | null;
-  nodes: Array<any>;
-  conversationSource: string;
 }
 
 // Extract key points from summary
@@ -49,7 +47,7 @@ function extractKeyPoints(text: string): string[] {
 }
 
 export default function SummaryCard(
-  { summary, nodes, conversationSource }: SummaryCardProps,
+  { summary }: SummaryCardProps,
 ) {
   return (
     <div class="w-full h-full">
@@ -124,18 +122,6 @@ export default function SummaryCard(
                     </ul>
                   </div>
                 )}
-
-                {/* Metadata */}
-                <div class="summary-meta">
-                  <span class="inline-flex items-center gap-1.5">
-                    <i class="fa fa-diagram-project" aria-hidden="true"></i>
-                    {nodes.length} topics
-                  </span>
-                  <span class="inline-flex items-center gap-1.5">
-                    <i class="fa fa-file-lines" aria-hidden="true"></i>
-                    {conversationSource}
-                  </span>
-                </div>
               </div>
             )}
         </div>

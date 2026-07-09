@@ -123,7 +123,7 @@ export default function ActionItemsBack(
           <button
             onClick={onMarkAllDone}
             class="cursor-pointer"
-            title="Mark all done"
+            data-tip="Mark all done"
             aria-label="Mark all done"
             disabled={pending === 0}
           >
@@ -132,7 +132,7 @@ export default function ActionItemsBack(
           <button
             onClick={() => copyToClipboard(buildSummary(items))}
             class="cursor-pointer"
-            title="Copy task summary"
+            data-tip="Copy summary"
             aria-label="Copy task summary"
             disabled={total === 0}
           >
@@ -141,7 +141,8 @@ export default function ActionItemsBack(
           <button
             onClick={onClearDone}
             class="cursor-pointer"
-            title="Clear done"
+            data-tip="Clear done"
+            data-tip-align="right"
             aria-label="Clear done"
             disabled={done === 0}
           >

@@ -576,7 +576,6 @@ export default function HomeIsland() {
                   )}
                   <GoLiveButton />
                   <ShareButton />
-                  <SoundToggle />
 
                   {/* Live session controls — shown when a meeting is active */}
                   {session && (
@@ -649,14 +648,11 @@ export default function HomeIsland() {
               </>
             )
             : (
-              // Default header — wordmark + quiet actions.
+              // Default header — wordmark only; the dials live in the footer.
               <>
                 <a href="/" class="app-header__brand flex-1">
                   ProMapper<span class="app-header__brand-dot">.</span>
                 </a>
-                <div class="app-header__actions">
-                  <ThemeSwitcher />
-                </div>
               </>
             )}
         </div>
@@ -795,8 +791,24 @@ export default function HomeIsland() {
           </div>
 
           <footer class="app-footer">
-            ProMapper <i class="fa fa-heart" aria-hidden="true"></i>{" "}
-            your words stay on your device
+            <span class="app-footer__brand">
+              © 2026 ProMapper
+              <i class="fa fa-heart" aria-hidden="true"></i>
+              made in Melbourne · everything stays on your device
+            </span>
+            <span class="app-footer__controls">
+              <ThemeSwitcher />
+              <SoundToggle />
+              <button
+                type="button"
+                class="header-icon-btn"
+                onClick={() => shortcutsOpen.value = true}
+                aria-label="Keyboard shortcuts"
+                data-tip="Shortcuts"
+              >
+                <i class="fa fa-keyboard" aria-hidden="true"></i>
+              </button>
+            </span>
           </footer>
         </main>
       </div>

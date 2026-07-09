@@ -55,7 +55,8 @@ export default function SummaryBack(
           <button
             onClick={() => summary && copyToClipboard(summary)}
             class="cursor-pointer"
-            title="Copy summary"
+            data-tip="Copy summary"
+            data-tip-align="right"
             aria-label="Copy summary"
             disabled={!summary}
           >
@@ -64,7 +65,8 @@ export default function SummaryBack(
           <button
             onClick={onBackup}
             class="cursor-pointer"
-            title="Back up all projects"
+            data-tip="Back up all projects"
+            data-tip-align="right"
             aria-label="Back up all projects"
           >
             <i class="fa fa-download text-sm"></i>

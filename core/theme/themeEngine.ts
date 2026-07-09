@@ -135,6 +135,11 @@ export class ThemeSystem {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+        // A shuffled theme isn't in the named list — rebuild it from storage.
+        if (parsed.name === "SHUFFLE" && parsed.custom?.theme?.accent) {
+          this.currentTheme = parsed.custom.theme as Theme;
+          return this.currentTheme;
+        }
         const theme = this.config.themes.find((t) => t.name === parsed.name);
         if (theme) {
           this.currentTheme = theme;
@@ -183,14 +188,54 @@ export class ThemeSystem {
     return match ? match[0] : null;
   }
 
+  /** Apply a theme OBJECT (e.g. a shuffle roll) — not limited to the named
+   * list. Applies, notifies, persists. */
+  applyCustomTheme(theme: Theme): Theme {
+    this.currentTheme = theme;
+    this.applyTheme(theme);
+    this.notifyListeners(theme);
+    this.saveTheme(theme);
+    return theme;
+  }
+
+  /** Flat CSS-var map for a theme — mirrors applyTheme's assignments so the
+   * FOUC script can set them verbatim before first paint. */
+  private themeToVars(theme: Theme): Record<string, string> {
+    const prefix = this.config.cssPrefix;
+    const vars: Record<string, string> = {
+      [`${prefix}-secondary`]: theme.secondary,
+      [`${prefix}-accent`]: theme.accent,
+      [`${prefix}-text`]: theme.text,
+      [`${prefix}-border`]: theme.border,
+      [`${prefix}-base`]: theme.base,
+      [`${prefix}-base-gradient`]: theme.base,
+      [`${prefix}-base-solid`]:
+        (theme.cssVars?.["--color-base-solid"] as string) ?? theme.base,
+    };
+    if (theme.textSecondary) {
+      vars[`${prefix}-text-secondary`] = theme.textSecondary;
+    }
+    for (const [k, v] of Object.entries(theme.cssVars ?? {})) {
+      vars[k] = String(v);
+    }
+    return vars;
+  }
+
   private saveTheme(theme: Theme): void {
     if (typeof window !== "undefined") {
       const storageKey = this.config.storageKey || "app-theme";
       try {
-        localStorage.setItem(
-          storageKey,
-          JSON.stringify({ name: theme.name, timestamp: Date.now() }),
-        );
+        // SHUFFLE rolls aren't in the named-theme list, so persist the
+        // full theme + a flat CSS-var map (the FOUC script applies the vars
+        // directly before first paint without knowing how to derive them).
+        const payload: Record<string, unknown> = {
+          name: theme.name,
+          timestamp: Date.now(),
+        };
+        if (theme.name === "SHUFFLE") {
+          payload.custom = { theme, vars: this.themeToVars(theme) };
+        }
+        localStorage.setItem(storageKey, JSON.stringify(payload));
       } catch (err) {
         console.error("Failed to save theme to localStorage:", err);
       }

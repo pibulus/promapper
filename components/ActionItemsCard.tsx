@@ -548,10 +548,12 @@ export default function ActionItemsCard(
   const addGhostRow = !creatingDraft.value && !searchQuery.value && (
     <button
       type="button"
-      class="action-add-row font-mono"
+      class="action-add-row"
       onClick={startCreatingInline}
+      aria-label="Add a task"
+      data-tip="Add a task"
     >
-      <i class="fa fa-plus" aria-hidden="true"></i> Add a task
+      <i class="fa fa-plus" aria-hidden="true"></i>
     </button>
   );
 
@@ -568,7 +570,8 @@ export default function ActionItemsCard(
                 class="btn btn--ghost btn--icon btn--compact"
                 aria-label={searchOpen.value ? "Close search" : "Search tasks"}
                 aria-pressed={searchOpen.value}
-                title="Search"
+                data-tip="Search"
+                data-tip-align="right"
               >
                 <i class="fa fa-magnifying-glass" aria-hidden="true"></i>
               </button>
@@ -582,7 +585,8 @@ export default function ActionItemsCard(
                   class="btn btn--ghost btn--icon btn--compact"
                   aria-label="Sort and filter"
                   aria-expanded={optionsOpen.value}
-                  title="Sort & filter"
+                  data-tip="Sort & filter"
+                  data-tip-align="right"
                 >
                   <i class="fa fa-sliders" aria-hidden="true"></i>
                 </button>
@@ -731,7 +735,7 @@ export default function ActionItemsCard(
                         <Fragment key={item.id}>
                           {/* Ghost add-row closes out the pending group */}
                           {index === firstCompletedIndex && addGhostRow}
-                          {/* "Clear done" divider — shown once before the first completed item */}
+                          {/* Done divider — wordless: rule, ✓count, broom */}
                           {progress.value.done > 0 &&
                             index === firstCompletedIndex && (
                             <div class="action-done-divider font-mono">
@@ -739,23 +743,25 @@ export default function ActionItemsCard(
                                 class="action-done-rule"
                                 aria-hidden="true"
                               />
-                              <span class="card-back-label action-done-label">
-                                Done · {progress.value.done}
+                              <span
+                                class="action-done-label"
+                                title={`${progress.value.done} done`}
+                              >
+                                <i class="fa fa-check" aria-hidden="true" />
+                                {progress.value.done}
                               </span>
+                              <button
+                                onClick={clearDone}
+                                class="action-done-clear"
+                                aria-label="Clear completed items"
+                                data-tip="Clear done"
+                              >
+                                <i class="fa fa-broom" aria-hidden="true" />
+                              </button>
                               <span
                                 class="action-done-rule"
                                 aria-hidden="true"
                               />
-                              <button
-                                onClick={clearDone}
-                                class="action-filter-pill"
-                                style={{
-                                  fontSize: "var(--tiny-size)",
-                                  color: "var(--color-text-secondary)",
-                                }}
-                              >
-                                Clear
-                              </button>
                             </div>
                           )}
                           <div
@@ -785,7 +791,7 @@ export default function ActionItemsCard(
                                 />
                               )}
 
-                            <div class="grid grid-cols-[auto_auto_1fr] gap-3 items-start relative z-[2]">
+                            <div class="grid grid-cols-[auto_1fr_auto_auto] gap-2.5 items-start relative z-[2]">
                               {/* Drag Handle (mouse/pen: press to grab; touch: long-press the row) */}
                               <div class="flex items-center pt-1">
                                 {canDrag
@@ -799,91 +805,6 @@ export default function ActionItemsCard(
                                     </i>
                                   )
                                   : <div class="drag-handle-placeholder"></div>}
-                              </div>
-
-                              {/* Checkbox */}
-                              <div class="flex items-center pt-1">
-                                {isTemp
-                                  ? (
-                                    <div
-                                      class="w-[1.4rem] h-[1.4rem] rounded-[0.45rem] flex items-center justify-center bg-cream"
-                                      style={{
-                                        border:
-                                          "2px dashed var(--color-border)",
-                                      }}
-                                      title="Creating inline..."
-                                    >
-                                      <i
-                                        class="fa fa-plus text-[10px]"
-                                        style={{
-                                          color: "var(--color-text-secondary)",
-                                        }}
-                                        aria-hidden="true"
-                                      >
-                                      </i>
-                                    </div>
-                                  )
-                                  : (
-                                    <button
-                                      type="button"
-                                      // Mouse toggles on pointerdown (snappy);
-                                      // touch/pen wait for the click so a scroll
-                                      // flick that lands here can't check it.
-                                      onPointerDown={(event) => {
-                                        event.stopPropagation();
-                                        if (event.pointerType === "mouse") {
-                                          event.preventDefault();
-                                          checkboxHandledByPointer.current =
-                                            true;
-                                          toggleActionItem(item.id);
-                                        }
-                                      }}
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        if (checkboxHandledByPointer.current) {
-                                          checkboxHandledByPointer.current =
-                                            false;
-                                          return;
-                                        }
-                                        toggleActionItem(item.id);
-                                      }}
-                                      onKeyDown={(event) => {
-                                        if (
-                                          event.key !== "Enter" &&
-                                          event.key !== " "
-                                        ) {
-                                          return;
-                                        }
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        toggleActionItem(item.id);
-                                      }}
-                                      class={`action-item-checkbox-button${
-                                        item.status === "completed"
-                                          ? " is-checked"
-                                          : ""
-                                      }${
-                                        poppingId.value === item.id
-                                          ? " is-popping"
-                                          : ""
-                                      }`}
-                                      role="checkbox"
-                                      aria-checked={item.status === "completed"}
-                                      aria-label={`Mark ${item.description} as ${
-                                        item.status === "completed"
-                                          ? "pending"
-                                          : "completed"
-                                      }`}
-                                    >
-                                      {item.status === "completed" && (
-                                        <i
-                                          class="fa fa-check"
-                                          aria-hidden="true"
-                                        >
-                                        </i>
-                                      )}
-                                    </button>
-                                  )}
                               </div>
 
                               {/* Content */}
@@ -1254,132 +1175,216 @@ export default function ActionItemsCard(
                                     </>
                                   )}
                               </div>
-                            </div>
-
-                            {/* Assignee dot — top-right corner, always visible */}
-                            {item.assignee && (
-                              <div class="action-item-corner-dot assignee-dropdown-container">
-                                <button
-                                  onClick={() =>
-                                    activeAssigneeDropdown.value =
-                                      activeAssigneeDropdown
-                                          .value ===
-                                          item.id
-                                        ? null
-                                        : item.id}
-                                  class="speaker-dot-btn"
-                                  title={`${item.assignee} — change`}
-                                  aria-label={`Assigned to ${item.assignee}. Click to change.`}
-                                >
-                                  <span
-                                    class="speaker-dot"
-                                    style={{
-                                      background: speakerColor(
-                                        item.assignee,
-                                        speakers,
-                                      ),
-                                    }}
-                                  />
-                                </button>
-                                {activeAssigneeDropdown.value ===
-                                    item.id && (
-                                  <div class="action-dropdown-menu font-mono">
-                                    {/* Custom name input */}
-                                    <div class="action-dropdown-input-wrapper">
-                                      <input
-                                        type="text"
-                                        aria-label="Assignee name"
-                                        defaultValue={item
-                                          .assignee || ""}
-                                        placeholder="Type a name…"
-                                        class="action-dropdown-input font-mono"
-                                        onKeyDown={(e) => {
-                                          if (e.key === "Enter") {
-                                            const val =
-                                              (e.target as HTMLInputElement)
-                                                .value.trim();
-                                            if (val) {
-                                              updateAssignee(
-                                                item.id,
-                                                val,
-                                              );
-                                            }
-                                            activeAssigneeDropdown
-                                              .value = null;
-                                          } else if (
-                                            e.key === "Escape"
-                                          ) {
-                                            activeAssigneeDropdown
-                                              .value = null;
-                                          }
-                                        }}
-                                        onBlur={() => {
-                                          if (
-                                            dropdownTimeoutRef
-                                              .current !==
-                                              null
-                                          ) {
-                                            clearTimeout(
-                                              dropdownTimeoutRef
-                                                .current,
-                                            );
-                                          }
-                                          dropdownTimeoutRef
-                                            .current = setTimeout(
-                                              () => {
-                                                activeAssigneeDropdown
-                                                  .value = null;
-                                                dropdownTimeoutRef
-                                                  .current = null;
-                                              },
-                                              200,
-                                            ) as unknown as number;
-                                        }}
-                                      />
-                                    </div>
-                                    {/* Clear option */}
-                                    <button
-                                      onClick={() => {
-                                        updateAssignee(
-                                          item.id,
-                                          null,
-                                        );
+                              {/* Assignee dot — small, discreet */}
+                              {item.assignee && (
+                                <div class="action-item-dot-cell assignee-dropdown-container relative pt-1">
+                                  <button
+                                    onClick={() =>
+                                      activeAssigneeDropdown.value =
                                         activeAssigneeDropdown
-                                          .value = null;
+                                            .value ===
+                                            item.id
+                                          ? null
+                                          : item.id}
+                                    class="speaker-dot-btn"
+                                    title={`${item.assignee} — change`}
+                                    aria-label={`Assigned to ${item.assignee}. Click to change.`}
+                                  >
+                                    <span
+                                      class="speaker-dot"
+                                      style={{
+                                        background: speakerColor(
+                                          item.assignee,
+                                          speakers,
+                                        ),
                                       }}
-                                      class="action-dropdown-option font-mono"
-                                    >
-                                      None
-                                    </button>
-                                    {/* Suggestions */}
-                                    {assigneeSuggestions.value
-                                      .map(
-                                        (assignee) => (
-                                          <button
-                                            key={assignee}
-                                            onClick={() => {
-                                              updateAssignee(
-                                                item.id,
-                                                assignee,
-                                              );
+                                    />
+                                  </button>
+                                  {activeAssigneeDropdown.value ===
+                                      item.id && (
+                                    <div class="action-dropdown-menu font-mono">
+                                      {/* Custom name input */}
+                                      <div class="action-dropdown-input-wrapper">
+                                        <input
+                                          type="text"
+                                          aria-label="Assignee name"
+                                          defaultValue={item
+                                            .assignee || ""}
+                                          placeholder="Type a name…"
+                                          class="action-dropdown-input font-mono"
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                              const val =
+                                                (e.target as HTMLInputElement)
+                                                  .value.trim();
+                                              if (val) {
+                                                updateAssignee(
+                                                  item.id,
+                                                  val,
+                                                );
+                                              }
                                               activeAssigneeDropdown
                                                 .value = null;
-                                            }}
-                                            class={`action-dropdown-option font-mono${
-                                              item.assignee ===
-                                                  assignee
-                                                ? " is-active"
-                                                : ""
-                                            }`}
-                                          >
-                                            {assignee}
-                                          </button>
-                                        ),
+                                            } else if (
+                                              e.key === "Escape"
+                                            ) {
+                                              activeAssigneeDropdown
+                                                .value = null;
+                                            }
+                                          }}
+                                          onBlur={() => {
+                                            if (
+                                              dropdownTimeoutRef
+                                                .current !==
+                                                null
+                                            ) {
+                                              clearTimeout(
+                                                dropdownTimeoutRef
+                                                  .current,
+                                              );
+                                            }
+                                            dropdownTimeoutRef
+                                              .current = setTimeout(
+                                                () => {
+                                                  activeAssigneeDropdown
+                                                    .value = null;
+                                                  dropdownTimeoutRef
+                                                    .current = null;
+                                                },
+                                                200,
+                                              ) as unknown as number;
+                                          }}
+                                        />
+                                      </div>
+                                      {/* Clear option */}
+                                      <button
+                                        onClick={() => {
+                                          updateAssignee(
+                                            item.id,
+                                            null,
+                                          );
+                                          activeAssigneeDropdown
+                                            .value = null;
+                                        }}
+                                        class="action-dropdown-option font-mono"
+                                      >
+                                        None
+                                      </button>
+                                      {/* Suggestions */}
+                                      {assigneeSuggestions.value
+                                        .map(
+                                          (assignee) => (
+                                            <button
+                                              key={assignee}
+                                              onClick={() => {
+                                                updateAssignee(
+                                                  item.id,
+                                                  assignee,
+                                                );
+                                                activeAssigneeDropdown
+                                                  .value = null;
+                                              }}
+                                              class={`action-dropdown-option font-mono${
+                                                item.assignee ===
+                                                    assignee
+                                                  ? " is-active"
+                                                  : ""
+                                              }`}
+                                            >
+                                              {assignee}
+                                            </button>
+                                          ),
+                                        )}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Checkbox */}
+                              <div class="flex items-center pt-1">
+                                {isTemp
+                                  ? (
+                                    <div
+                                      class="w-[1.4rem] h-[1.4rem] rounded-[0.45rem] flex items-center justify-center bg-cream"
+                                      style={{
+                                        border:
+                                          "2px dashed var(--color-border)",
+                                      }}
+                                      title="Creating inline..."
+                                    >
+                                      <i
+                                        class="fa fa-plus text-[10px]"
+                                        style={{
+                                          color: "var(--color-text-secondary)",
+                                        }}
+                                        aria-hidden="true"
+                                      >
+                                      </i>
+                                    </div>
+                                  )
+                                  : (
+                                    <button
+                                      type="button"
+                                      // Mouse toggles on pointerdown (snappy);
+                                      // touch/pen wait for the click so a scroll
+                                      // flick that lands here can't check it.
+                                      onPointerDown={(event) => {
+                                        event.stopPropagation();
+                                        if (event.pointerType === "mouse") {
+                                          event.preventDefault();
+                                          checkboxHandledByPointer.current =
+                                            true;
+                                          toggleActionItem(item.id);
+                                        }
+                                      }}
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        if (checkboxHandledByPointer.current) {
+                                          checkboxHandledByPointer.current =
+                                            false;
+                                          return;
+                                        }
+                                        toggleActionItem(item.id);
+                                      }}
+                                      onKeyDown={(event) => {
+                                        if (
+                                          event.key !== "Enter" &&
+                                          event.key !== " "
+                                        ) {
+                                          return;
+                                        }
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        toggleActionItem(item.id);
+                                      }}
+                                      class={`action-item-checkbox-button${
+                                        item.status === "completed"
+                                          ? " is-checked"
+                                          : ""
+                                      }${
+                                        poppingId.value === item.id
+                                          ? " is-popping"
+                                          : ""
+                                      }`}
+                                      role="checkbox"
+                                      aria-checked={item.status === "completed"}
+                                      aria-label={`Mark ${item.description} as ${
+                                        item.status === "completed"
+                                          ? "pending"
+                                          : "completed"
+                                      }`}
+                                    >
+                                      {item.status === "completed" && (
+                                        <i
+                                          class="fa fa-check"
+                                          aria-hidden="true"
+                                        >
+                                        </i>
                                       )}
-                                  </div>
-                                )}
+                                    </button>
+                                  )}
                               </div>
-                            )}
+                            </div>
 
                             {/* Edit button — hover-reveal on desktop, always visible on touch */}
                             {!isTemp && (
@@ -1393,7 +1398,7 @@ export default function ActionItemsCard(
                                     item.due_date,
                                   );
                                 }}
-                                class="action-item-edit-btn absolute top-2 right-16 w-6 h-6 flex items-center justify-center rounded-full transition-colors"
+                                class="action-item-edit-btn absolute top-2 right-[6.4rem] w-6 h-6 flex items-center justify-center rounded-full transition-colors"
                                 aria-label={`Edit "${item.description}"`}
                                 title="Edit"
                               >
@@ -1411,7 +1416,7 @@ export default function ActionItemsCard(
                                 e.stopPropagation();
                                 deleteItem(item.id);
                               }}
-                              class="action-item-delete action-item-delete-btn absolute top-2 right-9 w-6 h-6 flex items-center justify-center rounded-full transition-colors"
+                              class="action-item-delete action-item-delete-btn absolute top-2 right-[4.6rem] w-6 h-6 flex items-center justify-center rounded-full transition-colors"
                               aria-label={`Delete "${item.description}"`}
                               title="Delete (undoable)"
                             >

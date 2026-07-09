@@ -34,7 +34,8 @@ export default function TranscriptBack(
           <button
             onClick={() => text && copyToClipboard(text)}
             class="cursor-pointer"
-            title="Copy transcript"
+            data-tip="Copy transcript"
+            data-tip-align="right"
             aria-label="Copy transcript"
             disabled={!text}
           >

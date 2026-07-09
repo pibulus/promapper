@@ -7,6 +7,7 @@ import { copyToClipboard } from "../utils/toast.ts";
 import { formatTranscriptSafe } from "../utils/sanitize.ts";
 import { useSignal } from "@preact/signals";
 import { openReader } from "../signals/readerStore.ts";
+import Modal from "./Modal.tsx";
 
 interface TranscriptCardProps {
   transcript: {
@@ -62,7 +63,7 @@ export default function TranscriptCard(
                   mono: true,
                 })}
               class="cursor-pointer"
-              title="Open transcript full-screen"
+              data-tip="Read full-screen"
               aria-label="Expand transcript"
               disabled={!transcript?.text}
             >
@@ -72,7 +73,8 @@ export default function TranscriptCard(
               onClick={() =>
                 transcript?.text && copyToClipboard(transcript.text)}
               class="cursor-pointer"
-              title="Copy transcript"
+              data-tip="Copy transcript"
+              data-tip-align="right"
               aria-label="Copy transcript"
               disabled={!transcript?.text}
             >
@@ -92,9 +94,22 @@ export default function TranscriptCard(
             )
             : (
               <div class="relative">
-                {/* Format transcript with speaker highlighting (XSS-safe). */}
+                {
+                  /* Speaker highlighting is XSS-safe (formatTranscriptSafe).
+                    Names are clickable IN PLACE: tap one to rename that
+                    speaker everywhere (the old bottom speaker strip is gone —
+                    it duplicated what the text already shows). */
+                }
                 <div
                   class="whitespace-pre-wrap leading-relaxed transcript-content"
+                  onClick={(e) => {
+                    const el = (e.target as HTMLElement).closest(
+                      "[data-speaker]",
+                    ) as HTMLElement | null;
+                    if (el?.dataset.speaker && onRenameSpeaker) {
+                      startRename(el.dataset.speaker);
+                    }
+                  }}
                   dangerouslySetInnerHTML={{
                     __html: formatTranscriptSafe(
                       transcript.text,
@@ -102,74 +117,45 @@ export default function TranscriptCard(
                     ),
                   }}
                 />
-
-                {/* Speaker list if available */}
-                {transcript.speakers && transcript.speakers.length > 0 && (
-                  <div class="transcript-speakers-section">
-                    <div class="speakers-label">
-                      Speakers:
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                      {transcript.speakers.map((speaker) =>
-                        editingSpeaker.value === speaker
-                          ? (
-                            <span
-                              key={speaker}
-                              class="speaker-edit-container"
-                            >
-                              <input
-                                value={speakerName.value}
-                                onInput={(e) =>
-                                  speakerName.value =
-                                    (e.target as HTMLInputElement).value}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") saveRename();
-                                  if (e.key === "Escape") {
-                                    cancelRename();
-                                  }
-                                }}
-                                class="speaker-edit-input"
-                                aria-label={`Rename ${speaker}`}
-                                autoFocus
-                              />
-                              <button
-                                onClick={saveRename}
-                                class="speaker-btn speaker-btn--save"
-                                aria-label={`Save ${speaker} name`}
-                                title="Save speaker name"
-                              >
-                                ✓
-                              </button>
-                              <button
-                                onClick={cancelRename}
-                                class="speaker-btn speaker-btn--cancel"
-                                aria-label="Cancel speaker rename"
-                                title="Cancel"
-                              >
-                                ×
-                              </button>
-                            </span>
-                          )
-                          : (
-                            <button
-                              key={speaker}
-                              onClick={() => startRename(speaker)}
-                              class="speaker-badge-btn"
-                              title={`Rename ${speaker}`}
-                              aria-label={`Rename ${speaker}`}
-                              disabled={!onRenameSpeaker}
-                            >
-                              {speaker}
-                            </button>
-                          )
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
         </div>
       </div>
+
+      {/* Rename speaker — opened by tapping a name in the transcript */}
+      <Modal
+        open={editingSpeaker.value !== null}
+        onClose={cancelRename}
+        titleId="rename-speaker-title"
+        panelClass="max-w-sm"
+      >
+        <h3 id="rename-speaker-title" class="modal-heading">
+          Rename {editingSpeaker.value}
+        </h3>
+        <input
+          value={speakerName.value}
+          onInput={(e) =>
+            speakerName.value = (e.target as HTMLInputElement).value}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") saveRename();
+          }}
+          class="export-textarea"
+          aria-label={`New name for ${editingSpeaker.value}`}
+          autoFocus
+        />
+        <div class="flex gap-2 mt-3">
+          <button
+            onClick={saveRename}
+            class="btn btn--accent flex-1"
+            disabled={!speakerName.value.trim()}
+          >
+            Rename everywhere
+          </button>
+          <button onClick={cancelRename} class="btn btn--secondary flex-1">
+            Cancel
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

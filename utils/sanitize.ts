@@ -55,9 +55,11 @@ export function formatTranscriptSafe(
       "g",
     );
     const color = speakerColor(name, speakers);
+    // data-speaker makes the name tappable (rename-in-place); the value is
+    // already HTML-escaped above, safe inside a quoted attribute.
     formatted = formatted.replace(
       pattern,
-      `$1<span style="font-weight: 600; color: ${color}; margin-right: 0.5rem;">$2:</span>`,
+      `$1<span class="transcript-speaker" data-speaker="$2" style="font-weight: 600; color: ${color}; margin-right: 0.5rem;">$2:</span>`,
     );
   }
 

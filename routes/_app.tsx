@@ -86,6 +86,10 @@ if(!saved)return;
 var parsed=JSON.parse(saved);
 var name=parsed&&parsed.name;
 if(!name)return;
+if(name==="SHUFFLE"&&parsed.custom&&parsed.custom.vars){
+var cv=parsed.custom.vars;
+for(var ck in cv){document.documentElement.style.setProperty(ck,cv[ck]);}
+return;}
 var themes={
   "BUBBLEGUM":{
     "--color-base":"linear-gradient(135deg,#ffe2cf 0%,#ffd0bd 100%)",
