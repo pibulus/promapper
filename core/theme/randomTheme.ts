@@ -37,8 +37,10 @@ export const CURATED_PAIRS: ReadonlyArray<{
   readonly ground: readonly [number, number];
   readonly accent: readonly [number, number];
 }> = [
-  // salmon sunrise ground × teal spark (Miami gradient)
-  { name: "miami", ground: [12, 28], accent: [170, 186] },
+  // GREEN-FAMILY ACCENTS ARE DEAD (teal included): teal-on-pink/sunrise kept
+  // reading "hospital pink and green" no matter the saturation. Accents are
+  // coral, raspberry, cobalt, violet — full stop. Aqua survives only as a
+  // GROUND, always paired with a warm accent.
   // sunrise × cornflower/cobalt (#5C9DD5 / #5B8DEF register)
   { name: "sunset-cobalt", ground: [12, 28], accent: [208, 228] },
   // coral glow × orchid punch (#9D50BB register)
@@ -49,8 +51,8 @@ export const CURATED_PAIRS: ReadonlyArray<{
   { name: "lagoon-coral", ground: [172, 190], accent: [8, 20] },
   // aqua pool × raspberry (#E85D8F — the historic beloved accent)
   { name: "poolside", ground: [168, 188], accent: [328, 346] },
-  // orchid dusk × aqua spark
-  { name: "dusk-aqua", ground: [288, 312], accent: [170, 186] },
+  // sunrise × raspberry (the peachyCream × rose historic default)
+  { name: "dawn-rose", ground: [16, 30], accent: [330, 346] },
 ];
 
 export function hslToHex(h: number, s: number, l: number): string {

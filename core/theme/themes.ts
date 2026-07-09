@@ -38,6 +38,28 @@ import type { Theme, ThemeSystemConfig } from "@core/theme/types.ts";
 export const WARM_BG =
   "radial-gradient(circle at 18% 0%, rgba(255,166,128,0.85), transparent 52%), radial-gradient(circle at 82% 6%, rgba(255,143,112,0.7), transparent 52%), linear-gradient(168deg, #ffb28c 0%, #ffe0c9 38%, #fff4e8 78%)";
 
+/**
+ * Daybreak (default) — cobalt on the sunrise sky. The old hot-pink default
+ * meant every fresh load (and every discarded stale roll) greeted the user
+ * with bubblegum; a denim-cobalt accent on the coral-fade ground is the
+ * unisex, fresh face of the app.
+ */
+export const daybreak: Theme = {
+  name: "DAYBREAK",
+  vibe: "fresh & steady",
+  base: "linear-gradient(135deg, #ffe2cf 0%, #ffd0bd 100%)",
+  secondary: "rgba(255, 255, 255, 0.62)",
+  accent: "#4a7bc9",
+  text: "#232a3a",
+  textSecondary: "#6b7386",
+  border: "rgba(35, 42, 58, 0.1)",
+  cssVars: {
+    "--color-base-solid": "#ffe2cf",
+    "--shadow-soft": "0 4px 12px rgba(74, 123, 201, 0.14)",
+    "--gradient-bg": WARM_BG,
+  },
+};
+
 export const bubblegum: Theme = {
   name: "BUBBLEGUM",
   vibe: "warm & playful",
@@ -136,6 +158,7 @@ export const gold: Theme = {
 // ===================================================================
 
 export const proMapperThemes: Theme[] = [
+  daybreak,
   bubblegum,
   sky,
   grape,
@@ -145,7 +168,7 @@ export const proMapperThemes: Theme[] = [
 
 export const proMapperThemeConfig: ThemeSystemConfig = {
   themes: proMapperThemes,
-  defaultTheme: "BUBBLEGUM",
+  defaultTheme: "DAYBREAK",
   storageKey: "promapper-theme",
   randomEnabled: false,
   cssPrefix: "--color",

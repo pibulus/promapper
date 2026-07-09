@@ -87,11 +87,23 @@ var parsed=JSON.parse(saved);
 var name=parsed&&parsed.name;
 if(!name)return;
 if(name==="SHUFFLE"){
-if(parsed.v!==5||!parsed.custom||!parsed.custom.vars)return;
+if(parsed.v!==6||!parsed.custom||!parsed.custom.vars)return;
 var cv=parsed.custom.vars;
 for(var ck in cv){document.documentElement.style.setProperty(ck,cv[ck]);}
 return;}
 var themes={
+  "DAYBREAK":{
+    "--color-base":"linear-gradient(135deg,#ffe2cf 0%,#ffd0bd 100%)",
+    "--color-base-solid":"#ffe2cf",
+    "--color-base-gradient":"linear-gradient(135deg,#ffe2cf 0%,#ffd0bd 100%)",
+    "--color-secondary":"rgba(255,255,255,0.62)",
+    "--color-accent":"#4a7bc9",
+    "--color-text":"#232a3a",
+    "--color-text-secondary":"#6b7386",
+    "--color-border":"rgba(35,42,58,0.1)",
+    "--shadow-soft":"0 4px 12px rgba(74,123,201,0.14)",
+    "--gradient-bg":"radial-gradient(circle at 18% 0%,rgba(255,166,128,0.85),transparent 52%),radial-gradient(circle at 82% 6%,rgba(255,143,112,0.7),transparent 52%),linear-gradient(168deg,#ffb28c 0%,#ffe0c9 38%,#fff4e8 78%)"
+  },
   "BUBBLEGUM":{
     "--color-base":"linear-gradient(135deg,#ffe2cf 0%,#ffd0bd 100%)",
     "--color-base-solid":"#ffe2cf",

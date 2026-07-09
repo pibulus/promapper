@@ -25,16 +25,16 @@
   /* ===================================================================
      THEME SYSTEM - Dynamic runtime color variables
      ================================================================ */
-  /* Defaults = BUBBLEGUM (overridden by theme system + FOUC script).
-     The WARM PEACH→TANGERINE GRADIENT is the color event (conversation_mapper
-     refs); the bright accent is just a POP on top. Cards sit calm/cream over it. */
+  /* Defaults = DAYBREAK (overridden by theme system + FOUC script):
+     denim-cobalt accent on the sunrise-fade sky. The old hot-pink default
+     meant every fresh load opened on bubblegum. */
   --color-base: linear-gradient(135deg, #ffe2cf 0%, #ffd0bd 100%);
   --color-base-solid: #ffe2cf;
   --color-secondary: rgba(255, 255, 255, 0.62);
-  --color-accent: #ff2e88;
-  --color-text: #2b2430;
-  --color-text-secondary: #8a7e88;
-  --color-border: rgba(43, 36, 48, 0.1);
+  --color-accent: #4a7bc9;
+  --color-text: #232a3a;
+  --color-text-secondary: #6b7386;
+  --color-border: rgba(35, 42, 58, 0.1);
   /* AIRY SKY wash: colored at the top, fading into warm cream where the
      components live (mirror of WARM_BG in core/theme/themes.ts + the
      _app.tsx FOUC map). A full-bleed saturated field read as "a toy" —
@@ -1266,8 +1266,8 @@ body {
   position: absolute;
   bottom: 12px;
   right: 12px;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 10px;
   /* DARKER border for actual presence - not a ghost outline */
   border: 2px solid rgba(30, 23, 20, 0.20);
@@ -2326,16 +2326,42 @@ html::-webkit-scrollbar-thumb:hover,
 .card-header-actions {
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.25rem;
   color: var(--color-text-secondary);
 }
 
+/* Same 32px visual square + invisible 44px tap box as .header-icon-btn, so
+   these three-icon clusters (Summary/Transcript/Overview card headers) don't
+   ask a thumb to land on a bare 14px glyph. */
 .card-header-actions button {
-  transition: color var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  position: relative;
+  border-radius: var(--border-radius-sm);
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.card-header-actions button::after {
+  content: "";
+  position: absolute;
+  inset: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
 }
 
 .card-header-actions button:hover:not(:disabled) {
   color: var(--accent-ink);
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+}
+
+.card-header-actions button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .card-header-actions button:disabled {
@@ -4588,7 +4614,9 @@ a:focus-visible {
   font-weight: 500;
 }
 
-/* Item action button (star / delete) base. */
+/* Item action button (star / delete) base. Visual stays a compact 36px so the
+   drawer doesn't bulk up, but an invisible 44px box carries the real tap zone
+   — these sit stacked 8px apart and a bare 36px was thumb-slip territory. */
 .history-action-btn {
   border-radius: var(--border-radius-sm);
   padding: 6px;
@@ -4600,6 +4628,15 @@ a:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+}
+.history-action-btn::after {
+  content: "";
+  position: absolute;
+  inset: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
 }
 
 /* Star toggle. */
@@ -5710,6 +5747,8 @@ a:focus-visible {
   z-index: var(--z-drawer);
   display: flex;
   width: 24rem; /* w-96 */
+  max-width: 100vw; /* the history drawer caps at 85vw via Tailwind; this one
+  had no cap at all and would overflow the viewport under 384px (iPhone SE) */
   flex-direction: column;
   overflow: hidden;
   top: var(--header-height);
@@ -5742,6 +5781,17 @@ a:focus-visible {
   justify-content: center;
   border: none;
   background: transparent;
+  position: relative;
+}
+/* The visible glyph is a 24px svg; give the primary way to close this drawer
+   on mobile a real 44px tap zone instead of a bare icon-sized hitbox. */
+.export-drawer-close-btn::after {
+  content: "";
+  position: absolute;
+  inset: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
 }
 
 .export-drawer-close-btn:hover {
