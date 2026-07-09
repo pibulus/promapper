@@ -2239,6 +2239,91 @@ body {
   color: #fff;
 }
 
+/* Radio — the tile that hums. */
+.radio-body {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.radio-play {
+  width: 2.6rem;
+  height: 2.6rem;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent-fill);
+  color: #fff;
+  cursor: pointer;
+  transition: transform var(--transition-fast), filter var(--transition-fast);
+}
+.radio-play:hover {
+  transform: translateY(-1.5px);
+  filter: brightness(1.08);
+}
+.radio-play:active {
+  transform: translateY(1px);
+}
+.radio-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  flex: 1;
+}
+.radio-station {
+  font-weight: 700;
+  font-size: var(--small-size);
+}
+.radio-now {
+  font-size: var(--tiny-size);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.radio-next {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  position: relative;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.radio-next:hover {
+  color: var(--accent-ink);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+.radio-live-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--accent-ink);
+  animation: radio-pulse 1.6s ease-in-out infinite;
+}
+@keyframes radio-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .radio-live-dot {
+    animation: none;
+  }
+}
+
 /* Bishop — the quiet advisor. */
 .bishop-subtitle {
   font-size: var(--tiny-size);
