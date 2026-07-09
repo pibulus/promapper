@@ -56,8 +56,9 @@ export default function MarkdownMakerDrawer(
   const [shouldRender, setShouldRender] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Which formats fit THIS conversation — suggested ones sort first and get a
-  // quiet wand mark. Shape-based heuristics, no extra AI call.
+  // Which formats fit THIS conversation — shape-based heuristics, no extra AI
+  // call. Suggested formats get their own "For this map" section with visible
+  // descriptions; the rest sit in a compact grid below.
   const suggestedIds = useComputed(() => {
     const data = conversationData.value;
     return suggestFormatIds({
@@ -67,14 +68,14 @@ export default function MarkdownMakerDrawer(
       speakerCount: data?.transcript?.speakers?.length ?? 0,
     });
   });
-  const orderedPrompts = useComputed(() => {
-    const ids = suggestedIds.value;
-    return [...markdownPrompts].sort((a, b) => {
-      const ai = ids.indexOf(a.id);
-      const bi = ids.indexOf(b.id);
-      return (ai === -1 ? ids.length : ai) - (bi === -1 ? ids.length : bi);
-    });
-  });
+  const suggestedPrompts = useComputed(() =>
+    suggestedIds.value
+      .map((id) => markdownPrompts.find((p) => p.id === id))
+      .filter((p): p is NonNullable<typeof p> => Boolean(p))
+  );
+  const otherPrompts = useComputed(() =>
+    markdownPrompts.filter((p) => !suggestedIds.value.includes(p.id))
+  );
 
   // Load saved outputs from localStorage
   useEffect(() => {
@@ -617,57 +618,69 @@ export default function MarkdownMakerDrawer(
         {/* Content */}
         <div class="flex-1 overflow-y-auto p-4">
           {
-            /* Format picker — suggested-for-this-conversation formats sort
-              first and carry a wand mark */
+            /* For this map — the formats that fit this conversation's shape,
+              descriptions in the open (they were buried in tooltips) */
           }
-          <div class="mb-1 export-format-grid">
-            {orderedPrompts.value.map((promptOption) => {
-              const isSelected = selectedPromptId.value === promptOption.id;
-              const isSuggested = suggestedIds.value.includes(promptOption.id);
-              return (
-                <button
-                  key={promptOption.id}
-                  type="button"
-                  class={`btn ${
-                    isSelected ? "btn--accent" : "btn--secondary"
-                  } ${isSuggested ? "is-suggested" : ""}`}
-                  title={promptOption.description}
-                  onClick={() => generateFromPreset(promptOption.id)}
-                  disabled={loading.value}
-                >
-                  <i class={`fa ${promptOption.icon}`} aria-hidden="true"></i>
-                  <span>{promptOption.label}</span>
-                  {isSuggested && (
-                    <i
-                      class="fa fa-wand-magic-sparkles export-suggest-mark"
-                      title="Suggested for this conversation"
-                      aria-label="Suggested for this conversation"
-                    >
-                    </i>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          {/* One quiet line describing the selected (or best-fit) format */}
-          <p class="export-format-hint mb-3">
-            {(markdownPrompts.find((p) =>
-              p.id === (selectedPromptId.value ?? suggestedIds.value[0])
-            ))?.description ?? ""}
+          <p class="card-back-label export-section-label">
+            <i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i>
+            For this map
           </p>
+          <div class="export-suggested">
+            {suggestedPrompts.value.map((promptOption) => (
+              <button
+                key={promptOption.id}
+                type="button"
+                class={`export-suggested-btn${
+                  selectedPromptId.value === promptOption.id
+                    ? " is-selected"
+                    : ""
+                }`}
+                onClick={() => generateFromPreset(promptOption.id)}
+                disabled={loading.value}
+              >
+                <i class={`fa ${promptOption.icon}`} aria-hidden="true"></i>
+                <span class="export-suggested-name">{promptOption.label}</span>
+                <span class="export-suggested-desc">
+                  {promptOption.description}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Everything else, compact */}
+          <p class="card-back-label export-section-label">All formats</p>
+          <div class="mb-1 export-format-grid">
+            {otherPrompts.value.map((promptOption) => (
+              <button
+                key={promptOption.id}
+                type="button"
+                class={`btn ${
+                  selectedPromptId.value === promptOption.id
+                    ? "btn--accent"
+                    : "btn--secondary"
+                }`}
+                title={promptOption.description}
+                onClick={() => generateFromPreset(promptOption.id)}
+                disabled={loading.value}
+              >
+                <i class={`fa ${promptOption.icon}`} aria-hidden="true"></i>
+                <span>{promptOption.label}</span>
+              </button>
+            ))}
+          </div>
 
           {/* Custom Prompt Input */}
           <div class="mb-4">
             <label
-              class="block text-sm font-semibold mb-2"
+              class="card-back-label export-section-label"
               htmlFor="custom-prompt-input"
             >
-              Custom Prompt
+              Custom prompt
             </label>
             <textarea
               id="custom-prompt-input"
               class="export-textarea h-24"
-              placeholder="Type your own custom prompt here..."
+              placeholder="Ask for any format you can describe…"
               maxLength={5000}
               value={customPrompt.value}
               onInput={(e) =>
@@ -787,8 +800,8 @@ export default function MarkdownMakerDrawer(
           {/* Saved snapshots */}
           {savedOutputs.value.length > 0 && (
             <div class="export-snaps pt-4 mt-4">
-              <h4 class="font-bold text-sm mb-3">
-                <i class="fa fa-box-archive mr-2" aria-hidden="true"></i>
+              <h4 class="card-back-label export-section-label">
+                <i class="fa fa-box-archive" aria-hidden="true"></i>
                 Saved snapshots
               </h4>
               <div class="space-y-2">

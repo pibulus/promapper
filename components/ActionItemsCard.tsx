@@ -615,52 +615,55 @@ export default function ActionItemsCard(
               // the quick-add bar (this was the card's one 4px-radius input)
               class="w-full rounded-lg px-2.5 py-1.5 focus:outline-none action-input--xs font-mono"
             />
-            {/* Filter pills — reduce the list (sort only reorders) */}
-            <div class="flex gap-2 mt-2">
-              <button
-                onClick={() => {
-                  filterMine.value = !filterMine.value;
-                  soundToggle(filterMine.value);
-                }}
-                class="action-filter-pill"
-                aria-pressed={filterMine.value}
-              >
-                Mine
-              </button>
-              <button
-                onClick={() => {
-                  hideDone.value = !hideDone.value;
-                  soundToggle(hideDone.value);
-                }}
-                class="action-filter-pill"
-                aria-pressed={hideDone.value}
-              >
-                Hide done
-              </button>
-            </div>
-
-            {/* Bulk actions — shown when there are items */}
-            {progress.value.total > 0 && (
-              <div class="flex gap-2 mt-1.5 font-mono">
-                {!hideDone.value &&
-                  progress.value.total > progress.value.done && (
-                  <button
-                    onClick={completeAll}
-                    class="action-bulk-btn action-bulk-btn--accent"
-                  >
-                    Complete all
-                  </button>
-                )}
-                {!hideDone.value && progress.value.done > 0 && (
-                  <button
-                    onClick={clearDone}
-                    class="action-bulk-btn"
-                  >
-                    Clear {progress.value.done} done
-                  </button>
-                )}
+            {
+              /* One composed chrome row: filters left, bulk actions right —
+                (was two stacked rows of small text) */
+            }
+            <div class="flex items-center justify-between gap-2 mt-2 flex-wrap">
+              <div class="flex gap-2">
+                <button
+                  onClick={() => {
+                    filterMine.value = !filterMine.value;
+                    soundToggle(filterMine.value);
+                  }}
+                  class="action-filter-pill"
+                  aria-pressed={filterMine.value}
+                >
+                  Mine
+                </button>
+                <button
+                  onClick={() => {
+                    hideDone.value = !hideDone.value;
+                    soundToggle(hideDone.value);
+                  }}
+                  class="action-filter-pill"
+                  aria-pressed={hideDone.value}
+                >
+                  Hide done
+                </button>
               </div>
-            )}
+              {progress.value.total > 0 && (
+                <div class="flex gap-3 font-mono">
+                  {!hideDone.value &&
+                    progress.value.total > progress.value.done && (
+                    <button
+                      onClick={completeAll}
+                      class="action-bulk-btn action-bulk-btn--accent"
+                    >
+                      Complete all
+                    </button>
+                  )}
+                  {!hideDone.value && progress.value.done > 0 && (
+                    <button
+                      onClick={clearDone}
+                      class="action-bulk-btn"
+                    >
+                      Clear {progress.value.done} done
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* List */}
@@ -1281,10 +1284,13 @@ export default function ActionItemsCard(
                                                 class={`action-item-chip action-item-chip--btn flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors${
                                                   item.due_date
                                                     ? " has-value"
-                                                    : ""
+                                                    : " is-empty"
                                                 }${
                                                   isOverdue ? " is-overdue" : ""
                                                 }`}
+                                                title={item.due_date
+                                                  ? "Change due date"
+                                                  : "Set a due date"}
                                               >
                                                 <i class="fa fa-calendar text-xs">
                                                 </i>
@@ -1293,7 +1299,7 @@ export default function ActionItemsCard(
                                                     ? formatFriendlyDate(
                                                       item.due_date,
                                                     )
-                                                    : "None"}
+                                                    : "date"}
                                                 </span>
                                               </button>
                                               <div class="action-item-date-presets flex gap-1 mt-1 flex-wrap">

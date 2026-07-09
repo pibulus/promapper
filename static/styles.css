@@ -2309,7 +2309,7 @@ html::-webkit-scrollbar-thumb:hover,
 
 .action-item-card {
   position: relative;
-  padding: 0.7rem 0.85rem;
+  padding: 0.7rem 0.85rem 0.7rem 1rem;
   border-radius: var(--border-radius-sm);
   background: var(--surface-card);
   border: 2px solid var(--color-border);
@@ -2323,6 +2323,23 @@ html::-webkit-scrollbar-thumb:hover,
     opacity 160ms ease;
   cursor: pointer;
   font-family: var(--font-mono); /* Force monospace for the card text */
+}
+
+/* Accent spine — the same confident left tick the dashboard card headers
+   carry, one per item. Pending = vivid pop; completed = quiet echo. */
+.action-item-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: var(--border-radius-sm) 0 0 var(--border-radius-sm);
+  background: color-mix(in srgb, var(--color-accent) 80%, transparent);
+  pointer-events: none;
+}
+.action-item-card.is-completed::before {
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
 }
 
 /* Monospace fonts for all inputs, textareas, search and presets in action items */
@@ -2627,6 +2644,22 @@ html::-webkit-scrollbar-thumb:hover,
   box-shadow: 2px 2px 0px 0px var(--soft-black);
 }
 
+/* Empty slot (no assignee / no due date): a dashed ADD-affordance like the
+   "+ add details" chip — the old solid grey "None" read like broken data. */
+.action-item-chip.is-empty {
+  border-style: dashed;
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-text-secondary);
+}
+.action-item-chip.is-empty:hover {
+  border-style: dashed;
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: var(--surface-card-deep);
+  box-shadow: none;
+}
+
 .action-item-chip.has-value {
   color: var(--color-text);
   border-color: var(--soft-black);
@@ -2661,12 +2694,14 @@ html::-webkit-scrollbar-thumb:hover,
   justify-content: center;
   width: 1.4rem;
   height: 1.4rem;
-  border: 2px solid var(--color-border);
+  /* Warm-black border, not pale cream — this is THE tap target of the whole
+     card and it used to disappear into the background. */
+  border: 2px solid var(--soft-black);
   border-radius: 0.45rem;
   background: var(--surface-cream);
   color: var(--surface-cream);
   cursor: pointer;
-  box-shadow: 1px 1px 0px 0px var(--color-border);
+  box-shadow: 1.5px 1.5px 0px 0px var(--soft-black);
   transition:
     background 180ms ease,
     border-color 180ms ease,
@@ -5568,27 +5603,86 @@ a:focus-visible {
   gap: 0.45rem;
   padding: 0 0.7rem;
 }
-/* Suggested-for-this-conversation formats get a quiet accent ring + wand */
-.btn.is-suggested {
+/* (Suggested formats live in their own .export-suggested section now — the
+   old inline wand-mark + hint-line styles are gone with it.) */
+
+/* Section labels inside the drawer — the shared card-back uppercase-tiny
+   vocabulary, with drawer rhythm. */
+.export-section-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 1.1rem 0 0.5rem;
+}
+.export-section-label i {
+  color: var(--color-accent);
+  font-size: 0.7rem;
+}
+.export-section-label:first-child {
+  margin-top: 0;
+}
+
+/* "For this map" — the suggested formats, descriptions visible (they were
+   buried in tooltips), stacked as confident two-line rows. */
+.export-suggested {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.export-suggested-btn {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.65rem;
+  align-items: center;
+  text-align: left;
+  padding: 0.55rem 0.8rem;
+  border: 2px solid var(--border-cream-medium);
+  border-radius: 12px;
+  background: var(--surface-cream);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+.export-suggested-btn i {
+  grid-row: 1 / span 2;
+  width: 1.5rem;
+  text-align: center;
+  font-size: 1.05rem;
+  color: var(--color-accent);
+}
+.export-suggested-name {
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  line-height: 1.25;
+}
+.export-suggested-desc {
+  font-size: var(--tiny-size);
+  color: var(--color-text-secondary);
+  line-height: 1.35;
+}
+.export-suggested-btn:hover {
   border-color: color-mix(
     in srgb,
     var(--color-accent) 55%,
     var(--border-cream-medium)
   );
+  transform: translateY(-1px);
+  box-shadow: 2px 2px 0 0 var(--soft-black);
 }
-.export-suggest-mark {
-  margin-left: auto;
-  font-size: 0.7em;
-  color: var(--color-accent);
+.export-suggested-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
 }
-.btn--accent .export-suggest-mark {
-  color: white;
-}
-.export-format-hint {
-  font-size: var(--tiny-size);
-  color: var(--color-text-secondary);
-  margin: 0.35rem 0 0;
-  min-height: 1.1em;
+.export-suggested-btn.is-selected {
+  border-color: var(--accent-strong);
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--surface-cream));
 }
 
 /* Inline note boxes — warm, never alarm-red (error = rose wash per danger law) */
