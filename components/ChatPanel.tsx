@@ -97,13 +97,28 @@ export default function ChatPanel(
           : messages.map((m) => (
             <div key={m.id} class="mb-2">
               <span class="chat-sender-name flex items-center gap-1.5">
+                {
+                  /* DiceBear thumbs: the same face for the same name in every
+                    room — friendlier than a colored dot. Falls back to the
+                    hue dot underneath while the SVG loads/if offline. */
+                }
                 <span
-                  class="chat-sender-dot"
+                  class="chat-avatar"
                   style={{
                     background: `hsl(${senderHue(m.senderId)} 70% 45%)`,
                   }}
                   aria-hidden="true"
-                />
+                >
+                  <img
+                    src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${
+                      encodeURIComponent(m.senderName)
+                    }&radius=50`}
+                    alt=""
+                    loading="lazy"
+                    width={20}
+                    height={20}
+                  />
+                </span>
                 {m.senderName}
               </span>
               <p class="chat-message-body">{m.text}</p>

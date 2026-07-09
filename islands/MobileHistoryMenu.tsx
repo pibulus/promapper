@@ -487,22 +487,10 @@ export default function MobileHistoryMenu() {
                               class="flex flex-wrap items-center gap-2 mt-2"
                               style={{ fontSize: "var(--tiny-size)" }}
                             >
-                              <span
-                                class="history-item-badge"
-                                style={{
-                                  background: "rgba(59, 130, 246, 0.12)",
-                                  color: "#2563EB",
-                                }}
-                              >
+                              <span class="history-item-badge history-item-badge--accent">
                                 {conv.nodes.length} topics
                               </span>
-                              <span
-                                class="history-item-badge"
-                                style={{
-                                  background: "rgba(34, 197, 94, 0.12)",
-                                  color: "#16A34A",
-                                }}
-                              >
+                              <span class="history-item-badge history-item-badge--soft">
                                 {conv.actionItems.length} items
                               </span>
                             </div>

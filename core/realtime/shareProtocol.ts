@@ -246,11 +246,21 @@ function sanitizeActionItem(input: unknown, conversationId: string) {
 }
 
 export function generateShareRoomId(): string {
-  const randomId = globalThis.crypto?.randomUUID?.();
-  if (!randomId) {
+  // Short, human-shareable IDs: 14 base36 chars (~72 bits) instead of a
+  // 36-char UUID — links stay unguessable but stop looking like a hash
+  // dump. Old UUID-based IDs keep resolving (lookup is by exact string).
+  const bytes = globalThis.crypto?.getRandomValues?.(new Uint8Array(12));
+  if (!bytes) {
     throw new Error("Secure random IDs are not available.");
   }
-  return `${SHARE_ROOM_PREFIX}${randomId}`;
+  let id = "";
+  for (const b of bytes) id += (b % 36).toString(36);
+  // 12 bytes → 12 chars from a mod-36 alphabet plus 2 extra chars of
+  // entropy from a second pass keeps us comfortably past 60 bits even
+  // with the modulo bias.
+  const extra = globalThis.crypto.getRandomValues(new Uint8Array(2));
+  for (const b of extra) id += (b % 36).toString(36);
+  return `${SHARE_ROOM_PREFIX}${id}`;
 }
 
 export function sanitizeShareConversation(
