@@ -47,7 +47,7 @@ Deno.test("accents are PUNK — saturated mid-tones, never muted or pastel", () 
   for (let i = 0; i < 300; i++) {
     const { saturation, lightness } = generateThemeParts(rand);
     assert(
-      lightness >= 54 && lightness <= 64,
+      lightness >= 58 && lightness <= 66,
       `outside the punk mid-tone band: L${lightness}`,
     );
     assert(saturation >= 68, `muted accent: S${saturation}`);
@@ -58,8 +58,8 @@ Deno.test("ink on the roll's header band tint passes AA for every roll", () => {
   const rand = seededRand(1982);
   for (let i = 0; i < 300; i++) {
     const { theme } = generateThemeParts(rand);
-    // The roll overrides --header-band = color-mix(accent 55%, surface-cream)
-    const band = mixHex(theme.accent, SURFACE_CREAM, 0.55);
+    // The roll overrides --header-band = color-mix(accent 62%, surface-cream)
+    const band = mixHex(theme.accent, SURFACE_CREAM, 0.62);
     const ratio = contrast(theme.text, band);
     assert(ratio >= 4.5, `ink/band ${ratio.toFixed(2)} for ${theme.accent}`);
   }

@@ -1,8 +1,12 @@
 /**
- * Speaker colors — every voice in a conversation gets one stable color, drawn
- * from the locked vivid-pop palette (the same family the five themes use).
- * The SAME color identifies a speaker everywhere: their name in the
- * transcript, their bar in Voices, and their dot on an action item.
+ * Speaker colors — every voice in a conversation gets one stable color. The
+ * SAME color identifies a speaker everywhere: their name in the transcript,
+ * their bar in Voices, and their dot on an action item.
+ *
+ * THE LUSH RAINBOW (July 9 decree): rich, warm, classy versions of every
+ * hue — terracotta not crayon-red, ochre not yellow, teal not lime, denim
+ * not cyan. All readable as 600-weight names on cream, all unisex, zero
+ * kids'-crayon neon.
  *
  * Pure + framework-neutral. Color is by position in the speakers list (stable
  * for a conversation); names not in the list fall back to a hash so ad-hoc
@@ -10,11 +14,14 @@
  */
 
 export const SPEAKER_PALETTE = [
-  "#FF62D7", // bubblegum
-  "#00BFFF", // sky
-  "#7659FF", // grape
-  "#32CD32", // lime
-  "#F5A300", // gold (deepened for visibility on cream)
+  "#D4553B", // terracotta
+  "#2E8C7E", // deep teal
+  "#4A6FC3", // denim
+  "#C64B77", // raspberry
+  "#A8721F", // ochre
+  "#7E56BD", // violet
+  "#AC5286", // plum
+  "#467F96", // petrol
 ] as const;
 
 function nameHash(name: string): number {

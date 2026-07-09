@@ -35,23 +35,20 @@
   --color-text: #2b2430;
   --color-text-secondary: #8a7e88;
   --color-border: rgba(43, 36, 48, 0.1);
-  /* Rich warm wash: a genuinely COLORED coral journey (mirror of WARM_BG in
-     core/theme/themes.ts + the _app.tsx FOUC map). Never a timid near-white —
-     the ground carries the color, cards stay cream. */
+  /* AIRY SKY wash: colored at the top, fading into warm cream where the
+     components live (mirror of WARM_BG in core/theme/themes.ts + the
+     _app.tsx FOUC map). A full-bleed saturated field read as "a toy" —
+     the cream floor is what makes it breathe. */
   --gradient-bg:
     radial-gradient(
-    circle at 15% 12%,
-    rgba(255, 184, 140, 0.9),
-    transparent 55%
+    circle at 18% 0%,
+    rgba(255, 166, 128, 0.85),
+    transparent 52%
   ), radial-gradient(
-    circle at 85% 18%,
-    rgba(255, 146, 118, 0.85),
-    transparent 55%
-  ), radial-gradient(
-    circle at 75% 88%,
-    rgba(255, 164, 122, 0.85),
-    transparent 55%
-  ), linear-gradient(135deg, #ffdcc2 0%, #ffb894 55%, #ffcfae 100%);
+    circle at 82% 6%,
+    rgba(255, 143, 112, 0.7),
+    transparent 52%
+  ), linear-gradient(168deg, #ffb28c 0%, #ffe0c9 38%, #fff4e8 78%);
 
   /* ===================================================================
      DESIGN TOKENS - Consistent styling across components
@@ -80,13 +77,15 @@
     "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono:
     "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --heading-size: 1.125rem;
+  /* One notch more compact (July 9): Inter at 15px body read a touch big
+     for a dense tool — 14.5/13.5/12 keeps it modern without squinting. */
+  --heading-size: 1.0625rem;
   --heading-weight: 600;
-  --text-size: 0.9375rem;
+  --text-size: 0.90625rem;
   --text-weight: 400;
-  --small-size: 0.875rem;
+  --small-size: 0.84375rem;
   --tiny-size: 0.75rem;
-  --line-height: 1.6;
+  --line-height: 1.55;
 
   /* Shadows - Warm browns (DEPRECATED - use --shadow-* below) */
   --shadow-soft: 0 4px 12px rgba(30, 23, 20, 0.08);
@@ -140,7 +139,7 @@
      guarded by theme_contrast_test + random_theme_test sweeps. */
   --header-band: color-mix(
     in srgb,
-    var(--color-accent) 55%,
+    var(--color-accent) 62%,
     var(--surface-cream)
   );
   --header-band-ink: var(--color-text);
@@ -2075,13 +2074,6 @@ body {
     display: none;
   }
 
-  /* Words first on a phone: wrap to two lines instead of amputating at one
-     ("Sheriff…" tells nobody anything). Tap still expands the full text.
-     (.action-item-card prefix outranks the later base clamp:1 rule.) */
-  .action-item-card .action-item-description {
-    -webkit-line-clamp: 2;
-  }
-
   .topic-visualizations-shell,
   .topic-visualizations-placeholder {
     min-height: 280px !important;
@@ -2092,13 +2084,30 @@ body {
    DASHBOARD CARD SYSTEM - Reusable card components
    ================================================================ */
 
+/* The SHELL — one container holding ALL the components, so the dashboard
+   feels like a held composition instead of cards floating loose on the sky.
+   A soft accent-tinted plane between ground and cards. */
+.dashboard-shell {
+  background: color-mix(
+    in srgb,
+    var(--color-accent) 11%,
+    rgba(255, 252, 247, 0.72)
+  );
+  border: 2px solid var(--soft-black);
+  border-radius: 28px;
+  padding: clamp(0.8rem, 1.8vw, 1.4rem);
+  box-shadow: var(--shadow-slab);
+}
+
 .dashboard-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  /* SOLID themed surface — glass let the ground bleed through and the cards
+     read as having "no background colour". A whisper of the accent keeps
+     each card in relation to the theme; no backdrop-filter (opaque needs
+     none, and dropping it kills the per-card stacking-context traps). */
+  background: color-mix(in srgb, var(--color-accent) 5%, #fffdf8);
   border-radius: var(--border-radius-lg);
   /* project_mapper's chunky soul: a 2px warm-BLACK border (never brown) + a flat
-     warm slab shadow (no blur). Gives the glass card a confident toy-brut edge
+     warm slab shadow (no blur). Gives the card a confident toy-brut edge
      that reads as ours, not corporate. 24px radius keeps it a touch refined. */
   border: 2px solid var(--soft-black);
   box-shadow: var(--shadow-slab);
@@ -2461,47 +2470,6 @@ html::-webkit-scrollbar-thumb:hover,
   font-family: var(--font-mono) !important;
 }
 
-@keyframes border-beam-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Rotating conic ring shown while a row is selected or being edited
-   (was a 20-line inline style block on every row). */
-.border-beam-ring {
-  position: absolute;
-  inset: -2px;
-  border-radius: 0.45rem;
-  background: conic-gradient(
-    from 0deg,
-    transparent,
-    var(--color-accent),
-    transparent,
-    var(--color-accent),
-    transparent
-  );
-  mask: radial-gradient(
-    farthest-side,
-    transparent calc(100% - 2px),
-    #000 calc(100% - 2px + 1px)
-  );
-  -webkit-mask: radial-gradient(
-    farthest-side,
-    transparent calc(100% - 2px),
-    #000 calc(100% - 2px + 1px)
-  );
-  animation: border-beam-spin 6s linear infinite;
-  pointer-events: none;
-  z-index: 10;
-  opacity: 0.85;
-}
-@media (prefers-reduced-motion: reduce) {
-  .border-beam-ring {
-    animation: none;
-  }
-}
-
 .action-item-card:hover {
   transform: translateY(-2.5px);
   box-shadow: 5px 5px 0px 0px var(--soft-black);
@@ -2541,12 +2509,12 @@ html::-webkit-scrollbar-thumb:hover,
   );
 }
 
+/* Selected/editing = a calm accent edge. (The rotating conic ring and the
+   double outline+colored-slab treatment both read as noise — gone.) */
 .action-item-card.is-selected {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
   border-color: var(--accent-ink);
-  box-shadow: 5px 5px 0px 0px var(--color-accent);
-  transform: translateY(-2.5px);
+  box-shadow: 4px 4px 0px 0px
+    color-mix(in srgb, var(--accent-ink) 55%, var(--soft-black));
 }
 
 /* Pointer-drag states (usePointerSortable). The lifted row gets a bigger
@@ -2695,9 +2663,10 @@ html::-webkit-scrollbar-thumb:hover,
      body copy — rows come out uniform instead of headline-vs-chip soup. */
   font-size: var(--small-size);
   line-height: 1.5;
-  /* Uniform rows: ONE truncated line; tapping the text expands the item. */
+  /* TWO lines before truncating — one-line amputation ("Sheriff…") told
+     nobody anything. Tapping the text still expands the full item. */
   display: -webkit-box;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   cursor: pointer;
@@ -2948,6 +2917,12 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 /* Dropdown System (Soft Neo-Toybrut) */
+/* The row that owns an OPEN dropdown must paint above its sibling rows —
+   without the lift, later-DOM item cards painted their borders/text right
+   through the menu (the "assignee dots don't work" bug). */
+.action-item-card:has(.action-dropdown-menu) {
+  z-index: var(--z-dropdown);
+}
 .action-dropdown-menu {
   position: absolute;
   z-index: var(--z-dropdown);
@@ -3194,6 +3169,12 @@ html::-webkit-scrollbar-thumb:hover,
 /* Reveal on keyboard focus too — opacity:0 otherwise hides a focused control
    (and its focus ring) from keyboard users (WCAG 2.4.7). */
 .action-item-edit-btn:focus-visible,
+/* While the corner edit/✕ buttons are visible (selected row), the text
+   yields to them — no more icons sitting ON the words. */
+.action-item-card.is-selected .action-item-description {
+  padding-right: 2.5rem;
+}
+
 .action-item-card:focus-within .action-item-edit-btn {
   opacity: 1;
 }
@@ -5371,7 +5352,9 @@ a:focus-visible {
   display: flex;
   align-items: center;
   height: 100%;
-  padding-top: 3px;
+  /* 8px, not 3: the fixed 4px rainbow rule overlaps the bar's top, so true
+     centering needs the content nudged down or it reads high/unbalanced. */
+  padding-top: 8px;
 }
 
 /* Live session header elements */
@@ -5637,11 +5620,14 @@ a:focus-visible {
    controls right (theme dice, sound, shortcuts, backup live here now — the
    header stays for verbs, the footer holds the dials). */
 .app-footer {
-  /* LOCKED chrome: a slim frosted bar stuck to the viewport bottom (content
-     scrolls under it), mirroring the header. Real surface — never a floating
-     hairline mid-gradient. z sits above cards, below drawers/header. */
-  position: sticky;
+  /* LOCKED chrome: a slim frosted bar FIXED to the viewport bottom (content
+     scrolls under it), mirroring the header. fixed, not sticky — sticky's
+     geometry clipped the bar's lower half on some setups. z sits above
+     cards, below drawers/header. */
+  position: fixed;
   bottom: 0;
+  left: 0;
+  right: 0;
   z-index: calc(var(--z-drawer) - 5);
   padding: 0.3rem 1.4rem calc(0.3rem + env(safe-area-inset-bottom, 0px));
   display: flex;

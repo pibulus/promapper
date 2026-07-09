@@ -87,7 +87,7 @@ var parsed=JSON.parse(saved);
 var name=parsed&&parsed.name;
 if(!name)return;
 if(name==="SHUFFLE"){
-if(parsed.v!==4||!parsed.custom||!parsed.custom.vars)return;
+if(parsed.v!==5||!parsed.custom||!parsed.custom.vars)return;
 var cv=parsed.custom.vars;
 for(var ck in cv){document.documentElement.style.setProperty(ck,cv[ck]);}
 return;}
@@ -102,7 +102,7 @@ var themes={
     "--color-text-secondary":"#8a7e88",
     "--color-border":"rgba(43,36,48,0.1)",
     "--shadow-soft":"0 4px 12px rgba(255,77,151,0.12)",
-    "--gradient-bg":"radial-gradient(circle at 15% 12%,rgba(255,184,140,0.9),transparent 55%),radial-gradient(circle at 85% 18%,rgba(255,146,118,0.85),transparent 55%),radial-gradient(circle at 75% 88%,rgba(255,164,122,0.85),transparent 55%),linear-gradient(135deg,#ffdcc2 0%,#ffb894 55%,#ffcfae 100%)"
+    "--gradient-bg":"radial-gradient(circle at 18% 0%,rgba(255,166,128,0.85),transparent 52%),radial-gradient(circle at 82% 6%,rgba(255,143,112,0.7),transparent 52%),linear-gradient(168deg,#ffb28c 0%,#ffe0c9 38%,#fff4e8 78%)"
   },
   "SKY":{
     "--color-base":"linear-gradient(135deg,#ffe2cf 0%,#ffd0bd 100%)",
@@ -114,7 +114,7 @@ var themes={
     "--color-text-secondary":"#6f8597",
     "--color-border":"rgba(31,51,68,0.1)",
     "--shadow-soft":"0 4px 12px rgba(10,166,255,0.12)",
-    "--gradient-bg":"radial-gradient(circle at 15% 12%,rgba(255,184,140,0.9),transparent 55%),radial-gradient(circle at 85% 18%,rgba(255,146,118,0.85),transparent 55%),radial-gradient(circle at 75% 88%,rgba(255,164,122,0.85),transparent 55%),linear-gradient(135deg,#ffdcc2 0%,#ffb894 55%,#ffcfae 100%)"
+    "--gradient-bg":"radial-gradient(circle at 18% 0%,rgba(255,166,128,0.85),transparent 52%),radial-gradient(circle at 82% 6%,rgba(255,143,112,0.7),transparent 52%),linear-gradient(168deg,#ffb28c 0%,#ffe0c9 38%,#fff4e8 78%)"
   },
   "GRAPE":{
     "--color-base":"linear-gradient(135deg,#ffe2cf 0%,#ffd0bd 100%)",
@@ -126,7 +126,7 @@ var themes={
     "--color-text-secondary":"#807a96",
     "--color-border":"rgba(49,42,69,0.1)",
     "--shadow-soft":"0 4px 12px rgba(124,92,255,0.12)",
-    "--gradient-bg":"radial-gradient(circle at 15% 12%,rgba(255,184,140,0.9),transparent 55%),radial-gradient(circle at 85% 18%,rgba(255,146,118,0.85),transparent 55%),radial-gradient(circle at 75% 88%,rgba(255,164,122,0.85),transparent 55%),linear-gradient(135deg,#ffdcc2 0%,#ffb894 55%,#ffcfae 100%)"
+    "--gradient-bg":"radial-gradient(circle at 18% 0%,rgba(255,166,128,0.85),transparent 52%),radial-gradient(circle at 82% 6%,rgba(255,143,112,0.7),transparent 52%),linear-gradient(168deg,#ffb28c 0%,#ffe0c9 38%,#fff4e8 78%)"
   },
   "LIME":{
     "--color-base":"linear-gradient(135deg,#ffe2cf 0%,#ffd0bd 100%)",
@@ -138,7 +138,7 @@ var themes={
     "--color-text-secondary":"#6f8c7c",
     "--color-border":"rgba(31,58,43,0.1)",
     "--shadow-soft":"0 4px 12px rgba(16,181,80,0.12)",
-    "--gradient-bg":"radial-gradient(circle at 15% 12%,rgba(255,184,140,0.9),transparent 55%),radial-gradient(circle at 85% 18%,rgba(255,146,118,0.85),transparent 55%),radial-gradient(circle at 75% 88%,rgba(255,164,122,0.85),transparent 55%),linear-gradient(135deg,#ffdcc2 0%,#ffb894 55%,#ffcfae 100%)"
+    "--gradient-bg":"radial-gradient(circle at 18% 0%,rgba(255,166,128,0.85),transparent 52%),radial-gradient(circle at 82% 6%,rgba(255,143,112,0.7),transparent 52%),linear-gradient(168deg,#ffb28c 0%,#ffe0c9 38%,#fff4e8 78%)"
   },
   "GOLD":{
     "--color-base":"linear-gradient(135deg,#ffe2cf 0%,#ffd0bd 100%)",
@@ -150,7 +150,7 @@ var themes={
     "--color-text-secondary":"#8a7b54",
     "--color-border":"rgba(58,48,22,0.1)",
     "--shadow-soft":"0 4px 12px rgba(245,179,0,0.14)",
-    "--gradient-bg":"radial-gradient(circle at 15% 12%,rgba(255,184,140,0.9),transparent 55%),radial-gradient(circle at 85% 18%,rgba(255,146,118,0.85),transparent 55%),radial-gradient(circle at 75% 88%,rgba(255,164,122,0.85),transparent 55%),linear-gradient(135deg,#ffdcc2 0%,#ffb894 55%,#ffcfae 100%)"
+    "--gradient-bg":"radial-gradient(circle at 18% 0%,rgba(255,166,128,0.85),transparent 52%),radial-gradient(circle at 82% 6%,rgba(255,143,112,0.7),transparent 52%),linear-gradient(168deg,#ffb28c 0%,#ffe0c9 38%,#fff4e8 78%)"
   }
 };
 var vars=themes[name];

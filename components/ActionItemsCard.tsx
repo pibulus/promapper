@@ -733,15 +733,6 @@ export default function ActionItemsCard(
                               touchAction: canDrag ? "pan-y" : undefined,
                             }}
                           >
-                            {/* Rotating conic ring while selected or editing */}
-                            {(isSelected || editingItemId.value === item.id) &&
-                              (
-                                <div
-                                  aria-hidden="true"
-                                  class="border-beam-ring"
-                                />
-                              )}
-
                             <div class="grid grid-cols-[auto_1fr_auto_auto] gap-2.5 items-start relative z-[2]">
                               {/* Drag Handle (mouse/pen: press to grab; touch: long-press the row) */}
                               <div class="flex items-center pt-1">

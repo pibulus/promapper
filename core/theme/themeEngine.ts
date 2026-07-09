@@ -17,7 +17,7 @@ export type { Theme, ThemeSystemConfig };
  * then DISCARDED on load (falling back to the default theme) instead of
  * replaying frozen old vars forever. Mirror the literal in the _app.tsx FOUC
  * script. */
-export const SHUFFLE_SCHEMA_VERSION = 4;
+export const SHUFFLE_SCHEMA_VERSION = 5;
 
 // ===================================================================
 // THEME SYSTEM CLASS

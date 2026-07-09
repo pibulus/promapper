@@ -36,7 +36,7 @@ import type { Theme, ThemeSystemConfig } from "@core/theme/types.ts";
 // (saturated coral journey, not a tinted white) — cards get their freshness
 // from figure/ground separation. Mirror any change into the _app.tsx FOUC map.
 export const WARM_BG =
-  "radial-gradient(circle at 15% 12%, rgba(255,184,140,0.9), transparent 55%), radial-gradient(circle at 85% 18%, rgba(255,146,118,0.85), transparent 55%), radial-gradient(circle at 75% 88%, rgba(255,164,122,0.85), transparent 55%), linear-gradient(135deg, #ffdcc2 0%, #ffb894 55%, #ffcfae 100%)";
+  "radial-gradient(circle at 18% 0%, rgba(255,166,128,0.85), transparent 52%), radial-gradient(circle at 82% 6%, rgba(255,143,112,0.7), transparent 52%), linear-gradient(168deg, #ffb28c 0%, #ffe0c9 38%, #fff4e8 78%)";
 
 export const bubblegum: Theme = {
   name: "BUBBLEGUM",

@@ -271,9 +271,9 @@ export default function DashboardIsland() {
 
   // Mutations delegate to the action-items store (pure transforms in core/).
   return (
-    <div>
+    <div class="dashboard-shell">
       {/* Grid Container - Simple CSS Grid */}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 pb-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {
           /* Mobile hierarchy: a returning user's question is "what do I do
             next" — Action Items lead the single-column stack, transcript

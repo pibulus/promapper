@@ -154,9 +154,10 @@ export function generateThemeParts(
   const hue = pair.accent[0] + rand() * (pair.accent[1] - pair.accent[0]);
   // PUNK accents ("pastel backgrounds with punk accents" — the BRAND law):
   // saturated mid-tones in #FF6B6B / #4ECDC4 / #9B59B6 territory. Never a
-  // whisper-pastel, never muted. Ink contrast rides the solved companion.
+  // whisper-pastel, never muted, and not too dark either (L58–66 — the
+  // L54 floor read "too dark"). Ink contrast rides the solved companion.
   const saturation = 68 + rand() * 24; // 68–92
-  const lightness = 54 + rand() * 10; // 54–64
+  const lightness = 58 + rand() * 8; // 58–66
 
   const accent = hslToHex(hue, saturation, lightness);
   const strong = deriveStrong(hue, saturation);
@@ -168,42 +169,39 @@ export function generateThemeParts(
   // together, so ground and accent always play off each other on purpose.
   const bgHue = pair.ground[0] + rand() * (pair.ground[1] - pair.ground[0]);
 
-  // Two rich family washes + one pastelized accent-family glow in the low
-  // corner (the interplay). Never pigment-mix complementary pastels — sRGB
-  // mixing makes grey; the glow is a pure-hue pastel instead.
-  //
-  // SATURATION COURAGE: the ground must be genuinely COLORED (S 80–100,
-  // L 79–85), not tinted white — pale ground + pale figures reads hospital.
-  // Cards stay calm cream and get their freshness FROM the colored ground
-  // (figure/ground separation is the whole game).
-  const j = () => rand() * 12 - 6;
+  // AIRY SKY: the ground is a colored sky at the TOP that FADES INTO CREAM
+  // where the components live — a full-saturation full-bleed field read as
+  // "a toy". Two family washes hug the top corners; the accent leaves one
+  // low-alpha whisper near the bottom. Never pigment-mix complementary
+  // pastels — sRGB mixing makes grey; washes are pure-hue pastels.
+  const j = () => rand() * 10 - 5;
   const washes = [
-    hslToHex(wrap(bgHue - 8), 88 + rand() * 12, 80 + rand() * 3),
+    hslToHex(wrap(bgHue - 8), 88 + rand() * 12, 79 + rand() * 3),
     hslToHex(wrap(bgHue + 10), 86 + rand() * 14, 81 + rand() * 3),
     hslToHex(hue, 78 + rand() * 14, 82 + rand() * 3),
   ];
-  const washAlphas = [0.9, 0.85, 0.6];
+  const washAlphas = [0.85, 0.7, 0.35];
   const positions: Array<[number, number]> = [
-    [15 + j(), 12 + j()],
-    [85 + j(), 18 + j()],
-    [75 + j(), 88 + j()],
+    [18 + j(), 0],
+    [82 + j(), 6 + j() / 2],
+    [78 + j(), 96],
   ];
   const radials = washes.map((w, i) => {
     const [r, g, b] = hexToRgb(w);
     const [x, y] = positions[i];
     return `radial-gradient(circle at ${Math.round(x)}% ${Math.round(y)}%, ` +
-      `rgba(${r},${g},${b},${washAlphas[i]}), transparent 55%)`;
+      `rgba(${r},${g},${b},${washAlphas[i]}), transparent 52%)`;
   });
-  // Linear base — a real gradient JOURNEY (light in, richest mid, settles
-  // warm), saturated like the beloved coral reference, never near-white.
+  // Linear journey: saturated family sky → soft tint → warm cream. The
+  // cream floor is what makes it AIRY instead of toy-solid.
   const bgBase = [
-    hslToHex(wrap(bgHue + 6), 78 + rand() * 18, 87),
-    hslToHex(wrap(bgHue - 6), 88 + rand() * 12, 81),
-    hslToHex(wrap(bgHue + 2), 84 + rand() * 14, 85),
+    hslToHex(wrap(bgHue - 4), 85 + rand() * 15, 80 + rand() * 3),
+    hslToHex(wrap(bgHue + 4), 75 + rand() * 15, 89),
+    "#fff4e8",
   ];
-  const gradientBg = `${radials.join(", ")}, linear-gradient(135deg, ` +
-    `${bgBase[0]} 0%, ${bgBase[1]} 55%, ${bgBase[2]} 100%)`;
-  const baseSolid = hslToHex(bgHue, 82, 84);
+  const gradientBg = `${radials.join(", ")}, linear-gradient(168deg, ` +
+    `${bgBase[0]} 0%, ${bgBase[1]} 38%, ${bgBase[2]} 78%)`;
+  const baseSolid = hslToHex(bgHue, 70, 90);
 
   const theme: Theme = {
     name: "SHUFFLE",
