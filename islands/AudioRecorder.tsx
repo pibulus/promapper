@@ -21,6 +21,7 @@ import {
   computeAppendReceipt,
   formatAppendReceipt,
 } from "@core/orchestration/append-receipt.ts";
+import { showActionToast } from "@utils/toast.ts";
 import {
   deleteRecording as deleteStoredRecording,
   listRecordings,
@@ -130,6 +131,45 @@ export default function AudioRecorder(
     })();
     return () => {
       cancelled = true;
+    };
+  }, [conversationId]);
+
+  // Offline-first rescue: a take saved while the AI was unreachable has no
+  // receipt — it's audio the map never absorbed. Nudge ONCE per conversation
+  // (and again if connectivity returns) with a consent-ful action toast; the
+  // takes panel also gets a per-take map button. Never auto-spends AI calls.
+  const nudgedUnmappedRef = useRef<string | null>(null);
+  async function mapStoredTake(take: StoredRecording) {
+    await processAudioAppend(take.data, take.id);
+  }
+  async function mapAllUnmapped() {
+    for (const take of takes.value.filter((t) => !t.receipt)) {
+      await mapStoredTake(take);
+    }
+  }
+  function nudgeUnmapped() {
+    const unmapped = takes.value.filter((t) => !t.receipt).length;
+    if (unmapped === 0 || isProcessing.value) return;
+    if (nudgedUnmappedRef.current === conversationId) return;
+    nudgedUnmappedRef.current = conversationId;
+    showActionToast(
+      `${unmapped} take${unmapped === 1 ? "" : "s"} not mapped yet`,
+      "Map now",
+      () => void mapAllUnmapped(),
+    );
+  }
+  useEffect(() => {
+    // After takes hydrate, offer to map strays; re-offer when we come back
+    // online (the classic case: recorded in a dead spot).
+    const timer = setTimeout(nudgeUnmapped, 1_500);
+    const onOnline = () => {
+      nudgedUnmappedRef.current = null;
+      nudgeUnmapped();
+    };
+    globalThis.addEventListener("online", onOnline);
+    return () => {
+      clearTimeout(timer);
+      globalThis.removeEventListener("online", onOnline);
     };
   }, [conversationId]);
 

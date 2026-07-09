@@ -6446,6 +6446,10 @@ label {
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
+.recording-dock__take-actions button.is-unmapped {
+  /* An unmapped take glows accent — audio the map hasn't absorbed yet. */
+  color: var(--color-accent);
+}
 .recording-dock__take-actions button:hover {
   background: color-mix(in srgb, var(--color-accent) 14%, transparent);
   color: var(--color-accent);
