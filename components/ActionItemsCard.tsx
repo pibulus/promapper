@@ -6,10 +6,7 @@
 import { Fragment } from "preact";
 import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
-import {
-  clearCompletedActionItems,
-  toggleActionItemInList,
-} from "@core/orchestration/conversation-ops.ts";
+import { toggleActionItemInList } from "@core/orchestration/conversation-ops.ts";
 import { usePointerSortable } from "@utils/usePointerSortable.ts";
 import { hapticBump, hapticTap } from "@utils/haptics.ts";
 import {
@@ -216,14 +213,6 @@ export default function ActionItemsCard(
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [activeAssigneeDropdown.value]);
-
-  // Header progress count: "N of M done" (the emotional payoff of a list).
-  const progress = useComputed(() => {
-    const total = visibleItems.value.length;
-    const done = visibleItems.value.filter((i) => i.status === "completed")
-      .length;
-    return { total, done };
-  });
 
   // Self-populating assignee suggestions from existing items + "Me" always first
   const assigneeSuggestions = useComputed(() => {

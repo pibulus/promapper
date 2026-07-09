@@ -210,10 +210,6 @@ export default function MobileHistoryMenu() {
     isOpen.value = false;
   }
 
-  function toggleMenu() {
-    isOpen.value = !isOpen.value;
-  }
-
   function handleToggleStar(e: MouseEvent, id: string) {
     e.stopPropagation();
     toggleConversationStarred(id);
@@ -305,30 +301,11 @@ export default function MobileHistoryMenu() {
 
   return (
     <>
-      {/* Floating Menu Button - Hidden when a conversation is open (handled via header trigger) */}
-      {!conversationData.value && (
-        <button
-          onClick={toggleMenu}
-          class="history-drawer-trigger fixed bottom-6 right-6 flex items-center justify-center z-40 transition-all"
-          aria-label="Open conversation history"
-          title="View saved conversations"
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-            <polyline points="9 22 9 12 15 12 15 22" />
-          </svg>
-          <span class="hidden sm:inline">History</span>
-        </button>
-      )}
+      {
+        /* The drawer opens from the header History icon (both landing and
+          conversation headers) — the old floating trigger pill collided
+          with the footer dials. */
+      }
 
       {/* Backdrop */}
       {isOpen.value && (

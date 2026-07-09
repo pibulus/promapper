@@ -648,11 +648,26 @@ export default function HomeIsland() {
               </>
             )
             : (
-              // Default header — wordmark only; the dials live in the footer.
+              // Default header — wordmark + history; the dials live in the
+              // footer. (History was a floating pill crashing into the
+              // footer dials — it belongs in the icon bar like everywhere
+              // else.)
               <>
                 <a href="/" class="app-header__brand flex-1">
                   ProMapper<span class="app-header__brand-dot">.</span>
                 </a>
+                <div class="app-header__actions">
+                  <button
+                    onClick={() =>
+                      historyDrawerOpen.value = !historyDrawerOpen.value}
+                    class="header-icon-btn"
+                    data-tip="History"
+                    data-tip-align="right"
+                    aria-label="View history"
+                  >
+                    <i class="fa fa-history" aria-hidden="true"></i>
+                  </button>
+                </div>
               </>
             )}
         </div>
