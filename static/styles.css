@@ -1384,7 +1384,7 @@ body {
 
 .mapper-slab-button:disabled {
   opacity: 0.55;
-  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 0 rgba(30, 23, 20, 0.1);
   cursor: not-allowed;
 }
 
@@ -1949,7 +1949,7 @@ body {
     border-left: none;
     border-top: 2px solid rgba(0, 0, 0, 0.1);
     border-radius: 22px 22px 0 0;
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.16);
+    box-shadow: 0 -10px 30px rgba(30, 23, 20, 0.16);
     transform: translateY(100%) !important;
   }
 
@@ -3392,7 +3392,7 @@ html::-webkit-scrollbar-thumb:hover,
   border: 2px solid var(--color-border);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.72);
-  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.07);
+  box-shadow: 1px 1px 0 rgba(30, 23, 20, 0.07);
 }
 
 .topic-map-stats span {
@@ -3416,7 +3416,7 @@ html::-webkit-scrollbar-thumb:hover,
   background: #fff;
   outline: none;
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 3px 3px 0 rgba(30, 23, 20, 0.1);
 }
 
 /* Bottom-right control cluster — FontAwesome icon buttons, on-brand chunky
@@ -3440,7 +3440,7 @@ html::-webkit-scrollbar-thumb:hover,
   border: 2px solid var(--color-border);
   border-radius: var(--border-radius-sm);
   background: var(--surface-white-warm, #fffef7);
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.08);
+  box-shadow: 2px 2px 0 rgba(30, 23, 20, 0.08);
   color: var(--color-text);
   font-size: var(--small-size);
   cursor: pointer;
@@ -3469,7 +3469,7 @@ html::-webkit-scrollbar-thumb:hover,
   border-color: var(--accent-ink);
   color: var(--accent-ink);
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 3px 3px 0 rgba(30, 23, 20, 0.1);
 }
 
 /* Add-topic leads the cluster as the accent action — wider, filled, with a
@@ -3510,7 +3510,7 @@ html::-webkit-scrollbar-thumb:hover,
   border: 2px solid var(--color-border);
   border-radius: var(--border-radius-sm);
   background: var(--surface-white-warm, #fffef7);
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.08);
+  box-shadow: 2px 2px 0 rgba(30, 23, 20, 0.08);
   color: var(--color-text);
   font-size: var(--small-size);
   font-weight: 700;
@@ -3540,7 +3540,7 @@ html::-webkit-scrollbar-thumb:hover,
   border: 2px solid var(--color-border);
   border-radius: var(--border-radius-sm);
   background: var(--surface-white-warm, #fffef7);
-  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 4px 4px 0 rgba(30, 23, 20, 0.1);
 }
 
 .topic-viz-menu-item {
@@ -3649,7 +3649,7 @@ html::-webkit-scrollbar-thumb:hover,
   border-radius: 14px;
   background: #fff;
   font-size: 1.75rem;
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.08);
+  box-shadow: 2px 2px 0 rgba(30, 23, 20, 0.08);
 }
 
 .topic-node-detail h4 {
@@ -4454,7 +4454,7 @@ a:focus-visible {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-left: 2px solid rgba(0, 0, 0, 0.1);
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  box-shadow: -4px 0 24px rgba(30, 23, 20, 0.12);
   display: flex;
   flex-direction: column;
 }
@@ -4496,7 +4496,7 @@ a:focus-visible {
 }
 .history-drawer-close:hover {
   background: rgba(0, 0, 0, 0.1);
-  transform: scale(1.05);
+  transform: translateY(-1px);
 }
 
 /* "New Conversation" slab button. */
@@ -4511,7 +4511,7 @@ a:focus-visible {
   color: white;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.12);
+  box-shadow: 4px 4px 0 0 rgba(30, 23, 20, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5008,12 +5008,12 @@ a:focus-visible {
   border-radius: 999px;
   cursor: pointer;
   transition: all 150ms ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(30, 23, 20, 0.04);
 }
 .whiteboard-draw-btn:hover:not(:disabled) {
   background: color-mix(in srgb, var(--color-accent) 15%, transparent);
   border-color: var(--accent-ink);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(30, 23, 20, 0.08);
 }
 .whiteboard-draw-btn:disabled {
   opacity: 0.5;
@@ -5303,7 +5303,7 @@ a:focus-visible {
   max-width: 220px;
   word-wrap: break-word;
   box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 2px 8px rgba(30, 23, 20, 0.06),
     0 0 0 1px rgba(232, 131, 156, 0.08);
   opacity: 0;
   transform: scale(0.85) translateY(4px);
@@ -5376,7 +5376,7 @@ a:focus-visible {
 /* App Header styling - integration of inline styles */
 .app-header-glass {
   border-bottom: 2px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 12px rgba(30, 23, 20, 0.04);
   height: var(--header-height);
   display: flex;
   align-items: center;
@@ -6002,12 +6002,12 @@ a:focus-visible {
 
 .history-drawer-new-btn:hover {
   transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0 0 rgba(0, 0, 0, 0.12);
+  box-shadow: 6px 6px 0 0 rgba(30, 23, 20, 0.12);
 }
 
 .history-drawer-new-btn:active {
   transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.12);
+  box-shadow: 2px 2px 0 0 rgba(30, 23, 20, 0.12);
 }
 
 /* Live route fallback when no PartyKit host is configured */
@@ -6060,10 +6060,13 @@ label {
 .action-item-delete-btn:active,
 .mapper-clip-btn:active,
 .topic-map-add-button:active,
+.topic-map-ctrl:active,
 .header-export-btn:active,
 .topic-viz-trigger:active,
 .topic-viz-menu-item:active,
 .voice-drawer-close:active,
+.history-drawer-close:active,
+.whiteboard-draw-btn:not(:disabled):active,
 .whiteboard-toolbar button:active {
   transform: translateY(1px) scale(0.97);
 }
@@ -6214,7 +6217,7 @@ label {
   -webkit-backdrop-filter: blur(16px);
   border: 2px solid rgba(0, 0, 0, 0.15);
   border-radius: 999px;
-  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 4px 4px 0 0 rgba(30, 23, 20, 0.1);
   transition: box-shadow var(--transition-fast);
 }
 
@@ -6370,11 +6373,18 @@ label {
   font-size: var(--small-size);
   letter-spacing: 0.02em;
   cursor: pointer;
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.25);
+  box-shadow: 2px 2px 0 rgba(30, 23, 20, 0.25);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.recording-dock__stop:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 3px 4px 0 rgba(30, 23, 20, 0.25);
 }
 
 .recording-dock__stop:active {
   transform: translateY(1px) scale(0.97);
+  box-shadow: 1px 1px 0 rgba(30, 23, 20, 0.25);
 }
 
 .recording-dock__processing {
@@ -6403,7 +6413,7 @@ label {
   -webkit-backdrop-filter: blur(16px);
   border: 2px solid rgba(0, 0, 0, 0.15);
   border-radius: 18px;
-  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 4px 4px 0 0 rgba(30, 23, 20, 0.1);
   overflow: hidden;
   animation: dock-sheet-in 0.22s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
