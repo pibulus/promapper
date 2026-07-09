@@ -96,6 +96,13 @@ export default function SharedWhiteboard(
       if (initialScene) {
         try {
           parsed = JSON.parse(initialScene);
+          // JSON round-trips turn appState.collaborators (a Map inside
+          // Excalidraw) into a plain object — restoring that crashes
+          // InteractiveCanvas ("collaborators.forEach is not a function").
+          // Strip it; Excalidraw rebuilds its own.
+          if (parsed?.appState && "collaborators" in parsed.appState) {
+            delete parsed.appState.collaborators;
+          }
         } catch {
           parsed = { elements: [], appState: { theme: "light" } };
         }

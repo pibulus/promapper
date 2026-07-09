@@ -246,20 +246,24 @@ function sanitizeActionItem(input: unknown, conversationId: string) {
 }
 
 export function generateShareRoomId(): string {
-  // Short, human-shareable IDs: 14 base36 chars (~72 bits) instead of a
-  // 36-char UUID — links stay unguessable but stop looking like a hash
-  // dump. Old UUID-based IDs keep resolving (lookup is by exact string).
-  const bytes = globalThis.crypto?.getRandomValues?.(new Uint8Array(12));
-  if (!bytes) {
+  // Short, human-shareable IDs: 14 base36 chars (14 × log2(36) ≈ 72 bits,
+  // exact because of the rejection sampling below) instead of a 36-char
+  // UUID — links stay unguessable but stop looking like a hash dump. Old
+  // UUID-based IDs keep resolving (lookup is by exact string).
+  if (!globalThis.crypto?.getRandomValues) {
     throw new Error("Secure random IDs are not available.");
   }
   let id = "";
-  for (const b of bytes) id += (b % 36).toString(36);
-  // 12 bytes → 12 chars from a mod-36 alphabet plus 2 extra chars of
-  // entropy from a second pass keeps us comfortably past 60 bits even
-  // with the modulo bias.
-  const extra = globalThis.crypto.getRandomValues(new Uint8Array(2));
-  for (const b of extra) id += (b % 36).toString(36);
+  while (id.length < 14) {
+    const bytes = globalThis.crypto.getRandomValues(new Uint8Array(24));
+    for (const b of bytes) {
+      // Reject bytes ≥ 252 (252 = 36 × 7) so b % 36 is UNBIASED — a plain
+      // modulo skews toward low characters and quietly shrinks the entropy.
+      if (b >= 252) continue;
+      id += (b % 36).toString(36);
+      if (id.length === 14) break;
+    }
+  }
   return `${SHARE_ROOM_PREFIX}${id}`;
 }
 

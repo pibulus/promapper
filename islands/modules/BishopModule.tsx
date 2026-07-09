@@ -6,7 +6,7 @@
  */
 
 import { useSignal } from "@preact/signals";
-import { useRef } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 import { conversationData } from "@signals/conversationStore.ts";
 import { ensureApiSession } from "@utils/apiAuth.ts";
 import { enqueueApiRequest } from "@utils/requestQueue.ts";
@@ -24,10 +24,16 @@ export default function BishopModule() {
   const inputRef = useRef<HTMLInputElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
 
+  // Keep the log pinned to the newest exchange (effect, not a timing hack).
+  useEffect(() => {
+    logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
+  }, [exchanges.value.length]);
+
   async function ask() {
     const question = inputRef.current?.value.trim() ?? "";
     const data = conversationData.value;
     if (!question || !data || asking.value) return;
+    const askedId = data.conversation.id;
 
     asking.value = true;
     try {
@@ -51,12 +57,13 @@ export default function BishopModule() {
         return String(json.answer ?? "");
       });
 
+      // The conversation switched while Bishop was thinking — an answer
+      // about A must not appear on B's board (Bumblefuzz #4). The remount
+      // key usually destroys us first; this is the belt to that braces.
+      if (conversationData.value?.conversation.id !== askedId) return;
+
       exchanges.value = [...exchanges.value, { question, answer }];
       if (inputRef.current) inputRef.current.value = "";
-      // Let the new exchange render, then keep the log at the latest.
-      setTimeout(() => {
-        logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
-      }, 30);
     } catch (err) {
       showToast(
         err instanceof Error ? err.message : "Bishop couldn't answer",

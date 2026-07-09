@@ -53,6 +53,16 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
       ? buildExportContext(conversation, text)
       : text;
 
+    // The text/question caps alone don't bound the CONVERSATION payload —
+    // without this, an oversized object sails past the 413 into a
+    // pay-per-token AI call (Rex's finding).
+    if (context.length > MAX_TEXT_LENGTH * 2) {
+      return new Response(
+        JSON.stringify({ error: "Conversation is too large to ask about." }),
+        { status: 413, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
     const prompt = `You are Bishop, the quiet advisor inside ProMapper — a
 tool that turns conversations into living project maps. Answer the user's
 question using ONLY the conversation context below. Be concise and warm;

@@ -361,13 +361,17 @@ export default function DashboardIsland() {
             switched on in the rack. Sizes: small tucks into leftover cells,
             standard matches core cards, wide spans the row. */
         }
+        {
+          /* Conversation-scoped keys: switching conversations REMOUNTS every
+            module, so stale textareas/canvases/in-flight answers can't leak
+            across conversations (Bumblefuzz's hall-of-fame find). */
+        }
         {moduleRegistry
           .filter((m) => enabledModules.value.includes(m.id))
           .map((m) => (
             <div
-              key={m.id}
+              key={`${conversation.id}-${m.id}`}
               class={`order-6 md:order-none min-w-0 module-cell module-cell--${m.size}`}
-              style={m.size === "wide" ? { gridColumn: "1 / -1" } : undefined}
             >
               <m.component />
             </div>

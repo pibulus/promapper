@@ -6,6 +6,7 @@
 
 import { useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
+import { showToast } from "@utils/toast.ts";
 
 interface Channel {
   id: string;
@@ -88,7 +89,9 @@ export default function RadioModule() {
     if (!ch.nowPlayingUrl) return;
     const fetchNow = async () => {
       try {
-        const res = await fetch(ch.nowPlayingUrl!);
+        const res = await fetch(ch.nowPlayingUrl!, {
+          signal: AbortSignal.timeout(8_000),
+        });
         const data = await res.json();
         const song = data?.now_playing?.song;
         if (song?.title) {
@@ -113,8 +116,13 @@ export default function RadioModule() {
     audioRef.current.play().then(() => {
       playing.value = true;
       pollNowPlaying(channel);
-    }).catch(() => {
+    }).catch((err) => {
       playing.value = false;
+      // An interrupted play (rapid channel-skips) is normal; a dead stream
+      // deserves a word instead of a silently dead button (Rex #4).
+      if (!(err instanceof DOMException && err.name === "AbortError")) {
+        showToast("That station isn't reachable right now", "warning");
+      }
     });
   }
 

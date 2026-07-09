@@ -7,7 +7,7 @@
  * Excalidraws would fight), so this card steps aside.
  */
 
-import { useRef } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 import SharedWhiteboard from "../SharedWhiteboard.tsx";
 import { conversationData } from "@signals/conversationStore.ts";
 import { liveSession } from "@signals/liveSessionStore.ts";
@@ -18,15 +18,23 @@ export default function CanvasModule() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function persistScene(scene: string) {
+    const forId = conversationData.value?.conversation.id;
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      if (!conversationData.value) return;
-      conversationData.value = {
-        ...conversationData.value,
-        whiteboardScene: scene,
-      };
+      const current = conversationData.value;
+      // Conversation switched mid-debounce — this sketch belongs to the old
+      // one; dropping beats stamping it onto the new one (Bumblefuzz #2).
+      if (!current || current.conversation.id !== forId) return;
+      conversationData.value = { ...current, whiteboardScene: scene };
     }, SAVE_DEBOUNCE_MS);
   }
+
+  // No orphaned timers after unmount (rack toggle / live handoff / switch).
+  useEffect(() => {
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, []);
 
   if (liveSession.value) {
     return (

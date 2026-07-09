@@ -57,6 +57,16 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
       ? buildExportContext(conversation, text)
       : text;
 
+    // The prompt/text caps don't bound the CONVERSATION payload — cap the
+    // built context so an oversized object can't become an unbounded AI
+    // call (same hole Rex found in /api/ask).
+    if (context.length > MAX_TEXT_LENGTH * 2) {
+      return new Response(
+        JSON.stringify({ error: "Conversation is too large to export." }),
+        { status: 413, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), MARKDOWN_TIMEOUT_MS);
     let markdown: string;

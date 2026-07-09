@@ -2114,6 +2114,9 @@ body {
 .module-cell--small {
   align-self: start;
 }
+.module-cell--wide {
+  grid-column: 1 / -1;
+}
 .module-cell--small .dashboard-card {
   height: auto;
 }
