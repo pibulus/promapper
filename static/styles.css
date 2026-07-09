@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -68,12 +68,18 @@
   --border-radius-xl: 32px;
 
   /* Typography */
-  /* ONE font, committed: JetBrains Mono is the app's voice — the machine-
-     text honesty of the transcript, everywhere, at every weight. */
+  /* ONE font, committed (July 9 ruling): a good sans, everywhere. Plus
+     Jakarta Sans — warm geometric-humanist, readable at 15px prose, caps
+     with character for the uppercase headers. --font-mono intentionally
+     points at the SAME stack so transcript/task "machine text" stays
+     consistent with the rest of the app; if mono ever earns its way back,
+     this is the one line to flip. */
   --font-family:
-    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
   --font-mono:
-    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
   --heading-size: 1.125rem;
   --heading-weight: 600;
   --text-size: 0.9375rem;
@@ -119,6 +125,14 @@
      needs accent-on-which-white-sits. Bright --color-accent stays the pop. */
   --accent-strong: color-mix(in srgb, var(--color-accent) 72%, #1b1020);
 
+  /* Accent INDIRECTIONS — how pastel shuffle rolls stay readable without
+     touching the named themes. Named themes: both resolve to the raw accent
+     (zero visual change). A pastel roll overrides both with its solved deep
+     companion, so accent-colored words/borders and white-on-accent fills
+     pass AA by construction while surfaces stay pastel. */
+  --accent-ink: var(--color-accent); /* accent-colored text/icons/borders */
+  --accent-fill: var(--color-accent); /* accent solids that carry white ink */
+
   /* Card header — LIGHT. The title sits on the card surface (cream), DARK text,
      with the accent as a small POP only (a left rule). The WARM GRADIENT
      BACKGROUND is the color event, not the headers. Calm, classy, airy. */
@@ -140,7 +154,7 @@
 
   /* Chips (assignee / status / filter) — kills the hand-written accent ternaries. */
   --chip-on: var(--color-accent);
-  --chip-on-ink: var(--header-ink);
+  --chip-on-ink: var(--color-text);
   --chip-off: var(--surface-cream);
   --chip-off-ink: var(--color-text-secondary);
 
@@ -366,7 +380,7 @@ body {
 }
 
 .mode-tab.active {
-  background: var(--color-accent);
+  background: var(--accent-fill);
   color: white;
   box-shadow: var(--shadow-soft);
 }
@@ -446,7 +460,7 @@ body {
 .action-item-delete-btn:hover {
   /* Warm rose lift (project_mapper/ziplist pattern) — never reddens. */
   background: color-mix(in srgb, var(--color-accent) 14%, var(--surface-cream));
-  color: var(--color-accent);
+  color: var(--accent-ink);
   transform: scale(1.15) rotate(8deg);
 }
 
@@ -519,13 +533,13 @@ body {
 
 /* Accent button (Save edit, etc.) */
 .btn--accent {
-  background: var(--color-accent);
+  background: var(--accent-fill);
   color: white;
   box-shadow: 2px 2px 0 var(--soft-black);
   border: 2px solid var(--soft-black);
 }
 .btn--accent:hover {
-  background: color-mix(in srgb, var(--color-accent) 85%, white);
+  background: color-mix(in srgb, var(--accent-fill) 85%, white);
   box-shadow: 3px 3px 0 var(--soft-black);
   transform: translateY(-1.5px);
 }
@@ -626,11 +640,11 @@ body {
   white-space: nowrap;
 }
 .app-header__brand:hover {
-  color: var(--color-accent);
+  color: var(--accent-ink);
 }
 /* The accent dot in the wordmark — a tiny pop of the active theme. */
 .app-header__brand-dot {
-  color: var(--color-accent);
+  color: var(--accent-ink);
 }
 
 /* Thin divider between wordmark and project title. */
@@ -688,7 +702,7 @@ body {
 }
 .header-icon-btn:hover {
   background: color-mix(in srgb, var(--color-accent) 14%, transparent);
-  color: var(--color-accent);
+  color: var(--accent-ink);
 }
 .header-icon-btn:active {
   transform: translateY(1px);
@@ -713,7 +727,7 @@ body {
 /* Recording state — warm rose wash + accent icon (never alarm red). */
 .header-icon-btn.is-recording {
   background: var(--accent-rose-wash);
-  color: var(--color-accent);
+  color: var(--accent-ink);
   width: auto;
   padding: 0 0.6rem;
   gap: 0.4rem;
@@ -732,7 +746,7 @@ body {
   font-size: 0.625rem;
   font-weight: 700;
   border-radius: 999px;
-  background: var(--color-accent);
+  background: var(--accent-fill);
   color: #fff;
   line-height: 1;
 }
@@ -1489,7 +1503,7 @@ body {
 }
 
 .mapper-upload-drop:hover {
-  border-color: var(--color-accent);
+  border-color: var(--accent-ink);
   background: rgba(255, 255, 255, 0.85);
 }
 
@@ -2107,7 +2121,7 @@ body {
 
 .flip-card-btn:hover {
   background: var(--surface-cream-hover);
-  color: var(--color-accent);
+  color: var(--accent-ink);
   transform: rotate(-30deg);
 }
 
@@ -2140,9 +2154,10 @@ body {
 }
 
 .dashboard-card-header h3 {
-  font-size: var(--small-size);
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  /* Cozy caps: 600 + wide tracking reads calm where 700 tight shouted. */
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--header-band-ink);
   margin: 0;
@@ -2250,7 +2265,7 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 .card-header-actions button:hover:not(:disabled) {
-  color: var(--color-accent);
+  color: var(--accent-ink);
 }
 
 .card-header-actions button:disabled {
@@ -2317,7 +2332,7 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 .reader-panel__close:hover {
-  color: var(--color-accent);
+  color: var(--accent-ink);
   background: color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
@@ -2468,7 +2483,7 @@ html::-webkit-scrollbar-thumb:hover,
 .action-item-card.is-selected {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
-  border-color: var(--color-accent);
+  border-color: var(--accent-ink);
   box-shadow: 5px 5px 0px 0px var(--color-accent);
   transform: translateY(-2.5px);
 }
@@ -2478,7 +2493,7 @@ html::-webkit-scrollbar-thumb:hover,
    small bounce. */
 .action-item-card.is-lifting {
   box-shadow: 6px 6px 0px 0px var(--color-accent) !important;
-  border-color: var(--color-accent) !important;
+  border-color: var(--accent-ink) !important;
   cursor: grabbing;
   transform: translateY(-4px) scale(1.01) !important;
 }
@@ -2532,7 +2547,7 @@ html::-webkit-scrollbar-thumb:hover,
 
 .drag-handle:hover {
   background: var(--surface-cream-hover);
-  color: var(--color-accent) !important;
+  color: var(--accent-ink) !important;
   transform: scale(1.15);
 }
 
@@ -2544,7 +2559,7 @@ html::-webkit-scrollbar-thumb:hover,
 
 .drag-handle:active {
   cursor: grabbing;
-  color: var(--color-accent) !important;
+  color: var(--accent-ink) !important;
   transform: scale(1.15);
 }
 
@@ -2675,7 +2690,7 @@ html::-webkit-scrollbar-thumb:hover,
 .action-item-chip--btn:hover {
   /* Accent border only — border AND accent shadow together read as a fat
      pink ring that matched nothing else on the card. */
-  border-color: var(--color-accent);
+  border-color: var(--accent-ink);
   color: var(--color-text);
   background: var(--surface-card-deep);
   transform: translateY(-1.5px);
@@ -2730,12 +2745,12 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 .action-item-chip.has-value:hover {
-  border-color: var(--color-accent);
+  border-color: var(--accent-ink);
   box-shadow: 2.5px 2.5px 0px 0px var(--soft-black);
 }
 
 .action-item-chip.is-overdue {
-  border-color: var(--color-accent);
+  border-color: var(--accent-ink);
   color: var(--soft-brown);
   font-weight: 700;
   box-shadow: 1.5px 1.5px 0px 0px var(--color-accent);
@@ -2783,8 +2798,8 @@ html::-webkit-scrollbar-thumb:hover,
 
 .action-item-checkbox-button:hover,
 .action-item-checkbox-button:focus-visible {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  border-color: var(--accent-ink);
+  color: var(--accent-ink);
   outline: none;
   transform: scale(1.18) translateY(-1px);
   box-shadow: 2px 2px 0px 0px var(--color-accent);
@@ -2904,7 +2919,7 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 .action-dropdown-input:focus {
-  border-color: var(--color-accent);
+  border-color: var(--accent-ink);
 }
 
 .action-dropdown-option {
@@ -2927,13 +2942,13 @@ html::-webkit-scrollbar-thumb:hover,
 
 .action-dropdown-option:hover {
   background: var(--surface-cream-hover);
-  color: var(--color-accent);
+  color: var(--accent-ink);
 }
 
 .action-dropdown-option.is-active {
-  background: var(--color-accent);
+  background: var(--accent-fill);
   color: white;
-  border-bottom-color: var(--color-accent);
+  border-bottom-color: var(--accent-ink);
 }
 
 /* "Done · N" divider before completed items — dashed rules flanking a soft
@@ -3009,7 +3024,7 @@ html::-webkit-scrollbar-thumb:hover,
 }
 .card-back-btn:hover:not(:disabled) {
   background: var(--surface-cream-hover);
-  border-color: var(--color-accent);
+  border-color: var(--accent-ink);
 }
 .card-back-btn:disabled {
   opacity: 0.4;
@@ -3026,7 +3041,7 @@ html::-webkit-scrollbar-thumb:hover,
 .card-back-btn.is-danger:hover:not(:disabled) {
   background: var(--accent-rose-wash-soft);
   border-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
-  color: var(--color-accent);
+  color: var(--accent-ink);
 }
 
 /* Section divider above an actions block. */
@@ -3081,7 +3096,7 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 .action-filter-pill:hover {
-  border-color: var(--color-accent);
+  border-color: var(--accent-ink);
 }
 
 /* Status pill (overdue / due soon) — a warm amber DATA POINT, not a siren.
@@ -3107,7 +3122,7 @@ html::-webkit-scrollbar-thumb:hover,
 .action-filter-pill.is-danger:hover {
   background: var(--accent-rose-wash);
   border-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
-  color: var(--color-accent);
+  color: var(--accent-ink);
 }
 
 /* ===================================================================
@@ -3155,7 +3170,7 @@ html::-webkit-scrollbar-thumb:hover,
 }
 .action-item-edit-btn:hover {
   background: var(--surface-cream-hover);
-  color: var(--color-accent);
+  color: var(--accent-ink);
 }
 
 /* Vertical list — sideways overflow (sub-pixel rounding, the selected card's
@@ -3196,7 +3211,7 @@ html::-webkit-scrollbar-thumb:hover,
   transition: color var(--transition-fast), background var(--transition-fast);
 }
 .action-done-clear:hover {
-  color: var(--color-accent);
+  color: var(--accent-ink);
   background: var(--surface-cream-hover);
 }
 
@@ -3222,8 +3237,8 @@ html::-webkit-scrollbar-thumb:hover,
 }
 .action-add-row:hover,
 .action-add-row:focus-visible {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  border-color: var(--accent-ink);
+  color: var(--accent-ink);
   background: var(--surface-card-deep);
 }
 
@@ -3422,8 +3437,8 @@ html::-webkit-scrollbar-thumb:hover,
 .topic-map-ctrl:hover,
 .topic-map-ctrl:focus-visible {
   outline: none;
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  border-color: var(--accent-ink);
+  color: var(--accent-ink);
   transform: translate(-1px, -1px);
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.1);
 }
@@ -3480,8 +3495,8 @@ html::-webkit-scrollbar-thumb:hover,
 .topic-viz-trigger:hover,
 .topic-viz-trigger:focus-visible {
   outline: none;
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  border-color: var(--accent-ink);
+  color: var(--accent-ink);
 }
 
 .topic-viz-menu {
@@ -3520,7 +3535,7 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 .topic-viz-menu-item.active {
-  color: var(--color-accent);
+  color: var(--accent-ink);
   font-weight: 700;
 }
 
@@ -3649,7 +3664,7 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 .topic-node-action:hover {
-  border-color: var(--color-accent);
+  border-color: var(--accent-ink);
   background: color-mix(
     in srgb,
     var(--color-accent) 10%,
@@ -3767,7 +3782,7 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 .topic-node-modal__actions button:last-child {
-  background: var(--color-accent);
+  background: var(--accent-fill);
   color: #fff;
 }
 
@@ -3957,7 +3972,7 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-color: var(--color-accent) !important;
+  border-color: var(--accent-ink) !important;
   box-shadow: 0 0 0 3px rgba(232, 131, 156, 0.1);
   transform: translateY(-1px);
 }
@@ -4009,7 +4024,7 @@ a:focus-visible {
   position: absolute;
   top: -40px;
   left: 0;
-  background: var(--color-accent);
+  background: var(--accent-fill);
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 0 0 var(--border-radius-sm) 0;
@@ -4079,7 +4094,7 @@ a:focus-visible {
 .markdown-body h1,
 .markdown-body h2 {
   font-weight: 700;
-  color: var(--color-accent);
+  color: var(--accent-ink);
   margin: 1rem 0 0.5rem;
   line-height: 1.3;
 }
@@ -4122,7 +4137,7 @@ a:focus-visible {
 }
 
 .markdown-body a {
-  color: var(--color-accent);
+  color: var(--accent-ink);
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -4701,7 +4716,7 @@ a:focus-visible {
 .share-copy-btn {
   border-radius: var(--border-radius-sm);
   border: none;
-  background: var(--color-accent);
+  background: var(--accent-fill);
   color: #fff;
 }
 .share-copy-btn:hover {
@@ -4972,7 +4987,7 @@ a:focus-visible {
   padding: 0.4rem 1.1rem;
   font-size: var(--tiny-size);
   font-weight: 700;
-  color: var(--color-accent);
+  color: var(--accent-ink);
   background: color-mix(in srgb, var(--color-accent) 8%, transparent);
   border: 2px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
   border-radius: 999px;
@@ -4982,7 +4997,7 @@ a:focus-visible {
 }
 .whiteboard-draw-btn:hover:not(:disabled) {
   background: color-mix(in srgb, var(--color-accent) 15%, transparent);
-  border-color: var(--color-accent);
+  border-color: var(--accent-ink);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 .whiteboard-draw-btn:disabled {
@@ -5429,7 +5444,7 @@ a:focus-visible {
 .live-transcript-title {
   font-size: var(--tiny-size);
   font-weight: 700;
-  color: var(--color-accent);
+  color: var(--accent-ink);
   margin-bottom: 0.35rem;
 }
 
@@ -5459,7 +5474,7 @@ a:focus-visible {
 .key-points-title {
   font-size: var(--small-size);
   font-weight: 700;
-  color: var(--color-accent);
+  color: var(--accent-ink);
   margin-bottom: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -5472,7 +5487,7 @@ a:focus-visible {
   border-radius: var(--border-radius-sm);
   min-width: 1.125rem;
   height: 1.125rem;
-  background: var(--color-accent);
+  background: var(--accent-fill);
   color: #fff;
   font-size: 0.6rem;
   margin-top: 0.15rem;
@@ -5557,7 +5572,7 @@ a:focus-visible {
 }
 
 .speaker-btn--save {
-  background: var(--color-accent);
+  background: var(--accent-fill);
   color: #fff;
   border: none;
 }
@@ -5573,7 +5588,7 @@ a:focus-visible {
   border-radius: var(--border-radius-sm);
   font-size: var(--tiny-size);
   font-weight: 500;
-  background: var(--color-accent);
+  background: var(--accent-fill);
   color: #fff;
   border: 2px solid var(--color-border);
   min-height: 2rem;
@@ -5708,7 +5723,7 @@ a:focus-visible {
 }
 
 .export-drawer-close-btn:hover {
-  color: var(--color-accent);
+  color: var(--accent-ink);
   transform: scale(1.1);
 }
 
@@ -5736,7 +5751,7 @@ a:focus-visible {
   margin: 1.1rem 0 0.5rem;
 }
 .export-section-label i {
-  color: var(--color-accent);
+  color: var(--accent-ink);
   font-size: 0.7rem;
 }
 .export-section-label:first-child {
@@ -5773,7 +5788,7 @@ a:focus-visible {
   width: 1.5rem;
   text-align: center;
   font-size: 1.05rem;
-  color: var(--color-accent);
+  color: var(--accent-ink);
 }
 .export-suggested-name {
   font-weight: 700;
@@ -5827,7 +5842,7 @@ a:focus-visible {
 }
 .export-note i {
   margin-top: 0.15rem;
-  color: var(--color-accent);
+  color: var(--accent-ink);
 }
 
 /* Preview frame — themed bar the ghost icon buttons read white against */
@@ -5867,7 +5882,7 @@ a:focus-visible {
 }
 .export-textarea:focus {
   outline: none;
-  border-color: var(--color-accent);
+  border-color: var(--accent-ink);
 }
 .export-preview-editor {
   font-family: var(--font-mono);
@@ -5887,10 +5902,10 @@ a:focus-visible {
   padding: 0.75rem;
 }
 .export-snap.is-active {
-  border-color: var(--color-accent);
+  border-color: var(--accent-ink);
 }
 .export-snap-label {
-  color: var(--color-accent);
+  color: var(--accent-ink);
   font-weight: 600;
   font-size: var(--font-size-sm);
 }
@@ -5938,7 +5953,7 @@ a:focus-visible {
 }
 
 .live-unconfigured a {
-  color: var(--color-accent);
+  color: var(--accent-ink);
   text-decoration: underline;
 }
 
@@ -6098,8 +6113,8 @@ label {
   cursor: pointer;
 }
 .recording-hub__retry:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  border-color: var(--accent-ink);
+  color: var(--accent-ink);
 }
 
 /* (Legacy floating dock shell — superseded by .recording-hub; the sheet/take
@@ -6203,7 +6218,7 @@ label {
 
 .recording-dock__takes-chip:hover {
   background: var(--surface-cream-hover);
-  border-color: var(--color-accent);
+  border-color: var(--accent-ink);
 }
 
 .recording-dock__takes-chip:active {
@@ -6222,8 +6237,8 @@ label {
 }
 
 .recording-dock__retry:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  border-color: var(--accent-ink);
+  color: var(--accent-ink);
 }
 
 /* Recording state innards */
@@ -6265,7 +6280,7 @@ label {
 .recording-dock__warning {
   font-size: var(--tiny-size);
   font-weight: 700;
-  color: var(--color-accent);
+  color: var(--accent-ink);
   animation: dock-pulse 1.2s ease-in-out infinite;
   white-space: nowrap;
 }
@@ -6360,7 +6375,7 @@ label {
 }
 
 .recording-dock__sheet-close:hover {
-  color: var(--color-accent);
+  color: var(--accent-ink);
 }
 
 .recording-dock__sheet-body {
@@ -6422,7 +6437,7 @@ label {
   font-family: var(--font-mono);
   font-size: var(--tiny-size);
   font-weight: 600;
-  color: var(--color-accent);
+  color: var(--accent-ink);
 }
 
 .recording-dock__take-actions {
@@ -6448,11 +6463,11 @@ label {
 
 .recording-dock__take-actions button.is-unmapped {
   /* An unmapped take glows accent — audio the map hasn't absorbed yet. */
-  color: var(--color-accent);
+  color: var(--accent-ink);
 }
 .recording-dock__take-actions button:hover {
   background: color-mix(in srgb, var(--color-accent) 14%, transparent);
-  color: var(--color-accent);
+  color: var(--accent-ink);
 }
 
 .recording-dock__take-actions button:active {
@@ -6505,7 +6520,7 @@ label {
 .action-item-chip--ai {
   border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
   background: color-mix(in srgb, var(--color-accent) 10%, var(--surface-cream));
-  color: var(--color-accent);
+  color: var(--accent-ink);
   font-weight: 700;
   cursor: pointer;
 }
@@ -6554,7 +6569,7 @@ label {
   margin-bottom: 1rem;
   border: 2px solid var(--soft-black);
   border-radius: var(--border-radius);
-  background: var(--color-accent);
+  background: var(--accent-fill);
   color: white;
   font-weight: 800;
   font-size: var(--small-size);
@@ -6597,7 +6612,7 @@ label {
 }
 .shared-panel__icon {
   font-size: 2.5rem;
-  color: var(--color-accent);
+  color: var(--accent-ink);
   margin-bottom: 1rem;
 }
 .shared-panel__title {
@@ -6620,7 +6635,7 @@ label {
   color: var(--color-text);
 }
 .shared-note i {
-  color: var(--color-accent);
+  color: var(--accent-ink);
 }
 
 /* Per-person share affordance on the Overview back face */
@@ -6642,7 +6657,7 @@ label {
 
 .card-back-person-share:hover {
   opacity: 1;
-  color: var(--color-accent);
+  color: var(--accent-ink);
 }
 
 .card-back-person-share:active {

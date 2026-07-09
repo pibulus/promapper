@@ -706,7 +706,7 @@ export default function MarkdownMakerDrawer(
           {loading.value && (
             <div
               class="flex items-center justify-center gap-2 mb-4 py-2 text-sm font-bold"
-              style={{ color: "var(--color-accent)" }}
+              style={{ color: "var(--accent-ink)" }}
             >
               <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
               <span>

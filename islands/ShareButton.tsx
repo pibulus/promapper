@@ -232,7 +232,7 @@ export default function ShareButton() {
           {remaining !== null && remaining > 0 && (
             <p
               class="text-xs font-semibold"
-              style={{ color: "var(--color-accent)" }}
+              style={{ color: "var(--accent-ink)" }}
             >
               Expires in {remaining} day{remaining !== 1 ? "s" : ""}
             </p>

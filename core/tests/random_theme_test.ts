@@ -1,14 +1,22 @@
 /**
- * Shuffle-theme guards: every roll must land in the vivid-pop hue arcs (the
- * red/brown band is forbidden), and contrast must hold BY CONSTRUCTION —
- * dark ink over the 12% band tint, and white over --accent-strong.
+ * Shuffle-theme guards for the PASTEL scheme: every roll must land in the
+ * no-red hue arc, and contrast must hold BY CONSTRUCTION — dark ink over the
+ * roll's own 42% band tint, white over the solved --accent-strong, the deep
+ * companion readable as ink on cream, and the background family light enough
+ * that body ink stays comfortably readable everywhere.
+ *
+ * The 300-roll seeded sweep is the guard that caught real failures — keep it.
  */
 
 import { assert } from "./_assert.ts";
 import {
+  contrast,
   generateThemeParts,
   hslToHex,
   HUE_ARCS,
+  mixHex,
+  SURFACE_CREAM,
+  WARM_FAMILIES,
 } from "../theme/randomTheme.ts";
 
 /** Deterministic LCG so the sweep is reproducible. */
@@ -20,70 +28,94 @@ function seededRand(seed: number): () => number {
   };
 }
 
-function hexToRgb(hex: string): [number, number, number] {
-  return [
-    parseInt(hex.slice(1, 3), 16),
-    parseInt(hex.slice(3, 5), 16),
-    parseInt(hex.slice(5, 7), 16),
-  ];
-}
-
-function luminance(hex: string): number {
-  const [r, g, b] = hexToRgb(hex).map((v) => {
-    const c = v / 255;
-    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function contrast(a: string, b: string): number {
-  const l1 = luminance(a);
-  const l2 = luminance(b);
-  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
-}
-
-/** sRGB approximation of `color-mix(in srgb, A p%, B)`. */
-function mixHex(a: string, b: string, pOfA: number): string {
-  const ra = hexToRgb(a);
-  const rb = hexToRgb(b);
-  const m = ra.map((v, i) => Math.round(v * pOfA + rb[i] * (1 - pOfA)));
-  return `#${m.map((v) => v.toString(16).padStart(2, "0")).join("")}`;
-}
-
-Deno.test("rolls stay inside the vivid-pop hue arcs (no red, no mud)", () => {
+Deno.test("rolls stay inside the pastel hue arc (no red, no mud)", () => {
   const rand = seededRand(28);
   for (let i = 0; i < 300; i++) {
     const { hue } = generateThemeParts(rand);
     const inArc = HUE_ARCS.some(([lo, hi]) => hue >= lo && hue <= hi);
     assert(inArc, `hue ${hue} escaped the arcs`);
-    assert(hue >= 210 && hue <= 345, `hue outside safe arc: ${hue}`);
+    assert(hue >= 40 && hue <= 340, `hue in the red/mud band: ${hue}`);
   }
 });
 
-Deno.test("ink on the header band tint passes AA for every roll", () => {
+Deno.test("accents are sorbet pastel — light AND saturated, never dusty", () => {
+  const rand = seededRand(505);
+  for (let i = 0; i < 300; i++) {
+    const { saturation, lightness } = generateThemeParts(rand);
+    assert(lightness >= 78 && lightness <= 86, `not airy: L${lightness}`);
+    assert(saturation >= 68, `dusty grandma pastel: S${saturation}`);
+  }
+});
+
+Deno.test("ink on the roll's header band tint passes AA for every roll", () => {
   const rand = seededRand(1982);
-  const cream = "#fffef7"; // ~--surface-cream
   for (let i = 0; i < 300; i++) {
     const { theme } = generateThemeParts(rand);
-    // --header-band = color-mix(accent 12%, surface-cream)
-    const band = mixHex(theme.accent, cream, 0.12);
+    // The roll overrides --header-band = color-mix(accent 42%, surface-cream)
+    const band = mixHex(theme.accent, SURFACE_CREAM, 0.42);
     const ratio = contrast(theme.text, band);
     assert(ratio >= 4.5, `ink/band ${ratio.toFixed(2)} for ${theme.accent}`);
   }
 });
 
-Deno.test("white on --accent-strong passes AA for every roll", () => {
+Deno.test("white on the solved --accent-strong passes AA for every roll", () => {
   const rand = seededRand(777);
   for (let i = 0; i < 300; i++) {
     const { theme } = generateThemeParts(rand);
-    // --accent-strong = color-mix(accent 72%, #1b1020)
-    const strong = mixHex(theme.accent, "#1b1020", 0.72);
+    const strong = theme.cssVars?.["--accent-strong"] as string;
+    assert(!!strong && strong.startsWith("#"), "roll missing --accent-strong");
     const ratio = contrast("#ffffff", strong);
-    assert(
-      ratio >= 4.5,
-      `white/strong ${ratio.toFixed(2)} for ${theme.accent}`,
-    );
+    assert(ratio >= 4.5, `white/strong ${ratio.toFixed(2)} for ${strong}`);
+    // Ink and fill route through the same solved companion.
+    assert(theme.cssVars?.["--accent-ink"] === strong, "ink != strong");
+    assert(theme.cssVars?.["--accent-fill"] === strong, "fill != strong");
   }
+});
+
+Deno.test("the deep companion reads as ink on cream for every roll", () => {
+  const rand = seededRand(41);
+  for (let i = 0; i < 300; i++) {
+    const { theme } = generateThemeParts(rand);
+    const strong = theme.cssVars?.["--accent-strong"] as string;
+    const ratio = contrast(strong, SURFACE_CREAM);
+    assert(ratio >= 4.5, `strong/cream ${ratio.toFixed(2)} for ${strong}`);
+  }
+});
+
+Deno.test("background family stays light — body ink readable everywhere", () => {
+  const rand = seededRand(90210);
+  for (let i = 0; i < 300; i++) {
+    const { theme, bgWashes, bgBase } = generateThemeParts(rand);
+    const baseSolid = theme.cssVars?.["--color-base-solid"] as string;
+    // 5.5 floor: only footer/empty-state text sits directly on the bg, and
+    // AA is 4.5 — this keeps a wide margin while letting the saturated
+    // blue/violet washes (lowest luminance per lightness) stay lush.
+    for (const layer of [...bgWashes, ...bgBase, baseSolid]) {
+      const ratio = contrast(theme.text, layer);
+      assert(
+        ratio >= 5.5,
+        `ink/bg ${ratio.toFixed(2)} on ${layer} (accent ${theme.accent})`,
+      );
+    }
+  }
+});
+
+Deno.test("the background always lives in a warm family, never the accent's", () => {
+  const rand = seededRand(333);
+  for (let i = 0; i < 300; i++) {
+    const { bgHue } = generateThemeParts(rand);
+    const warm = WARM_FAMILIES.some(([lo, hi]) => bgHue >= lo && bgHue <= hi);
+    assert(warm, `bg hue ${bgHue} escaped the warm families`);
+  }
+});
+
+Deno.test("every roll re-tints the app background gradient", () => {
+  const a = generateThemeParts(seededRand(1));
+  const b = generateThemeParts(seededRand(2));
+  const ga = a.theme.cssVars?.["--gradient-bg"] as string;
+  const gb = b.theme.cssVars?.["--gradient-bg"] as string;
+  assert(!!ga && ga.includes("radial-gradient"), "roll missing bg mesh");
+  assert(ga !== gb, "two different rolls produced the same background");
 });
 
 Deno.test("hslToHex sanity", () => {
