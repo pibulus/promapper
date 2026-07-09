@@ -102,16 +102,13 @@ Run `deno task dev` (localhost:8003), test on a real iPhone + desktop Chrome:
 
 ## 3. Known small gaps (safe, well-scoped fixes)
 
-a. `islands/AudioRecorder.tsx`: the retry button re-appends the last blob but
-the take row already exists — verify retry doesn't create a receipt on the WRONG
-take if the user recorded another take in between (guard: compare
-`lastTakeIdRef` before stamping; skip stamping if ids drifted). b. Take naming:
-`Take ${takes.value.length + 1}` can duplicate names after deletes. Cheap fix:
-derive N from the highest existing "Take N" + 1. c. `.recording-dock__sheet` on
-very short landscape phones: cap with `max-height: min(55vh, 26rem)` is in —
-verify it scrolls, not clips. d. The dock shows for EMPTY conversations too
-(conversation with no takes) — that's intended (it's the "talk again"
-affordance). Don't "fix".
+a. ✅ FIXED (commit `21a608f`): receipts stamp the take paired with the blob at
+capture time — a retry can no longer stamp the wrong take. b. ✅ FIXED (same
+commit): take numbers derive from the highest existing "Take N", no dupes after
+deletes. c. `.recording-dock__sheet` on very short landscape phones: cap with
+`max-height: min(55vh, 26rem)` is in — verify it scrolls, not clips (needs a
+real device). d. The dock shows for EMPTY conversations too (conversation with
+no takes) — that's intended (it's the "talk again" affordance). Don't "fix".
 
 ## 4. Deferred by design (do NOT attempt without Pablo)
 
