@@ -633,16 +633,18 @@ export default function MobileHistoryMenu() {
               onClick={handleExport}
               class="history-backup-btn history-backup-btn--export"
               data-tip="Save a JSON backup"
+              aria-label="Save a JSON backup"
             >
-              ↓ Export
+              <i class="fa fa-download" aria-hidden="true"></i>
             </button>
 
             <button
               onClick={() => importInputRef.current?.click()}
               class="history-backup-btn history-backup-btn--import"
               data-tip="Merge from a backup file"
+              aria-label="Import a backup file"
             >
-              ↑ Import
+              <i class="fa fa-upload" aria-hidden="true"></i>
             </button>
 
             {/* Hidden file input */}

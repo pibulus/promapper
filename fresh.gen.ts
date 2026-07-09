@@ -48,6 +48,7 @@ import * as $modules_BishopModule from "./islands/modules/BishopModule.tsx";
 import * as $modules_CanvasModule from "./islands/modules/CanvasModule.tsx";
 import * as $modules_NotesModule from "./islands/modules/NotesModule.tsx";
 import * as $modules_RadioModule from "./islands/modules/RadioModule.tsx";
+import * as $modules_TonesModule from "./islands/modules/TonesModule.tsx";
 import * as $modules_moduleRegistry from "./islands/modules/moduleRegistry.ts";
 import * as $useRecorder from "./islands/useRecorder.ts";
 import * as $vizRegistry from "./islands/vizRegistry.ts";
@@ -103,6 +104,7 @@ const manifest = {
     "./islands/modules/CanvasModule.tsx": $modules_CanvasModule,
     "./islands/modules/NotesModule.tsx": $modules_NotesModule,
     "./islands/modules/RadioModule.tsx": $modules_RadioModule,
+    "./islands/modules/TonesModule.tsx": $modules_TonesModule,
     "./islands/modules/moduleRegistry.ts": $modules_moduleRegistry,
     "./islands/useRecorder.ts": $useRecorder,
     "./islands/vizRegistry.ts": $vizRegistry,

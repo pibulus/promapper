@@ -2381,6 +2381,46 @@ body {
   color: var(--accent-ink);
   background: color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
+
+/* Radio's flip side — the dial. */
+.radio-stations {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.radio-station-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--tiny-size);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.radio-station-row:hover {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  color: var(--accent-ink);
+}
+.radio-station-row.is-current {
+  background: var(--header-band);
+  color: var(--header-band-ink);
+}
+.radio-station-row i {
+  width: 1rem;
+  text-align: center;
+}
+.radio-station-row__name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .radio-live-dot {
   width: 0.55rem;
   height: 0.55rem;
@@ -4342,8 +4382,17 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 .history-drawer {
-  transition: transform 300ms ease-out, box-shadow 300ms ease-out;
+  /* Character in the slide: a springy settle (slight overshoot) instead of
+     a flat ease — the drawer ARRIVES rather than merely appearing. */
+  transition:
+    transform 380ms cubic-bezier(0.32, 1.2, 0.46, 1),
+    box-shadow 380ms ease-out;
   transform: translateX(100%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .history-drawer {
+    transition: transform 200ms ease-out;
+  }
 }
 
 .history-drawer.is-open {

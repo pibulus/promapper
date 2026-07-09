@@ -16,6 +16,7 @@ import NotesModule from "./NotesModule.tsx";
 import BishopModule from "./BishopModule.tsx";
 import RadioModule from "./RadioModule.tsx";
 import CanvasModule from "./CanvasModule.tsx";
+import TonesModule from "./TonesModule.tsx";
 
 /** small = short tile (tucks into leftover cells), standard = a core-card
  * cell, wide = full row. */
@@ -57,6 +58,14 @@ export const moduleRegistry: ModuleEntry[] = [
     icon: "radio",
     size: "small",
     component: RadioModule,
+  },
+  {
+    id: "tones",
+    name: "Tones",
+    tagline: "A hum for your head — focus, rain, warm, deep.",
+    icon: "wave-square",
+    size: "small",
+    component: TonesModule,
   },
   {
     id: "canvas",

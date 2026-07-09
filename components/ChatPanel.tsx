@@ -63,7 +63,7 @@ export default function ChatPanel(
         onClick={onToggle}
         aria-label={unread > 0 ? `Open chat (${unread} unread)` : "Open chat"}
       >
-        <i class="fa fa-comment" aria-hidden="true"></i> Chat
+        <i class="fa fa-comment" aria-hidden="true"></i>
         {unread > 0 && <span class="chat-fab-badge">{unread}</span>}
       </button>
     );
