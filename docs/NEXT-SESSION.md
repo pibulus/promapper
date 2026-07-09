@@ -1,38 +1,57 @@
-# NEXT-SESSION — after the color-contract marathon (July 9, 2026, late)
+# NEXT-SESSION — the overnight module build (July 10, ~02:30)
 
-Branch `fable-audit-2026-07-05`, committed through `2dc898a`, gates green (243
-tests, check + build pass). Dev: `DENO_ENV=development deno task dev` (8003).
-Read the promapper-visual-language memory FIRST — it now carries the definitive
-color contract, live-tuned through five rounds of Pablo feedback.
+Main, committed through `d5cb38a`, pushed. Gates green (243 tests, check +
+build). Read docs/MODULES.md (the rack standard) + the promapper-modules
+memory. Dev: `DENO_ENV=development deno task dev` (8003).
 
-## Where the design system landed (commits 350bbf6 → 2dc898a)
+## What got built overnight (Pablo said "go for broke")
 
-- **"Pastel backgrounds with punk accents"** (Pablo's BRAND doc, now law):
-  saturated light grounds (S80–100 L79–87), saturated MID-TONE accents (S68–92
-  L54–64). The dice picks between 7 CURATED_PAIRS in core/theme/randomTheme.ts —
-  designed couples only, no random hue math. Banned: mint/green accents (teal
-  ok), yellow, baby pink, butter grounds.
-- One recipe set: 55% header hats, solved deep companions
-  (--accent-ink/--accent-fill/--accent-strong), same statics for named themes +
-  rolls. SHUFFLE_SCHEMA_VERSION=4 kills stale saved rolls.
-- Inter everywhere; ALL CAPS banned app-wide; summary paragraphizer; chip-only
-  tooltips (::after = touch boxes; NO blanket 44px mobile rule); footer =
-  full-bleed sticky chrome; mobile header two-row lockup; mobile action items
-  compacted (28px checkbox, no drag handle, 2-line wrap).
+**The synth rack is real** (`371f9fb..d5cb38a`):
 
-## For the next session
+- **Module standard**: registry (drop-a-file + register-a-line), three
+  sizes (small/standard/wide) in one dense grid, conversation JSON as the
+  bus, modules OFF by default, the rack ghost tile → modal with toggles.
+  Board stays arranged (registry order, no drag).
+- **Four instruments**: Notes (scratch pad in the conversation JSON),
+  Bishop ♗ (ask your memory — guarded /api/ask via AIService, verified
+  live: answers about the pig were correct), Radio (raya port: KPAB +
+  SomaFM, small tile), Canvas (whiteboard outside meetings, same
+  whiteboardScene field, steps aside during live).
+- **Cheap wins**: DiceBear thumbs avatars on chat senders; share IDs
+  36-char UUID → 14-char base36 (~72 bits, rejection-sampled); history
+  chips de-Tailwinded to theme tokens.
+- **The gauntlet ran** (all four briefed on the contract): Rex found an
+  unbounded-conversation cost hole in /api/ask AND /api/markdown (fixed:
+  context caps) + Notes stale-overwrite (fixed); Bumblefuzz found the
+  hall-of-famer — modules didn't remount on conversation switch, so
+  Notes/Canvas debounces wrote into the WRONG conversation (fixed:
+  conversation-scoped keys + id-pinned writes + unmount cleanup + Bishop
+  stale-answer guard); Stacey laid 44px tap floors on the new controls;
+  Vince made the rack respond (hover/press/chips/8px rhythm).
+- Also fixed live: Excalidraw crashed restoring persisted scenes
+  (collaborators Map → plain object after JSON round-trip; stripped).
 
-- **Pablo's pair audit**: roll the dice a lot; kill/tune any CURATED_PAIRS entry
-  that misses (each is 1 line). Candidates to consider adding: peach × raspberry
-  (the miner's "Peach Cream × Raspberry" — historic default vibe).
-- The named themes (BUBBLEGUM/SKY/GRAPE/LIME/GOLD) predate the pair system —
-  LIME + GOLD accents likely violate the new taste law; consider re-curating the
-  named list to match the pairs (FOUC map must mirror).
-- Tooltips on in-scroll-area controls (item corner buttons) still native title=
-  on purpose (chips would clip in overflow) — fine unless Pablo says otherwise.
-- Real-device iPhone QA still virgin (NEXT-STEPS §1) + dock never renders in
-  headless Playwright (likely MediaRecorder missing).
-- Playwright note: if screenshots hang "waiting for fonts" with rAF frozen, the
-  browser compositor is wedged — browser_close + reopen fixes it.
-- Tone-mining workflow results (60 exact hexes from donor apps) are in the
-  wf_060f9840-718 journal if more pairs are wanted.
+## Morning taste calls (parked for Pablo, in order)
+
+1. **Canvas as the node map's flip** — the module works; the flip
+   unification (map front / canvas back, pencil affordance, maybe
+   auto-flip in meetings) is your call. All pieces exist.
+2. Roll the rack on a phone — the modules row at 390px got Stacey'd but
+   never real-device tested (the eternal caveat).
+3. Bishop Q&A is session-ephemeral by design — persist into the
+   conversation JSON if you want receipts (one field + one line).
+4. Magpie (collection module) and Horizon (the un-calendar) are specced
+   in MODULES.md "on deck" — each is roughly an afternoon.
+5. Oracle flags: rack rows lack distinct keyboard focus-visible; radio
+   now-playing ellipsis wants a long-title device check.
+6. Unlock/purchase mechanics: the enabled-set seam is built; "record 10
+   takes → radio hums awake" is a rule away.
+
+## Standing items
+
+- Real-device iPhone QA (dock, IDB, safe-area) — still virgin, still
+  first.
+- Named themes (BUBBLEGUM/SKY/GRAPE/LIME/GOLD) predate the pair system;
+  LIME/GOLD violate the taste law. Re-curate + FOUC mirror.
+- PDF export: theme header band + map PNG embed (specced July 10 chat).
+- The shared-view skinning gap (should feel like THE dashboard).

@@ -54,9 +54,12 @@ formats.
 
 ## Current rack
 
-| Module | Size     | What it does                                 |
-| ------ | -------- | -------------------------------------------- |
-| Notes  | standard | Scratch pad stored in the conversation JSON. |
+| Module | Size     | What it does                                  |
+| ------ | -------- | --------------------------------------------- |
+| Notes  | standard | Scratch pad stored in the conversation JSON.  |
+| Bishop | standard | Ask your memory — guarded AI over this convo. |
+| Radio  | small    | KPAB + SomaFM tile; born gap-filler.          |
+| Canvas | wide     | The whiteboard outside meetings; same scene.  |
 
 ## On deck (from the July 10 riff)
 
