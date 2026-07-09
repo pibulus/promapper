@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -35,21 +35,23 @@
   --color-text: #2b2430;
   --color-text-secondary: #8a7e88;
   --color-border: rgba(43, 36, 48, 0.1);
-  /* Rich warm wash: peach → coral → tangerine, present (not a timid near-white). */
+  /* Rich warm wash: a genuinely COLORED coral journey (mirror of WARM_BG in
+     core/theme/themes.ts + the _app.tsx FOUC map). Never a timid near-white —
+     the ground carries the color, cards stay cream. */
   --gradient-bg:
     radial-gradient(
     circle at 15% 12%,
-    rgba(255, 209, 176, 0.9),
+    rgba(255, 184, 140, 0.9),
     transparent 55%
   ), radial-gradient(
     circle at 85% 18%,
-    rgba(255, 173, 156, 0.85),
+    rgba(255, 146, 118, 0.85),
     transparent 55%
   ), radial-gradient(
     circle at 75% 88%,
-    rgba(255, 198, 150, 0.8),
+    rgba(255, 164, 122, 0.85),
     transparent 55%
-  ), linear-gradient(135deg, #ffe7d4 0%, #ffd2bd 55%, #ffe0cd 100%);
+  ), linear-gradient(135deg, #ffdcc2 0%, #ffb894 55%, #ffcfae 100%);
 
   /* ===================================================================
      DESIGN TOKENS - Consistent styling across components
@@ -68,18 +70,16 @@
   --border-radius-xl: 32px;
 
   /* Typography */
-  /* ONE font, committed (July 9 ruling): a good sans, everywhere. Plus
-     Jakarta Sans — warm geometric-humanist, readable at 15px prose, caps
-     with character for the uppercase headers. --font-mono intentionally
-     points at the SAME stack so transcript/task "machine text" stays
-     consistent with the rest of the app; if mono ever earns its way back,
-     this is the one line to flip. */
+  /* ONE font, committed (July 9 final ruling): Inter everywhere — the
+     original app voice, restored (JetBrains Mono and Jakarta were both
+     tried and overruled; headers present right in Inter). --font-mono
+     intentionally points at the SAME stack so transcript/task "machine
+     text" stays consistent; if mono ever earns its way back, this is the
+     one line to flip. */
   --font-family:
-    "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    sans-serif;
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono:
-    "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    sans-serif;
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --heading-size: 1.125rem;
   --heading-weight: 600;
   --text-size: 0.9375rem;
@@ -133,15 +133,14 @@
   --accent-ink: var(--color-accent); /* accent-colored text/icons/borders */
   --accent-fill: var(--color-accent); /* accent solids that carry white ink */
 
-  /* Card header — LIGHT. The title sits on the card surface (cream), DARK text,
-     with the accent as a small POP only (a left rule). The WARM GRADIENT
-     BACKGROUND is the color event, not the headers. Calm, classy, airy. */
-  /* Visual anchor: the band is a real accent tint now (was transparent —
-     headers read as body). Derived from the theme accent, so every theme
-     brings its own band. Dark ink on a 12% tint is trivially AA. */
+  /* Card header — a REAL colored hat (July 9 holistic pass): the band is a
+     55% accent tint over cream with DARK ink. This is where the accent
+     speaks on every card, playing against the warm ground (which is always
+     a different family). One recipe for named themes AND dice rolls —
+     guarded by theme_contrast_test + random_theme_test sweeps. */
   --header-band: color-mix(
     in srgb,
-    var(--color-accent) 12%,
+    var(--color-accent) 55%,
     var(--surface-cream)
   );
   --header-band-ink: var(--color-text);
@@ -158,12 +157,12 @@
   --chip-off: var(--surface-cream);
   --chip-off-ink: var(--color-text-secondary);
 
-  /* Card footer band — a soft candy-tinted strip so cards close warm. */
+  /* Card footer band — a softer echo of the header hat so cards close warm. */
   --footer-text: var(--color-text-secondary);
   --footer-heart: var(--color-accent);
   --footer-band: color-mix(
     in srgb,
-    var(--color-accent) 10%,
+    var(--color-accent) 32%,
     var(--surface-card)
   );
 
@@ -180,10 +179,10 @@
   --color-danger-dark: #dc2626;
 
   /* Warm-rose wash for destructive intent (recession, not alarm). */
-  --accent-rose-wash: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  --accent-rose-wash: color-mix(in srgb, var(--color-accent) 20%, transparent);
   --accent-rose-wash-soft: color-mix(
     in srgb,
-    var(--color-accent) 8%,
+    var(--color-accent) 12%,
     transparent
   );
   /* Warm amber for status/attention (overdue, due-soon) — a data point, not a
@@ -756,23 +755,26 @@ body {
    Wrap a control in [data-tip="…"]; the label DROPS BELOW on hover/focus
    (below, so it never clips off the top of the sticky header bar).
    Warm ink chip, theme-following, no system grey.
-   ================================================================ */
+
+   CHIP ONLY, no arrow: ::after is RESERVED for touch-target expansion
+   (.header-icon-btn::after is a 44px invisible box). When the tooltip
+   also styled ::after as its arrow, the two rules merged on every header
+   button — the 44px box picked up the arrow's black border and painted a
+   second bar under the real chip. That was the "double tooltip". Never
+   give [data-tip] an ::after again. */
 [data-tip] {
   position: relative;
-}
-[data-tip]::before,
-[data-tip]::after {
-  position: absolute;
-  left: 50%;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--transition-fast), transform var(--transition-fast);
-  z-index: var(--z-modal);
 }
 /* The label chip — drops below the control. */
 [data-tip]::before {
   content: attr(data-tip);
+  position: absolute;
+  left: 50%;
   top: calc(100% + 8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  z-index: var(--z-modal);
   transform: translate(-50%, -4px);
   padding: 0.3rem 0.55rem;
   border-radius: var(--border-radius-sm);
@@ -784,36 +786,20 @@ body {
   white-space: nowrap;
   box-shadow: var(--shadow-md);
 }
-/* The little pointer — points up toward the control. */
-[data-tip]::after {
-  content: "";
-  top: calc(100% + 3px);
-  transform: translate(-50%, -4px);
-  border: 5px solid transparent;
-  border-bottom-color: var(--soft-black);
-}
 [data-tip]:hover::before,
-[data-tip]:hover::after,
-[data-tip]:focus-visible::before,
-[data-tip]:focus-visible::after {
+[data-tip]:focus-visible::before {
   opacity: 1;
   transform: translate(-50%, 0);
 }
 /* Tooltips anchored at the right edge of the bar flip their alignment so they
    don't spill off-screen. */
-[data-tip][data-tip-align="right"]::before,
-[data-tip][data-tip-align="right"]::after {
+[data-tip][data-tip-align="right"]::before {
   left: auto;
   right: 0;
   transform: translate(0, -4px);
 }
-[data-tip][data-tip-align="right"]::after {
-  right: 8px;
-}
 [data-tip][data-tip-align="right"]:hover::before,
-[data-tip][data-tip-align="right"]:hover::after,
-[data-tip][data-tip-align="right"]:focus-visible::before,
-[data-tip][data-tip-align="right"]:focus-visible::after {
+[data-tip][data-tip-align="right"]:focus-visible::before {
   transform: translate(0, 0);
 }
 
@@ -824,19 +810,13 @@ body {
       card, never past its edge.
    2. Lift the whole card's context above its siblings while one of its
       tooltips is showing. */
-.card-header-actions [data-tip]::before,
-.card-header-actions [data-tip]::after {
+.card-header-actions [data-tip]::before {
   left: auto;
   right: 0;
   transform: translate(0, -4px);
 }
-.card-header-actions [data-tip]::after {
-  right: 8px;
-}
 .card-header-actions [data-tip]:hover::before,
-.card-header-actions [data-tip]:hover::after,
-.card-header-actions [data-tip]:focus-visible::before,
-.card-header-actions [data-tip]:focus-visible::after {
+.card-header-actions [data-tip]:focus-visible::before {
   transform: translate(0, 0);
 }
 .dashboard-card:has([data-tip]:hover),
@@ -856,7 +836,10 @@ body {
      theme switcher actually repaints the canvas. --gradient-bg is defined
      per-theme in core/theme/themes.ts (and the FOUC script in _app.tsx). */
   background: var(--gradient-bg);
-  overflow: hidden;
+  /* clip, NOT hidden: hidden makes the scene a (never-scrolling) scroll
+     container, which kills the footer's position:sticky. clip crops the
+     decorative splashes without capturing sticky. */
+  overflow: clip;
   animation: mapperGradient 18s ease-in-out infinite alternate;
 }
 
@@ -2174,10 +2157,10 @@ body {
 }
 
 .dashboard-card-header h3 {
-  /* Cozy caps: 600 + wide tracking reads calm where 700 tight shouted. */
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.07em;
+  /* The ORIGINAL header presentation (Inter 700 caps) — restored by decree. */
+  font-size: var(--small-size);
+  font-weight: 700;
+  letter-spacing: 0.01em;
   text-transform: uppercase;
   color: var(--header-band-ink);
   margin: 0;
@@ -5604,36 +5587,63 @@ a:focus-visible {
    controls right (theme dice, sound, shortcuts, backup live here now — the
    header stays for verbs, the footer holds the dials). */
 .app-footer {
-  /* A quiet sign-off line, not a band: hairline rule, no wash, snug. */
-  margin-top: 1.25rem;
-  padding: 0.55rem 1.4rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
+  /* LOCKED chrome: a slim frosted bar stuck to the viewport bottom (content
+     scrolls under it), mirroring the header. Real surface — never a floating
+     hairline mid-gradient. z sits above cards, below drawers/header. */
+  position: sticky;
+  bottom: 0;
+  z-index: calc(var(--z-drawer) - 5);
+  padding: 0.3rem 1.4rem calc(0.3rem + env(safe-area-inset-bottom, 0px));
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  flex-wrap: wrap;
-  border-top: 1px solid var(--color-border);
+  flex-wrap: nowrap;
+  border-top: 2px solid var(--color-border);
+  background: rgba(255, 250, 245, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   font-family: var(--font-mono);
   font-size: var(--tiny-size);
   color: var(--color-text-secondary);
+}
+/* Footer dials are quieter than header controls — same button, smaller.
+   min-height 0 beats the mobile touch-target rule: the invisible 44px
+   ::after box still carries the tap zone, the BAR stays slim. */
+.app-footer .header-icon-btn {
+  width: 1.75rem;
+  height: 1.75rem;
+  min-height: 0;
+  font-size: 0.8rem;
+}
+/* Footer tooltips must open UPWARD — the bar hugs the viewport bottom. */
+.app-footer [data-tip]::before {
+  top: auto;
+  bottom: calc(100% + 8px);
 }
 .app-footer__brand {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .app-footer__brand i {
   color: var(--footer-heart);
+}
+/* The tagline yields entirely on narrow bars — never a mid-word ellipsis. */
+@media (max-width: 640px) {
+  .app-footer__tagline {
+    display: none;
+  }
 }
 .app-footer__controls {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-}
-@media (max-width: 640px) {
-  .app-footer {
-    justify-content: center;
-  }
+  flex-shrink: 0;
 }
 
 /* Export drawer backdrop & container */
@@ -6097,7 +6107,8 @@ label {
    inner classes below are still live inside the hub's pulldown.) */
 .recording-dock {
   position: fixed;
-  bottom: calc(1.1rem + env(safe-area-inset-bottom, 0px));
+  /* Clears the locked footer chrome (~2.4rem) with a little air. */
+  bottom: calc(3.1rem + env(safe-area-inset-bottom, 0px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 28;

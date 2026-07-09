@@ -155,7 +155,8 @@ export default function ShareButton() {
             class="share-popover-close"
             onClick={() => popoverOpen.value = false}
             aria-label="Close share panel"
-            title="Close"
+            data-tip="Close"
+            data-tip-align="right"
           >
             <i class="fa fa-times" aria-hidden="true"></i>
           </button>
@@ -186,7 +187,7 @@ export default function ShareButton() {
                 <button
                   onClick={() => copyToClipboard(liveRoomUrl())}
                   class="min-h-9 px-3 py-1 text-xs font-bold share-copy-btn"
-                  title="Copy live room link"
+                  data-tip="Copy live link"
                 >
                   <i class="fa fa-copy" aria-hidden="true"></i>
                 </button>
@@ -222,7 +223,7 @@ export default function ShareButton() {
               <button
                 onClick={handleCopyUrl}
                 class="min-h-9 px-3 py-1 text-xs font-bold share-copy-btn"
-                title="Copy link"
+                data-tip="Copy link"
               >
                 <i class="fa fa-copy" aria-hidden="true"></i>
               </button>

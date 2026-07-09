@@ -61,6 +61,23 @@ Deno.test("every theme's VIVID header band passes AA with white text", () => {
   }
 });
 
+Deno.test("every theme's ink passes AA on the 55% header band", () => {
+  // CSS: --header-band = color-mix(accent 55%, --surface-cream), dark ink.
+  // One recipe for named themes AND shuffle rolls (rolls have their own
+  // 300-roll sweep in random_theme_test.ts).
+  for (const theme of proMapperThemes) {
+    const band = mix(theme.accent, CARD_SURFACE, 0.55);
+    const ratio = contrast(theme.text, band);
+    assertEquals(
+      ratio >= 4.5,
+      true,
+      `Theme "${theme.name}" ink on band ${band} is ${
+        ratio.toFixed(2)
+      }:1 — below the 4.5:1 AA floor`,
+    );
+  }
+});
+
 Deno.test("every theme body text passes AA on the card surface", () => {
   for (const theme of proMapperThemes) {
     const ratio = contrast(theme.text, CARD_SURFACE);

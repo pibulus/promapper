@@ -516,7 +516,7 @@ export default function HomeIsland() {
   }
 
   return (
-    <div class="mapper-scene min-h-screen">
+    <div class="mapper-scene flex min-h-screen flex-col">
       {/* Top Bar - Brand presence */}
       <header class="app-header-glass">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 w-full app-header__container">
@@ -746,11 +746,11 @@ export default function HomeIsland() {
         </div>
       )}
 
-      {/* Main Layout - No sidebar, centered content */}
-      <div
-        class="flex"
-        style={{ minHeight: "calc(100vh - var(--header-height))" }}
-      >
+      {
+        /* Main Layout - No sidebar, centered content. flex-1 fills the space
+          between the sticky header and the locked footer chrome. */
+      }
+      <div class="flex flex-1">
         {/* Mobile History Menu - Rendered always to be triggerable via header or floating button */}
         <MobileHistoryMenu />
 
@@ -808,29 +808,36 @@ export default function HomeIsland() {
               </section>
             )}
           </div>
-
-          <footer class="app-footer">
-            <span class="app-footer__brand">
-              © 2026 ProMapper
-              <i class="fa fa-heart" aria-hidden="true"></i>
-              made in Melbourne · everything stays on your device
-            </span>
-            <span class="app-footer__controls">
-              <ThemeSwitcher />
-              <SoundToggle />
-              <button
-                type="button"
-                class="header-icon-btn"
-                onClick={() => shortcutsOpen.value = true}
-                aria-label="Keyboard shortcuts"
-                data-tip="Shortcuts"
-              >
-                <i class="fa fa-keyboard" aria-hidden="true"></i>
-              </button>
-            </span>
-          </footer>
         </main>
       </div>
+
+      {
+        /* Locked footer chrome — a slim always-visible bar at the viewport
+          bottom (sticky), full-bleed, holding the dials. */
+      }
+      <footer class="app-footer">
+        <span class="app-footer__brand">
+          © 2026 ProMapper
+          <i class="fa fa-heart" aria-hidden="true"></i>
+          <span class="app-footer__tagline">
+            made in Melbourne · everything stays on your device
+          </span>
+        </span>
+        <span class="app-footer__controls">
+          <ThemeSwitcher />
+          <SoundToggle />
+          <button
+            type="button"
+            class="header-icon-btn"
+            onClick={() => shortcutsOpen.value = true}
+            aria-label="Keyboard shortcuts"
+            data-tip="Shortcuts"
+            data-tip-align="right"
+          >
+            <i class="fa fa-keyboard" aria-hidden="true"></i>
+          </button>
+        </span>
+      </footer>
 
       {/* Auth modal — triggered by requestAuthToken() from anywhere */}
       {/* In-session chat — FAB bottom-right, only while live */}

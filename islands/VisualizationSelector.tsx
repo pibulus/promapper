@@ -55,7 +55,7 @@ export default function VisualizationSelector() {
                 onClick={() => (menuOpen.value = !menuOpen.value)}
                 aria-haspopup="menu"
                 aria-expanded={menuOpen.value}
-                title="Switch visualization"
+                data-tip="Switch visualization"
               >
                 <i class={`fa fa-${active.icon}`} aria-hidden="true"></i>
                 <span>{active.label}</span>

@@ -43,7 +43,8 @@ export default function ReaderModal() {
             type="button"
             class="reader-panel__close"
             onClick={closeReader}
-            title="Close"
+            data-tip="Close"
+            data-tip-align="right"
             aria-label="Close reader"
           >
             <i class="fa fa-xmark" aria-hidden="true"></i>

@@ -94,13 +94,16 @@ export function deriveStrong(hue: number, sat: number): string {
 
 const wrap = (h: number) => ((h % 360) + 360) % 360;
 
-/** The warm families the background is allowed to live in — blush coral,
- * peach (the original), apricot butter, petal pink. Airy and classy by
- * construction; the roll picks the one farthest from the accent hue. */
+/** The families the background is allowed to live in — blush coral, peach
+ * (the original), apricot butter, orchid/mauve (the zombie-sheriff magenta),
+ * petal pink. Warm and classy by construction; the roll picks the one
+ * farthest from the accent hue so ground and accent always play off each
+ * other. */
 export const WARM_FAMILIES: ReadonlyArray<readonly [number, number]> = [
   [6, 18],
   [18, 36],
   [36, 50],
+  [296, 318],
   [330, 352],
 ];
 
@@ -134,9 +137,11 @@ export function generateThemeParts(
 ): ShuffleParts {
   const arc = HUE_ARCS[Math.floor(rand() * HUE_ARCS.length) % HUE_ARCS.length];
   const hue = arc[0] + rand() * (arc[1] - arc[0]);
-  // Sorbet pastel: saturation stays HIGH (fresh, not dusty), lightness airy.
-  const saturation = 68 + rand() * 24; // 68–92
-  const lightness = 78 + rand() * 8; // 78–86
+  // Mother-3 energy: accents are ACCENTED — saturated and present (bold soft
+  // tones like coral/teal/mustard), never a whisper-pastel and never the dark
+  // corporate band. Contrast still rides the solved deep companion.
+  const saturation = 76 + rand() * 18; // 76–94
+  const lightness = 63 + rand() * 9; // 63–72
 
   const accent = hslToHex(hue, saturation, lightness);
   const strong = deriveStrong(hue, saturation);
@@ -159,16 +164,21 @@ export function generateThemeParts(
   );
   const bgHue = family[0] + rand() * (family[1] - family[0]);
 
-  // Two warm washes + one soft accent-family glow in the low corner (the
-  // interplay). The glow is a PASTELIZED pure-family tone, never a pigment
-  // mix with the warm wash — sRGB-mixing complementary pastels makes grey.
+  // Two rich family washes + one pastelized accent-family glow in the low
+  // corner (the interplay). Never pigment-mix complementary pastels — sRGB
+  // mixing makes grey; the glow is a pure-hue pastel instead.
+  //
+  // SATURATION COURAGE: the ground must be genuinely COLORED (S 80–100,
+  // L 79–85), not tinted white — pale ground + pale figures reads hospital.
+  // Cards stay calm cream and get their freshness FROM the colored ground
+  // (figure/ground separation is the whole game).
   const j = () => rand() * 12 - 6;
   const washes = [
-    hslToHex(wrap(bgHue - 8), 80 + rand() * 15, 84 + rand() * 3),
-    hslToHex(wrap(bgHue + 10), 78 + rand() * 18, 85 + rand() * 3),
-    hslToHex(hue, 68 + rand() * 12, 87 + rand() * 3),
+    hslToHex(wrap(bgHue - 8), 84 + rand() * 14, 80 + rand() * 3),
+    hslToHex(wrap(bgHue + 10), 82 + rand() * 16, 81 + rand() * 3),
+    hslToHex(hue, 74 + rand() * 14, 82 + rand() * 3),
   ];
-  const washAlphas = [0.9, 0.8, 0.55];
+  const washAlphas = [0.9, 0.85, 0.6];
   const positions: Array<[number, number]> = [
     [15 + j(), 12 + j()],
     [85 + j(), 18 + j()],
@@ -180,16 +190,16 @@ export function generateThemeParts(
     return `radial-gradient(circle at ${Math.round(x)}% ${Math.round(y)}%, ` +
       `rgba(${r},${g},${b},${washAlphas[i]}), transparent 55%)`;
   });
-  // Linear base — same recipe territory as the beloved original
-  // (#ffe7d4 → #ffd2bd → #ffe0cd): warm, saturated, light.
+  // Linear base — a real gradient JOURNEY (light in, richest mid, settles
+  // warm), saturated like the beloved coral reference, never near-white.
   const bgBase = [
-    hslToHex(wrap(bgHue + 6), 72 + rand() * 20, 92),
-    hslToHex(wrap(bgHue - 6), 85 + rand() * 15, 88),
-    hslToHex(wrap(bgHue + 2), 80 + rand() * 18, 91),
+    hslToHex(wrap(bgHue + 6), 78 + rand() * 18, 87),
+    hslToHex(wrap(bgHue - 6), 88 + rand() * 12, 81),
+    hslToHex(wrap(bgHue + 2), 84 + rand() * 14, 85),
   ];
   const gradientBg = `${radials.join(", ")}, linear-gradient(135deg, ` +
     `${bgBase[0]} 0%, ${bgBase[1]} 55%, ${bgBase[2]} 100%)`;
-  const baseSolid = hslToHex(bgHue, 70, 91);
+  const baseSolid = hslToHex(bgHue, 82, 84);
 
   const theme: Theme = {
     name: "SHUFFLE",
@@ -205,19 +215,12 @@ export function generateThemeParts(
       "--shadow-soft": `0 4px 12px ${strong}1f`,
       "--gradient-bg": gradientBg,
       // The deep companion carries every text-bearing accent element.
+      // Bands/washes/chips derive from --color-accent via the SAME static
+      // recipes as the named themes (styles.css) — one downstream system,
+      // no per-roll special cases.
       "--accent-strong": strong,
       "--accent-ink": strong,
       "--accent-fill": strong,
-      // Pastel surfaces need MORE accent in the mix than vivid pops did —
-      // the static recipes (12%/10%) assume a saturated mid-lightness accent.
-      "--header-band":
-        "color-mix(in srgb, var(--color-accent) 42%, var(--surface-cream))",
-      "--footer-band":
-        "color-mix(in srgb, var(--color-accent) 32%, var(--surface-card))",
-      "--accent-rose-wash":
-        "color-mix(in srgb, var(--color-accent) 30%, transparent)",
-      "--accent-rose-wash-soft":
-        "color-mix(in srgb, var(--color-accent) 20%, transparent)",
     },
   };
 

@@ -38,12 +38,15 @@ Deno.test("rolls stay inside the pastel hue arc (no red, no mud)", () => {
   }
 });
 
-Deno.test("accents are sorbet pastel — light AND saturated, never dusty", () => {
+Deno.test("accents are bold-fresh — saturated, present, never dusty or dark", () => {
   const rand = seededRand(505);
   for (let i = 0; i < 300; i++) {
     const { saturation, lightness } = generateThemeParts(rand);
-    assert(lightness >= 78 && lightness <= 86, `not airy: L${lightness}`);
-    assert(saturation >= 68, `dusty grandma pastel: S${saturation}`);
+    assert(
+      lightness >= 63 && lightness <= 72,
+      `outside the bold-soft band: L${lightness}`,
+    );
+    assert(saturation >= 76, `dusty grandma pastel: S${saturation}`);
   }
 });
 
@@ -51,8 +54,8 @@ Deno.test("ink on the roll's header band tint passes AA for every roll", () => {
   const rand = seededRand(1982);
   for (let i = 0; i < 300; i++) {
     const { theme } = generateThemeParts(rand);
-    // The roll overrides --header-band = color-mix(accent 42%, surface-cream)
-    const band = mixHex(theme.accent, SURFACE_CREAM, 0.42);
+    // The roll overrides --header-band = color-mix(accent 55%, surface-cream)
+    const band = mixHex(theme.accent, SURFACE_CREAM, 0.55);
     const ratio = contrast(theme.text, band);
     assert(ratio >= 4.5, `ink/band ${ratio.toFixed(2)} for ${theme.accent}`);
   }

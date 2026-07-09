@@ -80,7 +80,8 @@ export default function ChatPanel(
           class="chat-minimize-btn"
           onClick={onToggle}
           aria-label="Minimize chat"
-          title="Minimize"
+          data-tip="Minimize"
+          data-tip-align="right"
         >
           <i class="fa fa-chevron-down" aria-hidden="true"></i>
         </button>

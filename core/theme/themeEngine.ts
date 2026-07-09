@@ -12,6 +12,13 @@
 import type { Theme, ThemeSystemConfig } from "./types.ts";
 export type { Theme, ThemeSystemConfig };
 
+/** Persisted SHUFFLE rolls carry their generator's schema version. Bump this
+ * whenever the generator's taste changes materially — stale saved rolls are
+ * then DISCARDED on load (falling back to the default theme) instead of
+ * replaying frozen old vars forever. Mirror the literal in the _app.tsx FOUC
+ * script. */
+export const SHUFFLE_SCHEMA_VERSION = 2;
+
 // ===================================================================
 // THEME SYSTEM CLASS
 // ===================================================================
@@ -136,7 +143,12 @@ export class ThemeSystem {
       try {
         const parsed = JSON.parse(saved);
         // A shuffled theme isn't in the named list — rebuild it from storage.
-        if (parsed.name === "SHUFFLE" && parsed.custom?.theme?.accent) {
+        // Rolls from an older generator schema are dropped (default applies).
+        if (
+          parsed.name === "SHUFFLE" &&
+          parsed.v === SHUFFLE_SCHEMA_VERSION &&
+          parsed.custom?.theme?.accent
+        ) {
           this.currentTheme = parsed.custom.theme as Theme;
           return this.currentTheme;
         }
@@ -233,6 +245,7 @@ export class ThemeSystem {
           timestamp: Date.now(),
         };
         if (theme.name === "SHUFFLE") {
+          payload.v = SHUFFLE_SCHEMA_VERSION;
           payload.custom = { theme, vars: this.themeToVars(theme) };
         }
         localStorage.setItem(storageKey, JSON.stringify(payload));

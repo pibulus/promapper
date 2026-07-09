@@ -30,11 +30,13 @@ import type { Theme, ThemeSystemConfig } from "@core/theme/types.ts";
  * pink→cream→lilac wash behind. Light, lush, playful.
  * Header band uses a pale tint with dark ink (set via --header-band* below).
  */
-// The constant warm peach→tangerine wash sits behind EVERY theme (the references
+// The constant warm coral wash sits behind EVERY named theme (the references
 // always have a warm bg; only the accent pop changes). Shared so it stays one
-// source of truth.
+// source of truth. July 9 richness pass: the ground is genuinely COLORED
+// (saturated coral journey, not a tinted white) — cards get their freshness
+// from figure/ground separation. Mirror any change into the _app.tsx FOUC map.
 export const WARM_BG =
-  "radial-gradient(circle at 15% 12%, rgba(255,209,176,0.9), transparent 55%), radial-gradient(circle at 85% 18%, rgba(255,173,156,0.85), transparent 55%), radial-gradient(circle at 75% 88%, rgba(255,198,150,0.8), transparent 55%), linear-gradient(135deg, #ffe7d4 0%, #ffd2bd 55%, #ffe0cd 100%)";
+  "radial-gradient(circle at 15% 12%, rgba(255,184,140,0.9), transparent 55%), radial-gradient(circle at 85% 18%, rgba(255,146,118,0.85), transparent 55%), radial-gradient(circle at 75% 88%, rgba(255,164,122,0.85), transparent 55%), linear-gradient(135deg, #ffdcc2 0%, #ffb894 55%, #ffcfae 100%)";
 
 export const bubblegum: Theme = {
   name: "BUBBLEGUM",

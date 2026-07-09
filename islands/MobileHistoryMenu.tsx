@@ -545,7 +545,8 @@ export default function MobileHistoryMenu() {
                                 handleDelete(conv.id);
                               }}
                               class="history-action-btn history-delete-btn"
-                              title="Delete conversation"
+                              data-tip="Delete"
+                              data-tip-align="right"
                             >
                               <i
                                 class="fa-regular fa-trash-can"
@@ -643,7 +644,7 @@ export default function MobileHistoryMenu() {
             <button
               onClick={handleExport}
               class="history-backup-btn history-backup-btn--export"
-              title="Download all conversations as a JSON backup"
+              data-tip="Save a JSON backup"
             >
               ↓ Export
             </button>
@@ -651,7 +652,7 @@ export default function MobileHistoryMenu() {
             <button
               onClick={() => importInputRef.current?.click()}
               class="history-backup-btn history-backup-btn--import"
-              title="Import conversations from a backup file (merges, never overwrites newer)"
+              data-tip="Merge from a backup file"
             >
               ↑ Import
             </button>

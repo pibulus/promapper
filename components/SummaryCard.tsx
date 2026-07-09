@@ -63,7 +63,7 @@ export default function SummaryCard(
                   html: formatMarkdownSafe(paragraphizeSummary(summary)),
                 })}
               class="cursor-pointer"
-              title="Open summary full-screen"
+              data-tip="Expand"
               aria-label="Expand summary"
               disabled={!summary}
             >
@@ -72,7 +72,7 @@ export default function SummaryCard(
             <button
               onClick={() => summary && copyToClipboard(summary)}
               class="cursor-pointer"
-              title="Copy summary"
+              data-tip="Copy"
               aria-label="Copy summary"
               disabled={!summary}
             >
