@@ -10,7 +10,7 @@
 import { useEffect } from "preact/hooks";
 import { createThemeSystem } from "@core/theme/themeEngine.ts";
 import { proMapperThemeConfig } from "@core/theme/themes.ts";
-import { generateTheme } from "@core/theme/randomTheme.ts";
+import { CURATED_PAIRS, generateThemeParts } from "@core/theme/randomTheme.ts";
 import { soundToggle } from "@utils/sound.ts";
 
 // Instantiated once per hydration root so it isn't re-created on render.
@@ -19,6 +19,18 @@ const themeSystem = createThemeSystem({
   randomEnabled: false,
 });
 
+/** Which curated ground family a hue belongs to (index into CURATED_PAIRS
+ * grounds), for the anti-repeat below. */
+function groundFamilyOf(bgHue: number): number {
+  return CURATED_PAIRS.findIndex(({ ground: [lo, hi] }) =>
+    bgHue >= lo && bgHue <= hi
+  );
+}
+
+// The SKY must visibly change on every roll — several pairs share a ground
+// family, so pure random could deal the same-looking sky twice in a row.
+let lastGroundFamily = -1;
+
 export default function ThemeSwitcher() {
   // Init on mount: apply the saved theme (named default or last shuffle).
   useEffect(() => {
@@ -26,7 +38,16 @@ export default function ThemeSwitcher() {
   }, []);
 
   function shuffle() {
-    themeSystem.applyCustomTheme(generateTheme());
+    let parts = generateThemeParts();
+    for (
+      let tries = 0;
+      tries < 6 && groundFamilyOf(parts.bgHue) === lastGroundFamily;
+      tries++
+    ) {
+      parts = generateThemeParts();
+    }
+    lastGroundFamily = groundFamilyOf(parts.bgHue);
+    themeSystem.applyCustomTheme(parts.theme);
     soundToggle(true);
   }
 
