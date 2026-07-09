@@ -521,17 +521,8 @@ export default function ActionItemsCard(
     if (!searchOpen.value) searchQuery.value = "";
   }
 
-  // Bulk complete/clear live on the flip side (Overview back) — the front
-  // keeps only the contextual Clear on the done divider, via this shared op.
-  function clearDone() {
-    const clearedCount =
-      visibleItems.value.filter((i) => i.status === "completed").length;
-    if (clearedCount === 0) return;
-    publishItems(clearCompletedActionItems(visibleItems.value));
-    if (canUndo()) {
-      showUndoToast(`Cleared ${clearedCount} done`, undoLastMutation);
-    }
-  }
+  // Bulk complete/clear live on the flip side (Overview back) only — done
+  // items fade hard on the front, no divider chrome between the groups.
 
   // ===================================================================
   // RENDER
@@ -735,35 +726,6 @@ export default function ActionItemsCard(
                         <Fragment key={item.id}>
                           {/* Ghost add-row closes out the pending group */}
                           {index === firstCompletedIndex && addGhostRow}
-                          {/* Done divider — wordless: rule, ✓count, broom */}
-                          {progress.value.done > 0 &&
-                            index === firstCompletedIndex && (
-                            <div class="action-done-divider font-mono">
-                              <span
-                                class="action-done-rule"
-                                aria-hidden="true"
-                              />
-                              <span
-                                class="action-done-label"
-                                title={`${progress.value.done} done`}
-                              >
-                                <i class="fa fa-check" aria-hidden="true" />
-                                {progress.value.done}
-                              </span>
-                              <button
-                                onClick={clearDone}
-                                class="action-done-clear"
-                                aria-label="Clear completed items"
-                                data-tip="Clear done"
-                              >
-                                <i class="fa fa-broom" aria-hidden="true" />
-                              </button>
-                              <span
-                                class="action-done-rule"
-                                aria-hidden="true"
-                              />
-                            </div>
-                          )}
                           <div
                             data-sortable-id={canDrag ? item.id : undefined}
                             onPointerDown={(e) =>

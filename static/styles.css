@@ -817,6 +817,34 @@ body {
   transform: translate(0, 0);
 }
 
+/* Card-header tooltips: every glass card is its own stacking context
+   (backdrop-filter) with overflow:hidden, so a tooltip near a card edge
+   was clipped and painted under later-DOM sibling cards. Two moves:
+   1. Anchor header-action tooltips to the RIGHT so they grow into the
+      card, never past its edge.
+   2. Lift the whole card's context above its siblings while one of its
+      tooltips is showing. */
+.card-header-actions [data-tip]::before,
+.card-header-actions [data-tip]::after {
+  left: auto;
+  right: 0;
+  transform: translate(0, -4px);
+}
+.card-header-actions [data-tip]::after {
+  right: 8px;
+}
+.card-header-actions [data-tip]:hover::before,
+.card-header-actions [data-tip]:hover::after,
+.card-header-actions [data-tip]:focus-visible::before,
+.card-header-actions [data-tip]:focus-visible::after {
+  transform: translate(0, 0);
+}
+.dashboard-card:has([data-tip]:hover),
+.dashboard-card:has([data-tip]:focus-visible) {
+  position: relative;
+  z-index: var(--z-tooltip);
+}
+
 /* ===================================================================
    CANVAS BACKGROUND + MODULE SYSTEM
    ================================================================ */
@@ -3053,25 +3081,6 @@ html::-webkit-scrollbar-thumb:hover,
   border-top: var(--border-width) solid var(--color-border);
 }
 
-.action-done-divider {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0;
-}
-.action-done-rule {
-  flex: 1;
-  border-top: 1px dashed var(--color-border);
-}
-/* The "Done · N" divider label reuses the shared card-back label, plus a
-   flex-shrink guard so the dashed rules give it room. */
-.action-done-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  flex-shrink: 0;
-}
-
 /* Filter pills (Mine / Hide done) */
 .action-filter-pill {
   position: relative;
@@ -3195,24 +3204,6 @@ html::-webkit-scrollbar-thumb:hover,
 .action-items-scroll:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: -2px;
-}
-
-.action-done-clear {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: color var(--transition-fast), background var(--transition-fast);
-}
-.action-done-clear:hover {
-  color: var(--accent-ink);
-  background: var(--surface-cream-hover);
 }
 
 /* Ghost add-row — the end of the pending list IS the add affordance: click
@@ -5464,6 +5455,21 @@ a:focus-visible {
   line-height: 1.6;
 }
 
+/* Breathable prose: short paragraphs with real air between them (the
+   paragraphizer regroups wall-of-text summaries into 2-sentence beats). */
+.summary-content p {
+  margin: 0;
+}
+.summary-content p + p {
+  margin-top: 0.7rem;
+}
+
+/* The first paragraph is the takeaway — let it lead, gently. */
+.summary-content > p:first-child {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
 .summary-key-points {
   margin-top: 0.75rem;
   padding: 0.75rem;
@@ -5626,17 +5632,15 @@ a:focus-visible {
    controls right (theme dice, sound, shortcuts, backup live here now — the
    header stays for verbs, the footer holds the dials). */
 .app-footer {
-  margin-top: 2.5rem;
-  padding: 0.9rem 1.4rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
+  /* A quiet sign-off line, not a band: hairline rule, no wash, snug. */
+  margin-top: 1.25rem;
+  padding: 0.55rem 1.4rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
-  border-top: 2px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-accent) 4%, transparent);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  border-top: 1px solid var(--color-border);
   font-family: var(--font-mono);
   font-size: var(--tiny-size);
   color: var(--color-text-secondary);

@@ -68,7 +68,7 @@ export function formatTranscriptSafe(
   // so they can't double-match here.)
   formatted = formatted.replace(
     /(^|<br\/>)(Speaker\s*\d+|[A-Z][a-z]+):/g,
-    '$1<span style="font-weight: 600; color: var(--color-accent); margin-right: 0.5rem;">$2:</span>',
+    '$1<span style="font-weight: 600; color: var(--accent-ink); margin-right: 0.5rem;">$2:</span>',
   );
 
   return formatted;

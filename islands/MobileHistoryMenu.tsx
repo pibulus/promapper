@@ -357,8 +357,9 @@ export default function MobileHistoryMenu() {
           <button
             onClick={() => (isOpen.value = false)}
             class="history-drawer-close"
+            aria-label="Close history"
           >
-            ✕
+            <i class="fa fa-xmark" aria-hidden="true"></i>
           </button>
         </div>
 
@@ -450,7 +451,10 @@ export default function MobileHistoryMenu() {
                     ? (
                       <>
                         No starred conversations yet.<br />
-                        Tap ☆ on any conversation to pin it here.
+                        Tap the{" "}
+                        <i class="fa-regular fa-star" aria-hidden="true"></i>
+                        {" "}
+                        on any conversation to pin it here.
                       </>
                     )
                     : (
@@ -548,7 +552,13 @@ export default function MobileHistoryMenu() {
                                 conv.starred ? " is-starred" : ""
                               }`}
                             >
-                              {conv.starred ? "★" : "☆"}
+                              <i
+                                class={conv.starred
+                                  ? "fa-solid fa-star"
+                                  : "fa-regular fa-star"}
+                                aria-hidden="true"
+                              >
+                              </i>
                             </button>
 
                             {/* Delete */}
@@ -560,7 +570,11 @@ export default function MobileHistoryMenu() {
                               class="history-action-btn history-delete-btn"
                               title="Delete conversation"
                             >
-                              🗑️
+                              <i
+                                class="fa-regular fa-trash-can"
+                                aria-hidden="true"
+                              >
+                              </i>
                             </button>
                           </div>
                         </div>

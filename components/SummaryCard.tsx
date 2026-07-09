@@ -5,6 +5,7 @@
 
 import { copyToClipboard } from "../utils/toast.ts";
 import { formatMarkdownSafe } from "../utils/sanitize.ts";
+import { paragraphizeSummary } from "../utils/summaryFormat.ts";
 import { openReader } from "../signals/readerStore.ts";
 
 interface SummaryCardProps {
@@ -59,7 +60,7 @@ export default function SummaryCard(
               onClick={() =>
                 summary && openReader({
                   title: "Summary",
-                  html: formatMarkdownSafe(summary),
+                  html: formatMarkdownSafe(paragraphizeSummary(summary)),
                 })}
               class="cursor-pointer"
               title="Open summary full-screen"
@@ -91,11 +92,15 @@ export default function SummaryCard(
             )
             : (
               <div>
-                {/* Main summary (XSS-safe) — sits directly on the card surface. */}
+                {
+                  /* Main summary (XSS-safe) — sits directly on the card
+                    surface, regrouped into short breathable paragraphs
+                    (never a wall of text). */
+                }
                 <div
                   class="summary-content"
                   dangerouslySetInnerHTML={{
-                    __html: formatMarkdownSafe(summary),
+                    __html: formatMarkdownSafe(paragraphizeSummary(summary)),
                   }}
                 />
 
