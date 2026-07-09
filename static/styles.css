@@ -2239,6 +2239,20 @@ body {
   color: #fff;
 }
 
+/* Canvas module — the whiteboard needs real height to draw in. */
+.canvas-module-body {
+  max-height: none;
+  height: 26rem;
+  padding: 0;
+  overflow: hidden;
+}
+.canvas-live-note {
+  font-size: var(--small-size);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  padding: 0.75rem 0.25rem;
+}
+
 /* Radio — the tile that hums. */
 .radio-body {
   display: flex;

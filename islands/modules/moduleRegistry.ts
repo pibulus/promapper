@@ -15,6 +15,7 @@ import type { ComponentType } from "preact";
 import NotesModule from "./NotesModule.tsx";
 import BishopModule from "./BishopModule.tsx";
 import RadioModule from "./RadioModule.tsx";
+import CanvasModule from "./CanvasModule.tsx";
 
 /** small = short tile (tucks into leftover cells), standard = a core-card
  * cell, wide = full row. */
@@ -56,5 +57,13 @@ export const moduleRegistry: ModuleEntry[] = [
     icon: "radio",
     size: "small",
     component: RadioModule,
+  },
+  {
+    id: "canvas",
+    name: "Canvas",
+    tagline: "Draw by hand — your sketch is already there when you go live.",
+    icon: "pen-ruler",
+    size: "wide",
+    component: CanvasModule,
   },
 ];
