@@ -13,6 +13,7 @@
 
 import type { ComponentType } from "preact";
 import NotesModule from "./NotesModule.tsx";
+import BishopModule from "./BishopModule.tsx";
 
 /** small = short tile (tucks into leftover cells), standard = a core-card
  * cell, wide = full row. */
@@ -38,5 +39,13 @@ export const moduleRegistry: ModuleEntry[] = [
     icon: "note-sticky",
     size: "standard",
     component: NotesModule,
+  },
+  {
+    id: "bishop",
+    name: "Bishop",
+    tagline: "Ask your memory — answers from this conversation only.",
+    icon: "chess-bishop",
+    size: "standard",
+    component: BishopModule,
   },
 ];
