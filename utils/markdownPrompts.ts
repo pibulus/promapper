@@ -142,6 +142,21 @@ Use clear sections, ordered steps where useful, assumptions, caveats, and any im
     suggestInstead: ["summary-report", "action-plan"],
   },
   {
+    id: "blind-spots",
+    label: "Blind spots",
+    icon: "fa-eye",
+    description: "Cognitive biases and assumptions at play in the conversation",
+    // The one gem ported from the original conversation_mapper's bias
+    // detector — reborn as a registry entry instead of 3,000 lines of UI.
+    prompt:
+      `Analyze this conversation for cognitive biases and unexamined assumptions. Look for patterns like confirmation bias, anchoring, groupthink, sunk-cost reasoning, authority bias, availability heuristic, and in-group favoritism — but only report what the transcript actually shows. For each finding:
+• Name the bias plainly
+• Quote or closely paraphrase the moment it appears (with the speaker)
+• One sentence on what it might be hiding
+End with the strongest unasked question in the room. Be honest and warm, not clinical — this is a mirror for the participants, not a verdict.`,
+    suggestInstead: ["summary-report"],
+  },
+  {
     id: "haiku",
     label: "Haiku",
     icon: "fa-leaf",

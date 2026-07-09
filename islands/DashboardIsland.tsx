@@ -17,9 +17,17 @@ import { useSignal } from "@preact/signals";
 import { showToast } from "@utils/toast.ts";
 import { ensureApiSession } from "@utils/apiAuth.ts";
 import TranscriptCard from "../components/TranscriptCard.tsx";
+import TranscriptBack from "../components/TranscriptBack.tsx";
 import SummaryCard from "../components/SummaryCard.tsx";
+import SummaryBack from "../components/SummaryBack.tsx";
 import ActionItemsCard from "../components/ActionItemsCard.tsx";
 import ActionItemsBack from "../components/ActionItemsBack.tsx";
+import {
+  listRecordings,
+  type StoredRecording,
+} from "@core/storage/recordingsDB.ts";
+import { getAllConversations } from "../core/storage/localStorage.ts";
+import { serializeBackup } from "../core/storage/backup.ts";
 import TopicVisualizationsCard from "./TopicVisualizationsCard.tsx";
 import SharedWhiteboard from "./SharedWhiteboard.tsx";
 import FlipCard from "./FlipCard.tsx";
@@ -76,6 +84,48 @@ export default function DashboardIsland() {
   const lastAutoDraw = useRef(0);
   const lastDrawnLength = useRef(0);
   const whiteboardRef = useRef<HTMLDivElement>(null);
+
+  // Takes (with append receipts) for the Summary card's Pulse back. Reloaded
+  // whenever the conversation changes — an append finishing updates the store,
+  // which re-runs this and picks up the freshly stamped receipt.
+  const takes = useSignal<StoredRecording[]>([]);
+  const activeConversationId = conversationData.value?.conversation.id ?? "";
+  useEffect(() => {
+    let cancelled = false;
+    if (!activeConversationId) {
+      takes.value = [];
+      return;
+    }
+    listRecordings(activeConversationId).then((stored) => {
+      if (!cancelled) takes.value = stored;
+    }).catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [activeConversationId, conversationData.value]);
+
+  // Same backup as the history drawer — surfaced on the Pulse back so the
+  // saving story lives next to the growing story.
+  function downloadBackup() {
+    try {
+      const json = serializeBackup(
+        getAllConversations(),
+        new Date().toISOString(),
+      );
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      const dateTag = new Date().toISOString().slice(0, 10);
+      anchor.download = `promapper-backup-${dateTag}.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      showToast("Backup downloaded — keep it somewhere safe", "success");
+    } catch (error) {
+      console.error("Backup failed:", error);
+      showToast("Couldn't build the backup", "error");
+    }
+  }
 
   function getExcalidrawAPI() {
     const el = whiteboardRef.current as
@@ -234,20 +284,47 @@ export default function DashboardIsland() {
             Summary | Actions) is restored with md:order-none. */
         }
 
-        {/* Card 1: Transcript */}
+        {/* Card 1: Transcript — flips to Voices (who held the floor) */}
         <div class="order-3 md:order-none min-w-0">
-          <TranscriptCard
-            transcript={transcript}
-            onRenameSpeaker={renameSpeaker}
+          <FlipCard
+            label="Transcript insights"
+            front={
+              <TranscriptCard
+                transcript={transcript}
+                onRenameSpeaker={renameSpeaker}
+              />
+            }
+            back={
+              <TranscriptBack
+                text={transcript?.text ?? ""}
+                speakers={transcript?.speakers ?? []}
+              />
+            }
           />
         </div>
 
-        {/* Card 2: Summary */}
+        {/* Card 2: Summary — flips to Pulse (takes + receipts, the append story) */}
         <div class="order-2 md:order-none min-w-0">
-          <SummaryCard
-            summary={summary ?? null}
-            nodes={nodes}
-            conversationSource={conversation.source}
+          <FlipCard
+            label="Project pulse"
+            front={
+              <SummaryCard
+                summary={summary ?? null}
+                nodes={nodes}
+                conversationSource={conversation.source}
+              />
+            }
+            back={
+              <SummaryBack
+                summary={summary ?? ""}
+                transcriptText={transcript?.text ?? ""}
+                topicCount={nodes.length}
+                taskCount={actionItems.length}
+                createdAt={conversation.created_at}
+                takes={takes.value}
+                onBackup={downloadBackup}
+              />
+            }
           />
         </div>
 
