@@ -793,6 +793,11 @@ export default function HomeIsland() {
               </section>
             )}
           </div>
+
+          <footer class="app-footer">
+            ProMapper <i class="fa fa-heart" aria-hidden="true"></i>{" "}
+            your words stay on your device
+          </footer>
         </main>
       </div>
 

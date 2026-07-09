@@ -120,7 +120,14 @@
   /* Card header — LIGHT. The title sits on the card surface (cream), DARK text,
      with the accent as a small POP only (a left rule). The WARM GRADIENT
      BACKGROUND is the color event, not the headers. Calm, classy, airy. */
-  --header-band: transparent;
+  /* Visual anchor: the band is a real accent tint now (was transparent —
+     headers read as body). Derived from the theme accent, so every theme
+     brings its own band. Dark ink on a 12% tint is trivially AA. */
+  --header-band: color-mix(
+    in srgb,
+    var(--color-accent) 12%,
+    var(--surface-cream)
+  );
   --header-band-ink: var(--color-text);
   --header-band-sub: color-mix(in srgb, var(--color-text) 55%, transparent);
 
@@ -404,7 +411,8 @@ body {
 .action-item-delete-btn {
   position: absolute;
   z-index: 5;
-  background: var(--soft-cream-dark);
+  background: var(--surface-cream);
+  border: 1.5px solid var(--color-border);
   opacity: 0;
   transition:
     opacity var(--transition-fast),
@@ -2074,11 +2082,13 @@ body {
    title. Soft, on-theme, unobtrusive until hovered. */
 .flip-card-btn {
   position: absolute;
-  top: calc(var(--card-padding) - 0.15rem);
-  right: calc(var(--card-padding) - 0.15rem);
+  /* Sits ON the header row, aligned with the other header action icons
+     (it used to float below the band's baseline). */
+  top: 0.4rem;
+  right: 0.6rem;
   z-index: 2;
-  width: 2rem;
-  height: 2rem;
+  width: 1.9rem;
+  height: 1.9rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2326,7 +2336,9 @@ html::-webkit-scrollbar-thumb:hover,
   position: relative;
   padding: 0.7rem 0.85rem 0.7rem 1rem;
   border-radius: var(--border-radius-sm);
-  background: var(--surface-card);
+  /* A shade of its own (accent-tinted) so items read as objects against the
+     card body — theme-driven like the header band. */
+  background: color-mix(in srgb, var(--color-accent) 5%, var(--surface-card));
   border: 2px solid var(--color-border);
   box-shadow: 2px 2px 0px 0px
     var(--soft-black); /* Converted inline styles to a clean brutalist shadow */
@@ -2605,9 +2617,9 @@ html::-webkit-scrollbar-thumb:hover,
      body copy — rows come out uniform instead of headline-vs-chip soup. */
   font-size: var(--small-size);
   line-height: 1.5;
-  /* Uniform rows: clamp to two lines; tapping the text expands one item. */
+  /* Uniform rows: ONE truncated line; tapping the text expands the item. */
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
   cursor: pointer;
@@ -2666,6 +2678,18 @@ html::-webkit-scrollbar-thumb:hover,
   background: var(--surface-card-deep);
   transform: translateY(-1.5px);
   box-shadow: 2px 2px 0px 0px var(--soft-black);
+}
+
+/* Corner slot for the assignee dot (top-right of each item card). */
+.action-item-corner-dot {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  z-index: 5;
+}
+.action-item-corner-dot .action-dropdown-menu {
+  right: 0;
+  left: auto;
 }
 
 /* Speaker dot — the assignee, as their stable palette color. Tooltip and
@@ -3097,7 +3121,8 @@ html::-webkit-scrollbar-thumb:hover,
 .action-item-edit-btn {
   position: absolute;
   z-index: 5;
-  background: var(--soft-cream-dark);
+  background: var(--surface-cream);
+  border: 1.5px solid var(--color-border);
   opacity: 0;
   transition: opacity var(--transition-fast), background var(--transition-fast);
 }
@@ -3124,10 +3149,10 @@ html::-webkit-scrollbar-thumb:hover,
   }
 }
 
-/* Corner clearance for the edit/delete buttons (a float spacer can't work
-   inside the -webkit-box used for line clamping). */
+/* Clearance for the always-visible corner dot; the hover edit/delete
+   buttons are opaque chips that sit OVER the (truncated) text cleanly. */
 .action-item-description {
-  padding-right: 3.4rem;
+  padding-right: 2rem;
 }
 .action-item-edit-btn:hover {
   background: var(--surface-cream-hover);
@@ -3264,14 +3289,6 @@ html::-webkit-scrollbar-thumb:hover,
   font-size: var(--small-size);
   transition: var(--transition-fast);
   color: var(--color-text);
-}
-
-/* Progress counter inside the header band. Inherits the band's ink — a
-   hardcoded white here was dead (overridden) and wrong on pale-tint bands. */
-.header-progress {
-  margin-left: 0.5rem;
-  font-size: var(--tiny-size);
-  font-weight: 500;
 }
 
 .topic-visualizations-shell {
@@ -5564,6 +5581,19 @@ a:focus-visible {
 /* ===================================================================
    DRAWER STYLE OVERHAULS - Export & History Drawer Polish
    ================================================================ */
+
+/* App footer — one quiet line; the heart is the only pop. */
+.app-footer {
+  padding: 2.2rem 1rem 1.6rem;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--tiny-size);
+  color: var(--color-text-secondary);
+}
+.app-footer i {
+  color: var(--footer-heart);
+  margin: 0 0.15rem;
+}
 
 /* Export drawer backdrop & container */
 .export-drawer-backdrop {

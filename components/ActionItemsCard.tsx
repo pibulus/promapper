@@ -561,17 +561,7 @@ export default function ActionItemsCard(
       <div class="w-full h-full">
         <div class="dashboard-card">
           <div class="dashboard-card-header">
-            <h3>
-              Action Items
-              {progress.value.total > 0 && (
-                <span
-                  class="header-progress"
-                  title={`${progress.value.done} of ${progress.value.total} done`}
-                >
-                  {progress.value.done}/{progress.value.total}
-                </span>
-              )}
-            </h3>
+            <h3>Action Items</h3>
             <div class="flex gap-1 items-center">
               <button
                 onClick={toggleSearch}
@@ -1131,222 +1121,96 @@ export default function ActionItemsCard(
                                           when set. Empty slots show nothing
                                           (the edit pencil holds the forms). */
                                       }
-                                      {(item.assignee || item.due_date) && (
+                                      {item.due_date && (
                                         <div class="action-item-meta flex items-center gap-2 flex-wrap">
-                                          {item.assignee && (
-                                            <div class="relative assignee-dropdown-container">
+                                          <div class="relative font-mono action-item-date-wrap">
+                                            <input
+                                              type="date"
+                                              id={`date-${item.id}`}
+                                              aria-label="Due date"
+                                              value={item.due_date || ""}
+                                              onChange={(e) =>
+                                                updateDueDate(
+                                                  item.id,
+                                                  (e.target as HTMLInputElement)
+                                                    .value || null,
+                                                )}
+                                              class="absolute opacity-0 pointer-events-none"
+                                            />
+                                            <button
+                                              onClick={() => {
+                                                const input = document
+                                                  .getElementById(
+                                                    `date-${item.id}`,
+                                                  ) as
+                                                    | HTMLInputElement
+                                                    | null;
+                                                try {
+                                                  if (
+                                                    input &&
+                                                    "showPicker" in input
+                                                  ) {
+                                                    (input as any)
+                                                      .showPicker();
+                                                  } else if (input) {
+                                                    input.focus();
+                                                    input.click();
+                                                  }
+                                                } catch {
+                                                  if (input) {
+                                                    input.focus();
+                                                    input.click();
+                                                  }
+                                                }
+                                              }}
+                                              class={`action-item-chip action-item-chip--btn flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors has-value${
+                                                isOverdue ? " is-overdue" : ""
+                                              }`}
+                                              title="Change due date"
+                                            >
+                                              <i class="fa fa-calendar text-xs">
+                                              </i>
+                                              <span class="font-mono">
+                                                {formatFriendlyDate(
+                                                  item.due_date,
+                                                )}
+                                              </span>
+                                            </button>
+                                            <div class="action-item-date-presets flex gap-1 mt-1 flex-wrap">
                                               <button
                                                 onClick={() =>
-                                                  activeAssigneeDropdown.value =
-                                                    activeAssigneeDropdown
-                                                        .value ===
-                                                        item.id
-                                                      ? null
-                                                      : item.id}
-                                                class="speaker-dot-btn"
-                                                title={`${item.assignee} — change`}
-                                                aria-label={`Assigned to ${item.assignee}. Click to change.`}
-                                              >
-                                                <span
-                                                  class="speaker-dot"
-                                                  style={{
-                                                    background: speakerColor(
-                                                      item.assignee,
-                                                      speakers,
-                                                    ),
-                                                  }}
-                                                />
-                                              </button>
-                                              {activeAssigneeDropdown.value ===
-                                                  item.id && (
-                                                <div class="action-dropdown-menu font-mono">
-                                                  {/* Custom name input */}
-                                                  <div class="action-dropdown-input-wrapper">
-                                                    <input
-                                                      type="text"
-                                                      aria-label="Assignee name"
-                                                      defaultValue={item
-                                                        .assignee || ""}
-                                                      placeholder="Type a name…"
-                                                      class="action-dropdown-input font-mono"
-                                                      onKeyDown={(e) => {
-                                                        if (e.key === "Enter") {
-                                                          const val =
-                                                            (e.target as HTMLInputElement)
-                                                              .value.trim();
-                                                          if (val) {
-                                                            updateAssignee(
-                                                              item.id,
-                                                              val,
-                                                            );
-                                                          }
-                                                          activeAssigneeDropdown
-                                                            .value = null;
-                                                        } else if (
-                                                          e.key === "Escape"
-                                                        ) {
-                                                          activeAssigneeDropdown
-                                                            .value = null;
-                                                        }
-                                                      }}
-                                                      onBlur={() => {
-                                                        if (
-                                                          dropdownTimeoutRef
-                                                            .current !==
-                                                            null
-                                                        ) {
-                                                          clearTimeout(
-                                                            dropdownTimeoutRef
-                                                              .current,
-                                                          );
-                                                        }
-                                                        dropdownTimeoutRef
-                                                          .current = setTimeout(
-                                                            () => {
-                                                              activeAssigneeDropdown
-                                                                .value = null;
-                                                              dropdownTimeoutRef
-                                                                .current = null;
-                                                            },
-                                                            200,
-                                                          ) as unknown as number;
-                                                      }}
-                                                    />
-                                                  </div>
-                                                  {/* Clear option */}
-                                                  <button
-                                                    onClick={() => {
-                                                      updateAssignee(
-                                                        item.id,
-                                                        null,
-                                                      );
-                                                      activeAssigneeDropdown
-                                                        .value = null;
-                                                    }}
-                                                    class="action-dropdown-option font-mono"
-                                                  >
-                                                    None
-                                                  </button>
-                                                  {/* Suggestions */}
-                                                  {assigneeSuggestions.value
-                                                    .map(
-                                                      (assignee) => (
-                                                        <button
-                                                          key={assignee}
-                                                          onClick={() => {
-                                                            updateAssignee(
-                                                              item.id,
-                                                              assignee,
-                                                            );
-                                                            activeAssigneeDropdown
-                                                              .value = null;
-                                                          }}
-                                                          class={`action-dropdown-option font-mono${
-                                                            item.assignee ===
-                                                                assignee
-                                                              ? " is-active"
-                                                              : ""
-                                                          }`}
-                                                        >
-                                                          {assignee}
-                                                        </button>
-                                                      ),
-                                                    )}
-                                                </div>
-                                              )}
-                                            </div>
-                                          )}
-
-                                          {item.due_date && (
-                                            <div class="relative font-mono action-item-date-wrap">
-                                              <input
-                                                type="date"
-                                                id={`date-${item.id}`}
-                                                aria-label="Due date"
-                                                value={item.due_date || ""}
-                                                onChange={(e) =>
                                                   updateDueDate(
                                                     item.id,
-                                                    (e.target as HTMLInputElement)
-                                                      .value || null,
+                                                    localDateISO(0),
                                                   )}
-                                                class="absolute opacity-0 pointer-events-none"
-                                              />
-                                              <button
-                                                onClick={() => {
-                                                  const input = document
-                                                    .getElementById(
-                                                      `date-${item.id}`,
-                                                    ) as
-                                                      | HTMLInputElement
-                                                      | null;
-                                                  try {
-                                                    if (
-                                                      input &&
-                                                      "showPicker" in input
-                                                    ) {
-                                                      (input as any)
-                                                        .showPicker();
-                                                    } else if (input) {
-                                                      input.focus();
-                                                      input.click();
-                                                    }
-                                                  } catch {
-                                                    if (input) {
-                                                      input.focus();
-                                                      input.click();
-                                                    }
-                                                  }
-                                                }}
-                                                class={`action-item-chip action-item-chip--btn flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors has-value${
-                                                  isOverdue ? " is-overdue" : ""
-                                                }`}
-                                                title="Change due date"
+                                                class="action-filter-pill action-date-preset"
                                               >
-                                                <i class="fa fa-calendar text-xs">
-                                                </i>
-                                                <span class="font-mono">
-                                                  {formatFriendlyDate(
-                                                    item.due_date,
-                                                  )}
-                                                </span>
+                                                Today
                                               </button>
-                                              <div class="action-item-date-presets flex gap-1 mt-1 flex-wrap">
+                                              <button
+                                                onClick={() =>
+                                                  updateDueDate(
+                                                    item.id,
+                                                    localDateISO(1),
+                                                  )}
+                                                class="action-filter-pill action-date-preset"
+                                              >
+                                                Tmrw
+                                              </button>
+                                              {item.due_date && (
                                                 <button
                                                   onClick={() =>
                                                     updateDueDate(
                                                       item.id,
-                                                      localDateISO(0),
+                                                      null,
                                                     )}
-                                                  class="action-filter-pill action-date-preset"
+                                                  class="action-filter-pill is-danger action-date-preset"
                                                 >
-                                                  Today
+                                                  Clear
                                                 </button>
-                                                <button
-                                                  onClick={() =>
-                                                    updateDueDate(
-                                                      item.id,
-                                                      localDateISO(1),
-                                                    )}
-                                                  class="action-filter-pill action-date-preset"
-                                                >
-                                                  Tmrw
-                                                </button>
-                                                {item.due_date && (
-                                                  <button
-                                                    onClick={() =>
-                                                      updateDueDate(
-                                                        item.id,
-                                                        null,
-                                                      )}
-                                                    class="action-filter-pill is-danger action-date-preset"
-                                                  >
-                                                    Clear
-                                                  </button>
-                                                )}
-                                              </div>
+                                              )}
                                             </div>
-                                          )}
+                                          </div>
                                         </div>
                                       )}
 
@@ -1392,6 +1256,131 @@ export default function ActionItemsCard(
                               </div>
                             </div>
 
+                            {/* Assignee dot — top-right corner, always visible */}
+                            {item.assignee && (
+                              <div class="action-item-corner-dot assignee-dropdown-container">
+                                <button
+                                  onClick={() =>
+                                    activeAssigneeDropdown.value =
+                                      activeAssigneeDropdown
+                                          .value ===
+                                          item.id
+                                        ? null
+                                        : item.id}
+                                  class="speaker-dot-btn"
+                                  title={`${item.assignee} — change`}
+                                  aria-label={`Assigned to ${item.assignee}. Click to change.`}
+                                >
+                                  <span
+                                    class="speaker-dot"
+                                    style={{
+                                      background: speakerColor(
+                                        item.assignee,
+                                        speakers,
+                                      ),
+                                    }}
+                                  />
+                                </button>
+                                {activeAssigneeDropdown.value ===
+                                    item.id && (
+                                  <div class="action-dropdown-menu font-mono">
+                                    {/* Custom name input */}
+                                    <div class="action-dropdown-input-wrapper">
+                                      <input
+                                        type="text"
+                                        aria-label="Assignee name"
+                                        defaultValue={item
+                                          .assignee || ""}
+                                        placeholder="Type a name…"
+                                        class="action-dropdown-input font-mono"
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter") {
+                                            const val =
+                                              (e.target as HTMLInputElement)
+                                                .value.trim();
+                                            if (val) {
+                                              updateAssignee(
+                                                item.id,
+                                                val,
+                                              );
+                                            }
+                                            activeAssigneeDropdown
+                                              .value = null;
+                                          } else if (
+                                            e.key === "Escape"
+                                          ) {
+                                            activeAssigneeDropdown
+                                              .value = null;
+                                          }
+                                        }}
+                                        onBlur={() => {
+                                          if (
+                                            dropdownTimeoutRef
+                                              .current !==
+                                              null
+                                          ) {
+                                            clearTimeout(
+                                              dropdownTimeoutRef
+                                                .current,
+                                            );
+                                          }
+                                          dropdownTimeoutRef
+                                            .current = setTimeout(
+                                              () => {
+                                                activeAssigneeDropdown
+                                                  .value = null;
+                                                dropdownTimeoutRef
+                                                  .current = null;
+                                              },
+                                              200,
+                                            ) as unknown as number;
+                                        }}
+                                      />
+                                    </div>
+                                    {/* Clear option */}
+                                    <button
+                                      onClick={() => {
+                                        updateAssignee(
+                                          item.id,
+                                          null,
+                                        );
+                                        activeAssigneeDropdown
+                                          .value = null;
+                                      }}
+                                      class="action-dropdown-option font-mono"
+                                    >
+                                      None
+                                    </button>
+                                    {/* Suggestions */}
+                                    {assigneeSuggestions.value
+                                      .map(
+                                        (assignee) => (
+                                          <button
+                                            key={assignee}
+                                            onClick={() => {
+                                              updateAssignee(
+                                                item.id,
+                                                assignee,
+                                              );
+                                              activeAssigneeDropdown
+                                                .value = null;
+                                            }}
+                                            class={`action-dropdown-option font-mono${
+                                              item.assignee ===
+                                                  assignee
+                                                ? " is-active"
+                                                : ""
+                                            }`}
+                                          >
+                                            {assignee}
+                                          </button>
+                                        ),
+                                      )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
                             {/* Edit button — hover-reveal on desktop, always visible on touch */}
                             {!isTemp && (
                               <button
@@ -1404,7 +1393,7 @@ export default function ActionItemsCard(
                                     item.due_date,
                                   );
                                 }}
-                                class="action-item-edit-btn absolute top-2 right-9 w-6 h-6 flex items-center justify-center rounded-full transition-colors"
+                                class="action-item-edit-btn absolute top-2 right-16 w-6 h-6 flex items-center justify-center rounded-full transition-colors"
                                 aria-label={`Edit "${item.description}"`}
                                 title="Edit"
                               >
@@ -1422,7 +1411,7 @@ export default function ActionItemsCard(
                                 e.stopPropagation();
                                 deleteItem(item.id);
                               }}
-                              class="action-item-delete action-item-delete-btn absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full transition-colors"
+                              class="action-item-delete action-item-delete-btn absolute top-2 right-9 w-6 h-6 flex items-center justify-center rounded-full transition-colors"
                               aria-label={`Delete "${item.description}"`}
                               title="Delete (undoable)"
                             >
