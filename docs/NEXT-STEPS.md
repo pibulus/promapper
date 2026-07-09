@@ -123,3 +123,21 @@ no takes) — that's intended (it's the "talk again" affordance). Don't "fix".
 - Node-map first-render scale-in pop (nodes already have a springy bezier).
 - Scroll-fade hint on the mobile header action cluster.
 - Swipe-to-delete on history items (undo toast already exists as safety net).
+
+## 6. conversation_mapper donor — remaining finds (July 9 agent inventory)
+
+Ported already: bias detector as the "Blind spots" export format (`2c3b2d7`).
+Still on the shelf, in value order — all are Pablo product calls:
+
+- **All Action Items page** — cross-conversation "everything I owe" aggregate
+  (donor: `src/routes/all-action-items/`). Real feature, needs a route + nav.
+- **Summary regenerate button** — donor had one; ProMapper has no summary-only
+  regen endpoint yet, so it's an API route + button.
+- **Share revoke UI** — list + delete active share links; matters once
+  Supabase-backed shares see real use.
+- **TopicSpeakerVisualization** — who-talks-about-what, would drop into
+  vizRegistry. The Voices back now covers who-talks-how-much.
+- **Per-conversation notepad** — human scratch space; could be a card back.
+- Verdict on the rest (viz zoo, toys page, URL scraper): obsolete or off-loop.
+- Reference repos status: free4chat/autopreso/Excalidraw already mined (phases
+  2a-2c); moonshine = Phase 4 offline STT; drawio = pass.
