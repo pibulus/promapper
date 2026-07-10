@@ -186,7 +186,10 @@ export default function HomeIsland() {
     const timer = setTimeout(() => {
       import("animejs").then(({ default: anime }) => {
         anime({
-          targets: ".dashboard-skeleton-grid > *, .grid > *",
+          // Dashboard CARDS only — a bare ".grid > *" also matched the inner
+          // row grids (action-item rows etc.) and left stale inline
+          // opacity/transform on their children, breaking hover-reveals.
+          targets: ".dashboard-skeleton-grid > *, .dashboard-grid > *",
           translateY: [24, 0],
           opacity: [0, 1],
           scale: [0.96, 1],

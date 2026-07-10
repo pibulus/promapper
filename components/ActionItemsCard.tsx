@@ -3,7 +3,6 @@
  * Manages and displays action items with full CRUD, drag-and-drop, and sorting
  */
 
-import { Fragment } from "preact";
 import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import { toggleActionItemInList } from "@core/orchestration/conversation-ops.ts";
@@ -91,10 +90,12 @@ export default function ActionItemsCard(
   // State
   const visibleItems = useSignal<ActionItem[]>(actionItems);
   const sortMode = useSignal<"manual" | "assignee" | "date">("manual");
-  // Filters: reduce the list (sort only reorders). Two booleans cover ~90% of
-  // "what's mine / what's still open" without a heavy filter UI.
+  // Filter: reduce the list (sort only reorders). "Mine" covers ~90% of
+  // list-narrowing without a heavy filter UI.
   const filterMine = useSignal(false);
-  const hideDone = useSignal(false);
+  // Done items live behind a collapsed drawer at the list's tail — a visible
+  // graveyard was crowding the card's bottom. Search auto-opens it.
+  const doneOpen = useSignal(false);
 
   // Pointer-based drag-to-reorder (mouse + touch + pen). Declared here, above
   // the sortedActionItems computed that reads previewOrder, so there's no
@@ -135,8 +136,11 @@ export default function ActionItemsCard(
   const searchOpen = useSignal(false);
   // One pulldown for sort + filters (side-by-side pills were chrome bloat).
   const optionsOpen = useSignal(false);
-  // Rows are clamped to two lines; tapping the text expands one at a time.
-  const expandedItemId = useSignal<string | null>(null);
+  // A just-checked item lingers in place briefly — the checkbox pop and the
+  // strikethrough get their beat — before tucking into the done drawer.
+  const recentlyCompletedId = useSignal<string | null>(null);
+  // One-shot bump on the done-drawer toggle when an item tucks in.
+  const doneBump = useSignal(false);
   const showAssigneeDropdown = useSignal(false);
   // True while the inline-create draft row is showing (local only, see DRAFT_ID)
   const creatingDraft = useSignal(false);
@@ -149,6 +153,7 @@ export default function ActionItemsCard(
 
   // Refs
   const dropdownTimeoutRef = useRef<number | null>(null);
+  const lingerTimeoutRef = useRef<number | null>(null);
   const selectedItemIndex = useSignal<number>(-1);
   // Set when a mouse pointerdown already toggled a checkbox, so the click that
   // follows doesn't double-toggle. Touch/pen toggle on click only (a scroll
@@ -160,11 +165,14 @@ export default function ActionItemsCard(
   // only registers once but never goes stale.
   const arrowKeyHandlerRef = useRef<(e: KeyboardEvent) => void>(() => {});
 
-  // Cleanup dropdown timeout on unmount
+  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (dropdownTimeoutRef.current !== null) {
         clearTimeout(dropdownTimeoutRef.current);
+      }
+      if (lingerTimeoutRef.current !== null) {
+        clearTimeout(lingerTimeoutRef.current);
       }
     };
   }, []);
@@ -218,16 +226,16 @@ export default function ActionItemsCard(
     if (filterMine.value) {
       processedItems = processedItems.filter((item) => item.assignee === "Me");
     }
-    if (hideDone.value) {
-      processedItems = processedItems.filter((item) =>
-        item.status !== "completed"
-      );
-    }
 
+    // The just-checked lingering item counts as pending so it holds its spot
+    // in the list while its checkoff animation plays.
+    const lingerId = recentlyCompletedId.value;
     const completed = processedItems.filter((item) =>
-      item.status === "completed"
+      item.status === "completed" && item.id !== lingerId
     );
-    const pending = processedItems.filter((item) => item.status === "pending");
+    const pending = processedItems.filter((item) =>
+      item.status === "pending" || item.id === lingerId
+    );
 
     const sortGroup = (items: ActionItem[]) => {
       if (sortMode.value === "assignee") {
@@ -278,15 +286,28 @@ export default function ActionItemsCard(
     return [...orderedPending, ...draftRow, ...sortGroup(completed)];
   });
 
+  // Rows actually on screen — the done drawer may be closed, and keyboard
+  // nav/selection must never land on a hidden row. Search auto-opens done
+  // (you're looking for something; don't make it a two-step find).
+  const doneShown = useComputed(() =>
+    doneOpen.value || Boolean(searchQuery.value)
+  );
+  const renderedItems = useComputed(() =>
+    doneShown.value ? sortedActionItems.value : sortedActionItems.value.filter(
+      (item) =>
+        item.status !== "completed" || item.id === recentlyCompletedId.value,
+    )
+  );
+
   // Reset keyboard selection when list length changes
   useEffect(() => {
     selectedItemIndex.value = -1;
-  }, [sortedActionItems.value.length]);
+  }, [renderedItems.value.length]);
 
   // Keep the arrow key handler ref current on every render — this avoids the
   // stale closure problem without re-registering the event listener.
   arrowKeyHandlerRef.current = (e: KeyboardEvent) => {
-    if (sortedActionItems.value.length === 0) return;
+    if (renderedItems.value.length === 0) return;
     const target = e.target as HTMLElement;
     if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
 
@@ -294,20 +315,20 @@ export default function ActionItemsCard(
       e.preventDefault();
       selectedItemIndex.value = Math.min(
         selectedItemIndex.value + 1,
-        sortedActionItems.value.length - 1,
+        renderedItems.value.length - 1,
       );
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       selectedItemIndex.value = Math.max(selectedItemIndex.value - 1, 0);
     } else if (e.key === "Enter" && selectedItemIndex.value >= 0) {
       e.preventDefault();
-      const item = sortedActionItems.value[selectedItemIndex.value];
+      const item = renderedItems.value[selectedItemIndex.value];
       if (item) toggleActionItem(item.id);
     } else if (
       (e.key === "e" || e.key === "F2") && selectedItemIndex.value >= 0
     ) {
       e.preventDefault();
-      const item = sortedActionItems.value[selectedItemIndex.value];
+      const item = renderedItems.value[selectedItemIndex.value];
       if (item) {
         startEditing(item.id, item.description, item.assignee, item.due_date);
       }
@@ -339,6 +360,14 @@ export default function ActionItemsCard(
     if (target?.status === "completed") {
       hapticTap();
       soundTick();
+      // Un-checking during the linger = a changed mind; cancel the tuck.
+      if (recentlyCompletedId.value === itemId) {
+        if (lingerTimeoutRef.current !== null) {
+          clearTimeout(lingerTimeoutRef.current);
+          lingerTimeoutRef.current = null;
+        }
+        recentlyCompletedId.value = null;
+      }
     } else {
       hapticBump();
       // Escalation: if THIS checkoff finishes the whole list, play the warmer
@@ -361,6 +390,21 @@ export default function ActionItemsCard(
       setTimeout(() => {
         if (poppingId.value === itemId) poppingId.value = null;
       }, 240);
+      // Hold the checked row in place while the pop + strikethrough play,
+      // then tuck it into the done drawer and bump the drawer toggle.
+      if (lingerTimeoutRef.current !== null) {
+        clearTimeout(lingerTimeoutRef.current);
+      }
+      recentlyCompletedId.value = itemId;
+      lingerTimeoutRef.current = setTimeout(() => {
+        lingerTimeoutRef.current = null;
+        if (recentlyCompletedId.value !== itemId) return;
+        recentlyCompletedId.value = null;
+        doneBump.value = true;
+        setTimeout(() => {
+          doneBump.value = false;
+        }, 450);
+      }, 900) as unknown as number;
     }
     // The manual-override rule (strip AI flags + stamp updated_at) lives in
     // the shared pure op — same seam the store and tests use.
@@ -426,14 +470,30 @@ export default function ActionItemsCard(
       publishItems([...visibleItems.value, newItem]);
       soundBloom();
     } else {
+      // No-change guard: click-to-edit means rows open casually — a look
+      // around that touches nothing must not stamp updated_at or push a sync.
+      const existing = visibleItems.value.find(
+        (item) => item.id === editingItemId.value,
+      );
+      const description = editingDescription.value.trim();
+      const assignee = editingAssignee.value.trim() || null;
+      const due_date = editingDueDate.value || null;
+      if (
+        existing && existing.description === description &&
+        (existing.assignee || null) === assignee &&
+        (existing.due_date || null) === due_date
+      ) {
+        cancelEdit();
+        return;
+      }
       publishItems(
         visibleItems.value.map((item) =>
           item.id === editingItemId.value
             ? {
               ...item,
-              description: editingDescription.value.trim(),
-              assignee: editingAssignee.value.trim() || null,
-              due_date: editingDueDate.value || null,
+              description,
+              assignee,
+              due_date,
               updated_at: new Date().toISOString(),
             }
             : item
@@ -484,11 +544,6 @@ export default function ActionItemsCard(
   // ===================================================================
   // RENDER
   // ===================================================================
-
-  // Find where completed items begin in the sorted list for "Clear done" divider
-  const firstCompletedIndex = sortedActionItems.value.findIndex((i) =>
-    i.status === "completed"
-  );
 
   // Ghost add-row: sits at the end of the pending items and BECOMES the task
   // when clicked (the inline draft opens in its place). Hidden while a draft
@@ -573,18 +628,6 @@ export default function ActionItemsCard(
                     >
                       Mine only
                     </button>
-                    <button
-                      type="button"
-                      class={`action-dropdown-option${
-                        hideDone.value ? " is-active" : ""
-                      }`}
-                      onClick={() => {
-                        hideDone.value = !hideDone.value;
-                        soundToggle(hideDone.value);
-                      }}
-                    >
-                      Hide done
-                    </button>
                   </div>
                 )}
               </div>
@@ -653,9 +696,10 @@ export default function ActionItemsCard(
                   : (
                     <div class="empty-state font-mono">
                       <div class="empty-state-icon">
-                        <i class="fa fa-circle-check" aria-hidden="true"></i>
+                        <i class="fa fa-magnifying-glass" aria-hidden="true">
+                        </i>
                       </div>
-                      <div class="empty-state-text">All done</div>
+                      <div class="empty-state-text">Nothing matches</div>
                     </div>
                   )
               )
@@ -666,7 +710,22 @@ export default function ActionItemsCard(
                     // at the wrong hour in non-UTC timezones (and isn't
                     // recomputed per row).
                     const todayISO = localDateISO(0);
-                    return sortedActionItems.value.map((item, index) => {
+                    const lingerId = recentlyCompletedId.value;
+                    const isPendingRow = (row: ActionItem) =>
+                      row.status === "pending" || row.id === lingerId;
+                    const pendingRows = sortedActionItems.value.filter(
+                      isPendingRow,
+                    );
+                    const completedRows = sortedActionItems.value.filter(
+                      (row) => !isPendingRow(row),
+                    );
+                    // doneIndex >= 0 marks a row inside the done drawer — it
+                    // gets the staggered reveal when the drawer opens.
+                    const renderRow = (
+                      item: ActionItem,
+                      index: number,
+                      doneIndex = -1,
+                    ) => {
                       const isDragging = draggingId.value === item.id;
                       const isSettling = settlingId.value === item.id;
                       const isTemp = item.id === DRAFT_ID;
@@ -680,558 +739,604 @@ export default function ActionItemsCard(
                         item.due_date < todayISO;
 
                       return (
-                        <Fragment key={item.id}>
-                          {/* Ghost add-row closes out the pending group */}
-                          {index === firstCompletedIndex && addGhostRow}
-                          <div
-                            data-sortable-id={canDrag ? item.id : undefined}
-                            onPointerDown={(e) =>
-                              canDrag && onRowPointerDown(e, item.id)}
-                            onClick={() => selectedItemIndex.value = index}
-                            class={`action-item-card relative transition-all${
-                              item.status === "completed" ? " is-completed" : ""
-                            }${isSelected ? " is-selected" : ""}${
-                              isDragging ? " is-dragging" : ""
-                            }${isSettling ? " is-settling" : ""}`}
-                            style={{
-                              // pan-y keeps native vertical scroll on draggable
-                              // rows; the long-press grab (usePointerSortable)
-                              // takes over once it fires. Anything stricter
-                              // would kill scrolling over the list on touch.
-                              touchAction: canDrag ? "pan-y" : undefined,
-                            }}
-                          >
-                            <div class="grid grid-cols-[auto_1fr_auto] gap-2.5 items-start relative z-[2]">
-                              {/* Drag Handle (mouse/pen: press to grab; touch: long-press the row) */}
-                              <div class="flex items-center pt-1">
-                                {canDrag
-                                  ? (
-                                    <i
-                                      class="fa fa-grip-vertical drag-handle"
-                                      title="Drag to reorder"
-                                      onPointerDown={(e) =>
-                                        onHandlePointerDown(e, item.id)}
-                                    >
-                                    </i>
-                                  )
-                                  : <div class="drag-handle-placeholder"></div>}
-                              </div>
+                        <div
+                          key={item.id}
+                          data-sortable-id={canDrag ? item.id : undefined}
+                          onPointerDown={(e) =>
+                            canDrag && onRowPointerDown(e, item.id)}
+                          onClick={() => selectedItemIndex.value = index}
+                          class={`action-item-card relative transition-all${
+                            item.status === "completed" ? " is-completed" : ""
+                          }${isSelected ? " is-selected" : ""}${
+                            isDragging ? " is-dragging" : ""
+                          }${isSettling ? " is-settling" : ""}${
+                            doneIndex >= 0 ? " done-enter" : ""
+                          }`}
+                          style={{
+                            // pan-y keeps native vertical scroll on draggable
+                            // rows; the long-press grab (usePointerSortable)
+                            // takes over once it fires. Anything stricter
+                            // would kill scrolling over the list on touch.
+                            touchAction: canDrag ? "pan-y" : undefined,
+                            ...(doneIndex >= 0
+                              ? { "--stagger": String(doneIndex) }
+                              : {}),
+                          }}
+                        >
+                          <div class="grid grid-cols-[auto_1fr_auto_auto] gap-2.5 items-start relative z-[2]">
+                            {/* Drag Handle (mouse/pen: press to grab; touch: long-press the row) */}
+                            <div class="flex items-center pt-1">
+                              {canDrag
+                                ? (
+                                  <i
+                                    class="fa fa-grip-vertical drag-handle"
+                                    title="Drag to reorder"
+                                    onPointerDown={(e) =>
+                                      onHandlePointerDown(e, item.id)}
+                                  >
+                                  </i>
+                                )
+                                : <div class="drag-handle-placeholder"></div>}
+                            </div>
 
-                              {/* Content */}
-                              <div class="flex flex-col gap-2 min-w-0 w-full">
-                                {editingItemId.value === item.id
-                                  ? (
-                                    <div class="space-y-3 font-mono">
-                                      <textarea
-                                        aria-label="Edit description"
-                                        value={editingDescription.value}
-                                        onInput={(e) => {
-                                          editingDescription.value =
-                                            (e.target as HTMLTextAreaElement)
-                                              .value;
-                                          soundTick(); // typing sound
-                                        }}
-                                        onKeyDown={(e) => {
-                                          if (
-                                            (e.ctrlKey || e.metaKey) &&
-                                            e.key === "Enter"
-                                          ) {
-                                            e.preventDefault();
-                                            saveEdit();
-                                          } else if (e.key === "Escape") {
-                                            e.preventDefault();
-                                            cancelEdit();
-                                          }
-                                        }}
-                                        onBlur={(e) => {
-                                          const related = (e as FocusEvent)
-                                            .relatedTarget as
-                                              | HTMLElement
-                                              | null;
-                                          // Don't save if focus moved to controls inside the editing card
-                                          if (
-                                            related &&
-                                            related.closest(".action-item-card")
-                                          ) return;
-                                          if (
-                                            editingDescription.value.trim()
-                                          ) {
-                                            saveEdit();
-                                          } else {
-                                            cancelEdit();
-                                          }
-                                        }}
-                                        placeholder="What needs doing?"
-                                        class="w-full rounded px-2.5 py-1.5 text-sm action-input-border bg-white focus:ring-2 focus:ring-accent outline-none font-mono"
-                                        style={{ minHeight: "70px" }}
-                                        autoFocus
-                                      />
+                            {/* Content */}
+                            <div class="flex flex-col gap-2 min-w-0 w-full">
+                              {editingItemId.value === item.id
+                                ? (
+                                  <div class="space-y-3 font-mono">
+                                    <textarea
+                                      aria-label="Edit description"
+                                      value={editingDescription.value}
+                                      onInput={(e) => {
+                                        editingDescription.value =
+                                          (e.target as HTMLTextAreaElement)
+                                            .value;
+                                        soundTick(); // typing sound
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (
+                                          (e.ctrlKey || e.metaKey) &&
+                                          e.key === "Enter"
+                                        ) {
+                                          e.preventDefault();
+                                          saveEdit();
+                                        } else if (e.key === "Escape") {
+                                          e.preventDefault();
+                                          cancelEdit();
+                                        }
+                                      }}
+                                      onBlur={(e) => {
+                                        const related = (e as FocusEvent)
+                                          .relatedTarget as
+                                            | HTMLElement
+                                            | null;
+                                        // Don't save if focus moved to controls inside the editing card
+                                        if (
+                                          related &&
+                                          related.closest(".action-item-card")
+                                        ) return;
+                                        if (
+                                          editingDescription.value.trim()
+                                        ) {
+                                          saveEdit();
+                                        } else {
+                                          cancelEdit();
+                                        }
+                                      }}
+                                      placeholder="What needs doing?"
+                                      class="w-full rounded px-2.5 py-1.5 text-sm action-input-border bg-white focus:ring-2 focus:ring-accent outline-none font-mono"
+                                      style={{ minHeight: "70px" }}
+                                      autoFocus
+                                    />
 
-                                      {/* Inline details fields */}
-                                      <div class="flex flex-wrap gap-3 items-center">
-                                        {/* Assignee pill editor */}
-                                        <div class="relative inline-block assignee-dropdown-container">
-                                          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs bg-cream border border-soft-black shadow-[2px_2px_0px_0px_var(--soft-black)]">
-                                            <i class="fa fa-user text-xs"></i>
-                                            <input
-                                              type="text"
-                                              value={editingAssignee.value}
-                                              onInput={(e) => {
-                                                editingAssignee.value =
-                                                  (e.target as HTMLInputElement)
-                                                    .value;
-                                                soundTick();
-                                              }}
-                                              onFocus={() => {
-                                                showAssigneeDropdown.value =
-                                                  true;
-                                              }}
-                                              onBlur={() => {
-                                                if (
-                                                  dropdownTimeoutRef.current !==
-                                                    null
-                                                ) {
-                                                  clearTimeout(
-                                                    dropdownTimeoutRef.current,
-                                                  );
-                                                }
-                                                dropdownTimeoutRef.current =
-                                                  setTimeout(() => {
-                                                    showAssigneeDropdown.value =
-                                                      false;
-                                                    dropdownTimeoutRef.current =
-                                                      null;
-                                                  }, 200) as unknown as number;
-                                              }}
-                                              placeholder="Who?"
-                                              class="w-20 bg-transparent border-none outline-none font-mono text-xs focus:ring-0 p-0"
-                                            />
-                                          </div>
-
-                                          {showAssigneeDropdown.value && (
-                                            <div class="action-dropdown-menu">
-                                              {assigneeSuggestions.value.map((
-                                                assignee,
-                                              ) => (
-                                                <button
-                                                  type="button"
-                                                  key={assignee}
-                                                  onMouseDown={() => {
-                                                    editingAssignee.value =
-                                                      assignee;
-                                                    showAssigneeDropdown.value =
-                                                      false;
-                                                  }}
-                                                  class={`action-dropdown-option font-mono text-xs${
-                                                    editingAssignee.value ===
-                                                        assignee
-                                                      ? " is-active"
-                                                      : ""
-                                                  }`}
-                                                >
-                                                  {assignee}
-                                                </button>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </div>
-
-                                        {/* Due date picker editor */}
+                                    {/* Inline details fields */}
+                                    <div class="flex flex-wrap gap-3 items-center">
+                                      {/* Assignee pill editor */}
+                                      <div class="relative inline-block assignee-dropdown-container">
                                         <div class="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs bg-cream border border-soft-black shadow-[2px_2px_0px_0px_var(--soft-black)]">
-                                          <i class="fa fa-calendar text-xs"></i>
+                                          <i class="fa fa-user text-xs"></i>
                                           <input
-                                            type="date"
-                                            value={editingDueDate.value}
+                                            type="text"
+                                            value={editingAssignee.value}
                                             onInput={(e) => {
-                                              editingDueDate.value =
+                                              editingAssignee.value =
                                                 (e.target as HTMLInputElement)
                                                   .value;
                                               soundTick();
                                             }}
-                                            class="bg-transparent border-none outline-none font-mono text-xs focus:ring-0 p-0 cursor-pointer"
+                                            onFocus={() => {
+                                              showAssigneeDropdown.value = true;
+                                            }}
+                                            onBlur={() => {
+                                              if (
+                                                dropdownTimeoutRef.current !==
+                                                  null
+                                              ) {
+                                                clearTimeout(
+                                                  dropdownTimeoutRef.current,
+                                                );
+                                              }
+                                              dropdownTimeoutRef.current =
+                                                setTimeout(() => {
+                                                  showAssigneeDropdown.value =
+                                                    false;
+                                                  dropdownTimeoutRef.current =
+                                                    null;
+                                                }, 200) as unknown as number;
+                                            }}
+                                            placeholder="Who?"
+                                            class="w-20 bg-transparent border-none outline-none font-mono text-xs focus:ring-0 p-0"
                                           />
                                         </div>
 
-                                        {/* Quick presets */}
-                                        <div class="flex gap-1">
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              editingDueDate.value =
-                                                localDateISO(
-                                                  0,
-                                                );
-                                              soundTick();
-                                            }}
-                                            class="action-filter-pill text-[10px] py-0.5 px-1.5"
-                                          >
-                                            Today
-                                          </button>
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              editingDueDate.value =
-                                                localDateISO(
-                                                  1,
-                                                );
-                                              soundTick();
-                                            }}
-                                            class="action-filter-pill text-[10px] py-0.5 px-1.5"
-                                          >
-                                            Tmrw
-                                          </button>
-                                        </div>
+                                        {showAssigneeDropdown.value && (
+                                          <div class="action-dropdown-menu">
+                                            {assigneeSuggestions.value.map((
+                                              assignee,
+                                            ) => (
+                                              <button
+                                                type="button"
+                                                key={assignee}
+                                                onMouseDown={() => {
+                                                  editingAssignee.value =
+                                                    assignee;
+                                                  showAssigneeDropdown.value =
+                                                    false;
+                                                }}
+                                                class={`action-dropdown-option font-mono text-xs${
+                                                  editingAssignee.value ===
+                                                      assignee
+                                                    ? " is-active"
+                                                    : ""
+                                                }`}
+                                              >
+                                                {assignee}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        )}
                                       </div>
 
-                                      <div class="flex justify-between items-center pt-1 edit-actions">
-                                        <span class="text-[10px] italic action-edit-hint">
-                                          Ctrl+Enter to save · Esc to cancel
-                                        </span>
-                                        <div class="flex gap-2">
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              saveEdit();
-                                            }}
-                                            disabled={!editingDescription.value
-                                              .trim()}
-                                            class="btn btn--accent btn--compact font-bold text-xs"
-                                          >
-                                            Save
-                                          </button>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              cancelEdit();
-                                            }}
-                                            class="btn btn--secondary btn--compact font-bold text-xs"
-                                          >
-                                            Cancel
-                                          </button>
-                                        </div>
+                                      {/* Due date picker editor */}
+                                      <div class="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs bg-cream border border-soft-black shadow-[2px_2px_0px_0px_var(--soft-black)]">
+                                        <i class="fa fa-calendar text-xs"></i>
+                                        <input
+                                          type="date"
+                                          value={editingDueDate.value}
+                                          onInput={(e) => {
+                                            editingDueDate.value =
+                                              (e.target as HTMLInputElement)
+                                                .value;
+                                            soundTick();
+                                          }}
+                                          class="bg-transparent border-none outline-none font-mono text-xs focus:ring-0 p-0 cursor-pointer"
+                                        />
+                                      </div>
+
+                                      {/* Quick presets */}
+                                      <div class="flex gap-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            editingDueDate.value = localDateISO(
+                                              0,
+                                            );
+                                            soundTick();
+                                          }}
+                                          class="action-filter-pill text-[10px] py-0.5 px-1.5"
+                                        >
+                                          Today
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            editingDueDate.value = localDateISO(
+                                              1,
+                                            );
+                                            soundTick();
+                                          }}
+                                          class="action-filter-pill text-[10px] py-0.5 px-1.5"
+                                        >
+                                          Tmrw
+                                        </button>
                                       </div>
                                     </div>
-                                  )
-                                  : (
-                                    <>
-                                      {
-                                        /* Two-line clamp keeps every row the
-                                          same shape; tap the text to expand,
-                                          double-tap to edit */
-                                      }
-                                      <p
-                                        class={`action-item-description leading-relaxed${
-                                          item.status === "completed"
-                                            ? " is-completed"
-                                            : ""
-                                        }${
-                                          expandedItemId.value === item.id
-                                            ? " is-expanded"
-                                            : ""
-                                        }`}
-                                        onClick={() =>
-                                          expandedItemId.value =
-                                            expandedItemId.value === item.id
-                                              ? null
-                                              : item.id}
-                                        onDblClick={() =>
-                                          startEditing(
-                                            item.id,
-                                            item.description,
-                                            item.assignee,
-                                            item.due_date,
-                                          )}
-                                        // Full text on hover (truncated rows), native so it wraps.
-                                        title={item.description}
-                                      >
-                                        {item.description}
-                                      </p>
 
-                                      {
-                                        /* Metadata — only what EXISTS renders:
+                                    <div class="flex justify-between items-center pt-1 edit-actions">
+                                      <span class="text-[10px] italic action-edit-hint">
+                                        Ctrl+Enter to save · Esc to cancel
+                                      </span>
+                                      <div class="flex gap-2">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            saveEdit();
+                                          }}
+                                          disabled={!editingDescription.value
+                                            .trim()}
+                                          class="btn btn--accent btn--compact font-bold text-xs"
+                                        >
+                                          Save
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            cancelEdit();
+                                          }}
+                                          class="btn btn--secondary btn--compact font-bold text-xs"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )
+                                : (
+                                  <>
+                                    {
+                                      /* Two-line clamp keeps every row the
+                                          same shape; click the words to edit
+                                          them in place (the editor shows the
+                                          full text — reading == editing) */
+                                    }
+                                    <p
+                                      class={`action-item-description leading-relaxed${
+                                        item.status === "completed"
+                                          ? " is-completed"
+                                          : ""
+                                      }`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        selectedItemIndex.value = index;
+                                        startEditing(
+                                          item.id,
+                                          item.description,
+                                          item.assignee,
+                                          item.due_date,
+                                        );
+                                      }}
+                                      // Full text on hover (truncated rows), native so it wraps.
+                                      title={item.description}
+                                    >
+                                      {item.description}
+                                    </p>
+
+                                    {
+                                      /* Metadata — only what EXISTS renders:
                                           the assignee's color dot, the date
                                           when set. Empty slots show nothing
                                           (the edit pencil holds the forms). */
-                                      }
-                                      {item.due_date && (
-                                        <div class="action-item-meta flex items-center gap-2 flex-wrap">
-                                          <div class="relative font-mono action-item-date-wrap">
-                                            <input
-                                              type="date"
-                                              id={`date-${item.id}`}
-                                              aria-label="Due date"
-                                              value={item.due_date || ""}
-                                              onChange={(e) =>
+                                    }
+                                    {item.due_date && (
+                                      <div class="action-item-meta flex items-center gap-2 flex-wrap">
+                                        <div class="relative font-mono action-item-date-wrap">
+                                          <input
+                                            type="date"
+                                            id={`date-${item.id}`}
+                                            aria-label="Due date"
+                                            value={item.due_date || ""}
+                                            onChange={(e) =>
+                                              updateDueDate(
+                                                item.id,
+                                                (e.target as HTMLInputElement)
+                                                  .value || null,
+                                              )}
+                                            class="absolute opacity-0 pointer-events-none"
+                                          />
+                                          <button
+                                            onClick={() => {
+                                              const input = document
+                                                .getElementById(
+                                                  `date-${item.id}`,
+                                                ) as
+                                                  | HTMLInputElement
+                                                  | null;
+                                              try {
+                                                if (
+                                                  input &&
+                                                  "showPicker" in input
+                                                ) {
+                                                  (input as any)
+                                                    .showPicker();
+                                                } else if (input) {
+                                                  input.focus();
+                                                  input.click();
+                                                }
+                                              } catch {
+                                                if (input) {
+                                                  input.focus();
+                                                  input.click();
+                                                }
+                                              }
+                                            }}
+                                            class={`action-item-chip action-item-chip--btn flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors has-value${
+                                              isOverdue ? " is-overdue" : ""
+                                            }`}
+                                            title="Change due date"
+                                          >
+                                            <i class="fa fa-calendar text-xs">
+                                            </i>
+                                            <span class="font-mono">
+                                              {formatFriendlyDate(
+                                                item.due_date,
+                                              )}
+                                            </span>
+                                          </button>
+                                          <div class="action-item-date-presets flex gap-1 mt-1 flex-wrap">
+                                            <button
+                                              onClick={() =>
                                                 updateDueDate(
                                                   item.id,
-                                                  (e.target as HTMLInputElement)
-                                                    .value || null,
+                                                  localDateISO(0),
                                                 )}
-                                              class="absolute opacity-0 pointer-events-none"
-                                            />
-                                            <button
-                                              onClick={() => {
-                                                const input = document
-                                                  .getElementById(
-                                                    `date-${item.id}`,
-                                                  ) as
-                                                    | HTMLInputElement
-                                                    | null;
-                                                try {
-                                                  if (
-                                                    input &&
-                                                    "showPicker" in input
-                                                  ) {
-                                                    (input as any)
-                                                      .showPicker();
-                                                  } else if (input) {
-                                                    input.focus();
-                                                    input.click();
-                                                  }
-                                                } catch {
-                                                  if (input) {
-                                                    input.focus();
-                                                    input.click();
-                                                  }
-                                                }
-                                              }}
-                                              class={`action-item-chip action-item-chip--btn flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors has-value${
-                                                isOverdue ? " is-overdue" : ""
-                                              }`}
-                                              title="Change due date"
+                                              class="action-filter-pill action-date-preset"
                                             >
-                                              <i class="fa fa-calendar text-xs">
-                                              </i>
-                                              <span class="font-mono">
-                                                {formatFriendlyDate(
-                                                  item.due_date,
-                                                )}
-                                              </span>
+                                              Today
                                             </button>
-                                            <div class="action-item-date-presets flex gap-1 mt-1 flex-wrap">
+                                            <button
+                                              onClick={() =>
+                                                updateDueDate(
+                                                  item.id,
+                                                  localDateISO(1),
+                                                )}
+                                              class="action-filter-pill action-date-preset"
+                                            >
+                                              Tmrw
+                                            </button>
+                                            {item.due_date && (
                                               <button
                                                 onClick={() =>
                                                   updateDueDate(
                                                     item.id,
-                                                    localDateISO(0),
+                                                    null,
                                                   )}
-                                                class="action-filter-pill action-date-preset"
+                                                class="action-filter-pill is-danger action-date-preset"
                                               >
-                                                Today
+                                                Clear
                                               </button>
-                                              <button
-                                                onClick={() =>
-                                                  updateDueDate(
-                                                    item.id,
-                                                    localDateISO(1),
-                                                  )}
-                                                class="action-filter-pill action-date-preset"
-                                              >
-                                                Tmrw
-                                              </button>
-                                              {item.due_date && (
-                                                <button
-                                                  onClick={() =>
-                                                    updateDueDate(
-                                                      item.id,
-                                                      null,
-                                                    )}
-                                                  class="action-filter-pill is-danger action-date-preset"
-                                                >
-                                                  Clear
-                                                </button>
-                                              )}
-                                            </div>
+                                            )}
                                           </div>
                                         </div>
-                                      )}
+                                      </div>
+                                    )}
 
-                                      {
-                                        /* AI self-checkoff — make the magic take
+                                    {
+                                      /* AI self-checkoff — make the magic take
                                         a bow. Chip shows when the AI flipped
                                         this item; tap reveals what it heard.
                                         Fields vanish on manual toggle (by
                                         design) and the chip goes with them. */
-                                      }
-                                      {(item as AIFlaggedItem).ai_checked && (
-                                        <div class="action-item-ai">
-                                          <button
-                                            type="button"
-                                            class="action-item-chip action-item-chip--ai px-3 py-1 rounded text-xs"
-                                            aria-expanded={expandedReasonId
-                                              .value === item.id}
-                                            onClick={() =>
-                                              expandedReasonId.value =
-                                                expandedReasonId.value ===
-                                                    item.id
-                                                  ? null
-                                                  : item.id}
-                                            title="The AI updated this item — tap for why"
-                                          >
-                                            ✨ AI {item.status === "completed"
-                                              ? "checked this off"
-                                              : "reopened this"}
-                                          </button>
-                                          {expandedReasonId.value === item.id &&
-                                            (item as AIFlaggedItem)
-                                              .checked_reason &&
-                                            (
-                                              <p class="action-item-ai-reason">
-                                                "{(item as AIFlaggedItem)
-                                                  .checked_reason}"
-                                              </p>
-                                            )}
-                                        </div>
-                                      )}
-                                    </>
-                                  )}
-                              </div>
+                                    }
+                                    {(item as AIFlaggedItem).ai_checked && (
+                                      <div class="action-item-ai">
+                                        <button
+                                          type="button"
+                                          class="action-item-chip action-item-chip--ai px-3 py-1 rounded text-xs"
+                                          aria-expanded={expandedReasonId
+                                            .value === item.id}
+                                          onClick={() =>
+                                            expandedReasonId.value =
+                                              expandedReasonId.value ===
+                                                  item.id
+                                                ? null
+                                                : item.id}
+                                          title="The AI updated this item — tap for why"
+                                        >
+                                          ✨ AI {item.status === "completed"
+                                            ? "checked this off"
+                                            : "reopened this"}
+                                        </button>
+                                        {expandedReasonId.value === item.id &&
+                                          (item as AIFlaggedItem)
+                                            .checked_reason &&
+                                          (
+                                            <p class="action-item-ai-reason">
+                                              "{(item as AIFlaggedItem)
+                                                .checked_reason}"
+                                            </p>
+                                          )}
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+                            </div>
 
-                              {/* Checkbox */}
-                              <div class="flex items-center pt-1">
-                                {isTemp
-                                  ? (
-                                    <div
-                                      class="w-[1.4rem] h-[1.4rem] rounded-[0.45rem] flex items-center justify-center bg-cream"
+                            {
+                              /* Edit + delete — IN the row grid (the old
+                                  absolute corner buttons landed on the
+                                  checkbox at narrow widths). Hover/selected
+                                  reveals them; they can't overlap anything. */
+                            }
+                            {!isTemp && editingItemId.value !== item.id && (
+                              <div class="action-item-actions flex items-center gap-1 pt-0.5">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    startEditing(
+                                      item.id,
+                                      item.description,
+                                      item.assignee,
+                                      item.due_date,
+                                    );
+                                  }}
+                                  class="action-item-icon-btn"
+                                  aria-label={`Edit "${item.description}"`}
+                                  title="Edit"
+                                >
+                                  <i
+                                    class="fa fa-pencil text-xs"
+                                    aria-hidden="true"
+                                  >
+                                  </i>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteItem(item.id);
+                                  }}
+                                  class="action-item-icon-btn action-item-icon-btn--delete"
+                                  aria-label={`Delete "${item.description}"`}
+                                  title="Delete (undoable)"
+                                >
+                                  <i
+                                    class="fa fa-times text-xs"
+                                    aria-hidden="true"
+                                  >
+                                  </i>
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Checkbox */}
+                            <div class="flex items-center pt-1">
+                              {isTemp
+                                ? (
+                                  <div
+                                    class="w-[1.25rem] h-[1.25rem] rounded-[0.4rem] flex items-center justify-center bg-cream"
+                                    style={{
+                                      border: "2px dashed var(--color-border)",
+                                    }}
+                                    title="Creating inline..."
+                                  >
+                                    <i
+                                      class="fa fa-plus text-[10px]"
                                       style={{
-                                        border:
-                                          "2px dashed var(--color-border)",
+                                        color: "var(--color-text-secondary)",
                                       }}
-                                      title="Creating inline..."
+                                      aria-hidden="true"
                                     >
+                                    </i>
+                                  </div>
+                                )
+                                : (
+                                  <button
+                                    type="button"
+                                    // Mouse toggles on pointerdown (snappy);
+                                    // touch/pen wait for the click so a scroll
+                                    // flick that lands here can't check it.
+                                    onPointerDown={(event) => {
+                                      event.stopPropagation();
+                                      if (event.pointerType === "mouse") {
+                                        event.preventDefault();
+                                        checkboxHandledByPointer.current = true;
+                                        toggleActionItem(item.id);
+                                      }
+                                    }}
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      if (checkboxHandledByPointer.current) {
+                                        checkboxHandledByPointer.current =
+                                          false;
+                                        return;
+                                      }
+                                      toggleActionItem(item.id);
+                                    }}
+                                    onKeyDown={(event) => {
+                                      if (
+                                        event.key !== "Enter" &&
+                                        event.key !== " "
+                                      ) {
+                                        return;
+                                      }
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      toggleActionItem(item.id);
+                                    }}
+                                    class={`action-item-checkbox-button${
+                                      item.status === "completed"
+                                        ? " is-checked"
+                                        : ""
+                                    }${
+                                      poppingId.value === item.id
+                                        ? " is-popping"
+                                        : ""
+                                    }${item.assignee ? " is-assigned" : ""}`}
+                                    // The checkbox IS the person: the
+                                    // assignee's stable identity hue rides
+                                    // in as a custom prop and the CSS mixes
+                                    // it toward the live theme (raw palette
+                                    // hex read garish next to any accent).
+                                    style={item.assignee
+                                      ? {
+                                        "--person-color": speakerColor(
+                                          item.assignee,
+                                          speakers,
+                                        ),
+                                      }
+                                      : undefined}
+                                    title={item.assignee
+                                      ? `Assigned to ${item.assignee}`
+                                      : undefined}
+                                    role="checkbox"
+                                    aria-checked={item.status === "completed"}
+                                    aria-label={`Mark ${item.description} as ${
+                                      item.status === "completed"
+                                        ? "pending"
+                                        : "completed"
+                                    }`}
+                                  >
+                                    {item.status === "completed" && (
                                       <i
-                                        class="fa fa-plus text-[10px]"
-                                        style={{
-                                          color: "var(--color-text-secondary)",
-                                        }}
+                                        class="fa fa-check"
                                         aria-hidden="true"
                                       >
                                       </i>
-                                    </div>
-                                  )
-                                  : (
-                                    <button
-                                      type="button"
-                                      // Mouse toggles on pointerdown (snappy);
-                                      // touch/pen wait for the click so a scroll
-                                      // flick that lands here can't check it.
-                                      onPointerDown={(event) => {
-                                        event.stopPropagation();
-                                        if (event.pointerType === "mouse") {
-                                          event.preventDefault();
-                                          checkboxHandledByPointer.current =
-                                            true;
-                                          toggleActionItem(item.id);
-                                        }
-                                      }}
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        if (checkboxHandledByPointer.current) {
-                                          checkboxHandledByPointer.current =
-                                            false;
-                                          return;
-                                        }
-                                        toggleActionItem(item.id);
-                                      }}
-                                      onKeyDown={(event) => {
-                                        if (
-                                          event.key !== "Enter" &&
-                                          event.key !== " "
-                                        ) {
-                                          return;
-                                        }
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                        toggleActionItem(item.id);
-                                      }}
-                                      class={`action-item-checkbox-button${
-                                        item.status === "completed"
-                                          ? " is-checked"
-                                          : ""
-                                      }${
-                                        poppingId.value === item.id
-                                          ? " is-popping"
-                                          : ""
-                                      }${item.assignee ? " is-assigned" : ""}`}
-                                      // The checkbox IS the person: its inside
-                                      // takes the assignee's stable color (the
-                                      // separate dot column is gone — the words
-                                      // get that width back).
-                                      style={item.assignee
-                                        ? {
-                                          background: speakerColor(
-                                            item.assignee,
-                                            speakers,
-                                          ),
-                                        }
-                                        : undefined}
-                                      title={item.assignee
-                                        ? `Assigned to ${item.assignee}`
-                                        : undefined}
-                                      role="checkbox"
-                                      aria-checked={item.status === "completed"}
-                                      aria-label={`Mark ${item.description} as ${
-                                        item.status === "completed"
-                                          ? "pending"
-                                          : "completed"
-                                      }`}
-                                    >
-                                      {item.status === "completed" && (
-                                        <i
-                                          class="fa fa-check"
-                                          aria-hidden="true"
-                                        >
-                                        </i>
-                                      )}
-                                    </button>
-                                  )}
-                              </div>
+                                    )}
+                                  </button>
+                                )}
                             </div>
-
-                            {/* Edit button — hover-reveal on desktop, always visible on touch */}
-                            {!isTemp && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  startEditing(
-                                    item.id,
-                                    item.description,
-                                    item.assignee,
-                                    item.due_date,
-                                  );
-                                }}
-                                class="action-item-edit-btn absolute top-2 right-[6.4rem] w-6 h-6 flex items-center justify-center rounded-full transition-colors"
-                                aria-label={`Edit "${item.description}"`}
-                                title="Edit"
-                              >
-                                <i
-                                  class="fa fa-pencil text-xs"
-                                  aria-hidden="true"
-                                >
-                                </i>
-                              </button>
-                            )}
-
-                            {/* Delete button — immediate, undoable via toast */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteItem(item.id);
-                              }}
-                              class="action-item-delete action-item-delete-btn absolute top-2 right-[4.6rem] w-6 h-6 flex items-center justify-center rounded-full transition-colors"
-                              aria-label={`Delete "${item.description}"`}
-                              title="Delete (undoable)"
-                            >
-                              <i class="fa fa-times text-xs" aria-hidden="true">
-                              </i>
-                            </button>
                           </div>
-                        </Fragment>
+                        </div>
                       );
-                    });
+                    };
+
+                    return (
+                      <>
+                        {pendingRows.map((item, i) => renderRow(item, i))}
+                        {
+                          /* Everything's checked — a tiny payoff moment above
+                            the tucked-away drawer (not during a search). */
+                        }
+                        {pendingRows.length === 0 && !searchQuery.value && (
+                          <div class="empty-state font-mono">
+                            <div class="empty-state-icon">
+                              <i class="fa fa-circle-check" aria-hidden="true">
+                              </i>
+                            </div>
+                            <div class="empty-state-text">All done</div>
+                          </div>
+                        )}
+                        {addGhostRow}
+                        {
+                          /* Done drawer — completed items rest behind this
+                            slim divider-toggle; search peeks inside it. */
+                        }
+                        {completedRows.length > 0 && (
+                          <button
+                            type="button"
+                            class={`action-done-toggle font-mono${
+                              doneShown.value ? " is-open" : ""
+                            }${doneBump.value ? " is-bumping" : ""}`}
+                            onClick={() => {
+                              doneOpen.value = !doneOpen.value;
+                              soundToggle(doneOpen.value);
+                            }}
+                            aria-expanded={doneShown.value}
+                          >
+                            <i class="fa fa-chevron-down" aria-hidden="true">
+                            </i>
+                            <span>{completedRows.length} done</span>
+                          </button>
+                        )}
+                        {doneShown.value &&
+                          completedRows.map((item, i) =>
+                            renderRow(item, pendingRows.length + i, i)
+                          )}
+                      </>
+                    );
                   })()}
-                  {/* No completed items → the pending group runs to the end */}
-                  {firstCompletedIndex === -1 && addGhostRow}
                 </div>
               )}
           </div>

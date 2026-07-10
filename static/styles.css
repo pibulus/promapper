@@ -407,51 +407,57 @@ body {
   background: var(--color-secondary);
 }
 
-/* Delete button (top-right corner of each card).
-   position must be ABSOLUTE here: this rule loads after the Tailwind
-   utilities, so a `relative` would override the markup's `absolute` and drop
-   the button into flow — it then stacked (invisibly, opacity 0) below the
-   card content, adding ~44px of ghost height to every card.
-   z-index must beat the content grid's z-[2]: without it the description's
-   (transparent) box sat ON TOP and swallowed every click on these buttons. */
-.action-item-delete-btn {
-  position: absolute;
-  z-index: 5;
-  background: var(--surface-cream);
-  border: 1.5px solid var(--color-border);
+/* Row action cluster (edit / delete) — a real grid column, right of the
+   words, left of the checkbox. In flow = it can never land on the checkbox
+   (the old absolute corner buttons did exactly that at narrow widths).
+   Hidden until the row is hovered/focused/selected; on touch, a tap anywhere
+   on the row selects it and the pair fades in. */
+.action-item-actions {
   opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+.action-item-card:hover .action-item-actions,
+.action-item-card:focus-within .action-item-actions,
+.action-item-card.is-selected .action-item-actions {
+  opacity: 1;
+}
+
+.action-item-icon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  border: 1.5px solid var(--color-border);
+  background: var(--surface-cream);
+  color: var(--color-text-secondary);
+  cursor: pointer;
   transition:
-    opacity var(--transition-fast),
     background var(--transition-fast),
     color var(--transition-fast),
     transform var(--transition-fast);
 }
-/* Tall tap target without growing the 24px visual. Width capped at 28px —
-   the edit button's center sits 28px away, so 44px-wide targets would
-   overlap and make the corner a coin-flip on touch. */
-.action-item-delete-btn::before {
+/* Tall tap target without growing the 24px visual. Width capped at 30px —
+   the neighbor button's center sits ~28px away, so 44px-wide targets would
+   overlap and make the pair a coin-flip on touch. */
+.action-item-icon-btn::before {
   content: "";
   position: absolute;
   inset: 50%;
-  width: 28px;
+  width: 30px;
   height: 44px;
   transform: translate(-50%, -50%);
 }
-.action-item-card:hover .action-item-delete-btn,
-.action-item-delete-btn:focus-visible,
-.action-item-card:focus-within .action-item-delete-btn {
-  opacity: 1;
+.action-item-icon-btn:hover {
+  background: var(--surface-cream-hover);
+  color: var(--accent-ink);
 }
-@media (hover: none) {
-  .action-item-delete-btn {
-    opacity: 1;
-  }
-}
-.action-item-delete-btn:hover {
+.action-item-icon-btn--delete:hover {
   /* Warm rose lift (project_mapper/ziplist pattern) — never reddens. */
   background: color-mix(in srgb, var(--color-accent) 14%, var(--surface-cream));
-  color: var(--accent-ink);
-  transform: scale(1.15) rotate(8deg);
+  transform: scale(1.12) rotate(8deg);
 }
 
 /* ===================================================================
@@ -2028,11 +2034,6 @@ body {
     overflow-wrap: anywhere;
   }
 
-  .action-item-description.is-expanded {
-    -webkit-line-clamp: unset;
-    display: block;
-  }
-
   .action-item-description.is-completed {
     opacity: 0.6;
     text-decoration-thickness: 2px;
@@ -2046,19 +2047,13 @@ body {
     padding: 0.42rem 0.55rem !important;
   }
 
-  .action-item-delete {
-    top: 0.4rem !important;
-    right: 0.4rem !important;
-  }
-
   .action-item-card .grid {
     gap: 0.55rem;
   }
 
-  .action-item-checkbox-button {
-    width: 28px;
-    height: 28px;
-  }
+  /* (No checkbox size override here — the base 1.25rem applies everywhere;
+     it can't win anyway, the base rule comes later in the cascade. Touch
+     hits ride the invisible 44px ::before box.) */
 
   /* The drag handle is desktop chrome — touch sorting rides the long-press
      on the row itself. Reclaim its column for the words. */
@@ -3200,11 +3195,6 @@ html::-webkit-scrollbar-thumb:hover,
   text-decoration: line-through transparent 1.5px;
 }
 
-.action-item-description.is-expanded {
-  -webkit-line-clamp: unset;
-  display: block;
-}
-
 .action-item-description.is-completed {
   text-decoration: line-through
     color-mix(in srgb, var(--color-accent) 70%, transparent) 1.5px;
@@ -3281,12 +3271,12 @@ html::-webkit-scrollbar-thumb:hover,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.4rem;
-  height: 1.4rem;
+  width: 1.25rem;
+  height: 1.25rem;
   /* Warm-black border, not pale cream — this is THE tap target of the whole
      card and it used to disappear into the background. */
   border: 2px solid var(--soft-black);
-  border-radius: 0.45rem;
+  border-radius: 0.4rem;
   background: var(--surface-cream);
   color: var(--surface-cream);
   cursor: pointer;
@@ -3315,6 +3305,19 @@ html::-webkit-scrollbar-thumb:hover,
   outline: none;
   transform: scale(1.18) translateY(-1px);
   box-shadow: 2px 2px 0px 0px var(--color-accent);
+}
+
+/* The checkbox IS the person — wearing theme clothes. The assignee's stable
+   identity hue rides in as --person-color and gets pulled toward the live
+   accent, then pastelized over cream: every dice roll re-harmonizes the whole
+   crew (raw palette hex read garish next to any single theme). Stays BEFORE
+   .is-checked so the checked accent fill wins. */
+.action-item-checkbox-button.is-assigned {
+  background: color-mix(
+    in oklab,
+    color-mix(in oklab, var(--person-color) 80%, var(--color-accent)) 52%,
+    var(--surface-cream)
+  );
 }
 
 .action-item-checkbox-button.is-checked {
@@ -3360,7 +3363,7 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 .action-item-checkbox-button i {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
 }
 
 .action-item-checkbox-button.is-checked i {
@@ -3380,9 +3383,6 @@ html::-webkit-scrollbar-thumb:hover,
     transform: scale(1) rotate(0deg);
   }
 }
-
-/* (No extra border/slab on the delete button — it must match the edit pencil
-   next to it. The old dark ring made the pair read as two different systems.) */
 
 /* Sort + filter pulldown (header) */
 .action-options-menu {
@@ -3623,57 +3623,14 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 /* ===================================================================
-   ACTION ITEMS CARD — Edit button, quick-add, focus ring, overdue
+   ACTION ITEMS CARD — quick-add, done drawer, focus ring, overdue
    ================================================================ */
 
-/* Edit button — hover-reveal on desktop, always visible on touch.
-   ABSOLUTE for the same reason as the delete button above: `relative` here
-   out-cascaded the markup's `absolute` and pushed the button into flow. */
-.action-item-edit-btn {
-  position: absolute;
-  z-index: 5;
-  background: var(--surface-cream);
-  border: 1.5px solid var(--color-border);
-  opacity: 0;
-  transition: opacity var(--transition-fast), background var(--transition-fast);
-}
-/* 44px touch target without growing the 24px visual (mirrors the checkbox). */
-/* Width capped at 28px so it can't overlap the delete button 28px away. */
-.action-item-edit-btn::before {
-  content: "";
-  position: absolute;
-  inset: 50%;
-  width: 28px;
-  height: 44px;
-  transform: translate(-50%, -50%);
-}
-.action-item-card:hover .action-item-edit-btn,
-/* Reveal on keyboard focus too — opacity:0 otherwise hides a focused control
-   (and its focus ring) from keyboard users (WCAG 2.4.7). */
-.action-item-edit-btn:focus-visible,
-/* While the corner edit/✕ buttons are visible (selected row), the text
-   yields to them — no more icons sitting ON the words. */
-.action-item-card.is-selected .action-item-description {
-  padding-right: 2.5rem;
-}
-
-.action-item-card:focus-within .action-item-edit-btn {
-  opacity: 1;
-}
-@media (hover: none) {
-  .action-item-edit-btn {
-    opacity: 1;
-  }
-}
-
-/* Clearance for the always-visible corner dot; the hover edit/delete
-   buttons are opaque chips that sit OVER the (truncated) text cleanly. */
+/* Click-to-edit: the words open their own editor, so they carry the text
+   cursor as the hint. (The old corner-button + padding-right clearance
+   system is gone — edit/delete live in the row grid now.) */
 .action-item-description {
-  padding-right: 2rem;
-}
-.action-item-edit-btn:hover {
-  background: var(--surface-cream-hover);
-  color: var(--accent-ink);
+  cursor: text;
 }
 
 /* Vertical list — sideways overflow (sub-pixel rounding, the selected card's
@@ -3725,6 +3682,91 @@ html::-webkit-scrollbar-thumb:hover,
   border-color: var(--accent-ink);
   color: var(--accent-ink);
   background: var(--surface-card-deep);
+}
+
+/* Done drawer toggle — a slim dashed seam at the list's tail holding the
+   completed group. Same dashed language as the add-row above it; the label
+   bumps when a checked item tucks itself in. */
+.action-done-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.85rem;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--tiny-size);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+.action-done-toggle::before,
+.action-done-toggle::after {
+  content: "";
+  flex: 1;
+  border-top: 2px dashed
+    color-mix(in srgb, var(--color-border) 45%, transparent);
+  transition: border-color var(--transition-fast);
+}
+.action-done-toggle:hover,
+.action-done-toggle:focus-visible {
+  color: var(--accent-ink);
+}
+.action-done-toggle:hover::before,
+.action-done-toggle:hover::after {
+  border-color: color-mix(in srgb, var(--accent-ink) 45%, transparent);
+}
+.action-done-toggle i {
+  display: inline-block;
+  font-size: 0.6rem;
+  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.action-done-toggle.is-open i {
+  transform: rotate(180deg);
+}
+.action-done-toggle span {
+  display: inline-block;
+}
+.action-done-toggle.is-bumping span,
+.action-done-toggle.is-bumping i {
+  animation: done-toggle-bump 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes done-toggle-bump {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.25);
+  }
+  70% {
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Drawer reveal — completed rows unfurl with a tiny stagger. `backwards`
+   keeps delayed rows hidden until their turn; delay capped so a long
+   graveyard doesn't turn into a slideshow. */
+.action-item-card.done-enter {
+  animation: done-rise 240ms ease backwards;
+  animation-delay: min(calc(var(--stagger, 0) * 45ms), 360ms);
+}
+@keyframes done-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .action-item-card.done-enter,
+  .action-done-toggle.is-bumping span,
+  .action-done-toggle.is-bumping i {
+    animation: none;
+  }
 }
 
 /* ── ACTION ITEMS — modal & form shared styles ──────────────────── */
@@ -4485,7 +4527,7 @@ select:focus-visible {
    alternative get the same on-brand ring (mouse :focus state is unaffected). */
 .mapper-clip-btn:focus-visible,
 .action-item-checkbox-button:focus-visible,
-.action-item-edit-btn:focus-visible,
+.action-item-icon-btn:focus-visible,
 button:focus-visible,
 [role="button"]:focus-visible,
 a:focus-visible {
@@ -6513,8 +6555,8 @@ label {
 .flip-card-btn:active,
 .action-header-btn:active,
 .action-item-chip--btn:active,
-.action-item-edit-btn:active,
-.action-item-delete-btn:active,
+.action-item-icon-btn:active,
+.action-done-toggle:active,
 .mapper-clip-btn:active,
 .topic-map-add-button:active,
 .topic-map-ctrl:active,
