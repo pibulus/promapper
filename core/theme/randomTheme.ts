@@ -102,6 +102,11 @@ export function mixHex(a: string, b: string, pOfA: number): string {
  * harder of the two checks — passing it guarantees white-on-strong too. */
 export const SURFACE_CREAM = "#fff7ef";
 
+/** The warmer cream the header band mixes against (styles.css
+ * --header-band) — sunshine in the bands without raising the accent %.
+ * Tests mirror this value. */
+export const BAND_CREAM = "#ffefdc";
+
 /** The deep companion: same hue as the pastel accent, lightness walked down
  * until it clears AA against cream (and therefore white) with margin.
  * Golds keep their saturation (dropping it goes olive); cool hues shed a
@@ -158,7 +163,7 @@ export function generateThemeParts(
   // saturated mid-tones in #FF6B6B / #4ECDC4 / #9B59B6 territory. Never a
   // whisper-pastel, never muted, and not too dark either (L58–66 — the
   // L54 floor read "too dark"). Ink contrast rides the solved companion.
-  const saturation = 68 + rand() * 24; // 68–92
+  const saturation = 76 + rand() * 20; // 76–96 (warmer/juicier bands)
   const lightness = 58 + rand() * 8; // 58–66
 
   const accent = hslToHex(hue, saturation, lightness);

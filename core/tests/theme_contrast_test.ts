@@ -42,6 +42,7 @@ function mix(a: string, b: string, aWeight: number): string {
 // The default card surface (--surface-card → --soft-cream). Cool themes nudge it
 // but stay near this lightness, so it's a faithful contrast baseline.
 const CARD_SURFACE = "#fff7ef";
+const BAND_CREAM = "#ffefdc"; // mirror of randomTheme.BAND_CREAM / styles.css
 const DEEPEN = "#1b1020"; // CSS: --accent-strong = color-mix(accent 72%, #1b1020)
 
 Deno.test("every theme's VIVID header band passes AA with white text", () => {
@@ -62,11 +63,11 @@ Deno.test("every theme's VIVID header band passes AA with white text", () => {
 });
 
 Deno.test("every theme's ink passes AA on the 62% header band", () => {
-  // CSS: --header-band = color-mix(accent 62%, --surface-cream), dark ink.
+  // CSS: --header-band = color-mix(accent 62%, #ffefdc warm cream), dark ink.
   // One recipe for named themes AND shuffle rolls (rolls have their own
   // 300-roll sweep in random_theme_test.ts).
   for (const theme of proMapperThemes) {
-    const band = mix(theme.accent, CARD_SURFACE, 0.62);
+    const band = mix(theme.accent, BAND_CREAM, 0.62);
     const ratio = contrast(theme.text, band);
     assertEquals(
       ratio >= 4.5,

@@ -77,13 +77,13 @@
     "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono:
     "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  /* One notch more compact (July 9): Inter at 15px body read a touch big
-     for a dense tool — 14.5/13.5/12 keeps it modern without squinting. */
+  /* Two notches more compact than the 15px original (July 9 + July 10
+     morning): 14/13/12 — dense-tool sizing, still no squinting. */
   --heading-size: 1.0625rem;
   --heading-weight: 600;
-  --text-size: 0.90625rem;
+  --text-size: 0.875rem;
   --text-weight: 400;
-  --small-size: 0.84375rem;
+  --small-size: 0.8125rem;
   --tiny-size: 0.75rem;
   --line-height: 1.55;
 
@@ -137,11 +137,9 @@
      speaks on every card, playing against the warm ground (which is always
      a different family). One recipe for named themes AND dice rolls —
      guarded by theme_contrast_test + random_theme_test sweeps. */
-  --header-band: color-mix(
-    in srgb,
-    var(--color-accent) 62%,
-    var(--surface-cream)
-  );
+  /* Mixed against a WARMER cream than the card surface — sunshine in the
+     band without raising the accent % (which fails GRAPE's AA sweep). */
+  --header-band: color-mix(in srgb, var(--color-accent) 62%, #ffefdc);
   --header-band-ink: var(--color-text);
   --header-band-sub: color-mix(in srgb, var(--color-text) 55%, transparent);
 
@@ -5962,7 +5960,7 @@ a:focus-visible {
 
 /* The first paragraph is the takeaway — let it lead, gently. */
 .summary-content > p:first-child {
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 500;
 }
 
