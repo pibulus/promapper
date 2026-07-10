@@ -4824,6 +4824,9 @@ a:focus-visible {
 .markdown-body {
   color: var(--color-text);
   font-size: var(--text-size);
+  /* Was an inline style stamped by formatMarkdownSafe — lives here now so
+     scoped contexts (e.g. .summary-content) can override it. */
+  line-height: 1.7;
 }
 
 .markdown-body > :first-child {
@@ -6189,10 +6192,18 @@ a:focus-visible {
 }
 
 /* SummaryCard components */
+/* Same size + leading as .transcript-content — the two cards sit side by
+   side and must read as one system. The inner .markdown-body sets its own
+   --text-size (that was the visible mismatch), so it must inherit here. */
 .summary-content {
-  font-size: var(--text-size);
+  font-size: var(--small-size);
   color: var(--color-text);
-  line-height: 1.6;
+  line-height: 1.5;
+}
+.summary-content .markdown-body,
+.summary-content .markdown-body p {
+  font-size: inherit;
+  line-height: inherit;
 }
 
 /* Breathable prose: short paragraphs with real air between them (the
@@ -6201,12 +6212,15 @@ a:focus-visible {
   margin: 0;
 }
 .summary-content p + p {
-  margin-top: 0.7rem;
+  margin-top: 0.6rem;
 }
 
-/* The first paragraph is the takeaway — let it lead, gently. */
-.summary-content > p:first-child {
-  font-size: 0.9375rem;
+/* The first paragraph is the takeaway — let it lead, gently (one step up
+   from the body, scaled with it). Paragraphs live inside .markdown-body,
+   so the old direct-child selector never matched. */
+.summary-content > p:first-child,
+.summary-content .markdown-body > p:first-child {
+  font-size: var(--text-size);
   font-weight: 500;
 }
 
@@ -6265,11 +6279,14 @@ a:focus-visible {
   background: color-mix(in srgb, currentColor 12%, transparent);
 }
 
+/* Transcript + summary read as ONE prose system: same size (--small-size),
+   same leading. They had drifted (summary a step bigger) and the pair sit
+   side by side, so the mismatch showed. */
 .transcript-content {
   font-family: var(--font-mono);
   font-size: var(--small-size);
   color: var(--color-text);
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .transcript-speakers-section {

@@ -141,5 +141,8 @@ export function formatMarkdownSafe(text: string): string {
 
   const html = markedInstance.parse(text, { async: false }) as string;
 
-  return `<div class="markdown-body" style="line-height: 1.7;">${html}</div>`;
+  // No inline line-height: it out-ranked every stylesheet rule and froze
+  // markdown leading at 1.7 app-wide. .markdown-body CSS owns it now, so
+  // contexts (summary card vs Bishop) can size their own prose.
+  return `<div class="markdown-body">${html}</div>`;
 }
