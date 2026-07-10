@@ -138,7 +138,6 @@ export default function ActionItemsCard(
   // Rows are clamped to two lines; tapping the text expands one at a time.
   const expandedItemId = useSignal<string | null>(null);
   const showAssigneeDropdown = useSignal(false);
-  const activeAssigneeDropdown = useSignal<string | null>(null);
   // True while the inline-create draft row is showing (local only, see DRAFT_ID)
   const creatingDraft = useSignal(false);
   // Transient "just checked off" id — drives a one-shot checkbox pop. Kept
@@ -191,28 +190,6 @@ export default function ActionItemsCard(
       document.removeEventListener("mousedown", close);
     };
   }, [optionsOpen.value]);
-
-  // Click outside to close item-level assignee dropdown.
-  // Store the timeout so we can cancel it on cleanup and avoid a listener leak.
-  useEffect(() => {
-    if (activeAssigneeDropdown.value === null) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest(".assignee-dropdown-container")) {
-        activeAssigneeDropdown.value = null;
-      }
-    };
-
-    const timeoutId = setTimeout(() => {
-      document.addEventListener("mousedown", handleClickOutside);
-    }, 10);
-
-    return () => {
-      clearTimeout(timeoutId);
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [activeAssigneeDropdown.value]);
 
   // Self-populating assignee suggestions from existing items + "Me" always first
   const assigneeSuggestions = useComputed(() => {
@@ -476,15 +453,6 @@ export default function ActionItemsCard(
     editingDueDate.value = "";
   }
 
-  function updateAssignee(itemId: string, assignee: string | null) {
-    const updatedItems = visibleItems.value.map((item) =>
-      item.id === itemId
-        ? { ...item, assignee, updated_at: new Date().toISOString() }
-        : item
-    );
-    publishItems(updatedItems);
-  }
-
   function updateDueDate(itemId: string, due_date: string | null) {
     const updatedItems = visibleItems.value.map((item) =>
       item.id === itemId
@@ -733,7 +701,7 @@ export default function ActionItemsCard(
                               touchAction: canDrag ? "pan-y" : undefined,
                             }}
                           >
-                            <div class="grid grid-cols-[auto_1fr_auto_auto] gap-2.5 items-start relative z-[2]">
+                            <div class="grid grid-cols-[auto_1fr_auto] gap-2.5 items-start relative z-[2]">
                               {/* Drag Handle (mouse/pen: press to grab; touch: long-press the row) */}
                               <div class="flex items-center pt-1">
                                 {canDrag
@@ -1117,130 +1085,6 @@ export default function ActionItemsCard(
                                     </>
                                   )}
                               </div>
-                              {/* Assignee dot — small, discreet */}
-                              {item.assignee && (
-                                <div class="action-item-dot-cell assignee-dropdown-container relative pt-1">
-                                  <button
-                                    onClick={() =>
-                                      activeAssigneeDropdown.value =
-                                        activeAssigneeDropdown
-                                            .value ===
-                                            item.id
-                                          ? null
-                                          : item.id}
-                                    class="speaker-dot-btn"
-                                    title={`${item.assignee} — change`}
-                                    aria-label={`Assigned to ${item.assignee}. Click to change.`}
-                                  >
-                                    <span
-                                      class="speaker-dot"
-                                      style={{
-                                        background: speakerColor(
-                                          item.assignee,
-                                          speakers,
-                                        ),
-                                      }}
-                                    />
-                                  </button>
-                                  {activeAssigneeDropdown.value ===
-                                      item.id && (
-                                    <div class="action-dropdown-menu font-mono">
-                                      {/* Custom name input */}
-                                      <div class="action-dropdown-input-wrapper">
-                                        <input
-                                          type="text"
-                                          aria-label="Assignee name"
-                                          defaultValue={item
-                                            .assignee || ""}
-                                          placeholder="Type a name…"
-                                          class="action-dropdown-input font-mono"
-                                          onKeyDown={(e) => {
-                                            if (e.key === "Enter") {
-                                              const val =
-                                                (e.target as HTMLInputElement)
-                                                  .value.trim();
-                                              if (val) {
-                                                updateAssignee(
-                                                  item.id,
-                                                  val,
-                                                );
-                                              }
-                                              activeAssigneeDropdown
-                                                .value = null;
-                                            } else if (
-                                              e.key === "Escape"
-                                            ) {
-                                              activeAssigneeDropdown
-                                                .value = null;
-                                            }
-                                          }}
-                                          onBlur={() => {
-                                            if (
-                                              dropdownTimeoutRef
-                                                .current !==
-                                                null
-                                            ) {
-                                              clearTimeout(
-                                                dropdownTimeoutRef
-                                                  .current,
-                                              );
-                                            }
-                                            dropdownTimeoutRef
-                                              .current = setTimeout(
-                                                () => {
-                                                  activeAssigneeDropdown
-                                                    .value = null;
-                                                  dropdownTimeoutRef
-                                                    .current = null;
-                                                },
-                                                200,
-                                              ) as unknown as number;
-                                          }}
-                                        />
-                                      </div>
-                                      {/* Clear option */}
-                                      <button
-                                        onClick={() => {
-                                          updateAssignee(
-                                            item.id,
-                                            null,
-                                          );
-                                          activeAssigneeDropdown
-                                            .value = null;
-                                        }}
-                                        class="action-dropdown-option font-mono"
-                                      >
-                                        None
-                                      </button>
-                                      {/* Suggestions */}
-                                      {assigneeSuggestions.value
-                                        .map(
-                                          (assignee) => (
-                                            <button
-                                              key={assignee}
-                                              onClick={() => {
-                                                updateAssignee(
-                                                  item.id,
-                                                  assignee,
-                                                );
-                                                activeAssigneeDropdown
-                                                  .value = null;
-                                              }}
-                                              class={`action-dropdown-option font-mono${
-                                                item.assignee ===
-                                                    assignee
-                                                  ? " is-active"
-                                                  : ""
-                                              }`}
-                                            >
-                                              {assignee}
-                                            </button>
-                                          ),
-                                        )}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
 
                               {/* Checkbox */}
                               <div class="flex items-center pt-1">
@@ -1307,7 +1151,22 @@ export default function ActionItemsCard(
                                         poppingId.value === item.id
                                           ? " is-popping"
                                           : ""
-                                      }`}
+                                      }${item.assignee ? " is-assigned" : ""}`}
+                                      // The checkbox IS the person: its inside
+                                      // takes the assignee's stable color (the
+                                      // separate dot column is gone — the words
+                                      // get that width back).
+                                      style={item.assignee
+                                        ? {
+                                          background: speakerColor(
+                                            item.assignee,
+                                            speakers,
+                                          ),
+                                        }
+                                        : undefined}
+                                      title={item.assignee
+                                        ? `Assigned to ${item.assignee}`
+                                        : undefined}
                                       role="checkbox"
                                       aria-checked={item.status === "completed"}
                                       aria-label={`Mark ${item.description} as ${

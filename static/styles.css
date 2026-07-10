@@ -3239,46 +3239,6 @@ html::-webkit-scrollbar-thumb:hover,
   box-shadow: 2px 2px 0px 0px var(--soft-black);
 }
 
-/* Inline dot cell (sits between text and checkbox). */
-.action-item-dot-cell .action-dropdown-menu {
-  right: 0;
-  left: auto;
-}
-
-/* Speaker dot — the assignee, as their stable palette color. Tooltip and
-   aria carry the name; the dot IS the identity (same color as their
-   transcript name + Voices bar). */
-.speaker-dot-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1rem;
-  height: 1rem;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-}
-.speaker-dot-btn::before {
-  content: "";
-  position: absolute;
-  inset: 50%;
-  width: 40px;
-  height: 40px;
-  transform: translate(-50%, -50%);
-}
-.speaker-dot {
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 50%;
-  border: 1.5px solid rgba(30, 23, 20, 0.35);
-  transition: transform var(--transition-fast);
-}
-.speaker-dot-btn:hover .speaker-dot,
-.speaker-dot-btn:focus-visible .speaker-dot {
-  transform: scale(1.25);
-}
-
 .action-item-chip.has-value {
   color: var(--color-text);
   border-color: var(--soft-black);
@@ -7090,6 +7050,11 @@ label {
   color: var(--accent-ink);
   font-weight: 700;
   cursor: pointer;
+  /* One tidy line, left-aligned — the wrapping centered pill read as mess
+     at the bottom of the card. */
+  white-space: nowrap;
+  font-size: var(--tiny-size);
+  padding: 0.2rem 0.55rem;
 }
 
 .action-item-chip--ai:hover {
