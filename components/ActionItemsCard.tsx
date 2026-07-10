@@ -130,6 +130,10 @@ export default function ActionItemsCard(
   const editingAssignee = useSignal("");
   const editingDueDate = useSignal("");
   const triggerConfetti = useSignal(false);
+  // Where the last-item confetti bursts FROM — the checkbox that earned it.
+  const confettiOrigin = useSignal<{ x: number; y: number } | undefined>(
+    undefined,
+  );
   const searchQuery = useSignal("");
   // Search lives behind a header button — the input only exists while open,
   // and closing it clears the filter (no stale invisible query).
@@ -442,6 +446,14 @@ export default function ActionItemsCard(
         );
       if (wasLast) {
         soundBloom();
+        // Burst from the checkbox that cleared the list (works for keyboard
+        // toggles too — we look the row up, not the pointer).
+        const box = listContainerRef.current?.querySelector(
+          `[data-row-id="${itemId}"] .action-item-checkbox-button`,
+        )?.getBoundingClientRect();
+        confettiOrigin.value = box
+          ? { x: box.left + box.width / 2, y: box.top + box.height / 2 }
+          : undefined;
         triggerConfetti.value = true;
         setTimeout(() => {
           triggerConfetti.value = false;
@@ -678,7 +690,12 @@ export default function ActionItemsCard(
 
   return (
     <>
-      <Confetti trigger={triggerConfetti.value} />
+      <Confetti
+        trigger={triggerConfetti.value}
+        origin={confettiOrigin.value}
+        particleCount={40}
+        spread={70}
+      />
       <div class="w-full h-full">
         <div class="dashboard-card">
           <div class="dashboard-card-header">
@@ -794,12 +811,12 @@ export default function ActionItemsCard(
                       <div class="empty-state-face" aria-hidden="true">
                         ( • ᴗ • )
                       </div>
-                      <div class="empty-state-text font-mono">
+                      <div class="empty-state-text">
                         Nothing to do. Lovely.
                       </div>
                       <button
                         onClick={startCreatingInline}
-                        class="action-header-btn px-3 py-1 rounded mt-2 font-mono"
+                        class="action-header-btn px-3 py-1 rounded mt-2"
                         style={{
                           fontSize: "var(--small-size)",
                           border: "2px solid var(--color-border)",
@@ -810,11 +827,9 @@ export default function ActionItemsCard(
                     </div>
                   )
                   : (
-                    <div class="empty-state font-mono">
-                      <div class="empty-state-icon">
-                        <i class="fa fa-magnifying-glass" aria-hidden="true">
-                        </i>
-                      </div>
+                    // Text only — Inter, no icon badge (the big grey circle
+                    // read as noise, and mono is for machine text).
+                    <div class="empty-state">
                       <div class="empty-state-text">Nothing matches</div>
                     </div>
                   )
@@ -1497,18 +1512,10 @@ export default function ActionItemsCard(
                       <>
                         {pendingRows.map((item, i) => renderRow(item, i))}
                         {
-                          /* Everything's checked — a tiny payoff moment above
-                            the tucked-away drawer (not during a search). */
+                          /* Everything checked? Say NOTHING — the bare + row
+                            and the "N done" seam already tell the story
+                            (an "All done" badge was redundant chrome). */
                         }
-                        {pendingRows.length === 0 && !searchQuery.value && (
-                          <div class="empty-state font-mono">
-                            <div class="empty-state-icon">
-                              <i class="fa fa-circle-check" aria-hidden="true">
-                              </i>
-                            </div>
-                            <div class="empty-state-text">All done</div>
-                          </div>
-                        )}
                         {addGhostRow}
                         {
                           /* Done drawer — completed items rest behind this

@@ -17,6 +17,9 @@ interface ConfettiProps {
   particleCount?: number;
   spread?: number;
   colors?: string[];
+  /** Burst point in viewport px — e.g. the checkbox that earned it.
+      Confetti from nowhere reads as mystery litter; anchor it. */
+  origin?: { x: number; y: number };
 }
 
 interface Particle {
@@ -32,7 +35,7 @@ interface Particle {
 }
 
 export default function Confetti(
-  { trigger, particleCount = 60, spread = 80, colors }: ConfettiProps,
+  { trigger, particleCount = 60, spread = 80, colors, origin }: ConfettiProps,
 ) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
@@ -52,6 +55,7 @@ export default function Confetti(
 
   useEffect(() => {
     if (!IS_BROWSER || !trigger || !canvasRef.current) return;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -62,9 +66,10 @@ export default function Confetti(
 
     const palette = colors ?? defaultColors;
 
-    // Spawn particles from center
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 3;
+    // Spawn from the given origin (the thing being celebrated); fall back
+    // to upper-center for callers that have no anchor.
+    const cx = origin?.x ?? canvas.width / 2;
+    const cy = origin?.y ?? canvas.height / 3;
     for (let i = 0; i < particleCount; i++) {
       const angle = (Math.random() * 2 - 1) * Math.PI * (spread / 180);
       const speed = 3 + Math.random() * 8;
@@ -95,7 +100,9 @@ export default function Confetti(
         p.x += p.vx;
         p.y += p.vy;
         p.rotation += p.rotationSpeed;
-        p.opacity -= 0.008;
+        // Quick fade — lingering low-alpha pieces read as stray flecks,
+        // not celebration.
+        p.opacity -= 0.016;
 
         if (p.opacity <= 0 || p.y > canvas.height + 40) return false;
 
@@ -110,7 +117,7 @@ export default function Confetti(
       });
 
       frame++;
-      if (frame < 180 && particlesRef.current.length > 0) {
+      if (frame < 120 && particlesRef.current.length > 0) {
         animFrameRef.current = requestAnimationFrame(animate);
       } else {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
