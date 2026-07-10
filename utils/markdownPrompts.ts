@@ -36,6 +36,15 @@ const CONTEXT_PREAMBLE =
 
 export const markdownPrompts: MarkdownPrompt[] = [
   {
+    id: "done-report",
+    label: "What got done",
+    icon: "fa-clipboard-check",
+    description: "Completed work so far — what, by whom, and what's left",
+    prompt:
+      `Write a warm, factual progress report from this conversation's action items and context. Lead with what has been COMPLETED (group by person where assignees exist, note anything the AI checked off from later conversation). Follow with what's still open. Close with a one-line pulse of the project. Plain headings, short lines, no corporate fluff.`,
+    suggestInstead: [],
+  },
+  {
     id: "blog-post",
     label: "Blog",
     icon: "fa-newspaper",

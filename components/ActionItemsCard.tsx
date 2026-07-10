@@ -632,11 +632,11 @@ export default function ActionItemsCard(
                 visibleItems.value.length === 0
                   ? (
                     <div class="empty-state">
-                      <div class="empty-state-icon">
-                        <i class="fa fa-list-check" aria-hidden="true"></i>
+                      <div class="empty-state-face" aria-hidden="true">
+                        ( • ᴗ • )
                       </div>
                       <div class="empty-state-text font-mono">
-                        It's quiet here.
+                        Nothing to do. Lovely.
                       </div>
                       <button
                         onClick={startCreatingInline}
@@ -941,7 +941,8 @@ export default function ActionItemsCard(
                                             item.assignee,
                                             item.due_date,
                                           )}
-                                        title="Tap to expand · double-tap to edit"
+                                        // Full text on hover (truncated rows), native so it wraps.
+                                        title={item.description}
                                       >
                                         {item.description}
                                       </p>

@@ -83,6 +83,17 @@ Dev: `DENO_ENV=development deno task dev` (8003).
   lens (pitch / blog / risks / brief) and it renders that text view of the
   conversation, refreshable. It's the export formats made LIVING. Strong
   candidate for the next module.
+- **Charts module (pie graphs)**: yes as an AUTO-chart of the memory
+  (done-vs-open per person donut, topics over takes — zero config, D3 is already
+  in the deps), no as a generic chart-maker (that way lies
+  dashboard-for-dashboards corporate). Bitches do love pie graphs; feed them
+  conversation truth, not a config form.
+- **Private action items**: real feature, real seam. `private?: true` on
+  ActionItem; the CRITICAL work is stripping private items in EVERY outbound
+  path (shareProtocol sanitize, liveSync outbound, party protocol) before
+  anything leaves the device — the privacy promise must be airtight, so don't
+  rush it. Locally: subdued/lock-marked rows. "Mine by default" already exists
+  as the filterMine filter — persisting it as a preference is one line.
 - **Markdown policy** (current + intended): AI text renders markdown-safe
   everywhere (summary, Bishop, exports are md-native); human inputs stay plain
   (Notes is a plain textarea — md preview is a candidate back-face). Rule: md is

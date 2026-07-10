@@ -2284,6 +2284,16 @@ body {
   border: var(--border-width) solid var(--color-border);
 }
 
+/* The empty-list face — text glyphs (the icon-DNA base face), not emoji. */
+.empty-state-face {
+  font-size: 1.35rem;
+  letter-spacing: 0.05em;
+  color: var(--accent-ink);
+  opacity: 0.75;
+  margin-bottom: 0.4rem;
+  user-select: none;
+}
+
 /* Level bars — the tiny live meter inside recording states. currentColor
    so it reads on any surface; bars scale from a shared baseline. */
 .level-bars {
