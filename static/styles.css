@@ -2064,8 +2064,9 @@ body {
   }
 
   .action-item-description {
-    /* Same small mono size as desktop now — one density everywhere. */
-    line-height: 1.45 !important;
+    /* One density everywhere — same 13px/1.5 as desktop rows AND the
+       transcript/summary prose (the old 1.45 here contradicted itself). */
+    line-height: 1.5 !important;
     /* Wrap long words so the description can't overflow the narrow grid track. */
     overflow-wrap: anywhere;
   }
