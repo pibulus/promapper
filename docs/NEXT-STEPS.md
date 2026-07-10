@@ -1,5 +1,12 @@
 # NEXT STEPS — handoff for the follow-up session (any model)
 
+**FRESHEST: July 10 action-items pass is on `main` (commits
+`6188ca0…da0ffe7`, pushed).** Read the "July 10" section of `CLAUDE.md`
+first — done drawer, in-row editor, touch tap-to-read, per-item linger
+timers, date-anchored extraction prompt, quiet all-done state. 245 tests
+green. Owed: real-iPhone QA (tap-to-read vs pencil-edit, editor keyboard)
++ Pablo's parked taste calls listed there.
+
 Branch: `fable-audit-2026-07-05`. State: `deno task check` ✅ · `deno task test`
 224/224 ✅ · `deno task build` ✅. Read `docs/FABLE-AUDIT.md` + the "July 6" and
 "July 9" sections of `CLAUDE.md` for what shipped. Stash

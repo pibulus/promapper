@@ -770,6 +770,62 @@ The loop is now the product. Shipped on top of the July 5 audit+vibe passes:
 safe-area), IDB persistence on Safari, live reconnect flow with two real peers.
 That QA is the next session's first job.
 
+## July 10, 2026 — Action Items Love Pass (main, commits 6188ca0…da0ffe7)
+
+Five commits, all on main, all pushed. The Action Items card got its full
+layout/interaction overhaul plus a four-agent audit pass (rex/bumblefuzz/
+stacey/vince — scoped report-only briefs, findings triaged + verified before
+landing; the pattern WORKS when they audit mechanics, not generate taste).
+
+**What shipped:**
+
+1. **Row layout** — edit ✎/delete ✕ are a hover/tap-revealed OVERLAY (pinned
+   left of the in-flow checkbox, feathered scrim, pointer-events gated). The
+   old absolute corner buttons landed the X on the checkbox at ≤640px, and a
+   merged-selector bug meant the pencil never showed on desktop hover. Words
+   got ~50px width back (hidden grid column was reserving space).
+2. **Checkbox = person, theme-dressed** — assignee hue rides in as
+   `--person-color`; CSS pulls it toward the live accent + pastelizes over
+   cream (raw spritzy hex was garish AND the inline style beat `.is-checked`).
+3. **Done drawer** — completed items hide behind a dashed "N done" seam;
+   checked items linger 900ms in place (per-item timer SET — two quick
+   checkoffs both get their hold), then tuck; drawer label bumps on every
+   arrival (tuck, undo-restore, remote sync). Search auto-peeks the drawer.
+4. **The editor is the row, grown** — click words to edit (desktop); textarea
+   holds the words in place, extras UNFOLD beneath (grid-rows 0fr→1fr with
+   keyframe-scoped overflow clip so the assignee dropdown never cages).
+   Who/when chips, native picker via hidden input, Today/Tmrw/Clear presets
+   grouped (no orphan wrap), Cancel/Save (says "Add" for drafts). No-change
+   guard: casual open-and-close doesn't stamp updated_at.
+5. **Touch model** — tap words = unclamp to READ (no keyboard pop); pencil
+   (revealed by the same tap) = edit. Focus returns to the row on close.
+6. **Safety seams** — switching rows mid-edit SAVES (was silent text loss via
+   another row's pencil); live-collab rewrite/delete under an open editor
+   cancels with an honest toast; keyboard handler bails while editing (Enter
+   on a preset was invisibly toggling completion); Escape aborts drags;
+   delete mid-linger kills its timer.
+7. **Due dates anchored** — `buildActionItemsPrompt` injects
+   `today is <localDateISO>` so "by Friday" resolves (was unresolvable —
+   the model never knew the date). Two tests pin it.
+8. **Quiet all-done** — empty-pending shows NOTHING but the + row and the
+   done seam (grey medal + "All done" label deleted); empty states are Inter
+   not mono; confetti bursts from the checkbox that earned it (was viewport
+   center = mystery flecks), fades fast, respects reduced-motion.
+9. **HomeIsland fix** — card entrance anime targeted `.grid > *`, stamping
+   stale inline opacity/transform on every nested grid child. Now scoped to
+   `.dashboard-grid > *`.
+
+245 tests green, check + build pass. **Still owed: real-iPhone QA** — the
+tap-to-read/pencil-edit split, editor keyboard behavior, plus the standing
+device QA list from July 6/9.
+
+**Parked taste calls (Pablo's):** editor textarea uses `:focus` not
+`:focus-visible` (strong treatment on mouse click too — arguably nicer);
+faint always-visible action buttons on touch (one-line CSS if wanted); the
+✨ AI-chip emoji ruling (still parked, chip now lives inside the drawer);
+"Tmrw" preset sizing. Skipped as not-worth-it: double-click caret flicker,
+drawer-toggle spam jank, textarea double-reflow micro-perf.
+
 ## July 9, 2026 — Four-Zone Polish Pass (branch: fable-audit-2026-07-05)
 
 Audit-driven pass over four zones, one commit each (224 tests green, check/build
