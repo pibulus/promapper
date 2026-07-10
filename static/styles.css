@@ -2284,6 +2284,25 @@ body {
   border: var(--border-width) solid var(--color-border);
 }
 
+/* Level bars — the tiny live meter inside recording states. currentColor
+   so it reads on any surface; bars scale from a shared baseline. */
+.level-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 0.9rem;
+  flex-shrink: 0;
+}
+.level-bars__bar {
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+  background: currentColor;
+  transform: scaleY(0.2);
+  transform-origin: bottom;
+  opacity: 0.9;
+}
+
 /* Chat avatars — DiceBear thumbs over the sender-hue dot fallback. */
 .chat-avatar {
   display: inline-flex;

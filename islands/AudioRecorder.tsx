@@ -14,6 +14,7 @@
 
 import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
+import LevelBars from "../components/LevelBars.tsx";
 import { conversationData } from "@signals/conversationStore.ts";
 import { liveSession } from "@signals/liveSessionStore.ts";
 import { reconcileAppendResult } from "@core/orchestration/append-reconcile.ts";
@@ -71,6 +72,7 @@ export default function AudioRecorder(
     showTimeWarning,
     startRecording,
     stopRecording,
+    streamRef,
   } = useRecorder({
     maxDurationSeconds: MAX_RECORDING_TIME,
     warnAtSecondsLeft: WARNING_TIME,
@@ -432,7 +434,13 @@ export default function AudioRecorder(
               ? `Auto-stop in ${formatTime(timeRemaining.value)}`
               : "Stop and map this take"}
           >
-            <span class="recording-hub__pulse" aria-hidden="true" />
+            {
+              /* Live level meter — silence is visible, "is it hearing me?"
+                answers itself. Pulse stays as the no-stream fallback. */
+            }
+            {streamRef.current
+              ? <LevelBars stream={streamRef.current} />
+              : <span class="recording-hub__pulse" aria-hidden="true" />}
             <span
               class={`recording-hub__time${
                 showTimeWarning.value ? " is-warning" : ""
