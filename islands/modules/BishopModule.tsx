@@ -79,7 +79,7 @@ export default function BishopModule() {
       <div class="dashboard-card">
         <div class="dashboard-card-header">
           <h3>Bishop</h3>
-          <span class="bishop-subtitle">ask your memory</span>
+          <span class="card-header-tagline">ask your memory</span>
         </div>
         <div class="dashboard-card-body bishop-body">
           <div class="bishop-log" ref={logRef}>
@@ -123,6 +123,8 @@ export default function BishopModule() {
               class="bishop-send"
               disabled={asking.value}
               aria-label="Ask"
+              data-tip="Ask"
+              data-tip-align="right"
             >
               <i
                 class={`fa ${

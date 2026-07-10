@@ -55,14 +55,16 @@ export default function ModuleRack() {
                 <button
                   type="button"
                   class={`module-rack-toggle${on ? " is-on" : ""}`}
-                  aria-pressed={on}
+                  role="switch"
+                  aria-checked={on}
+                  aria-label={`${m.name} ${on ? "on" : "off"}`}
                   onClick={() => {
                     toggleModule(m.id);
                     hapticTap();
                     soundToggle(!on);
                   }}
                 >
-                  {on ? "On" : "Off"}
+                  <span class="module-rack-toggle__knob" aria-hidden="true" />
                 </button>
               </li>
             );

@@ -146,6 +146,8 @@ export default function ChatPanel(
           class="chat-send-btn"
           onClick={send}
           aria-label="Send message"
+          data-tip="Send"
+          data-tip-align="right"
         >
           <i class="fa fa-paper-plane" aria-hidden="true"></i>
         </button>

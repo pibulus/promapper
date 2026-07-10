@@ -150,12 +150,6 @@
   --btn-radius: var(--border-radius-sm); /* 8px — standard inline buttons */
   --btn-radius-pill: 999px; /* hero CTA + filter pills only */
 
-  /* Chips (assignee / status / filter) — kills the hand-written accent ternaries. */
-  --chip-on: var(--color-accent);
-  --chip-on-ink: var(--color-text);
-  --chip-off: var(--surface-cream);
-  --chip-off-ink: var(--color-text-secondary);
-
   /* Card footer band — a softer echo of the header hat so cards close warm. */
   --footer-text: var(--color-text-secondary);
   --footer-heart: var(--color-accent);
@@ -2230,38 +2224,52 @@ body {
   color: var(--color-text-secondary);
   line-height: 1.4;
 }
+/* A real SWITCH, not a word ("things be what they are"): pill track +
+   sliding knob, accent-strong when on. The visible control stays compact —
+   the invisible ::after box carries the 44px tap ergonomics. */
 .module-rack-toggle {
+  position: relative;
   flex-shrink: 0;
-  min-width: 3.25rem;
-  min-height: 2.75rem;
-  padding: 0.35rem 0.7rem;
+  width: 2.75rem;
+  height: 1.6rem;
+  padding: 0.15rem;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   border-radius: var(--btn-radius-pill);
   border: 2px solid var(--color-border);
   background: var(--surface-cream);
-  color: var(--color-text-secondary);
-  font-size: var(--tiny-size);
-  font-weight: 700;
   cursor: pointer;
   transition:
     background var(--transition-fast),
-    color var(--transition-fast),
-    border-color var(--transition-fast),
-    transform var(--transition-fast);
+    border-color var(--transition-fast);
+}
+.module-rack-toggle::after {
+  content: "";
+  position: absolute;
+  inset: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+.module-rack-toggle__knob {
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  background: var(--color-text-secondary);
+  transition:
+    transform 180ms cubic-bezier(0.32, 1.4, 0.5, 1),
+    background var(--transition-fast);
 }
 .module-rack-toggle:hover {
   border-color: color-mix(in srgb, var(--accent-ink) 45%, var(--color-border));
-  transform: translateY(-1.5px);
-}
-.module-rack-toggle:active {
-  transform: translateY(1px);
 }
 .module-rack-toggle.is-on {
   background: var(--accent-strong);
   border-color: var(--accent-strong);
-  color: #fff;
+}
+.module-rack-toggle.is-on .module-rack-toggle__knob {
+  transform: translateX(1.1rem);
+  background: #fff;
 }
 .module-rack-toggle.is-on:hover {
   filter: brightness(1.08);
@@ -2443,7 +2451,7 @@ body {
 }
 
 /* Bishop — the quiet advisor. */
-.bishop-subtitle {
+.card-header-tagline {
   font-size: var(--tiny-size);
   color: var(--header-band-sub);
   font-weight: 600;
@@ -5598,14 +5606,6 @@ a:focus-visible {
   font-size: var(--tiny-size);
   font-weight: 700;
   color: var(--color-text);
-}
-
-/* Sender color dot. */
-.chat-sender-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
 }
 
 /* Message text body. */

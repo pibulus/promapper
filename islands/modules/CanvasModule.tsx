@@ -59,7 +59,7 @@ export default function CanvasModule() {
       <div class="dashboard-card">
         <div class="dashboard-card-header">
           <h3>Canvas</h3>
-          <span class="bishop-subtitle">draw alongside the map</span>
+          <span class="card-header-tagline">draw alongside the map</span>
         </div>
         <div class="dashboard-card-body canvas-module-body">
           <SharedWhiteboard
