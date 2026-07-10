@@ -84,7 +84,8 @@ export default function HomeIsland() {
     })
       .__LIVE_ROOM__;
     if (preset?.roomId && preset?.partyHost && !liveSession.value) {
-      startLiveMode(preset.roomId, preset.partyHost);
+      // Arrived via a /live/:roomId link — a guest, not the host.
+      startLiveMode(preset.roomId, preset.partyHost, false);
       // Load the shared conversation from the PartyKit room
       conversationData.value = null; // will be set by live sync onInit
     }
@@ -613,31 +614,39 @@ export default function HomeIsland() {
                           </span>
                         )}
 
-                      {/* Recording */}
-                      <button
-                        onClick={isRecording.value
-                          ? stopRecording
-                          : startRecording}
-                        disabled={isProcessing.value && isRecording.value}
-                        class={`header-icon-btn${
-                          isRecording.value ? " is-recording" : ""
-                        }`}
-                        aria-label={isRecording.value
-                          ? "Stop recording"
-                          : "Record meeting"}
-                      >
-                        <i
-                          class={`fa ${
-                            isRecording.value ? "fa-stop" : "fa-microphone"
+                      {
+                        /* Recording — HOST ONLY (one room, one mic: guests'
+                          voices come through the room; a second open mic
+                          would double-transcribe). Guests simply don't see
+                          it — show, don't say. */
+                      }
+                      {session.isHost && (
+                        <button
+                          onClick={isRecording.value
+                            ? stopRecording
+                            : startRecording}
+                          disabled={isProcessing.value && isRecording.value}
+                          class={`header-icon-btn${
+                            isRecording.value ? " is-recording" : ""
                           }`}
-                          aria-hidden="true"
-                        />
-                        {isRecording.value && (
-                          <span class="recording-timer">
-                            {formatTime(recordingTime.value)}
-                          </span>
-                        )}
-                      </button>
+                          aria-label={isRecording.value
+                            ? "Stop recording"
+                            : "Record meeting"}
+                          data-tip={isRecording.value ? "Stop" : "Record"}
+                        >
+                          <i
+                            class={`fa ${
+                              isRecording.value ? "fa-stop" : "fa-microphone"
+                            }`}
+                            aria-hidden="true"
+                          />
+                          {isRecording.value && (
+                            <span class="recording-timer">
+                              {formatTime(recordingTime.value)}
+                            </span>
+                          )}
+                        </button>
+                      )}
 
                       {/* Voice drawer toggle */}
                       <button

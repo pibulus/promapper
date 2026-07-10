@@ -60,6 +60,34 @@ Dev: `DENO_ENV=development deno task dev` (8003).
 6. Unlock/purchase mechanics: the enabled-set seam is built; "record 10 takes →
    radio hums awake" is a rule away.
 
+## Pablo's idea burst (July 10 morning — my takes, ready to build)
+
+- **Quiet sessions**: 90% exists (a live room with no recording does
+  presence/chat/board/map). Build = a host-side mic toggle (fa-microphone ↔
+  fa-microphone-slash + tooltip, show-don't-say) carried as a room flag in the
+  party protocol so guests' UI follows. ~an afternoon.
+- **Live audio caching**: live chunks are transcribe-and-discard today.
+  Recommendation: host-side option to also save the session as a take
+  (IndexedDB, same caps as the dock). Watch size (1h ≈ 30-60MB).
+- **REMOTE full-room capture gap**: the host's recorder only hears the host's
+  mic — remote voices live in WebRTC tracks. In-person rooms work great today;
+  remote needs an AudioContext mix of local mic + remote tracks into the
+  recorder stream. Real feature, park until rooms get use.
+- **Appended transcripts**: appends concatenate into one growing text. Design
+  wanted: per-take segments in the Transcript card (fold/expand per session,
+  newest open). Pairs beautifully with the takes timeline.
+- **Summary preferences**: brief/standard/detailed as a stored preference
+  injected into the summary prompt. Needs a settings seam — the rack modal could
+  grow a small "preferences" section.
+- **The Lens idea**: the Summary card generalized — a module where you pick a
+  lens (pitch / blog / risks / brief) and it renders that text view of the
+  conversation, refreshable. It's the export formats made LIVING. Strong
+  candidate for the next module.
+- **Markdown policy** (current + intended): AI text renders markdown-safe
+  everywhere (summary, Bishop, exports are md-native); human inputs stay plain
+  (Notes is a plain textarea — md preview is a candidate back-face). Rule: md is
+  the lingua franca for machine text, never a requirement for humans.
+
 ## Standing items
 
 - Real-device iPhone QA (dock, IDB, safe-area) — still virgin, still first.
