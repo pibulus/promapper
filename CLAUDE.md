@@ -814,6 +814,13 @@ landing; the pattern WORKS when they audit mechanics, not generate taste).
 9. **HomeIsland fix** — card entrance anime targeted `.grid > *`, stamping stale
    inline opacity/transform on every nested grid child. Now scoped to
    `.dashboard-grid > *`.
+10. **One prose system (dec1ce2 + f06baaf)** — transcript, summary, and action
+    rows all read at `--small-size`/1.5 (summary was a step bigger). Two buried
+    bugs fixed en route: `formatMarkdownSafe` stamped an INLINE
+    `line-height:1.7` on every markdown block (out-ranked all CSS — now a
+    `.markdown-body` rule that scopes can override), and the summary's "first
+    paragraph leads" rule had NEVER matched (paragraphs live inside the
+    `.markdown-body` wrapper) — the takeaway now leads at `--text-size`/500.
 
 245 tests green, check + build pass. **Still owed: real-iPhone QA** — the
 tap-to-read/pencil-edit split, editor keyboard behavior, plus the standing
