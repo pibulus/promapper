@@ -158,6 +158,18 @@ export function usePointerSortable(options: SortableOptions) {
     globalThis.addEventListener("pointermove", onMove, { passive: false });
     globalThis.addEventListener("pointerup", onUp);
     globalThis.addEventListener("pointercancel", onUp);
+    globalThis.addEventListener("keydown", onDragKeyDown);
+  }
+
+  // Escape aborts the drag — routed through the pointercancel path so the
+  // reorder reverts instead of committing.
+  function onDragKeyDown(event: KeyboardEvent) {
+    const s = session.current;
+    if (!s || event.key !== "Escape") return;
+    event.preventDefault();
+    onUp(
+      { pointerId: s.pointerId, type: "pointercancel" } as PointerEvent,
+    );
   }
 
   function onMove(event: PointerEvent) {
@@ -235,6 +247,7 @@ export function usePointerSortable(options: SortableOptions) {
     globalThis.removeEventListener("pointermove", onMove);
     globalThis.removeEventListener("pointerup", onUp);
     globalThis.removeEventListener("pointercancel", onUp);
+    globalThis.removeEventListener("keydown", onDragKeyDown);
     if (s.autoScrollRAF != null) cancelAnimationFrame(s.autoScrollRAF);
 
     // Spring the lifted row's transform back to zero in its (new) slot.

@@ -18,6 +18,7 @@ import {
 } from "../ai/prompts.ts";
 
 import type { ActionItem } from "../types/index.ts";
+import { localDateISO } from "../storage/dates.ts";
 
 // ===================================================================
 // TRANSCRIPTION_PROMPT
@@ -92,6 +93,19 @@ Deno.test("buildActionItemsPrompt with existing items includes dedup context", (
 Deno.test("buildActionItemsPrompt without existing items has no dedup context", () => {
   const prompt = buildActionItemsPrompt("some text");
   assertEquals(prompt.includes("EXISTING ACTION ITEMS"), false);
+});
+
+// The date anchor is what lets "by Friday" resolve to a real due_date — a
+// refactor that drops it regresses silently, so both input branches pin it.
+Deno.test("buildActionItemsPrompt anchors relative dates to today (text)", () => {
+  const prompt = buildActionItemsPrompt("Finish it by Friday.");
+  assertStringIncludes(prompt, `today is ${localDateISO(0)}`);
+});
+
+Deno.test("buildActionItemsPrompt anchors relative dates to today (audio)", () => {
+  const blob = new Blob(["audio data"], { type: "audio/webm" });
+  const prompt = buildActionItemsPrompt(blob);
+  assertStringIncludes(prompt, `today is ${localDateISO(0)}`);
 });
 
 // ===================================================================

@@ -434,7 +434,9 @@ body {
   pointer-events: auto;
 }
 /* Feathered scrim so covered words fade out under the buttons instead of
-   peeking through the gaps between them. */
+   peeking through the gaps between them. The scrim must match the row's
+   ACTUAL background: base rows are accent-tinted, hovered rows deepen —
+   a fixed deep scrim showed a seam on touch-selected (non-hovered) rows. */
 .action-item-actions::before {
   content: "";
   position: absolute;
@@ -444,9 +446,16 @@ body {
   background: linear-gradient(
     to right,
     transparent,
-    var(--surface-card-deep) 40%
+    color-mix(in srgb, var(--color-accent) 5%, var(--surface-card)) 40%
   );
   pointer-events: none;
+}
+.action-item-card:hover .action-item-actions::before {
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--surface-card-deep) 40%
+  );
 }
 
 .action-item-icon-btn {
@@ -3178,7 +3187,15 @@ html::-webkit-scrollbar-thumb:hover,
 
 /* Touch devices skip the preset overlay entirely — tapping the date chip
    opens the OS date picker, which is the better flow there anyway. (The old
-   always-visible presets were a big part of the card's clutter.) */
+   always-visible presets were a big part of the card's clutter.) The
+   explicit guard matters: a tap FOCUSES the chip, and :focus-within would
+   otherwise flash the presets under the opening picker sheet. */
+@media (hover: none) {
+  .action-item-date-wrap:focus-within .action-item-date-presets {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .action-item-date-presets {
@@ -3222,6 +3239,12 @@ html::-webkit-scrollbar-thumb:hover,
   text-decoration: line-through transparent 1.5px;
 }
 
+/* Touch tap-to-read: the clamp opens without entering the editor. */
+.action-item-description.is-expanded {
+  -webkit-line-clamp: unset;
+  display: block;
+}
+
 .action-item-description.is-completed {
   text-decoration: line-through
     color-mix(in srgb, var(--color-accent) 70%, transparent) 1.5px;
@@ -3234,7 +3257,7 @@ html::-webkit-scrollbar-thumb:hover,
 .action-edit {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 
 /* The words: a quiet field that grows with the text (JS keeps the height
@@ -3274,7 +3297,7 @@ html::-webkit-scrollbar-thumb:hover,
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.5rem;
   animation: edit-unfold-clip 240ms step-end;
 }
 @keyframes edit-unfold {
@@ -3306,7 +3329,16 @@ html::-webkit-scrollbar-thumb:hover,
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
+}
+
+/* Date presets travel as ONE unit when the meta row wraps — a flat wrap
+   orphaned "Tmrw" alone on its own line at phone widths. */
+.action-edit-presets {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: nowrap;
 }
 
 /* Who/when chips — the same pill language the display row speaks. */
@@ -3347,7 +3379,9 @@ html::-webkit-scrollbar-thumb:hover,
   border: none;
   outline: none;
   padding: 0;
-  width: 6.5rem;
+  /* Narrow fallback (Safari has no field-sizing): "Pablo"/"Me" fit and the
+     chip row survives 320px; long names scroll within the field. */
+  width: 4.5rem;
   min-width: 3.5rem;
   font-size: inherit;
   color: inherit;
@@ -3874,6 +3908,9 @@ html::-webkit-scrollbar-thumb:hover,
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  /* Full-width row, but still needs real tap height — tiny text + thin
+     padding alone computed to ~25px. */
+  min-height: 2.25rem;
   padding: 0.25rem 0.85rem;
   border: none;
   background: transparent;
@@ -6734,6 +6771,9 @@ label {
 .action-header-btn:active,
 .action-item-chip--btn:active,
 .action-item-icon-btn:active,
+.action-item-checkbox-button:active,
+.action-edit-chip--btn:active,
+.action-edit-preset:active,
 .action-done-toggle:active,
 .mapper-clip-btn:active,
 .topic-map-add-button:active,

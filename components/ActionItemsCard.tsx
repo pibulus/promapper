@@ -15,7 +15,7 @@ import {
   soundTick,
   soundToggle,
 } from "@utils/sound.ts";
-import { showUndoToast } from "@utils/toast.ts";
+import { showToast, showUndoToast } from "@utils/toast.ts";
 import { canUndo, undoLastMutation } from "@signals/conversationStore.ts";
 import { localDateISO } from "@core/storage/dates.ts";
 import { speakerColor } from "@core/theme/speakerColors.ts";
@@ -136,11 +136,16 @@ export default function ActionItemsCard(
   const searchOpen = useSignal(false);
   // One pulldown for sort + filters (side-by-side pills were chrome bloat).
   const optionsOpen = useSignal(false);
-  // A just-checked item lingers in place briefly — the checkbox pop and the
+  // Just-checked items linger in place briefly — the checkbox pop and the
   // strikethrough get their beat — before tucking into the done drawer.
-  const recentlyCompletedId = useSignal<string | null>(null);
+  // A SET, not a scalar: checking two items quickly must not cut the first
+  // one's linger short (each id gets its own timer in lingerTimersRef).
+  const lingeringIds = useSignal<ReadonlySet<string>>(new Set());
   // One-shot bump on the done-drawer toggle when an item tucks in.
   const doneBump = useSignal(false);
+  // Touch-only: tapping the words unclamps them for reading (desktop reads
+  // via hover title / the editor; editing on touch rides the pencil).
+  const expandedItemId = useSignal<string | null>(null);
   const showAssigneeDropdown = useSignal(false);
   // True while the inline-create draft row is showing (local only, see DRAFT_ID)
   const creatingDraft = useSignal(false);
@@ -153,7 +158,16 @@ export default function ActionItemsCard(
 
   // Refs
   const dropdownTimeoutRef = useRef<number | null>(null);
-  const lingerTimeoutRef = useRef<number | null>(null);
+  const lingerTimersRef = useRef<Map<string, number>>(new Map());
+  // What the open editor started from — if a live-collab update rewrites the
+  // item underneath the editor, we bail honestly instead of clobbering it.
+  const editSnapshotRef = useRef<
+    {
+      description: string;
+      assignee: string | null;
+      due_date: string | null;
+    } | null
+  >(null);
   const selectedItemIndex = useSignal<number>(-1);
   // Set when a mouse pointerdown already toggled a checkbox, so the click that
   // follows doesn't double-toggle. Touch/pen toggle on click only (a scroll
@@ -171,14 +185,33 @@ export default function ActionItemsCard(
       if (dropdownTimeoutRef.current !== null) {
         clearTimeout(dropdownTimeoutRef.current);
       }
-      if (lingerTimeoutRef.current !== null) {
-        clearTimeout(lingerTimeoutRef.current);
+      for (const timer of lingerTimersRef.current.values()) {
+        clearTimeout(timer);
       }
+      lingerTimersRef.current.clear();
     };
   }, []);
 
   useEffect(() => {
     visibleItems.value = actionItems;
+    // If a live-collab/remote update rewrote or removed the item under an
+    // open editor, bail out honestly instead of clobbering the newer copy
+    // on save (the draft row is local-only and can't collide).
+    const editingId = editingItemId.value;
+    const snapshot = editSnapshotRef.current;
+    if (!editingId || editingId === DRAFT_ID || !snapshot) return;
+    const current = actionItems.find((item) => item.id === editingId);
+    if (!current) {
+      cancelEdit();
+      showToast("That item was removed elsewhere — edit discarded", "warning");
+    } else if (
+      current.description !== snapshot.description ||
+      (current.assignee || null) !== (snapshot.assignee || null) ||
+      (current.due_date || null) !== (snapshot.due_date || null)
+    ) {
+      cancelEdit();
+      showToast("That item changed elsewhere — reopen it to edit", "warning");
+    }
   }, [actionItems]);
 
   // Click outside closes the sort/filter pulldown.
@@ -227,14 +260,14 @@ export default function ActionItemsCard(
       processedItems = processedItems.filter((item) => item.assignee === "Me");
     }
 
-    // The just-checked lingering item counts as pending so it holds its spot
-    // in the list while its checkoff animation plays.
-    const lingerId = recentlyCompletedId.value;
+    // Just-checked lingering items count as pending so they hold their spot
+    // in the list while their checkoff animation plays.
+    const lingering = lingeringIds.value;
     const completed = processedItems.filter((item) =>
-      item.status === "completed" && item.id !== lingerId
+      item.status === "completed" && !lingering.has(item.id)
     );
     const pending = processedItems.filter((item) =>
-      item.status === "pending" || item.id === lingerId
+      item.status === "pending" || lingering.has(item.id)
     );
 
     const sortGroup = (items: ActionItem[]) => {
@@ -294,10 +327,30 @@ export default function ActionItemsCard(
   );
   const renderedItems = useComputed(() =>
     doneShown.value ? sortedActionItems.value : sortedActionItems.value.filter(
-      (item) =>
-        item.status !== "completed" || item.id === recentlyCompletedId.value,
+      (item) => item.status !== "completed" || lingeringIds.value.has(item.id),
     )
   );
+
+  // The drawer label bumps whenever a completed item actually LANDS in it —
+  // a local tuck after the linger, an undo restoring a done item, a remote
+  // sync. Watching the count catches every arrival path, not just the tuck.
+  const tuckedCount = useComputed(() =>
+    visibleItems.value.filter((item) =>
+      item.status === "completed" && !lingeringIds.value.has(item.id)
+    ).length
+  );
+  const prevTuckedRef = useRef(0);
+  useEffect(() => {
+    const count = tuckedCount.value;
+    const grew = count > prevTuckedRef.current;
+    prevTuckedRef.current = count;
+    if (!grew) return;
+    doneBump.value = true;
+    const timer = setTimeout(() => {
+      doneBump.value = false;
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [tuckedCount.value]);
 
   // Reset keyboard selection when list length changes
   useEffect(() => {
@@ -308,6 +361,9 @@ export default function ActionItemsCard(
   // stale closure problem without re-registering the event listener.
   arrowKeyHandlerRef.current = (e: KeyboardEvent) => {
     if (renderedItems.value.length === 0) return;
+    // An open editor owns the keyboard entirely — Enter on a preset BUTTON
+    // inside it must not fall through and toggle the row being edited.
+    if (editingItemId.value !== null) return;
     const target = e.target as HTMLElement;
     if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
 
@@ -353,6 +409,20 @@ export default function ActionItemsCard(
     onUpdateItems(items);
   }
 
+  // End an item's linger hold: kill its timer and drop it from the set.
+  function stopLinger(itemId: string) {
+    const timer = lingerTimersRef.current.get(itemId);
+    if (timer !== undefined) {
+      clearTimeout(timer);
+      lingerTimersRef.current.delete(itemId);
+    }
+    if (lingeringIds.value.has(itemId)) {
+      const next = new Set(lingeringIds.value);
+      next.delete(itemId);
+      lingeringIds.value = next;
+    }
+  }
+
   function toggleActionItem(itemId: string) {
     const target = visibleItems.value.find((item) => item.id === itemId);
     // Completing is the rewarding beat (warm chime + firm buzz); un-completing
@@ -361,13 +431,7 @@ export default function ActionItemsCard(
       hapticTap();
       soundTick();
       // Un-checking during the linger = a changed mind; cancel the tuck.
-      if (recentlyCompletedId.value === itemId) {
-        if (lingerTimeoutRef.current !== null) {
-          clearTimeout(lingerTimeoutRef.current);
-          lingerTimeoutRef.current = null;
-        }
-        recentlyCompletedId.value = null;
-      }
+      stopLinger(itemId);
     } else {
       hapticBump();
       // Escalation: if THIS checkoff finishes the whole list, play the warmer
@@ -391,20 +455,22 @@ export default function ActionItemsCard(
         if (poppingId.value === itemId) poppingId.value = null;
       }, 240);
       // Hold the checked row in place while the pop + strikethrough play,
-      // then tuck it into the done drawer and bump the drawer toggle.
-      if (lingerTimeoutRef.current !== null) {
-        clearTimeout(lingerTimeoutRef.current);
-      }
-      recentlyCompletedId.value = itemId;
-      lingerTimeoutRef.current = setTimeout(() => {
-        lingerTimeoutRef.current = null;
-        if (recentlyCompletedId.value !== itemId) return;
-        recentlyCompletedId.value = null;
-        doneBump.value = true;
+      // then tuck it into the done drawer (the tuckedCount effect bumps the
+      // drawer toggle when it lands). Per-item timers: concurrent checkoffs
+      // each get their full hold.
+      const previous = lingerTimersRef.current.get(itemId);
+      if (previous !== undefined) clearTimeout(previous);
+      lingeringIds.value = new Set(lingeringIds.value).add(itemId);
+      lingerTimersRef.current.set(
+        itemId,
         setTimeout(() => {
-          doneBump.value = false;
-        }, 450);
-      }, 900) as unknown as number;
+          lingerTimersRef.current.delete(itemId);
+          if (!lingeringIds.value.has(itemId)) return;
+          const next = new Set(lingeringIds.value);
+          next.delete(itemId);
+          lingeringIds.value = next;
+        }, 900) as unknown as number,
+      );
     }
     // The manual-override rule (strip AI flags + stamp updated_at) lives in
     // the shared pure op — same seam the store and tests use.
@@ -418,11 +484,13 @@ export default function ActionItemsCard(
   }
 
   function startCreatingInline() {
-    // Discard any in-progress edit before creating a new one
+    // Switching away mid-edit SAVES the draft (saveEdit's guards keep a
+    // clean look-around silent) — moving on must never eat typed text.
     if (editingItemId.value) {
-      cancelEdit();
+      saveEdit();
     }
     creatingDraft.value = true;
+    editSnapshotRef.current = null;
     editingItemId.value = DRAFT_ID;
     editingDescription.value = "";
     editingAssignee.value = "";
@@ -435,10 +503,17 @@ export default function ActionItemsCard(
     currentAssignee: string | null,
     currentDueDate: string | null,
   ) {
-    // Discard any in-progress edit before starting a new one
+    // Switching rows mid-edit SAVES the previous draft — the old silent
+    // cancelEdit() here was a no-warning text eater when you clicked
+    // another row's pencil (blur skips saving for in-card targets).
     if (editingItemId.value && editingItemId.value !== itemId) {
-      cancelEdit();
+      saveEdit();
     }
+    editSnapshotRef.current = {
+      description: currentDescription,
+      assignee: currentAssignee,
+      due_date: currentDueDate,
+    };
     editingItemId.value = itemId;
     editingDescription.value = currentDescription;
     editingAssignee.value = currentAssignee || "";
@@ -470,16 +545,22 @@ export default function ActionItemsCard(
       publishItems([...visibleItems.value, newItem]);
       soundBloom();
     } else {
-      // No-change guard: click-to-edit means rows open casually — a look
-      // around that touches nothing must not stamp updated_at or push a sync.
       const existing = visibleItems.value.find(
         (item) => item.id === editingItemId.value,
       );
+      // The item vanished mid-edit (deleted here or remotely) — nothing to
+      // save onto, and a publish would broadcast a pointless no-op.
+      if (!existing) {
+        cancelEdit();
+        return;
+      }
+      // No-change guard: click-to-edit means rows open casually — a look
+      // around that touches nothing must not stamp updated_at or push a sync.
       const description = editingDescription.value.trim();
       const assignee = editingAssignee.value.trim() || null;
       const due_date = editingDueDate.value || null;
       if (
-        existing && existing.description === description &&
+        existing.description === description &&
         (existing.assignee || null) === assignee &&
         (existing.due_date || null) === due_date
       ) {
@@ -506,11 +587,25 @@ export default function ActionItemsCard(
   }
 
   function cancelEdit() {
+    const closingId = editingItemId.value;
     creatingDraft.value = false;
     editingItemId.value = null;
     editingDescription.value = "";
     editingAssignee.value = "";
     editingDueDate.value = "";
+    editSnapshotRef.current = null;
+    // Return focus to the row the editor came from — otherwise closing the
+    // editor (Esc / Ctrl+Enter) drops keyboard focus onto <body>. Skipped
+    // when another editor opened in the same beat (row switch).
+    if (closingId && closingId !== DRAFT_ID) {
+      requestAnimationFrame(() => {
+        if (editingItemId.value !== null) return;
+        const row = listContainerRef.current?.querySelector(
+          `[data-row-id="${closingId}"]`,
+        ) as HTMLElement | null;
+        row?.focus();
+      });
+    }
   }
 
   function updateDueDate(itemId: string, due_date: string | null) {
@@ -543,6 +638,9 @@ export default function ActionItemsCard(
   // Delete immediately; the undo toast is the safety net (no confirm modal —
   // that's the app's danger law: calm recession + undo, not alarm friction).
   function deleteItem(itemId: string) {
+    // Deleting a mid-linger item must also kill its timer, or the dangling
+    // timeout bumps the drawer 900ms later over nothing.
+    stopLinger(itemId);
     const removed = visibleItems.value.find((item) => item.id === itemId);
     publishItems(visibleItems.value.filter((item) => item.id !== itemId));
     if (canUndo()) {
@@ -728,9 +826,9 @@ export default function ActionItemsCard(
                     // at the wrong hour in non-UTC timezones (and isn't
                     // recomputed per row).
                     const todayISO = localDateISO(0);
-                    const lingerId = recentlyCompletedId.value;
+                    const lingering = lingeringIds.value;
                     const isPendingRow = (row: ActionItem) =>
-                      row.status === "pending" || row.id === lingerId;
+                      row.status === "pending" || lingering.has(row.id);
                     const pendingRows = sortedActionItems.value.filter(
                       isPendingRow,
                     );
@@ -760,7 +858,11 @@ export default function ActionItemsCard(
                       return (
                         <div
                           key={item.id}
+                          data-row-id={item.id}
                           data-sortable-id={canDrag ? item.id : undefined}
+                          // Focusable (not tabbable) so the closing editor
+                          // can hand keyboard focus back to its row.
+                          tabIndex={-1}
                           onPointerDown={(e) =>
                             canDrag && onRowPointerDown(e, item.id)}
                           onClick={() => selectedItemIndex.value = index}
@@ -835,10 +937,12 @@ export default function ActionItemsCard(
                                   const related = (e as FocusEvent)
                                     .relatedTarget as HTMLElement | null;
                                   // Don't save if focus moved to controls
-                                  // inside the editing card
+                                  // inside THIS editor (.action-edit). The
+                                  // old any-card check let a click on
+                                  // ANOTHER row's pencil skip the save.
                                   if (
                                     related &&
-                                    related.closest(".action-item-card")
+                                    related.closest(".action-edit")
                                   ) return;
                                   if (editingDescription.value.trim()) {
                                     saveEdit();
@@ -980,42 +1084,49 @@ export default function ActionItemsCard(
                                           : "When?"}
                                       </span>
                                     </button>
-                                    <button
-                                      type="button"
-                                      class="action-edit-preset"
-                                      onClick={() => {
-                                        editingDueDate.value = localDateISO(
-                                          0,
-                                        );
-                                        soundTick();
-                                      }}
-                                    >
-                                      Today
-                                    </button>
-                                    <button
-                                      type="button"
-                                      class="action-edit-preset"
-                                      onClick={() => {
-                                        editingDueDate.value = localDateISO(
-                                          1,
-                                        );
-                                        soundTick();
-                                      }}
-                                    >
-                                      Tmrw
-                                    </button>
-                                    {editingDueDate.value && (
+                                    {
+                                      /* Presets wrap as ONE atomic group —
+                                        flat flex-wrap orphaned "Tmrw" onto
+                                        its own line at narrow widths. */
+                                    }
+                                    <div class="action-edit-presets">
                                       <button
                                         type="button"
                                         class="action-edit-preset"
                                         onClick={() => {
-                                          editingDueDate.value = "";
+                                          editingDueDate.value = localDateISO(
+                                            0,
+                                          );
                                           soundTick();
                                         }}
                                       >
-                                        Clear
+                                        Today
                                       </button>
-                                    )}
+                                      <button
+                                        type="button"
+                                        class="action-edit-preset"
+                                        onClick={() => {
+                                          editingDueDate.value = localDateISO(
+                                            1,
+                                          );
+                                          soundTick();
+                                        }}
+                                      >
+                                        Tmrw
+                                      </button>
+                                      {editingDueDate.value && (
+                                        <button
+                                          type="button"
+                                          class="action-edit-preset"
+                                          onClick={() => {
+                                            editingDueDate.value = "";
+                                            soundTick();
+                                          }}
+                                        >
+                                          Clear
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
 
                                   <div class="action-edit-footer">
@@ -1064,20 +1175,34 @@ export default function ActionItemsCard(
                               {/* Content */}
                               <div class="flex flex-col gap-2 min-w-0 w-full">
                                 {
-                                  /* Two-line clamp keeps every row the
-                                          same shape; click the words to edit
-                                          them in place (the editor shows the
-                                          full text — reading == editing) */
+                                  /* Two-line clamp keeps every row the same
+                                          shape. Desktop: click the words to
+                                          edit them in place (hover title
+                                          reads the full text). Touch: a tap
+                                          UNCLAMPS to read — no keyboard pop
+                                          for "just reading" — and the same
+                                          tap reveals the pencil for editing. */
                                 }
                                 <p
                                   class={`action-item-description leading-relaxed${
                                     item.status === "completed"
                                       ? " is-completed"
                                       : ""
+                                  }${
+                                    expandedItemId.value === item.id
+                                      ? " is-expanded"
+                                      : ""
                                   }`}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     selectedItemIndex.value = index;
+                                    if (matchMedia("(hover: none)").matches) {
+                                      expandedItemId.value =
+                                        expandedItemId.value === item.id
+                                          ? null
+                                          : item.id;
+                                      return;
+                                    }
                                     startEditing(
                                       item.id,
                                       item.description,
@@ -1177,7 +1302,12 @@ export default function ActionItemsCard(
                                         design) and the chip goes with them. */
                                 }
                                 {(item as AIFlaggedItem).ai_checked && (
-                                  <div class="action-item-ai">
+                                  // aria-live: the checked_reason paragraph
+                                  // mounts on tap — announce it.
+                                  <div
+                                    class="action-item-ai"
+                                    aria-live="polite"
+                                  >
                                     <button
                                       type="button"
                                       class="action-item-chip action-item-chip--ai px-3 py-1 rounded text-xs"
