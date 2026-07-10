@@ -407,19 +407,46 @@ body {
   background: var(--color-secondary);
 }
 
-/* Row action cluster (edit / delete) — a real grid column, right of the
-   words, left of the checkbox. In flow = it can never land on the checkbox
-   (the old absolute corner buttons did exactly that at narrow widths).
-   Hidden until the row is hovered/focused/selected; on touch, a tap anywhere
-   on the row selects it and the pair fades in. */
+/* Row action cluster (edit / delete) — an overlay pinned at the row's right
+   edge, a fixed gap LEFT of the in-flow checkbox (so it can never land on
+   it — the old corner buttons did exactly that at narrow widths). An overlay
+   rather than a grid column because a hidden column still reserves width and
+   starves the words of space. Hidden = no pointer events, so the text under
+   it stays clickable. On touch, tapping the row selects it and the pair
+   fades in. */
 .action-item-actions {
+  position: absolute;
+  z-index: 3;
+  right: 3.1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
   opacity: 0;
+  pointer-events: none;
   transition: opacity var(--transition-fast);
 }
 .action-item-card:hover .action-item-actions,
 .action-item-card:focus-within .action-item-actions,
 .action-item-card.is-selected .action-item-actions {
   opacity: 1;
+  pointer-events: auto;
+}
+/* Feathered scrim so covered words fade out under the buttons instead of
+   peeking through the gaps between them. */
+.action-item-actions::before {
+  content: "";
+  position: absolute;
+  inset: -0.6rem -0.45rem;
+  z-index: -1;
+  border-radius: 0.6rem;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--surface-card-deep) 40%
+  );
+  pointer-events: none;
 }
 
 .action-item-icon-btn {
@@ -3201,8 +3228,162 @@ html::-webkit-scrollbar-thumb:hover,
   opacity: 0.6;
 }
 
-.action-edit-hint {
+/* ── Inline editor — the row grown in place, three calm beats: the words,
+   the who/when chips, the actions. No second box: the textarea sits where
+   the display text sat and everything else unfolds beneath it. ── */
+.action-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* The words: a quiet field that grows with the text (JS keeps the height
+   synced — no scrollbar, no resize nub). */
+.action-edit-text {
+  width: 100%;
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  background: var(--surface-card);
+  padding: 0.5rem 0.65rem;
+  font-size: var(--small-size);
+  line-height: 1.5;
+  color: var(--color-text);
+  resize: none;
+  overflow: hidden;
+  min-height: 2.6rem;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+.action-edit-text:focus {
+  outline: none;
+  border-color: var(--accent-ink);
+  box-shadow: 2px 2px 0 0 var(--color-accent);
+}
+
+/* The unfold: chips + actions rise out of the row (grid-track 0fr → 1fr is
+   the only clean way to animate to an intrinsic height). Overflow clips only
+   DURING the animation — the keyframe carries it — so the assignee dropdown
+   is never caged afterwards. */
+.action-edit-extras {
+  display: grid;
+  grid-template-rows: 1fr;
+  animation: edit-unfold 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.action-edit-extras-inner {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  animation: edit-unfold-clip 240ms step-end;
+}
+@keyframes edit-unfold {
+  from {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+  to {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+@keyframes edit-unfold-clip {
+  from {
+    overflow: hidden;
+  }
+  to {
+    overflow: hidden;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .action-edit-extras,
+  .action-edit-extras-inner {
+    animation: none;
+  }
+}
+
+.action-edit-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+/* Who/when chips — the same pill language the display row speaks. */
+.action-edit-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 9999px;
+  border: 2px solid var(--color-border);
+  background: var(--surface-cream);
   color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  cursor: text;
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    background var(--transition-fast);
+}
+.action-edit-chip i {
+  font-size: 0.7rem;
+}
+.action-edit-chip:focus-within,
+.action-edit-chip--btn:hover {
+  border-color: var(--accent-ink);
+  color: var(--color-text);
+  background: var(--surface-card-deep);
+}
+.action-edit-chip--btn {
+  cursor: pointer;
+}
+.action-edit-chip.has-value {
+  color: var(--color-text);
+  border-color: var(--soft-black);
+}
+.action-edit-chip-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  width: 6.5rem;
+  min-width: 3.5rem;
+  font-size: inherit;
+  color: inherit;
+}
+/* Where supported, the chip grows with the name instead of clipping it. */
+@supports (field-sizing: content) {
+  .action-edit-chip-input {
+    field-sizing: content;
+    width: auto;
+    max-width: 12rem;
+  }
+}
+
+/* Date presets — quiet text, not more pills. */
+.action-edit-preset {
+  border: none;
+  background: none;
+  padding: 0.2rem 0.25rem;
+  border-radius: 0.3rem;
+  font-size: var(--tiny-size);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+.action-edit-preset:hover,
+.action-edit-preset:focus-visible {
+  color: var(--accent-ink);
+  text-decoration: underline dashed;
+  text-underline-offset: 3px;
+}
+
+.action-edit-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 0.1rem;
 }
 
 /* Premium Neo-Toybrut Chips */
@@ -3811,9 +3992,6 @@ html::-webkit-scrollbar-thumb:hover,
 }
 .action-input--xs {
   font-size: var(--tiny-size);
-  border: 2px solid var(--color-border);
-}
-.action-input-border {
   border: 2px solid var(--color-border);
 }
 
