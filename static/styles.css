@@ -1854,7 +1854,11 @@ body {
   }
 
   /* iOS zooms the whole page when a focused input's font is < 16px. Force
-     16px on phones (padding still keeps these visually compact). */
+     16px on phones (padding still keeps these visually compact).
+     !important on purpose: this is a device-behavior guard, and classed
+     rules (.action-edit-textarea, .export-textarea, .mapper-unified-input
+     textarea…) out-specificity a bare element selector — the guard was
+     silently losing on every styled field. */
   input[type="text"],
   input[type="search"],
   input[type="email"],
@@ -1862,7 +1866,7 @@ body {
   input:not([type]),
   textarea,
   select {
-    font-size: 16px;
+    font-size: 16px !important;
   }
 
   /* The history search sits in a slide-up sheet — give it a comfortable tap

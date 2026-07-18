@@ -149,6 +149,21 @@ export default function MobileHistoryMenu() {
     return () => globalThis.removeEventListener("keydown", onKeydown);
   }, [showConfirmDelete.value]);
 
+  // Escape closes the drawer itself — every other overlay in the app has
+  // this, and without it the open drawer blocks the whole page for keyboard
+  // users. Guarded so the delete-confirm handler above wins while it's up.
+  useEffect(() => {
+    if (!isOpen.value || showConfirmDelete.value) return;
+    function onKeydown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        isOpen.value = false;
+      }
+    }
+    globalThis.addEventListener("keydown", onKeydown);
+    return () => globalThis.removeEventListener("keydown", onKeydown);
+  }, [isOpen.value, showConfirmDelete.value]);
+
   // Refresh list when conversationData changes (debounced)
   useEffect(() => {
     if (conversationData.value) {
