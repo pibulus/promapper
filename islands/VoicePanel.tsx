@@ -129,9 +129,33 @@ export default function VoicePanel(
       }
 
       // 2. Set up audio analysis (for speaking detection on local).
-      //    AudioContext was created up-front to preserve the iOS gesture chain.
-      const source = audioCtx.createMediaStreamSource(stream);
-      const analyzer = audioCtx.createAnalyser();
+      //    AudioContext was created up-front to preserve the iOS gesture
+      //    chain — but iOS reroutes the mic hardware (usually to 48kHz) once
+      //    capture starts, and the up-front context keeps its old rate. It
+      //    stays 'running' yet feeds the analyser pure silence: speaking dot
+      //    never lights while WebRTC audio works fine. Recreate at the mic's
+      //    real rate; safe after the grant because active capture keeps
+      //    contexts runnable without a fresh gesture. Remote analysers read
+      //    audioCtxRef so they land on the replacement too.
+      let ctx = audioCtx;
+      const micRate = stream.getAudioTracks()[0]?.getSettings?.()?.sampleRate;
+      if (micRate && ctx.sampleRate !== micRate) {
+        console.warn(
+          `AudioContext rate ${ctx.sampleRate} != mic rate ${micRate} — recreating context`,
+        );
+        try {
+          await ctx.close();
+        } catch {
+          // A dying context that refuses to close still gets replaced below.
+        }
+        ctx = new AudioContext();
+        audioCtxRef.current = ctx;
+        if (ctx.state === "suspended") {
+          ctx.resume().catch(() => {});
+        }
+      }
+      const source = ctx.createMediaStreamSource(stream);
+      const analyzer = ctx.createAnalyser();
       analyzer.fftSize = 256;
       analyzer.smoothingTimeConstant = 0.4;
       source.connect(analyzer);
