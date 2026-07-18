@@ -860,6 +860,14 @@ export default function HomeIsland() {
           bottom (sticky), full-bleed, holding the dials. */
       }
       <footer class="app-footer">
+        {/* Phones only (CSS-gated): the conversation title docks here in the
+            thumb zone — the h1 stays in the header for screen readers and
+            desktop, so this copy is decorative. */}
+        {conversationData.value?.conversation.title && (
+          <span class="app-footer__title" aria-hidden="true">
+            {conversationData.value.conversation.title}
+          </span>
+        )}
         <span class="app-footer__brand">
           © 2026 ProMapper
           <i class="fa fa-heart" aria-hidden="true"></i>

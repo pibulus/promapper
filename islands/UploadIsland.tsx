@@ -43,10 +43,10 @@ export default function UploadIsland(
   );
   const hasText = useComputed(() => textInput.value.trim().length > 0);
   const primaryLabel = useComputed(() => {
-    if (isRecording.value) return "Stop Recording";
-    if (hasText.value) return "Analyze Text";
-    if (selectedFile.value) return "Map Audio";
-    return "Start Recording";
+    if (isRecording.value) return "Stop recording";
+    if (hasText.value) return "Analyze text";
+    if (selectedFile.value) return "Map audio";
+    return "Start recording";
   });
   const primaryDisabled = useComputed(() =>
     isProcessing.value && !isRecording.value
