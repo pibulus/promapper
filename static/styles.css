@@ -2368,10 +2368,18 @@ body {
   overflow: hidden;
 }
 .canvas-live-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
   font-size: var(--small-size);
   color: var(--color-text-secondary);
   line-height: 1.5;
-  padding: 0.75rem 0.25rem;
+  /* Sits in a soft accent-washed panel with an accent left-rule — the same
+     "here's what's happening" grammar as the summary key-points block. */
+  padding: 0.75rem;
+  border-left: 3px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
+  border-radius: var(--border-radius-sm);
+  background: color-mix(in srgb, var(--color-accent) 7%, transparent);
 }
 
 /* Radio — the tile that hums. */
@@ -2387,37 +2395,51 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: none;
+  /* Toy-brut slab: the chunky warm-black edge + flat shadow every accent
+     button in the app wears — the module play buttons join the family. */
+  border: 2px solid var(--soft-black);
   border-radius: 50%;
   background: var(--accent-fill);
   color: #fff;
+  box-shadow: 2px 2px 0 var(--soft-black);
   cursor: pointer;
-  transition: transform var(--transition-fast), filter var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    filter var(--transition-fast);
 }
 .radio-play:hover {
   transform: translateY(-1.5px);
+  box-shadow: 3px 3px 0 var(--soft-black);
   filter: brightness(1.08);
 }
 .radio-play:active {
-  transform: translateY(1px);
+  transform: translateY(0.5px);
+  box-shadow: 1px 1px 0 var(--soft-black);
 }
 .radio-info {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  gap: 0.15rem;
   min-width: 0;
   flex: 1;
 }
 .radio-station {
   font-weight: 700;
   font-size: var(--small-size);
+  line-height: 1.3;
 }
 .radio-now {
   font-size: var(--tiny-size);
+  line-height: 1.4;
   color: var(--color-text-secondary);
-  white-space: nowrap;
+  /* Two-line clamp — the old single-line ellipsis clipped Tones' little
+     mood lines mid-phrase; two lines lets them breathe, still bounded. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 .radio-next {
   flex-shrink: 0;
@@ -2460,7 +2482,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   width: 100%;
-  padding: 0.35rem 0.5rem;
+  padding: 0.4rem 0.55rem;
   border: none;
   border-radius: var(--border-radius-sm);
   background: transparent;
@@ -2468,11 +2490,15 @@ body {
   font-size: var(--tiny-size);
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
 }
 .radio-station-row:hover {
   background: color-mix(in srgb, var(--color-accent) 10%, transparent);
   color: var(--accent-ink);
+  transform: translateX(2px);
 }
 .radio-station-row.is-current {
   background: var(--header-band);
@@ -2549,12 +2575,16 @@ body {
   font-weight: 700;
   font-size: var(--small-size);
   color: var(--accent-ink);
-  margin-bottom: 0.25rem;
+  line-height: 1.5;
+  margin-bottom: 0.35rem;
 }
 .bishop-answer {
   font-size: var(--small-size);
-  line-height: 1.55;
+  line-height: 1.5;
   padding: 0.6rem 0.75rem;
+  /* A slim accent left-rule threads the answer to its question — same visual
+     grammar as the card header's accent rule. */
+  border-left: 3px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
   border-radius: var(--border-radius-sm);
   background: color-mix(in srgb, var(--color-accent) 7%, transparent);
 }
@@ -2577,10 +2607,15 @@ body {
   color: var(--color-text);
   font-family: var(--font-family);
   font-size: var(--small-size);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 .bishop-input:focus-visible {
   outline: none;
   border-color: var(--color-accent);
+  /* Soft accent ring on focus — the same warm halo the other inputs get. */
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 18%, transparent);
 }
 .bishop-send {
   width: 2.75rem;
@@ -2589,26 +2624,36 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: none;
+  /* Same toy-brut slab as the radio/tones play buttons — one button family. */
+  border: 2px solid var(--soft-black);
   border-radius: var(--border-radius-sm);
   background: var(--accent-fill);
   color: #fff;
+  box-shadow: 2px 2px 0 var(--soft-black);
   cursor: pointer;
-  transition: transform var(--transition-fast), filter var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    filter var(--transition-fast);
 }
 .bishop-send:hover:not(:disabled) {
   transform: translateY(-1.5px);
+  box-shadow: 3px 3px 0 var(--soft-black);
   filter: brightness(1.08);
 }
 .bishop-send:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: translateY(0.5px);
+  box-shadow: 1px 1px 0 var(--soft-black);
 }
 .bishop-send:disabled {
   opacity: 0.55;
+  box-shadow: none;
   cursor: default;
 }
 
-/* Notes module — a calm page inside the card. */
+/* Notes module — a calm page inside the card. Joins the one prose system
+   (13px / 1.5, same as transcript + summary) so a note reads as kin to the
+   rest of the board, not a stray textarea. */
 .notes-module-textarea {
   width: 100%;
   min-height: 14rem;
@@ -2619,8 +2664,8 @@ body {
   background: transparent;
   color: var(--color-text);
   font-family: var(--font-family);
-  font-size: var(--text-size);
-  line-height: var(--line-height);
+  font-size: var(--small-size);
+  line-height: 1.5;
 }
 .notes-module-textarea::placeholder {
   color: var(--color-text-secondary);
