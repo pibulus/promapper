@@ -33,6 +33,13 @@ export interface RecorderOptions {
   blockNavigation?: boolean;
   /** Silences the "Couldn't access microphone" toast (caller shows own). */
   silentMicError?: boolean;
+  /**
+   * Catch accidental blink-taps client-side: a stop-blob smaller than this
+   * (bytes) shows a kind toast and skips onStop entirely — no wasted upload
+   * round-trip. 0 (default) disables; batch recorders want ~1024 to match
+   * the server's MIN_AUDIO_SIZE, streaming consumers should leave it off.
+   */
+  minBlobBytes?: number;
 }
 
 export interface RecorderHandle {
@@ -90,7 +97,15 @@ export function useRecorder(opts: RecorderOptions = {}): RecorderHandle {
       autoGainControl: true,
     },
     timesliceMs = 1000,
-    mimeTypes = ["audio/webm", "audio/ogg", "audio/mp4", ""],
+    // Opus-first: bare "audio/webm" usually resolves to opus anyway, but
+    // asking explicitly removes the guess (the daysay chain).
+    mimeTypes = [
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/mp4",
+      "audio/ogg;codecs=opus",
+      "",
+    ],
     onBeforeStart,
     onChunk,
     onStop,
@@ -99,6 +114,7 @@ export function useRecorder(opts: RecorderOptions = {}): RecorderHandle {
     warnAtSecondsLeft = 30,
     blockNavigation = false,
     silentMicError = false,
+    minBlobBytes = 0,
   } = opts;
 
   const isRecording = useSignal(false);
@@ -112,6 +128,27 @@ export function useRecorder(opts: RecorderOptions = {}): RecorderHandle {
   const timerRef = useRef<number | null>(null);
   const isStartingRecording = useRef(false);
   const silenced = useRef(false); // track if we've already shown the warning
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  // Keep the screen awake through a long take — a sleeping screen kills the
+  // recording. Decorative-adjacent: failures never block recording.
+  async function requestWakeLock() {
+    if (wakeLockRef.current || !("wakeLock" in navigator)) return;
+    if (document.visibilityState !== "visible") return;
+    try {
+      wakeLockRef.current = await navigator.wakeLock.request("screen");
+      wakeLockRef.current?.addEventListener("release", () => {
+        wakeLockRef.current = null;
+      });
+    } catch {
+      // Screen may sleep; recording continues.
+    }
+  }
+
+  function releaseWakeLock() {
+    wakeLockRef.current?.release().catch(() => {});
+    wakeLockRef.current = null;
+  }
 
   function clearTimer() {
     if (timerRef.current) {
@@ -122,6 +159,7 @@ export function useRecorder(opts: RecorderOptions = {}): RecorderHandle {
 
   function cleanupMedia() {
     clearTimer();
+    releaseWakeLock();
     mediaRecorderRef.current = null;
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
@@ -183,6 +221,7 @@ export function useRecorder(opts: RecorderOptions = {}): RecorderHandle {
       showTimeWarning.value = false;
       silenced.current = false;
       isStartingRecording.current = false;
+      void requestWakeLock();
 
       // Derive elapsed from wall clock, not tick counting: iOS throttles
       // background intervals, so a counter silently falls behind (and the
@@ -238,6 +277,17 @@ export function useRecorder(opts: RecorderOptions = {}): RecorderHandle {
       type: recorder.mimeType || "audio/webm",
     });
     chunksRef.current = [];
+
+    // Blink-tap gate: mirror the server's kind copy without the round-trip.
+    if (minBlobBytes > 0 && blob.size < minBlobBytes) {
+      showToast(
+        "That recording came through empty — we didn't catch any audio. Give it another go.",
+        "info",
+      );
+      cleanupMedia();
+      isProcessing.value = false;
+      return;
+    }
 
     try {
       await onStop?.(blob);

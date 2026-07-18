@@ -77,7 +77,16 @@ export default function AudioRecorder(
     maxDurationSeconds: MAX_RECORDING_TIME,
     warnAtSecondsLeft: WARNING_TIME,
     blockNavigation: true,
-    mimeTypes: ["audio/webm", "audio/ogg", "audio/mp4", ""],
+    mimeTypes: [
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/mp4",
+      "audio/ogg;codecs=opus",
+      "",
+    ],
+    // Matches the server's MIN_AUDIO_SIZE — blink-taps bail kindly without
+    // the upload round-trip.
+    minBlobBytes: 1024,
     onStop: async (blob) => {
       lastRecordingBlobRef.current = blob;
       retryRecordingReady.value = true;

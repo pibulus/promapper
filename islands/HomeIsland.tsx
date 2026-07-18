@@ -149,6 +149,31 @@ export default function HomeIsland() {
     return () => globalThis.removeEventListener("keydown", onKeydown);
   }, []);
 
+  // The header action cluster scrolls horizontally on phones once a live
+  // session stacks up controls. CSS can't see overflow, so this watcher
+  // toggles the fade-hint class (.has-overflow-right) that tells thumbs
+  // there's more to the right.
+  useEffect(() => {
+    if (!IS_BROWSER) return;
+    const update = () => {
+      document.querySelectorAll<HTMLElement>(".app-header__actions").forEach(
+        (el) => {
+          const overflowsRight = el.scrollWidth - el.clientWidth >
+            Math.max(1, el.scrollLeft + 1);
+          el.classList.toggle("has-overflow-right", overflowsRight);
+        },
+      );
+    };
+    update();
+    globalThis.addEventListener("resize", update);
+    const el = document.querySelector<HTMLElement>(".app-header__actions");
+    el?.addEventListener("scroll", update, { passive: true });
+    return () => {
+      globalThis.removeEventListener("resize", update);
+      el?.removeEventListener("scroll", update);
+    };
+  }, [liveSession.value?.roomId, conversationData.value ? 1 : 0]);
+
   // ✨ typed.js — typewriter effect on the hero heading
   useEffect(() => {
     if (!IS_BROWSER || conversationData.value) return;
@@ -268,7 +293,7 @@ export default function HomeIsland() {
     },
     timesliceMs: 500,
     // "" trailing fallback = let the browser pick if neither type is supported.
-    mimeTypes: ["audio/webm", "audio/mp4", ""],
+    mimeTypes: ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", ""],
     onBeforeStart: ensureApiSession,
     // Let the hook surface mic failures — silentMicError:true left the live
     // record button doing nothing on failure, with no explanation at all.
@@ -860,9 +885,11 @@ export default function HomeIsland() {
           bottom (sticky), full-bleed, holding the dials. */
       }
       <footer class="app-footer">
-        {/* Phones only (CSS-gated): the conversation title docks here in the
+        {
+          /* Phones only (CSS-gated): the conversation title docks here in the
             thumb zone — the h1 stays in the header for screen readers and
-            desktop, so this copy is decorative. */}
+            desktop, so this copy is decorative. */
+        }
         {conversationData.value?.conversation.title && (
           <span class="app-footer__title" aria-hidden="true">
             {conversationData.value.conversation.title}
