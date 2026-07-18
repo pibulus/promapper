@@ -78,11 +78,17 @@ export default function ShareButton() {
         showToast(result.warning, "warning");
       }
       if (result.mode !== "local-only") {
-        copyToClipboard(result.url);
+        // Mobile → open the OS share sheet so it's one tap to a friend.
+        // Desktop (no native share) → fall back to copying the link.
+        const shared = await tryNativeShare(
+          result.url,
+          "Here's a project map I put together — take a look.",
+        );
+        if (!shared) copyToClipboard(result.url);
       }
     } catch (error) {
       console.error("Failed to create share:", error);
-      showToast("Couldn't create a share link — try again", "error");
+      showToast("That didn't take — give it another try in a sec", "error");
     } finally {
       isGenerating.value = false;
     }
@@ -98,16 +104,38 @@ export default function ShareButton() {
     copyToClipboard(share.value.url);
   }
 
+  // Native share sheet on mobile (falls back to clipboard). Returns true if the
+  // OS sheet handled it, so callers can skip the copy toast.
+  async function tryNativeShare(url: string, message: string): Promise<boolean> {
+    const nav = navigator as Navigator & {
+      share?: (data: ShareData) => Promise<void>;
+    };
+    if (typeof nav.share !== "function") return false;
+    try {
+      await nav.share({
+        title: "A ProMapper project map",
+        text: message,
+        url,
+      });
+      return true;
+    } catch (error) {
+      // AbortError = user dismissed the sheet on purpose; not a failure, and
+      // we shouldn't then noisily copy behind their back.
+      if (error instanceof Error && error.name === "AbortError") return true;
+      return false;
+    }
+  }
+
   async function copyToClipboard(text: string) {
     try {
       await navigator.clipboard.writeText(text);
-      showToast("Share link copied", "success");
+      showToast("Link copied — send it to someone lovely", "success");
     } catch (error) {
       // Clipboard API can be unavailable (non-HTTPS, older Safari) — the link
       // is still visible in the panel, so point the user at it rather than
       // failing silently.
       console.error("Failed to copy share link:", error);
-      showToast("Couldn't copy automatically — copy the link below", "warning");
+      showToast("Grab the link below and pop it wherever you like", "warning");
     }
   }
 
@@ -185,7 +213,14 @@ export default function ShareButton() {
                   onClick={(e) => (e.target as HTMLInputElement).select()}
                 />
                 <button
-                  onClick={() => copyToClipboard(liveRoomUrl())}
+                  onClick={async () => {
+                    const url = liveRoomUrl();
+                    const shared = await tryNativeShare(
+                      url,
+                      "Come join my live ProMapper room — we'll map it out together.",
+                    );
+                    if (!shared) copyToClipboard(url);
+                  }}
                   class="min-h-9 px-3 py-1 text-xs font-bold share-copy-btn"
                   data-tip="Copy live link"
                 >

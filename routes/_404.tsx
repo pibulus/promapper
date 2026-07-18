@@ -4,22 +4,26 @@ export default function Error404() {
   return (
     <>
       <Head>
-        <title>404 - Page not found</title>
+        <title>Hmm, that page wandered off | ProMapper</title>
+        <meta
+          name="description"
+          content="This page isn't here — but your project map is one click away."
+        />
       </Head>
-      <div class="px-4 py-8 mx-auto bg-[#86efac]">
-        <div class="max-w-screen-md mx-auto flex flex-col items-center justify-center">
-          <img
-            class="my-6"
-            src="/logo.svg"
-            width="128"
-            height="128"
-            alt="the Fresh logo: a sliced lemon dripping with juice"
-          />
-          <h1 class="text-4xl font-bold">404 - Page not found</h1>
-          <p class="my-4">
-            The page you were looking for doesn't exist.
+      <div class="mapper-scene min-h-screen flex items-center justify-center px-6">
+        <div class="shared-panel max-w-md">
+          <div class="shared-panel__icon">
+            <i class="fa fa-compass" aria-hidden="true"></i>
+          </div>
+          <h2 class="shared-panel__title">This page wandered off</h2>
+          <p class="shared-panel__body mb-6">
+            We looked, but there's nothing at this spot. It may have moved, or
+            the link picked up a typo somewhere. No harm done — let's get you
+            back on the map.
           </p>
-          <a href="/" class="underline">Go back home</a>
+          <a href="/" class="btn btn--accent">
+            Go to Home
+          </a>
         </div>
       </div>
     </>
