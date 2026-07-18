@@ -78,6 +78,15 @@ export default class ConversationRoom implements Party.Server {
     this.broadcastPresence(conn.id);
   }
 
+  // Runtime-forced disconnects (oversized frame, socket error) skip onClose,
+  // leaving the dropped peer in everyone's roster until the next join/leave
+  // re-broadcasts. Observed live: a 1009 kill left a ghost for 3s+ while a
+  // clean close cleared instantly. Mirror onClose here so error-path drops
+  // clear too.
+  onError(conn: Party.Connection, _error: Error) {
+    this.broadcastPresence(conn.id);
+  }
+
   // ===============================================================
   // CLIENT MESSAGES (WebSocket)
   // ===============================================================
@@ -170,6 +179,11 @@ export default class ConversationRoom implements Party.Server {
         const speakers = this.field(normalized.data, "speakers");
         const chunkId = this.field(normalized.data, "chunkId");
         if (typeof text !== "string" || text.length > 8000) return;
+        // Same reasoning as chat: an active recording is the realest sign of
+        // life a room has, so extend the TTL. Without this, a listen-only
+        // meeting (chunks flowing, nobody editing or chatting) never bumps
+        // lastActiveAt and the room can expire mid-session.
+        await this.saveMetadata(touchRoomMetadata(state.metadata ?? {}));
         this.relay(LIVE_MESSAGE_TYPES.TRANSCRIPT_CHUNK, {
           text,
           // Keep only short strings — a peer's payload is not trusted.
