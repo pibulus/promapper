@@ -14,6 +14,7 @@
 import type { ComponentType } from "preact";
 import NotesModule from "./NotesModule.tsx";
 import BishopModule from "./BishopModule.tsx";
+import TakesModule from "./TakesModule.tsx";
 import RadioModule from "./RadioModule.tsx";
 import CanvasModule from "./CanvasModule.tsx";
 import TonesModule from "./TonesModule.tsx";
@@ -50,6 +51,14 @@ export const moduleRegistry: ModuleEntry[] = [
     icon: "chess-bishop",
     size: "standard",
     component: BishopModule,
+  },
+  {
+    id: "takes",
+    name: "Takes",
+    tagline: "Every recording kept — listen back, see what each one changed.",
+    icon: "record-vinyl",
+    size: "standard",
+    component: TakesModule,
   },
   {
     id: "radio",

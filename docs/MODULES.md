@@ -57,13 +57,14 @@ formats.
 
 ## Current rack
 
-| Module | Size     | What it does                                  |
-| ------ | -------- | --------------------------------------------- |
-| Notes  | standard | Scratch pad stored in the conversation JSON.  |
-| Bishop | standard | Ask your memory — reads this conversation to answer. |
-| Radio  | small    | KPAB + SomaFM tile; born gap-filler.          |
-| Tones  | small    | WebAudio moods — focus, rain, warm, deep.     |
-| Canvas | wide     | The whiteboard outside meetings; same scene.  |
+| Module | Size     | What it does                                                                                      |
+| ------ | -------- | ------------------------------------------------------------------------------------------------- |
+| Notes  | standard | Scratch pad stored in the conversation JSON.                                                      |
+| Bishop | standard | Ask your memory — reads this conversation to answer.                                              |
+| Takes  | standard | Every recording kept — listen back + append receipts (reads recordingsDB, same rows as the dock). |
+| Radio  | small    | KPAB + SomaFM tile; born gap-filler.                                                              |
+| Tones  | small    | WebAudio moods — focus, rain, warm, deep.                                                         |
+| Canvas | wide     | The whiteboard outside meetings; same scene.                                                      |
 
 ## On deck (from the July 10 riff)
 

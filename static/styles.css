@@ -2606,6 +2606,28 @@ body {
   flex-direction: column;
   gap: 0.6rem;
 }
+
+/* Takes module — the dock's take rows, living in a rack card. */
+.takes-module-body {
+  display: flex;
+  flex-direction: column;
+}
+.takes-module-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 17rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 0.15rem;
+}
+.takes-module-empty {
+  font-size: var(--small-size);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+  padding: 0.4rem 0.2rem;
+}
 .bishop-log {
   flex: 1;
   min-height: 9rem;

@@ -336,6 +336,11 @@ export default function AudioRecorder(
 
   function stopPlayback() {
     if (audioElementRef.current) {
+      // Detach handlers BEFORE clearing src — src = "" itself fires an
+      // `error` event, which toasted "Error playing audio" after every
+      // take that simply finished playing.
+      audioElementRef.current.onended = null;
+      audioElementRef.current.onerror = null;
       audioElementRef.current.pause();
       audioElementRef.current.src = "";
       audioElementRef.current = null;
