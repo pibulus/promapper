@@ -11,9 +11,12 @@ export const handler: Handlers = {
 
     try {
       const shareId = ctx.params.shareId;
-      // Real share ids are always "cm_" + UUID. Rejecting junk here avoids a
-      // pointless Supabase round-trip per request on a public endpoint.
-      if (!/^cm_[0-9a-fA-F-]{36}$/.test(shareId)) {
+      // Real share ids are "cm_" + either a short base36 slug (new, 14 chars,
+      // from generateShareRoomId) or a legacy 36-char UUID. Rejecting junk here
+      // avoids a pointless Supabase round-trip per request on a public endpoint.
+      // NOTE: the old gate was /^cm_[0-9a-fA-F-]{36}$/ which only matched UUIDs
+      // and 404'd every new short share id — this broadening fixes that.
+      if (!/^cm_[A-Za-z0-9-]{8,40}$/.test(shareId)) {
         return jsonResponse({ error: "Share not found." }, 404);
       }
       const record = await getShareStore().get(shareId);
