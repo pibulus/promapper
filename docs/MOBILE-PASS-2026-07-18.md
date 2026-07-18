@@ -53,3 +53,25 @@ Pablo picking every taste call from rendered screenshots.
 - `islands/VoicePanel.tsx` has an uncommitted iOS AudioContext
   sample-rate fix from outside this session — deliberately left
   uncommitted here.
+
+## Round 2 — live/share/PartyKit at phone width (same day)
+
+Driven against a real local PartyKit room (`partykit dev` + host env),
+host + guest tabs at 390×844:
+
+- Header cluster no longer paints over the wordmark in live sessions
+  (grid priority flip) + scroll fade hint when controls overflow.
+- Dot-only live badge actually applies (cascade-order bug — the rule was
+  defined before its base rules).
+- Voice drawer hugs content pre-join; chat is a footer-clearing sheet;
+  share popover breaks out of the scrollable cluster (it was 165px
+  off-screen and clipped).
+- Verified end to end: room create → guest join + dashboard sync → chat/
+  voice → share link → shared view. Zero horizontal overflow everywhere.
+- Parallel-instance commits landed alongside (5f2890c AudioContext rate,
+  5e2112c recorder hardening — includes this session's header overflow
+  watcher effect in HomeIsland).
+
+Still owed: real-device (not emulated) run of the same loop once the
+worker has a public home, and the mic-permission flows Playwright can't
+exercise (Record meeting, Join voice with real hardware).
