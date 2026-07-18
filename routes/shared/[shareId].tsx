@@ -14,10 +14,39 @@ export default function SharedConversation({ params }: PageProps) {
   return (
     <>
       <Head>
-        <title>Shared Project Map | ProMapper</title>
+        <title>Someone shared a project map with you | ProMapper</title>
         <meta
           name="description"
-          content="View a shared ProMapper project map"
+          content="Peek at a project map someone put together — topics, action items, and the whole story, laid out."
+        />
+        {/* Private-by-link: don't index a share URL, and keep the preview
+            content-free so it never leaks what's inside. */}
+        <meta name="robots" content="noindex" />
+        <meta property="og:type" content="website" />
+        <meta
+          property="og:title"
+          content="Someone shared a project map with you"
+        />
+        <meta
+          property="og:description"
+          content="Take a look — topics, action items, and the whole story, tidied into one map."
+        />
+        <meta
+          property="og:image"
+          content="https://promapper.app/og-image.png"
+        />
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta
+          property="twitter:title"
+          content="Someone shared a project map with you"
+        />
+        <meta
+          property="twitter:description"
+          content="Take a look — topics, action items, and the whole story, tidied into one map."
+        />
+        <meta
+          property="twitter:image"
+          content="https://promapper.app/og-image.png"
         />
       </Head>
 

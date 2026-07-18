@@ -28,6 +28,35 @@ export const handler: Handlers<LiveData> = {
   },
 };
 
+/**
+ * OG/Twitter tags for a live room. Deliberately content-free — a live link is
+ * private-by-key, so the preview must NEVER hint at what's inside the room.
+ * Charming + generic: "someone saved you a seat".
+ */
+function LiveOgTags() {
+  const title = "Someone opened a live ProMapper room with you";
+  const description =
+    "Hop in — you'll shape this project map together, in real time.";
+  return (
+    <>
+      <meta property="og:type" content="website" />
+      <meta property="og:title" content={title} />
+      <meta property="og:description" content={description} />
+      <meta
+        property="og:image"
+        content="https://promapper.app/og-image.png"
+      />
+      <meta property="twitter:card" content="summary_large_image" />
+      <meta property="twitter:title" content={title} />
+      <meta property="twitter:description" content={description} />
+      <meta
+        property="twitter:image"
+        content="https://promapper.app/og-image.png"
+      />
+    </>
+  );
+}
+
 export default function LiveRoom({ data }: PageProps<LiveData>) {
   // No PartyKit host configured = live sync can never connect. Say so instead
   // of rendering a normal-looking homepage that silently isn't live (the
@@ -38,6 +67,7 @@ export default function LiveRoom({ data }: PageProps<LiveData>) {
         <Head>
           <title>Live Collaboration | ProMapper</title>
           <meta name="robots" content="noindex" />
+          <LiveOgTags />
         </Head>
         <main class="live-unconfigured">
           <h1>Live rooms are napping</h1>
@@ -60,6 +90,7 @@ export default function LiveRoom({ data }: PageProps<LiveData>) {
           content="A live ProMapper collaboration room"
         />
         <meta name="robots" content="noindex" />
+        <LiveOgTags />
         <script
           dangerouslySetInnerHTML={{
             __html: `window.__LIVE_ROOM__ = ${
