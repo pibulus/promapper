@@ -174,3 +174,25 @@ export function mergeAppendActionItems(
 
   return merged;
 }
+
+/**
+ * Marker separating the base summary from the latest-recording update block.
+ * Shared by /api/append and /api/live/analyze so both merge summaries the
+ * same way.
+ */
+export const SUMMARY_UPDATE_MARKER = "**Update from latest recording:**";
+
+/**
+ * Append summaries without unbounded growth: keep the original base summary
+ * and only the LATEST update block. An empty new summary (short/lightweight
+ * round) leaves the existing summary untouched.
+ */
+export function mergeAppendSummary(
+  existingSummary: string | null | undefined,
+  newSummary: string,
+): string {
+  if (!newSummary) return existingSummary ?? "";
+  if (!existingSummary) return newSummary;
+  const base = existingSummary.split(SUMMARY_UPDATE_MARKER)[0].trim();
+  return `${base}\n\n${SUMMARY_UPDATE_MARKER}\n${newSummary}`;
+}

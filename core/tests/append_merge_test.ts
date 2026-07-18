@@ -3,6 +3,7 @@ import {
   mergeAppendActionItems,
   mergeAppendEdges,
   mergeAppendNodes,
+  mergeAppendSummary,
   normalizeDescription,
 } from "../orchestration/append-merge.ts";
 import type { ActionItem } from "../types/index.ts";
@@ -225,4 +226,34 @@ Deno.test("normalizeDescription collapses noise but preserves meaning", () => {
   ) {
     throw new Error("distinct descriptions normalized to the same key");
   }
+});
+
+// ===================================================================
+// mergeAppendSummary
+// ===================================================================
+
+Deno.test("summary merge keeps base + only the latest update block", () => {
+  const first = mergeAppendSummary(
+    "The town met about the fox.",
+    "Fox update one.",
+  );
+  assertEquals(
+    first,
+    "The town met about the fox.\n\n**Update from latest recording:**\nFox update one.",
+  );
+  const second = mergeAppendSummary(first, "Fox update two.");
+  assertEquals(
+    second,
+    "The town met about the fox.\n\n**Update from latest recording:**\nFox update two.",
+  );
+});
+
+Deno.test("summary merge with no existing summary returns the new one", () => {
+  assertEquals(mergeAppendSummary(null, "Fresh summary."), "Fresh summary.");
+  assertEquals(mergeAppendSummary("", "Fresh summary."), "Fresh summary.");
+});
+
+Deno.test("empty new summary leaves the existing one untouched (short rounds)", () => {
+  assertEquals(mergeAppendSummary("Keep me.", ""), "Keep me.");
+  assertEquals(mergeAppendSummary(null, ""), "");
 });

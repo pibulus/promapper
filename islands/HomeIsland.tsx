@@ -38,6 +38,11 @@ import {
 } from "@signals/liveSync.ts";
 import ChatPanel from "../components/ChatPanel.tsx";
 import { sendTranscriptChunk } from "@signals/partyService.ts";
+import {
+  flushLiveAnalysis,
+  noteLiveChunk,
+  resetLiveAnalysis,
+} from "@signals/liveAnalysis.ts";
 import { isViewingShared } from "@signals/conversationStore.ts";
 import { ensureApiSession } from "@utils/apiAuth.ts";
 import { soundBloom, soundChime, soundPortal } from "@utils/sound.ts";
@@ -327,6 +332,9 @@ export default function HomeIsland() {
       stopLiveSync();
       isViewingShared.value = false;
       if (isRecording.value) stopRecording();
+      // Drop the analysis buffer with the session (an already in-flight
+      // round still lands — it's the host's own conversation).
+      resetLiveAnalysis();
     };
   }, [session?.roomId, session?.partyHost]);
 
@@ -463,7 +471,13 @@ export default function HomeIsland() {
         if (text) {
           const chunk = { id: Date.now(), text, speakers };
           liveTranscript.value = [...liveTranscript.value, chunk].slice(-20);
-          if (session) sendTranscriptChunk(text, speakers);
+          if (session) {
+            sendTranscriptChunk(text, speakers);
+            // Host-only by construction (the record button is host-gated):
+            // feed the live-analysis loop so nodes/actions/summary keep up
+            // with the meeting instead of waiting for an explicit append.
+            noteLiveChunk(text, speakers);
+          }
         }
       }
     } catch (err) {
@@ -489,6 +503,9 @@ export default function HomeIsland() {
       await sendChunk();
     }
     await _stopRecording();
+    // Analyze the meaningful tail without delaying the stop UX — the result
+    // lands in the dashboard (and the room) when it's ready.
+    void flushLiveAnalysis();
     if (liveTranscript.value.length > 0) soundBloom();
   }
 

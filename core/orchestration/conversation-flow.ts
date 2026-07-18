@@ -243,6 +243,97 @@ export async function processAudio(
   };
 }
 
+type TextAnalysis = Awaited<ReturnType<typeof analyzeText>>;
+
+/** Map a raw analysis onto the flow-result node/edge/action shapes. */
+function mapAnalysis(analysis: TextAnalysis, conversationId: string): {
+  nodes: Node[];
+  edges: Edge[];
+  actionItems: ActionItem[];
+} {
+  return {
+    nodes: analysis.topics.nodes.map((node) => ({
+      id: node.id,
+      conversation_id: conversationId,
+      label: node.label,
+      emoji: node.emoji,
+      color: node.color,
+      created_at: new Date().toISOString(),
+    })),
+    edges: analysis.topics.edges.map((edge) => ({
+      id: crypto.randomUUID(),
+      conversation_id: conversationId,
+      source_topic_id: edge.source_topic_id,
+      target_topic_id: edge.target_topic_id,
+      color: edge.color,
+      created_at: new Date().toISOString(),
+    })),
+    actionItems: analysis.actionItems.map((item) => ({
+      id: crypto.randomUUID(),
+      conversation_id: conversationId,
+      description: item.description,
+      assignee: item.assignee,
+      due_date: item.due_date,
+      status: "pending" as const,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })),
+  };
+}
+
+/**
+ * Process already-transcribed text from a live session — full analysis, no
+ * title generation. The live loop runs every ~30s; regenerating the title
+ * each round would rename the conversation mid-meeting, so the caller keeps
+ * whatever title it already has (`title` is echoed into the result).
+ */
+export async function processLiveText(
+  aiService: AIService,
+  text: string,
+  conversationId: string,
+  speakers: string[],
+  title: string,
+  options: Omit<ProcessAudioOptions, "lightweightIfShort"> = {},
+): Promise<ConversationFlowResult> {
+  const {
+    existingActionItems = [],
+    existingNodes = [],
+    existingEdges = [],
+    signal,
+  } = options;
+
+  const analysis = await analyzeText(
+    aiService,
+    text,
+    speakers,
+    existingActionItems,
+    existingNodes,
+    existingEdges,
+    signal,
+  );
+
+  return {
+    conversation: {
+      id: conversationId,
+      title,
+      source: "audio",
+      transcript: text,
+    },
+    transcript: {
+      id: crypto.randomUUID(),
+      conversation_id: conversationId,
+      text,
+      speakers,
+      source: "audio",
+      created_at: new Date().toISOString(),
+    },
+    ...mapAnalysis(analysis, conversationId),
+    summary: analysis.summary,
+    statusUpdates: analysis.statusUpdates,
+    warnings: analysis.warnings,
+  };
+}
+
 /**
  * Process new text input
  */
@@ -286,32 +377,7 @@ export async function processText(
       source: "text",
       created_at: new Date().toISOString(),
     },
-    nodes: analysis.topics.nodes.map((node) => ({
-      id: node.id,
-      conversation_id: conversationId,
-      label: node.label,
-      emoji: node.emoji,
-      color: node.color,
-      created_at: new Date().toISOString(),
-    })),
-    edges: analysis.topics.edges.map((edge) => ({
-      id: crypto.randomUUID(),
-      conversation_id: conversationId,
-      source_topic_id: edge.source_topic_id,
-      target_topic_id: edge.target_topic_id,
-      color: edge.color,
-      created_at: new Date().toISOString(),
-    })),
-    actionItems: analysis.actionItems.map((item) => ({
-      id: crypto.randomUUID(),
-      conversation_id: conversationId,
-      description: item.description,
-      assignee: item.assignee,
-      due_date: item.due_date,
-      status: "pending" as const,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })),
+    ...mapAnalysis(analysis, conversationId),
     summary: analysis.summary,
     statusUpdates: analysis.statusUpdates,
     warnings: analysis.warnings,
