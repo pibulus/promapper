@@ -18,7 +18,7 @@ import {
   mergeAppendNodes,
   mergeAppendSummary,
 } from "@core/orchestration/append-merge.ts";
-import { guardRequest } from "@services/requestGuard.ts";
+import { guardAudioBudget, guardRequest } from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
 import {
   MAX_AUDIO_SIZE,
@@ -116,6 +116,10 @@ export const handler: Handlers = {
           { status: 413, headers: { "Content-Type": "application/json" } },
         );
       }
+
+      // Free-tier audio metering (no-op until AUDIO_BYTES_PER_DAY is set).
+      const budgetBlock = guardAudioBudget(req, audioFile.size);
+      if (budgetBlock) return budgetBlock;
 
       const existingActionItems = parseExistingActionItems(
         existingActionItemsJson,
@@ -229,4 +233,3 @@ export const handler: Handlers = {
     }
   },
 };
-

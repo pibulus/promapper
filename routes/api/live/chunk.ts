@@ -5,7 +5,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { guardRequest } from "@services/requestGuard.ts";
+import { guardAudioBudget, guardRequest } from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
 import { MAX_AUDIO_SIZE, uploadAudioFile } from "@services/audio.ts";
 
@@ -38,6 +38,10 @@ export const handler: Handlers = {
           { status: 413, headers: { "Content-Type": "application/json" } },
         );
       }
+
+      // Free-tier audio metering (no-op until AUDIO_BYTES_PER_DAY is set).
+      const budgetBlock = guardAudioBudget(req, audioFile.size);
+      if (budgetBlock) return budgetBlock;
 
       const { part: audioPart } = await uploadAudioFile(audioFile);
       const aiService = getAIService();

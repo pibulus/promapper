@@ -1,5 +1,9 @@
 import { getCookies } from "$std/http/cookie.ts";
 import { validateSession } from "@services/authSessions.ts";
+import {
+  type BudgetEntry,
+  consumeWindowBudget,
+} from "@services/windowBudget.ts";
 
 /**
  * Lightweight request guard: origin allow-list + in-memory rate limiting.
@@ -25,6 +29,22 @@ const RATE_LIMIT_WINDOW_MS = Number(
 const RATE_LIMIT_MAX = Number(Deno.env.get("API_RATE_LIMIT") ?? "60");
 
 const rateMap = new Map<string, { count: number; windowStart: number }>();
+
+// ─── Daily budgets — the slow-abuse backstop ───
+// The 60/min burst limit alone lets a patient scraper ride 59/min forever;
+// these cap the DAY. Generous by design: one live meeting-hour is roughly
+// 300 calls (chunks + analysis rounds), so 1000/day never touches honest
+// use. Audio is metered in BYTES — exact, no codec guessing (~12KB/s opus
+// means 10 minutes ≈ 7MB). AUDIO_BYTES_PER_DAY stays 0 (disabled) until
+// tiers launch. Same in-memory caveat as the burst limit: works on a
+// long-lived process (the Pi), not on per-request isolates.
+const DAILY_WINDOW_MS = 86_400_000;
+const API_DAILY_LIMIT = Number(Deno.env.get("API_DAILY_LIMIT") ?? "1000");
+const AUDIO_BYTES_PER_DAY = Number(
+  Deno.env.get("AUDIO_BYTES_PER_DAY") ?? "0",
+);
+const dailyCallMap = new Map<string, BudgetEntry>();
+const audioByteMap = new Map<string, BudgetEntry>();
 const authToken = Deno.env.get("API_AUTH_TOKEN")?.trim() ?? null;
 const SESSION_COOKIE_NAME = "cm_session";
 
@@ -62,7 +82,53 @@ export async function guardRequest(req: Request): Promise<Response | null> {
   const rateBlock = enforceRateLimit(req);
   if (rateBlock) return rateBlock;
 
+  const dailyBlock = enforceDailyLimit(req);
+  if (dailyBlock) return dailyBlock;
+
   return null;
+}
+
+function enforceDailyLimit(req: Request): Response | null {
+  if (API_DAILY_LIMIT <= 0) return null;
+  const ok = consumeWindowBudget(
+    dailyCallMap,
+    getClientToken(req),
+    1,
+    API_DAILY_LIMIT,
+    DAILY_WINDOW_MS,
+    Date.now(),
+  );
+  if (ok) return null;
+  return jsonResponse(
+    { error: "That's a lot for one day — things reset tomorrow." },
+    429,
+  );
+}
+
+/**
+ * Audio budget for the recording routes (/api/process, /api/append,
+ * /api/live/chunk). Call AFTER size validation with the actual blob bytes.
+ * Disabled until AUDIO_BYTES_PER_DAY is set — flipping tiers on is config,
+ * not code.
+ */
+export function guardAudioBudget(
+  req: Request,
+  bytes: number,
+): Response | null {
+  if (AUDIO_BYTES_PER_DAY <= 0) return null;
+  const ok = consumeWindowBudget(
+    audioByteMap,
+    getClientToken(req),
+    bytes,
+    AUDIO_BYTES_PER_DAY,
+    DAILY_WINDOW_MS,
+    Date.now(),
+  );
+  if (ok) return null;
+  return jsonResponse(
+    { error: "Today's recording allowance is used up — it refills tomorrow." },
+    429,
+  );
 }
 
 /**

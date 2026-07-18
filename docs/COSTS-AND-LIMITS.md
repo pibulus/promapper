@@ -90,8 +90,13 @@ Three layers, simplest-first — "can't scale IS the feature" helps here:
       (fenced JSON + trailing explanation prose lost ALL results down every JSON
       path) — fixed in cleanJsonResponse, plus a merge guard so no-op flips
       can't stamp phantom ai_checked sparkles.
-- [ ] Daily per-IP ledger in requestGuard (small; works on Pi)
+- [x] Daily per-IP ledger — DONE 2026-07-18. `API_DAILY_LIMIT` (default 1000
+      calls/day — one meeting-hour is ~300, so honest use never touches it; 0
+      disables). Pure core in `services/windowBudget.ts`.
 - [ ] OpenRouter spend-capped key (Pablo, console, 5 minutes)
-- [ ] Audio-minutes meter + free-allowance check on /api/process, /api/append,
-      /api/live/chunk (server-side; device-id + IP key)
+- [x] Audio budget meter — DONE 2026-07-18, wired into /api/process,
+      /api/append, /api/live/chunk. Metered in BYTES (exact, no codec guessing —
+      ~12KB/s opus, 10 min ≈ 7MB). `AUDIO_BYTES_PER_DAY` ships 0 (DISABLED) —
+      flipping the free tier on at launch is one env var. Keyed per IP today;
+      add the device-id half when the license-key work lands.
 - [ ] License-key check for /api/live/* (pairs with the PartyKit deploy)
