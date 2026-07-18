@@ -25,6 +25,7 @@ import {
 import type {
   AIService,
   AudioInput,
+  ChatTurn,
   OpenRouterAudioFormat,
   OpenRouterAudioPart,
   ParseErrorSink,
@@ -50,8 +51,27 @@ export interface OpenRouterServiceOptions {
 }
 
 interface ChatMessage {
-  role: "user";
+  role: "system" | "user" | "assistant";
   content: string | Array<Record<string, unknown>>;
+}
+
+/**
+ * Parse one SSE line from an OpenRouter streaming response. Returns the text
+ * delta it carries, or null for heartbeats/blank lines/[DONE]/malformed
+ * chunks. Pure + exported for tests.
+ */
+export function parseOpenRouterStreamLine(line: string): string | null {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith("data:")) return null;
+  const payload = trimmed.slice(5).trim();
+  if (!payload || payload === "[DONE]") return null;
+  try {
+    const parsed = JSON.parse(payload);
+    const delta = parsed?.choices?.[0]?.delta?.content;
+    return typeof delta === "string" && delta.length > 0 ? delta : null;
+  } catch {
+    return null;
+  }
 }
 
 function isOpenRouterAudioPart(
@@ -409,6 +429,68 @@ export function createOpenRouterService(
         modelHint,
         signal,
       );
+    },
+
+    async chatMessages(
+      messages: ChatTurn[],
+      modelHint?: string,
+      signal?: AbortSignal,
+    ): Promise<string> {
+      return await chat(messages, modelHint, signal);
+    },
+
+    // Streaming chat — yields text deltas as OpenRouter sends them. No retry
+    // wrapper: a stream that dies mid-answer can't be transparently replayed
+    // (the caller already has half the text) — callers fall back to the
+    // non-streaming path instead.
+    async *chatStream(
+      messages: ChatTurn[],
+      modelHint?: string,
+      signal?: AbortSignal,
+    ): AsyncIterable<string> {
+      const response = await fetcher(joinUrl(baseUrl, "/chat/completions"), {
+        method: "POST",
+        headers: buildHeaders(options),
+        body: JSON.stringify({
+          model: modelHint ?? options.model,
+          messages,
+          stream: true,
+          temperature: 0.1,
+          max_tokens: 8192,
+        }),
+        signal,
+      });
+
+      if (!response.ok || !response.body) {
+        const detail = await response.text().catch(() => "");
+        throw new Error(
+          `OpenRouter stream failed (${response.status}): ${
+            detail.slice(0, 200)
+          }`,
+        );
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            const delta = parseOpenRouterStreamLine(line);
+            if (delta !== null) yield delta;
+          }
+        }
+        const tail = parseOpenRouterStreamLine(buffer);
+        if (tail !== null) yield tail;
+      } finally {
+        // Client bailed (abort, early return) — release the upstream socket.
+        await reader.cancel().catch(() => {});
+      }
     },
   };
 }

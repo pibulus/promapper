@@ -23,11 +23,13 @@ export default function BishopModule() {
   const asking = useSignal(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
+  // The in-flight answer, rendered live as chunks arrive. null = not asking.
+  const draft = useSignal<Exchange | null>(null);
 
   // Keep the log pinned to the newest exchange (effect, not a timing hack).
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
-  }, [exchanges.value.length]);
+  }, [exchanges.value.length, draft.value?.answer.length]);
 
   async function ask() {
     const question = inputRef.current?.value.trim() ?? "";
@@ -36,17 +38,52 @@ export default function BishopModule() {
     const askedId = data.conversation.id;
 
     asking.value = true;
+    draft.value = { question, answer: "" };
     try {
       await ensureApiSession();
+      // Follow-ups keep their thread: recent exchanges ride along.
+      const history = exchanges.value.slice(-6);
+      const body = {
+        question,
+        text: data.transcript?.text ?? "",
+        conversation: data,
+        history,
+      };
+
       const answer = await enqueueApiRequest(async ({ signal }) => {
+        // Streaming first — the answer appears as it's written. If the
+        // stream won't START (proxy, 502), fall back to the JSON path.
+        try {
+          const response = await fetch("/api/ask", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...body, stream: true }),
+            signal,
+          });
+          if (response.ok && response.body) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let text = "";
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              text += decoder.decode(value, { stream: true });
+              if (draft.value) draft.value = { question, answer: text };
+            }
+            if (text.trim()) return text;
+            // Empty stream = upstream died before a word — fall through.
+          }
+        } catch (err) {
+          if (err instanceof DOMException && err.name === "AbortError") {
+            throw err;
+          }
+          // Stream path failed — try the JSON path below.
+        }
+
         const response = await fetch("/api/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            question,
-            text: data.transcript?.text ?? "",
-            conversation: data,
-          }),
+          body: JSON.stringify(body),
           signal,
         });
         if (!response.ok) {
@@ -70,6 +107,7 @@ export default function BishopModule() {
         "error",
       );
     } finally {
+      draft.value = null;
       asking.value = false;
     }
   }
@@ -101,6 +139,21 @@ export default function BishopModule() {
                 />
               </div>
             ))}
+            {draft.value && (
+              <div class="bishop-exchange">
+                <p class="bishop-question">{draft.value.question}</p>
+                {draft.value.answer
+                  ? (
+                    <div
+                      class="bishop-answer"
+                      dangerouslySetInnerHTML={{
+                        __html: formatMarkdownSafe(draft.value.answer),
+                      }}
+                    />
+                  )
+                  : <p class="bishop-answer bishop-thinking">…</p>}
+              </div>
+            )}
           </div>
           <form
             class="bishop-ask-row"

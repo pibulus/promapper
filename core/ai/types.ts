@@ -81,4 +81,22 @@ export interface AIService {
     modelHint?: string,
     signal?: AbortSignal,
   ): Promise<string>;
+  /** Multi-turn chat — for Bishop follow-ups and anything conversational. */
+  chatMessages(
+    messages: ChatTurn[],
+    modelHint?: string,
+    signal?: AbortSignal,
+  ): Promise<string>;
+  /** Streaming multi-turn chat — yields text deltas as they generate. */
+  chatStream(
+    messages: ChatTurn[],
+    modelHint?: string,
+    signal?: AbortSignal,
+  ): AsyncIterable<string>;
+}
+
+/** One turn of a multi-turn chat conversation. */
+export interface ChatTurn {
+  role: "system" | "user" | "assistant";
+  content: string;
 }
