@@ -32,7 +32,16 @@ export default function App({ Component }: PageProps) {
           property="og:description"
           content="A friendly way to turn ongoing conversations and notes into transcripts, summaries, actions, topic maps, docs, and shared context."
         />
-        <meta property="og:image" content="/og-image.png" />
+        {/* ABSOLUTE image URL — link scrapers (iMessage, WhatsApp, Slack)
+            silently drop relative og:image paths, so the card showed no
+            thumbnail. Width/height let them render before downloading. */}
+        <meta property="og:image" content="https://promapper.app/og-image.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta
+          property="og:image:alt"
+          content="ProMapper — project maps from messy conversations"
+        />
 
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
@@ -48,7 +57,10 @@ export default function App({ Component }: PageProps) {
           property="twitter:description"
           content="A friendly way to turn ongoing conversations and notes into transcripts, summaries, actions, topic maps, docs, and shared context."
         />
-        <meta property="twitter:image" content="/og-image.png" />
+        <meta
+          property="twitter:image"
+          content="https://promapper.app/og-image.png"
+        />
 
         {/* Favicon */}
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

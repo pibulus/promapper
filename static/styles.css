@@ -1728,6 +1728,14 @@ body {
 }
 
 @media (max-width: 640px) {
+  /* A teensy global tighten: 15.5px root = every rem-based size and space
+     shrinks ~3% together, so phone screens fit a little more without any
+     one element reading "small". Form fields are exempt — the 16px
+     anti-zoom guard below is px + !important on purpose. */
+  html {
+    font-size: 15.5px;
+  }
+
   :root {
     /* Single-row header now (title lives in the footer strip). */
     --header-height: 52px;

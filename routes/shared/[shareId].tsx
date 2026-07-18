@@ -35,6 +35,12 @@ export default function SharedConversation({ params }: PageProps) {
           property="og:image"
           content="https://promapper.app/og-image.png"
         />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta
+          property="og:image:alt"
+          content="ProMapper — project maps from messy conversations"
+        />
         <meta property="twitter:card" content="summary_large_image" />
         <meta
           property="twitter:title"
