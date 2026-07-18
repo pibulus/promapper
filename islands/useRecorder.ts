@@ -184,8 +184,13 @@ export function useRecorder(opts: RecorderOptions = {}): RecorderHandle {
       silenced.current = false;
       isStartingRecording.current = false;
 
+      // Derive elapsed from wall clock, not tick counting: iOS throttles
+      // background intervals, so a counter silently falls behind (and the
+      // max-duration stop fires late). With a timestamp the first foreground
+      // tick catches up to the truth.
+      const startedAt = Date.now();
       timerRef.current = setInterval(() => {
-        recordingTime.value++;
+        recordingTime.value = Math.floor((Date.now() - startedAt) / 1000);
         const remaining = maxDurationSeconds
           ? maxDurationSeconds - recordingTime.value
           : Infinity;

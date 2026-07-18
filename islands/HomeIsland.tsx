@@ -576,7 +576,13 @@ export default function HomeIsland() {
                 <div class="app-header__actions">
                   {/* Export — icon only */}
                   <button
-                    onClick={() => drawerOpen.value = !drawerOpen.value}
+                    onClick={() => {
+                      // One drawer at a time — the header stays tappable
+                      // above both, so without this Export + History could
+                      // stack into an inescapable sandwich on a phone.
+                      if (!drawerOpen.value) historyDrawerOpen.value = false;
+                      drawerOpen.value = !drawerOpen.value;
+                    }}
                     class="header-icon-btn"
                     data-tip="Export"
                     aria-label="Export conversation"
@@ -586,8 +592,10 @@ export default function HomeIsland() {
 
                   {/* History — icon only */}
                   <button
-                    onClick={() =>
-                      historyDrawerOpen.value = !historyDrawerOpen.value}
+                    onClick={() => {
+                      if (!historyDrawerOpen.value) drawerOpen.value = false;
+                      historyDrawerOpen.value = !historyDrawerOpen.value;
+                    }}
                     class="header-icon-btn"
                     data-tip="History"
                     aria-label="View history"

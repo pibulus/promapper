@@ -38,9 +38,12 @@ export function createSvg(node: HTMLElement, config: Config) {
     .attr("viewBox", `0 0 ${config.width} ${config.height}`)
     .attr("preserveAspectRatio", "xMidYMid meet")
     .style("background-color", config.backgroundColor)
-    // Let D3 own pan/zoom gestures instead of the browser trying to scroll
-    // the page — otherwise touch zoom stutters and fights native scroll.
-    .style("touch-action", "none")
+    // pan-y, not none: a thumb landing on empty canvas can still scroll the
+    // page vertically (touch-action:none made the whole card a scroll trap on
+    // phones). Pinch-zoom and horizontal pan still reach D3; node drags set
+    // touch-action:none on the node groups themselves so they never fight
+    // the page.
+    .style("touch-action", "pan-y")
     .on("click", (event) => {
       if (event.target === svg.node() && config.onBackgroundClick) {
         config.onBackgroundClick(event);
@@ -110,6 +113,9 @@ export function createNodeGroup(
   selection
     .attr("class", "node-group")
     .style("cursor", "grab")
+    // Touches that START on a node belong to the drag, never the page —
+    // the svg itself is pan-y so empty-canvas touches still scroll.
+    .style("touch-action", "none")
     .call(
       d3
         .drag<SVGGElement, NodeData>()

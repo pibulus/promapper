@@ -46,6 +46,17 @@ export default function Modal(
     target?.focus();
   }, [open]);
 
+  // Lock body scroll while open — same pattern as the drawers/ReaderModal.
+  // Without it the page scrolls (and iOS rubber-bands) behind the dialog.
+  useEffect(() => {
+    if (!open) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open]);
+
   // ESC closes
   useEffect(() => {
     if (!open) return;

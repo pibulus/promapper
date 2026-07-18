@@ -793,6 +793,7 @@ export default function ForceDirectedGraph(
             <label>
               <span>Emoji</span>
               <input
+                type="text"
                 value={newNodeEmoji.value}
                 onInput={(event) =>
                   newNodeEmoji.value = (event.target as HTMLInputElement).value}
@@ -806,6 +807,7 @@ export default function ForceDirectedGraph(
             <label>
               <span>Topic</span>
               <input
+                type="text"
                 value={newNodeLabel.value}
                 onInput={(event) =>
                   newNodeLabel.value = (event.target as HTMLInputElement).value}
@@ -856,6 +858,10 @@ export default function ForceDirectedGraph(
               Rename topic
             </h3>
             <input
+              // type="text" matters: the iOS anti-zoom guard (16px font on
+              // phones) targets input[type="text"] — a typeless input never
+              // matches the selector and Safari force-zooms on focus.
+              type="text"
               value={renameModalValue.value}
               onInput={(e) =>
                 renameModalValue.value = (e.target as HTMLInputElement).value}
@@ -877,7 +883,8 @@ export default function ForceDirectedGraph(
                 borderRadius: "8px",
                 background: "var(--surface-cream)",
                 padding: "0.55rem 0.7rem",
-                fontSize: "var(--text-size)",
+                // No inline fontSize — inline beats the mobile 16px
+                // input[type="text"] rule and re-triggers iOS focus zoom.
                 color: "var(--color-text)",
                 width: "100%",
                 boxSizing: "border-box",

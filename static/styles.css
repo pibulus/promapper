@@ -865,7 +865,9 @@ body {
    ================================================================ */
 
 .mapper-scene {
+  /* dvh tracks the iOS URL bar; the vh line is the no-dvh fallback. */
   min-height: 100vh;
+  min-height: 100dvh;
   position: relative;
   /* Risograph-style pastel splashes, driven by the active theme so the
      theme switcher actually repaints the canvas. --gradient-bg is defined
@@ -3478,7 +3480,15 @@ html::-webkit-scrollbar-thumb:hover,
   font-size: var(--tiny-size);
   color: var(--color-text-secondary);
   cursor: pointer;
+  position: relative;
   transition: color var(--transition-fast);
+}
+/* Invisible tap-box: vertical-only extension — the presets sit shoulder to
+   shoulder, so widening the boxes would steal each other's taps. */
+.action-edit-preset::after {
+  content: "";
+  position: absolute;
+  inset: -11px -1px;
 }
 .action-edit-preset:hover,
 .action-edit-preset:focus-visible {
@@ -4373,7 +4383,9 @@ html::-webkit-scrollbar-thumb:hover,
 }
 
 .topic-map-canvas svg {
-  touch-action: none;
+  /* pan-y matches the inline style D3 sets in utils/emojimap/render.ts —
+     empty-canvas touches scroll the page; pinch/horizontal stay with D3. */
+  touch-action: pan-y;
 }
 
 /* Selected/hovered edge glow — theme accent, not a hardcoded rose (wrong on
@@ -5578,41 +5590,6 @@ a:focus-visible {
 
 /* Main grid: sidebar (voice) | main (dashboard + whiteboard).
    On narrow screens, stacks vertically. */
-.live-layout {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 0;
-  min-height: calc(100vh - 56px);
-}
-
-@media (max-width: 768px) {
-  .live-layout {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
-  }
-}
-
-/* Left sidebar — voice panel, whiteboard tools (future). */
-.live-layout-sidebar {
-  border-right: 2px solid var(--color-border);
-  background: var(--surface-cream);
-  overflow-y: auto;
-}
-
-@media (max-width: 768px) {
-  .live-layout-sidebar {
-    border-right: none;
-    border-bottom: 2px solid var(--color-border);
-    max-height: 300px;
-  }
-}
-
-/* Main content area — transcript + dashboard. */
-.live-layout-main {
-  min-width: 0;
-  overflow-y: auto;
-}
-
 /* ===================================================================
    SHARED WHITEBOARD — Excalidraw card inside the dashboard
    ================================================================ */
@@ -5806,8 +5783,16 @@ a:focus-visible {
   border: 2px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
   border-radius: 999px;
   cursor: pointer;
+  position: relative;
   transition: all 150ms ease;
   box-shadow: 0 1px 3px rgba(30, 23, 20, 0.04);
+}
+/* Invisible tap-box extension (same pattern as .header-icon-btn::after) —
+   vertical only, the neighbor button sits 0.4rem away horizontally. */
+.whiteboard-draw-btn::after {
+  content: "";
+  position: absolute;
+  inset: -8px 0;
 }
 .whiteboard-draw-btn:hover:not(:disabled) {
   background: color-mix(in srgb, var(--color-accent) 15%, transparent);
@@ -5825,6 +5810,16 @@ a:focus-visible {
   border: 2.5px solid var(--color-border);
   border-radius: 0 0 12px 12px;
   overflow: hidden;
+}
+
+/* On phones 500px is most of the screen — clamp to just over half the
+   VISIBLE viewport (svh dodges the iOS URL-bar resize; vh line is the
+   fallback for browsers without svh). */
+@media (max-width: 640px) {
+  .shared-whiteboard {
+    height: min(55vh, 440px);
+    height: min(55svh, 440px);
+  }
 }
 
 .shared-whiteboard-placeholder {
@@ -6031,7 +6026,10 @@ a:focus-visible {
     top: auto;
     width: 100%;
     max-width: 100%;
+    /* svh so the sheet is sized against the VISIBLE viewport — with plain vh
+       the bottom controls hid under the iOS URL bar until it collapsed. */
     height: min(72vh, 620px);
+    height: min(72svh, 620px);
     border-left: none;
     border-top: 2px solid var(--color-border);
     border-radius: 22px 22px 0 0;

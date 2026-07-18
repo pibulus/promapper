@@ -133,6 +133,7 @@ export default function TranscriptCard(
           Rename {editingSpeaker.value}
         </h3>
         <input
+          type="text"
           value={speakerName.value}
           onInput={(e) =>
             speakerName.value = (e.target as HTMLInputElement).value}
