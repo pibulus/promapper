@@ -9,6 +9,7 @@
 import { Handlers } from "$fresh/server.ts";
 import { guardRequest } from "@services/requestGuard.ts";
 import { pushSnapshotToRoom } from "@services/partyUpdates.ts";
+import { generateShareRoomId } from "@core/realtime/shareProtocol.ts";
 
 function publicHost(): string {
   return (Deno.env.get("PUBLIC_PARTYKIT_HOST") ??
@@ -39,7 +40,13 @@ export const handler: Handlers = {
     }
 
     const conversation = (body as { conversation?: unknown })?.conversation;
-    const roomId = `cm_${crypto.randomUUID()}`;
+    // Short, cute room ids (cm_ + 14 base36 chars ≈ 72 bits) instead of a
+    // 36-char UUID — the link is the key, so entropy stays well above the
+    // 48-bit floor while the URL stops looking like a hash dump. Every consumer
+    // (live route sanitizer, sanitizeShareLive, voice-token) accepts
+    // [A-Za-z0-9_-]{3,64}. The PartyKit worker is not deployed yet, so the wire
+    // format is free to change. Old UUID rooms keep resolving (lookup is exact).
+    const roomId = generateShareRoomId();
 
     // Seed the room with the current snapshot so the first joiner sees it.
     const pushed = await pushSnapshotToRoom(roomId, conversation);
