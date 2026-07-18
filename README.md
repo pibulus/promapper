@@ -29,16 +29,16 @@ screenshots may be wearing a different sky.
 ### 🎤 Capture → Shape
 
 - **Record or upload** audio files
-- **Automatic transcription** with native speaker diarization (Gemini 3.x)
-- **AI-powered analysis** extracts topics, action items, and summaries in
-  parallel
+- **Automatic transcription** that tidies the talk and names the speakers
+- **Reads the conversation** and pulls out topics, action items, and a summary,
+  all at once
 - **Real-time visualizer** during recording sessions
 
-### 🤖 AI Self-Checkoff (The Magic Feature)
+### 🤖 Self-Checkoff (The Magic Feature)
 
-User says: _"I finished writing that report"_ → AI automatically marks the
-"Write report" action item as ✓ Complete. The AI compares new audio/text against
-existing action items and updates their status with logical reasoning.
+User says: _"I finished writing that report"_ → the "Write report" action item
+quietly marks itself ✓ Complete. New audio or text gets read against the open
+action items, and their status updates to match what was said.
 
 ### 🕸️ Interactive Topic Graph (EmojimapViz)
 
@@ -51,8 +51,8 @@ existing action items and updates their status with logical reasoning.
 
 - **Multiplayer sync**: Real-time cursor presence, chat rooms, and named avatars
   (e.g. _"Glitch Koala"_) powered by PartyKit.
-- **Shared Whiteboard**: Collaborative sketchpad using Excalidraw, allowing both
-  humans and Claude to draw diagrams side-by-side.
+- **Shared Whiteboard**: Collaborative sketchpad using Excalidraw — people and
+  the board's own helper hand can draw diagrams side-by-side.
 - **WebRTC Voice Relay**: Zero-latency P2P voice chat with active speaker
   highlights, powered by Cloudflare RealtimeKit SFU.
 
@@ -98,7 +98,7 @@ Turn the same project map into different useful documents:
    cp .env.example .env
    ```
 
-   Edit `.env` and add your AI API key:
+   Edit `.env` and add your provider API key:
    ```bash
    AI_PROVIDER=openrouter
    OPENROUTER_API_KEY=your_openrouter_api_key_here
@@ -126,8 +126,8 @@ Turn the same project map into different useful documents:
 
 4. **First API call**
 
-   When you trigger any AI-powered feature from the UI, the browser will prompt
-   you for the `API_AUTH_TOKEN`. Paste the same value you set in `.env`—it’s
+   When you trigger any feature that reads the conversation from the UI, the
+   browser will prompt you for the `API_AUTH_TOKEN`. Paste the same value you set in `.env`—it’s
    only used to open a short-lived HttpOnly session cookie, so it’s never stored
    in LocalStorage and you’ll be prompted again when the session expires.
 
@@ -138,10 +138,10 @@ Turn the same project map into different useful documents:
 ### First Use
 
 1. **Record** a conversation or **upload** an audio file
-2. Wait for AI processing (usually 10-30 seconds)
+2. Give it a moment to read the conversation (usually 10-30 seconds)
 3. **Explore** the dashboard:
    - 📝 Transcript with speakers
-   - 📊 AI-generated summary
+   - 📊 A summary drawn from the talk
    - ✅ Action items with assignees
    - 🕸️ Topic relationship graph
 4. **Export** to different formats using the drawer
@@ -150,15 +150,15 @@ Turn the same project map into different useful documents:
 ## 📚 Documentation
 
 - **[CLAUDE.md](./CLAUDE.md)** - Development guide for future coding sessions
-- **[core/README.md](./core/README.md)** - Framework-agnostic AI logic
+- **[core/README.md](./core/README.md)** - Framework-agnostic reading-engine
   documentation
 - **[GLOSSARY.md](./GLOSSARY.md)** - Terms and file map for the codebase
 
 ## 🏗️ Architecture
 
 ```
-/core/                  # Framework-agnostic AI logic
-  ├── ai/              # AI provider wrappers & prompts
+/core/                  # Framework-agnostic reading engine
+  ├── ai/              # Provider wrappers & prompts
   ├── orchestration/   # Parallel processing flows
   ├── realtime/        # Share-room protocol and storage adapters
   ├── types/           # TypeScript type definitions
@@ -173,9 +173,9 @@ Turn the same project map into different useful documents:
 /services/             # Server-side API/auth/audio helpers
 ```
 
-The core AI logic (`/core/`) is extracted into pure TypeScript and can be used
-in **any framework** (React, Vue, Svelte, etc.). Fresh is just the current UI
-implementation.
+The core reading engine (`/core/`) is extracted into pure TypeScript and can be
+used in **any framework** (React, Vue, Svelte, etc.). Fresh is just the current
+UI implementation.
 
 ## 🛠️ Development
 
@@ -191,7 +191,7 @@ deno task check      # Run linting and type checking
 ### Tech Stack
 
 - **Framework**: [Fresh](https://fresh.deno.dev/) (Deno + Preact)
-- **AI**: OpenRouter primary, Google Gemini fallback
+- **Reading engine**: OpenRouter primary, Google Gemini fallback
 - **Visualization**: [D3.js](https://d3js.org/) (force-directed graphs)
 - **State**: [Preact Signals](https://preactjs.com/guide/v10/signals/)
 - **Storage**: LocalStorage, URL shares, optional Supabase share store
@@ -207,7 +207,7 @@ deno task check      # Run linting and type checking
 
 ## 🔐 Privacy
 
-- All processing happens through the configured AI provider
+- All processing happens through the provider you configure
 - Conversations stored locally in browser (localStorage)
 - Small share links use compressed URL data
 - Larger share links use `/api/share` with Supabase when configured, or an

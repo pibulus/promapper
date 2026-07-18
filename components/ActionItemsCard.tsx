@@ -1334,11 +1334,11 @@ export default function ActionItemsCard(
                                               item.id
                                             ? null
                                             : item.id}
-                                      title="The AI updated this item — tap for why"
+                                      title="This updated itself from the conversation — tap for why"
                                     >
-                                      ✨ AI {item.status === "completed"
-                                        ? "checked this off"
-                                        : "reopened this"}
+                                      ✨ {item.status === "completed"
+                                        ? "checked off for you"
+                                        : "reopened for you"}
                                     </button>
                                     {expandedReasonId.value === item.id &&
                                       (item as AIFlaggedItem)

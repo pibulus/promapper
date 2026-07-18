@@ -60,7 +60,7 @@ formats.
 | Module | Size     | What it does                                  |
 | ------ | -------- | --------------------------------------------- |
 | Notes  | standard | Scratch pad stored in the conversation JSON.  |
-| Bishop | standard | Ask your memory — guarded AI over this convo. |
+| Bishop | standard | Ask your memory — reads this conversation to answer. |
 | Radio  | small    | KPAB + SomaFM tile; born gap-filler.          |
 | Tones  | small    | WebAudio moods — focus, rain, warm, deep.     |
 | Canvas | wide     | The whiteboard outside meetings; same scene.  |

@@ -632,7 +632,7 @@ export default function ForceDirectedGraph(
               } connects to ${edgeTarget?.emoji || "•"} ${
                 edgeTarget?.label || "Topic"
               }.`
-              : "This line links two topics the AI saw as connected in the conversation."}
+              : "This line links two topics the map drew together from the conversation."}
           </p>
         </div>
         {edgeSource && edgeTarget && (
