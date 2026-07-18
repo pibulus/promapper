@@ -48,6 +48,10 @@ export interface OpenRouterServiceOptions {
   summaryModel?: string;
   /** Optional model override for topic extraction (relationship mapping). */
   topicModel?: string;
+  /** Optional model override for markdown exports (user-facing prose). */
+  markdownModel?: string;
+  /** Optional model override for action-item status checks (self-checkoff). */
+  statusModel?: string;
 }
 
 interface ChatMessage {
@@ -348,8 +352,12 @@ export function createOpenRouterService(
 
         const prompt = buildActionItemStatusPrompt(existingActionItems);
         const text = typeof input === "string"
-          ? await chatText(`${prompt}\n\nText: ${input}`, undefined, signal)
-          : await chatAudio(prompt, input, undefined, signal);
+          ? await chatText(
+            `${prompt}\n\nText: ${input}`,
+            options.statusModel,
+            signal,
+          )
+          : await chatAudio(prompt, input, options.statusModel, signal);
 
         // Validate against real IDs + enum so a hallucinated id/status can't
         // silently flip the wrong task.
@@ -410,7 +418,7 @@ export function createOpenRouterService(
       try {
         return (await chatText(
           buildMarkdownTransformPrompt(formatPrompt, text),
-          undefined,
+          options.markdownModel,
           signal,
         )).trim();
       } catch (error) {

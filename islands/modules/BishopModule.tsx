@@ -25,6 +25,17 @@ export default function BishopModule() {
   const logRef = useRef<HTMLDivElement>(null);
   // The in-flight answer, rendered live as chunks arrive. null = not asking.
   const draft = useSignal<Exchange | null>(null);
+  // While Bishop thinks, one of these shows with slow dots — picked fresh
+  // per ask so every fire is a little different.
+  const THINKING_LINES = [
+    "consulting the record",
+    "turning the pages back",
+    "weighing what was said",
+    "reading between the lines",
+    "thinking it over, properly",
+    "finding where that thread went",
+  ];
+  const thinkingLine = useSignal(THINKING_LINES[0]);
 
   // Keep the log pinned to the newest exchange (effect, not a timing hack).
   useEffect(() => {
@@ -38,6 +49,8 @@ export default function BishopModule() {
     const askedId = data.conversation.id;
 
     asking.value = true;
+    thinkingLine.value =
+      THINKING_LINES[Math.floor(Math.random() * THINKING_LINES.length)];
     draft.value = { question, answer: "" };
     try {
       await ensureApiSession();
@@ -151,7 +164,14 @@ export default function BishopModule() {
                       }}
                     />
                   )
-                  : <p class="bishop-answer bishop-thinking">…</p>}
+                  : (
+                    <p class="bishop-answer bishop-thinking">
+                      <span>{thinkingLine.value}</span>
+                      <span class="bishop-dot" aria-hidden="true" />
+                      <span class="bishop-dot" aria-hidden="true" />
+                      <span class="bishop-dot" aria-hidden="true" />
+                    </p>
+                  )}
               </div>
             )}
           </div>

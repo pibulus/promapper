@@ -16,6 +16,9 @@ const DEFAULT_OPENROUTER_TOPIC_MODEL = "~anthropic/claude-haiku-latest";
  * alias per the anti-drift law. Splurge via OPENROUTER_ASK_MODEL
  * (e.g. ~anthropic/claude-sonnet-latest at $2/$10). */
 const DEFAULT_OPENROUTER_ASK_MODEL = "~anthropic/claude-haiku-latest";
+/** Markdown exports are rare, user-initiated, and read as deliverables —
+ * same profile as Bishop, so same quality tier. */
+const DEFAULT_OPENROUTER_MARKDOWN_MODEL = "~anthropic/claude-haiku-latest";
 const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 /** Model hint for /api/ask (Bishop). Read per-call — no cache to bust. */
@@ -48,6 +51,14 @@ export function getAIService(): AIService {
     DEFAULT_OPENROUTER_SUMMARY_MODEL;
   const topicModel = Deno.env.get("OPENROUTER_TOPIC_MODEL") ??
     DEFAULT_OPENROUTER_TOPIC_MODEL;
+  const markdownModel = Deno.env.get("OPENROUTER_MARKDOWN_MODEL") ??
+    DEFAULT_OPENROUTER_MARKDOWN_MODEL;
+  // No quality default for status checks: self-checkoff runs on EVERY append
+  // and every live-analysis round, so the general (cheap) model is the
+  // deliberate volume choice. The env knob exists so flipping it after a
+  // real-meeting quality test is config, not code.
+  const statusModel = Deno.env.get("OPENROUTER_STATUS_MODEL")?.trim() ||
+    undefined;
 
   const configKey = JSON.stringify({
     apiKey,
@@ -58,6 +69,8 @@ export function getAIService(): AIService {
     transcribeModel,
     summaryModel,
     topicModel,
+    markdownModel,
+    statusModel,
   });
 
   if (!cachedOpenRouterService || cachedOpenRouterConfig !== configKey) {
@@ -70,6 +83,8 @@ export function getAIService(): AIService {
       transcriptionModel: transcribeModel,
       summaryModel,
       topicModel,
+      markdownModel,
+      statusModel,
     });
     cachedOpenRouterConfig = configKey;
   }

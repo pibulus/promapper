@@ -2636,6 +2636,51 @@ body {
   flex-direction: column;
   gap: 0.75rem;
 }
+/* Bishop thinking — a quiet italic aside with three slow breathing dots.
+   Line + timing picked per ask so every fire feels a little different. */
+.bishop-thinking {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.16rem;
+  font-style: italic;
+  color: var(--color-text-secondary);
+}
+.bishop-thinking > span:first-child {
+  margin-right: 0.15rem;
+}
+.bishop-thinking .bishop-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  align-self: center;
+  animation: bishop-dot-breathe 1.4s ease-in-out infinite;
+}
+.bishop-thinking .bishop-dot:nth-child(3) {
+  animation-delay: 0.22s;
+}
+.bishop-thinking .bishop-dot:nth-child(4) {
+  animation-delay: 0.44s;
+}
+@keyframes bishop-dot-breathe {
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bishop-thinking .bishop-dot {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
 .bishop-empty {
   display: flex;
   flex-direction: column;

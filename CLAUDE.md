@@ -52,13 +52,19 @@ Optional model overrides: `OPENROUTER_MODEL`, `OPENROUTER_TRANSCRIPTION_MODEL`,
 All AI calls go through the `AIService` boundary (`core/ai/types.ts`). The
 provider (OpenRouter or Gemini) is selected server-side at startup via env.
 
-**Per-task model selection (OpenRouter only)** — since June 2026, audio
-transcription uses a dedicated model by default:
+**Per-task model selection (OpenRouter only)** — the mix as of July 18, 2026
+(prices live-checked that day). The split: HIGH-VOLUME calls ride the cheap
+general model; RARE + USER-FACING-PROSE calls ride Haiku; transcription rides
+Gemini for native diarisation.
 
-| Task                | Default Model                  | Why                                                                                                                                                                                      |
-| ------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Audio transcription | `~google/gemini-flash-latest`  | Gemini 3.x has **native diarisation** — "identifies who's talking" is baked into the model, not prompt-driven. 1M context handles hour+ multi-person meetings. Understands voice nuance. |
-| Everything else     | `google/gemini-3.1-flash-lite` | May 2026 Gemini 3.x model — $0.25/$1.50 per 1M. Fast, cheap, good structured extraction.                                                                                                 |
+| Task                                        | Default Model                    | Env override                                          | Why                                                                                                                                                   |
+| ------------------------------------------- | -------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Audio transcription (appends + live)        | `~google/gemini-flash-latest`    | `OPENROUTER_TRANSCRIPTION_MODEL`                      | Native diarisation — "who's talking" is baked into the model. $1.50/$9. Highest-volume audio path.                                                    |
+| Topics + summary                            | `~anthropic/claude-haiku-latest` | `OPENROUTER_TOPIC_MODEL` / `OPENROUTER_SUMMARY_MODEL` | Quality where users read/see it. $1/$5.                                                                                                               |
+| Bishop (/api/ask)                           | `~anthropic/claude-haiku-latest` | `OPENROUTER_ASK_MODEL`                                | Most reasoning-heavy, least frequent call. Splurge option: `~anthropic/claude-sonnet-latest` ($2/$10).                                                |
+| Markdown exports                            | `~anthropic/claude-haiku-latest` | `OPENROUTER_MARKDOWN_MODEL`                           | Rare, user-initiated deliverables — same profile as Bishop.                                                                                           |
+| Action extraction, titles, whiteboard agent | `google/gemini-3.1-flash-lite`   | `OPENROUTER_MODEL`                                    | High-volume structured extraction. $0.25/$1.50 — cheap on purpose.                                                                                    |
+| Status self-checkoff                        | `google/gemini-3.1-flash-lite`   | `OPENROUTER_STATUS_MODEL`                             | DELIBERATE volume choice (runs every append + every live round). The knob exists so a quality upgrade after real-meeting testing is config, not code. |
 
 Override the transcription model with `OPENROUTER_TRANSCRIPTION_MODEL` (set to
 empty to fall back to `OPENROUTER_MODEL` for everything). For a cheaper
