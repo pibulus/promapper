@@ -92,18 +92,35 @@ export const buildActionItemStatusPrompt = (
     })),
   );
 
-  return `Based on the following audio, determine if any of these action items have been completed or need to be uncompleted.
+  // Precision-biased on purpose: the errors are asymmetric. A missed
+  // checkoff costs the user one tap; a FALSE checkoff hides a real task in
+  // the done drawer — and during live sessions this prompt runs every ~30s
+  // against ambiguous chatter. When unsure, change nothing.
+  return `Based on the following recording, decide whether any of these action items' status should change.
 
 Existing Action Items:
 ${actionItemsJSON}
 
-Return a JSON array of action items that need their status changed, with the following structure:
+STRICT RULES — err on the side of changing NOTHING:
+- Mark an item "completed" ONLY when the words state the work already
+  HAPPENED — past tense, finished: "done", "fixed it", "sent that off",
+  "sorted it yesterday".
+- Talking ABOUT a task, planning it, intending it, promising it, or having
+  STARTED it is NOT completion. "I'll do it tomorrow", "we should", "I've
+  begun", "working on it" change nothing.
+- A joke, a sarcastic remark, or a hypothetical is NOT completion.
+- Mark a completed item back to "pending" ONLY when the words clearly say it
+  turned out NOT to be done ("turns out the fence is still broken").
+- If you are not certain, leave the item alone. Returning an empty array is
+  a good answer, not a failure.
+
+Return a JSON array of ONLY the items whose status must change:
 [
   {
     "id": "action-item-id",
     "description": "task description",
     "status": "completed" or "pending",
-    "reason": "brief explanation of why this status changed"
+    "reason": "brief explanation quoting the words that justify the change"
   }
 ]
 

@@ -65,8 +65,15 @@ export async function withRetry<T>(
 // ===================================================================
 
 export function cleanJsonResponse(text: string): string {
-  return text
-    .trim()
+  const trimmed = text.trim();
+  // Models sometimes append explanation prose AFTER the closing fence
+  // ("```json\n[]\n```\nNo changes were warranted because…"). The old
+  // strip-the-edges approach left that prose attached and JSON.parse threw —
+  // silently LOSING real results down every parser that uses this. When a
+  // complete fenced block exists, its contents are the answer.
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenced) return fenced[1].trim();
+  return trimmed
     .replace(/^```(json)?\s*/, "")
     .replace(/\s*```$/, "");
 }

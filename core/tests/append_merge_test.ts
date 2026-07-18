@@ -257,3 +257,21 @@ Deno.test("empty new summary leaves the existing one untouched (short rounds)", 
   assertEquals(mergeAppendSummary("Keep me.", ""), "Keep me.");
   assertEquals(mergeAppendSummary(null, ""), "");
 });
+
+Deno.test("no-op status flips don't stamp ai_checked (phantom sparkle guard)", () => {
+  const existing: ActionItem[] = [{
+    id: "fence",
+    conversation_id: "c",
+    description: "Mend the west fence",
+    assignee: null,
+    due_date: null,
+    status: "pending",
+    created_at: "2026-07-18T00:00:00.000Z",
+    updated_at: "2026-07-18T00:00:00.000Z",
+  }];
+  const merged = mergeAppendActionItems(existing, [], [
+    { id: "fence", status: "pending", reason: "sarcasm, actually" },
+  ]);
+  assertEquals(merged[0].ai_checked, undefined);
+  assertEquals(merged[0].updated_at, "2026-07-18T00:00:00.000Z");
+});

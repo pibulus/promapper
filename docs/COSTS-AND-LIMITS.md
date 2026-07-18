@@ -82,7 +82,14 @@ Three layers, simplest-first — "can't scale IS the feature" helps here:
 
 ## Next moves (when ready to build)
 
-- [ ] Checkoff prompt rewrite + eval fixture script (one session, no risk)
+- [x] Checkoff prompt rewrite + eval fixture script — DONE 2026-07-18.
+      **Verdict: precision-prompted flash-lite went 14/14 clean (zero false
+      positives); Haiku 13/14 (its one miss a harmless pending→pending no-op).
+      The knob stays on flash-lite, by evidence.** Re-run any time:
+      `deno task eval:checkoff`. Bonus: the eval exposed a real parser bug
+      (fenced JSON + trailing explanation prose lost ALL results down every JSON
+      path) — fixed in cleanJsonResponse, plus a merge guard so no-op flips
+      can't stamp phantom ai_checked sparkles.
 - [ ] Daily per-IP ledger in requestGuard (small; works on Pi)
 - [ ] OpenRouter spend-capped key (Pablo, console, 5 minutes)
 - [ ] Audio-minutes meter + free-allowance check on /api/process, /api/append,

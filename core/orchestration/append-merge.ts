@@ -141,6 +141,11 @@ export function mergeAppendActionItems(
   const updatedExisting = existingActionItems.map((item) => {
     const statusUpdate = updatesById.get(item.id);
     if (!statusUpdate) return item;
+    // No-op flip (pending→pending etc.): the model "changed" an item to the
+    // status it already had. Stamping ai_checked + updated_at for that would
+    // decorate an untouched item with a phantom ✨ — drop it (seen in the
+    // checkoff eval's sarcasm trap).
+    if (statusUpdate.status === item.status) return item;
 
     return {
       ...item,

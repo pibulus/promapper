@@ -216,3 +216,16 @@ Deno.test("parseStatusUpdatesResponse fires onParseError on garbled JSON", () =>
   });
   assertEquals(signalled, "self-checkoff updates");
 });
+
+Deno.test("cleanJsonResponse extracts a fenced block with trailing prose", () => {
+  const withProse =
+    '```json\n[{"id":"fence"}]\n```\nNo other changes were warranted because the rest was planning talk.';
+  assertEquals(cleanJsonResponse(withProse), '[{"id":"fence"}]');
+});
+
+Deno.test("cleanJsonResponse still handles bare and edge-fenced payloads", () => {
+  assertEquals(cleanJsonResponse("[]"), "[]");
+  assertEquals(cleanJsonResponse("```json\n[]\n```"), "[]");
+  assertEquals(cleanJsonResponse("```\n[]\n```"), "[]");
+  assertEquals(cleanJsonResponse("```json\n[]"), "[]");
+});

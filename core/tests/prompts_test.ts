@@ -243,3 +243,23 @@ Deno.test("ACTION_ITEMS_BASE_PROMPT uses empty-array contract, not the 'No actio
   assertStringIncludes(ACTION_ITEMS_BASE_PROMPT, "empty array");
   assertEquals(ACTION_ITEMS_BASE_PROMPT.includes("No action items"), false);
 });
+
+Deno.test("status prompt is precision-biased — the asymmetry is law", () => {
+  const prompt = buildActionItemStatusPrompt([
+    {
+      id: "fence",
+      conversation_id: "c",
+      description: "Mend the west fence",
+      assignee: null,
+      due_date: null,
+      status: "pending",
+      created_at: "2026-07-18T00:00:00.000Z",
+      updated_at: "2026-07-18T00:00:00.000Z",
+    },
+  ]);
+  // A false checkoff hides real work; these lines are the guard rails.
+  assertStringIncludes(prompt, "changing NOTHING");
+  assertStringIncludes(prompt, "NOT completion");
+  assertStringIncludes(prompt, "empty array is");
+  assertStringIncludes(prompt, "clearly say it");
+});
