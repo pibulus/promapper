@@ -82,7 +82,7 @@ Deno.test("every theme's ink passes AA on the 62% header band", () => {
 Deno.test("headers are MONO and the CTA plate carries white ink on every theme", () => {
   // July 20 ruling: no supporting band hues, ever — the colour
   // relationships live between layers (ground ↔ band ↔ plate), not between
-  // header hues. The CTA plate (color-mix(accent-fill 42%, soft-black))
+  // header hues. The CTA plate (color-mix(RAW accent 46%, soft-black))
   // must carry white text on every named theme.
   const SOFT_BLACK = "#1e1714";
   for (const theme of proMapperThemes) {
@@ -96,7 +96,7 @@ Deno.test("headers are MONO and the CTA plate carries white ink on every theme",
       undefined,
       `Theme "${theme.name}" defines --band-hue-c — the carnival is banned`,
     );
-    const plate = mix(theme.accent, SOFT_BLACK, 0.42);
+    const plate = mix(theme.accent, SOFT_BLACK, 0.46);
     const ratio = contrast("#ffffff", plate);
     assertEquals(
       ratio >= 4.5,

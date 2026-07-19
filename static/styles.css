@@ -152,15 +152,15 @@
      warm black. Never stark all-black (July 20 veto), never a saturated
      slab (July 19 veto) — 42% is the solved middle: reads as a plate,
      carries the theme. Shadow = the band colour peeking (riso offset). */
-  --cta-plate: color-mix(in srgb, var(--accent-fill) 42%, var(--soft-black));
+  --cta-plate: color-mix(in srgb, var(--color-accent) 46%, var(--soft-black));
   --cta-plate-border: color-mix(
     in srgb,
-    var(--accent-fill) 28%,
+    var(--color-accent) 30%,
     var(--soft-black)
   );
   --cta-plate-hover: color-mix(
     in srgb,
-    var(--accent-fill) 50%,
+    var(--color-accent) 55%,
     var(--soft-black)
   );
 
@@ -2239,9 +2239,9 @@ body {
     gap: 0.45rem;
   }
   .module-cell--small .radio-play {
-    width: 2.1rem;
-    height: 2.1rem;
-    box-shadow: 1.5px 1.5px 0 var(--soft-black);
+    width: 2rem;
+    height: 2rem;
+    box-shadow: 1.5px 1.5px 0 var(--header-band);
   }
   .module-cell--small .radio-next {
     width: 1.5rem;
@@ -2525,19 +2525,21 @@ body {
   gap: 0.75rem;
 }
 .radio-play {
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 2.25rem;
+  height: 2.25rem;
   flex-shrink: 0;
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* Toy-brut slab: the chunky warm-black edge + flat shadow every accent
-     button in the app wears — the module play buttons join the family. */
-  border: 2px solid var(--soft-black);
+  font-size: 0.8rem;
+  /* CTA plate (COLOR-SYSTEM.md): hued ink, compact — icon slabs stay
+     small and juicy, never big dark pucks. */
+  border: 2px solid var(--cta-plate-border);
   border-radius: 50%;
-  background: var(--accent-fill);
+  background: var(--cta-plate);
   color: #fff;
-  box-shadow: 2px 2px 0 var(--soft-black);
+  box-shadow: 2px 2px 0 var(--header-band);
   cursor: pointer;
   transition:
     transform var(--transition-fast),
@@ -2546,12 +2548,24 @@ body {
 }
 .radio-play:hover {
   transform: translateY(-1.5px);
-  box-shadow: 3px 3px 0 var(--soft-black);
+  box-shadow: 3px 3px 0 var(--header-band);
   filter: brightness(1.08);
 }
 .radio-play:active {
   transform: translateY(0.5px);
-  box-shadow: 1px 1px 0 var(--soft-black);
+  box-shadow: 1px 1px 0 var(--header-band);
+}
+/* 44px tap target on touch — the compact visual stays. */
+@media (pointer: coarse) {
+  .radio-play::before,
+  .bishop-send::before {
+    content: "";
+    position: absolute;
+    inset: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
 }
 .radio-info {
   display: flex;
@@ -2847,9 +2861,10 @@ body {
     transparent);
 }
 .bishop-send {
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 2.4rem;
+  height: 2.4rem;
   flex-shrink: 0;
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;

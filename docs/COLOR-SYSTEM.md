@@ -58,16 +58,23 @@ hued ink. Nothing else shouts.
 ## The CTA plate law (+Topic, mic/record, Bishop ask, btn--accent)
 
 ```css
---cta-plate: color-mix(in srgb, var(--accent-fill) 42%, var(--soft-black));
---cta-plate-border: color-mix(in srgb, var(--accent-fill) 28%, var(--soft-black));
---cta-plate-hover: color-mix(in srgb, var(--accent-fill) 50%, var(--soft-black));
+--cta-plate: color-mix(in srgb, var(--color-accent) 46%, var(--soft-black));
+--cta-plate-border: color-mix(in srgb, var(--color-accent) 30%, var(--soft-black));
+--cta-plate-hover: color-mix(in srgb, var(--color-accent) 55%, var(--soft-black));
 ```
+
+Plates mix from the RAW accent, never `--accent-fill` — on shuffle rolls
+accent-fill routes to the solved deep companion, which collapsed plates to
+near-black ("still too dark", the July 20 screenshot). Icon-slab CTAs stay
+COMPACT: 2.25–2.4rem visuals with 44px coarse-pointer tap targets — small and
+juicy, never big dark pucks.
 
 Primary buttons are the accent mixed DEEP into warm black — hued ink. The
 history: 72% accent slabs were "garish" (July 19), 0% stark black was "too stark
-always" (July 20), 42% is the solved middle — reads as a plate, carries the
-theme. Shadow = `--header-band` peeking (riso misregistration). White-on-plate ≥
-4.5:1 is test-pinned for every named theme and 300 rolls.
+always" (July 20), ~46% of the raw accent is the solved middle — reads as a
+plate, carries the theme. Shadow = `--header-band` peeking (riso
+misregistration). White-on-plate ≥ 4.5:1 is test-pinned for every named theme
+and 300 rolls.
 
 `--accent-fill` still exists for small non-button accent solids (count badges,
 toggle knobs, progress). Anything button-shaped takes the plate.
