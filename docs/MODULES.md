@@ -82,11 +82,10 @@ Card header bands are ONE colour: the accent band, on every card (the July 19
 trio and the brief duo experiment are both dead — Pablo's ruling: "headers are
 consistent"). The rack's colour relationships live between LAYERS instead: each
 theme's ground family ↔ the band ↔ the CTA plate — the trio law in
-docs/COLOR-SYSTEM.md. Per-theme grounds and accents are defined in FOUR
-places that must stay in sync: `static/styles.css` (:root defaults and
-recipes), `core/theme/themes.ts` (per-theme cssVars incl. `--gradient-bg`
-skies), `routes/_app.tsx` (FOUC map), `core/theme/randomTheme.ts` (shuffle
-pairs).
+docs/COLOR-SYSTEM.md. Per-theme grounds and accents are defined in FOUR places
+that must stay in sync: `static/styles.css` (:root defaults and recipes),
+`core/theme/themes.ts` (per-theme cssVars incl. `--gradient-bg` skies),
+`routes/_app.tsx` (FOUC map), `core/theme/randomTheme.ts` (shuffle pairs).
 
 ## On deck (from the July 10 riff)
 
