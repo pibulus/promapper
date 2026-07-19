@@ -3,69 +3,121 @@
  * whimsical, CONSISTENT looks on demand. A roll is a SPACE, not an office
  * product: lush light washes, one candy accent, deep ink where words live.
  *
- * The scheme (July 9 pastel rework):
- *   - accent = a FRESH PASTEL (high saturation + high lightness — dusty/greyed
- *     pastel is grandma, saturated pastel is sorbet). It colors SURFACES:
- *     bands, chips, washes, the background family.
+ * July 20 rebuild — OKLCH curated pairs (docs/COLOR-SYSTEM.md is the law):
+ *   - every color is authored in OKLCH and stored as hex. Equal L = equal
+ *     perceived weight across hues; chroma is clamped to each hue's sRGB
+ *     ceiling instead of pretending one saturation number fits all.
+ *   - the dice picks between DESIGNED couples (ground family × accent arc),
+ *     each carrying its own accent L/C target derived from the beloved
+ *     anchors (Miami coral, rebel purple, raspberry, DAYBREAK cobalt).
+ *     Free random pairing kept rolling combos nobody would choose.
+ *   - ONE supporting band hue per roll: the accent rotated 16° at the same
+ *     L/C, direction chosen per pair away from the banned arcs (alarm-red,
+ *     mustard). --band-hue-c is dead — three unrelated header hues was the
+ *     July 19 carnival, overruled.
+ *   - accents are CORAL / RASPBERRY / COBALT / ORCHID only (green-family
+ *     accents incl. teal are dead: "hospital pink and green"). Aqua/lagoon
+ *     survives as a GROUND, always under a warm accent. Blues live at hue
+ *     246–262, never 264–275 (the OKLCH blue trap).
  *   - --accent-ink / --accent-strong = a DEEP COMPANION of the same hue,
- *     solved numerically so white text passes AA on it by construction.
- *     Every text-bearing accent element routes through these tokens.
- *   - the app background re-tints per roll: a mesh of analogous pastel washes
- *     (peach→coral, pink→lavender, mint→sky — whatever family the hue lands
- *     in) over a light warm-blended base, same structure as the proven
- *     WARM_BG.
- *   - hue arc skips the red/brown band entirely (no-red law, no mud) but is
- *     otherwise free: butter → lime → mint → sky → lilac → pink.
- *   - band/wash recipes are overridden per roll at HIGHER mix percentages —
- *     a pastel at 12% is invisible where a vivid pop wasn't. Named themes
- *     keep the static recipes.
+ *     lightness walked down until white-on-it AND it-on-cream both clear
+ *     AA by construction. Every text-bearing accent element routes through
+ *     these tokens; band/wash recipes stay the SAME static color-mix
+ *     recipes the named themes use.
  */
 
 import type { Theme } from "@core/theme/types.ts";
+import { hexToOklch, maxChroma, oklchToHex } from "@core/theme/oklch.ts";
 
-/** CURATED PAIRS — the dice picks between DESIGNED couples, not raw hues.
- * Free random pairing kept rolling combos nobody would choose (mint on baby
- * pink = kids' party). Each pair is a ground family + a PUNK accent arc from
- * Pablo's own palette language (BRAND docs): "pastel backgrounds with punk
- * accents" — Miami Gradient (#FFD700→#FF6B6B→#4ECDC4), Sunset Spectrum,
- * riso fluoro pink #FF48B0, rebel purple #9B59B6, zombie-sheriff
- * orchid+coral. Grounds: sunrise coral/peach, orchid/magenta, aqua.
- * Accents: teal, cobalt, rebel purple, coral-red, hot pink — never mint,
- * never yellow, never baby pink. */
+/** CURATED PAIRS v2 — OKLCH hue arcs (arcs may pass 360: mod applied at
+ * generation). Per-pair accent registers keep every family in its own
+ * proven register instead of one global range that made coral scream and
+ * cobalt sulk. bandDir picks the 16° neighbour's romantic side. */
 export const CURATED_PAIRS: ReadonlyArray<{
   readonly name: string;
+  /** Ground-family OKLCH hue arc (sky washes live here). */
   readonly ground: readonly [number, number];
+  /** Accent OKLCH hue arc. */
   readonly accent: readonly [number, number];
+  /** Accent lightness register. */
+  readonly accentL: readonly [number, number];
+  /** Accent chroma register (pre-gamut-clamp). */
+  readonly accentC: readonly [number, number];
+  /** Ground wash lightness target (aqua families ride lighter — that airy
+   * pool feel is a lightness fact, preserved per pair). */
+  readonly groundL: number;
+  /** Ground wash chroma target. */
+  readonly groundC: number;
+  /** Which way the supporting band hue rotates (±16°). */
+  readonly bandDir: 1 | -1;
 }> = [
-  // GREEN-FAMILY ACCENTS ARE DEAD (teal included): teal-on-pink/sunrise kept
-  // reading "hospital pink and green" no matter the saturation. Accents are
-  // coral, raspberry, cobalt, violet — full stop. Aqua survives only as a
-  // GROUND, always paired with a warm accent.
-  // sunrise × cornflower/cobalt (#5C9DD5 / #5B8DEF register)
-  { name: "sunset-cobalt", ground: [12, 28], accent: [208, 228] },
-  // coral glow × orchid punch (#9D50BB register)
-  { name: "coral-orchid", ground: [8, 24], accent: [278, 298] },
+  // sunrise coral/peach × denim cobalt (the DAYBREAK register)
+  {
+    name: "sunset-cobalt",
+    ground: [38, 60],
+    accent: [246, 262],
+    accentL: [0.58, 0.63],
+    accentC: [0.13, 0.17],
+    groundL: 0.85,
+    groundC: 0.085,
+    bandDir: 1, // toward periwinkle — cyan-ward flirts with hospital teal
+  },
+  // coral glow × orchid punch (rebel-purple #9B59B6 territory)
+  {
+    name: "coral-orchid",
+    ground: [30, 52],
+    accent: [306, 322],
+    accentL: [0.57, 0.63],
+    accentC: [0.17, 0.22],
+    groundL: 0.85,
+    groundC: 0.085,
+    bandDir: 1, // toward magenta — juicier than violet-ward
+  },
   // orchid dusk × juicy coral (#FF6B6B — the zombie-sheriff look)
-  { name: "dusk-coral", ground: [288, 314], accent: [8, 20] },
+  {
+    name: "dusk-coral",
+    ground: [318, 336],
+    accent: [27, 40],
+    accentL: [0.66, 0.71],
+    accentC: [0.16, 0.19],
+    groundL: 0.84,
+    groundC: 0.1,
+    bandDir: 1, // toward apricot — minus lands in the alarm-red arc
+  },
   // lagoon × coral pop (Miami inverted)
-  { name: "lagoon-coral", ground: [172, 190], accent: [8, 20] },
+  {
+    name: "lagoon-coral",
+    ground: [188, 210],
+    accent: [27, 40],
+    accentL: [0.66, 0.71],
+    accentC: [0.16, 0.19],
+    groundL: 0.9,
+    groundC: 0.075,
+    bandDir: 1,
+  },
   // aqua pool × raspberry (#E85D8F — the historic beloved accent)
-  { name: "poolside", ground: [168, 188], accent: [328, 346] },
+  {
+    name: "poolside",
+    ground: [183, 205],
+    accent: [350, 366],
+    accentL: [0.63, 0.68],
+    accentC: [0.17, 0.2],
+    groundL: 0.9,
+    groundC: 0.075,
+    bandDir: -1, // toward magenta — plus crosses into red
+  },
   // sunrise × raspberry (the peachyCream × rose historic default)
-  { name: "dawn-rose", ground: [16, 30], accent: [330, 346] },
+  {
+    name: "dawn-rose",
+    ground: [42, 64],
+    accent: [350, 366],
+    accentL: [0.63, 0.68],
+    accentC: [0.17, 0.2],
+    groundL: 0.85,
+    groundC: 0.085,
+    bandDir: -1,
+  },
 ];
-
-export function hslToHex(h: number, s: number, l: number): string {
-  const sat = s / 100;
-  const light = l / 100;
-  const k = (n: number) => (n + h / 30) % 12;
-  const a = sat * Math.min(light, 1 - light);
-  const f = (n: number) =>
-    light - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-  const toHex = (v: number) =>
-    Math.round(v * 255).toString(16).padStart(2, "0");
-  return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
-}
 
 function hexToRgb(hex: string): [number, number, number] {
   return [
@@ -107,29 +159,52 @@ export const SURFACE_CREAM = "#fff7ef";
  * Tests mirror this value. */
 export const BAND_CREAM = "#ffefdc";
 
-/** The deep companion: same hue as the pastel accent, lightness walked down
- * until it clears AA against cream (and therefore white) with margin.
- * Golds keep their saturation (dropping it goes olive); cool hues shed a
- * little so the deep tone reads rich, not neon. */
-export function deriveStrong(hue: number, sat: number): string {
-  const s = hue < 95 ? Math.min(94, sat + 8) : Math.max(48, sat - 10);
-  for (let l = 48; l >= 20; l--) {
-    const hex = hslToHex(hue, s, l);
+/** The deep companion: same hue as the accent, chroma capped so the deep
+ * tone reads rich instead of neon, lightness walked down until it clears
+ * AA against cream (and therefore white-on-it) with margin. OKLCH descent
+ * holds the hue honest — the old HSL walk drifted it. */
+export function deriveStrong(hue: number, chroma: number): string {
+  const c = Math.min(chroma, 0.15);
+  for (let L = 0.55; L >= 0.2; L -= 0.01) {
+    const hex = oklchToHex(L, c, hue);
     if (contrast(hex, SURFACE_CREAM) >= 4.6) return hex;
   }
-  return hslToHex(hue, s, 20);
+  return oklchToHex(0.2, c, hue);
+}
+
+/** The supporting band hue: accent rotated 16° at the same L/C (docs/
+ * COLOR-SYSTEM.md band law — ONE neighbour, Δh ≤ 18°, never a trio). */
+export const BAND_NEIGHBOUR_DEG = 16;
+
+/** Band-b starts at the accent's L/C on the rotated hue, then nudges L up
+ * (≤ +0.04) until ink clears AA on its 62%-over-cream band. */
+function deriveBandNeighbour(
+  L: number,
+  C: number,
+  hue: number,
+  ink: string,
+): string {
+  for (let l = L; l <= L + 0.041; l += 0.01) {
+    const hex = oklchToHex(l, C, hue);
+    if (contrast(ink, mixHex(hex, BAND_CREAM, 0.62)) >= 4.5) return hex;
+  }
+  return oklchToHex(L + 0.04, C, hue);
 }
 
 const wrap = (h: number) => ((h % 360) + 360) % 360;
 
 /** Ground families, derived from the curated pairs (kept as an export for
- * the test sweeps). */
+ * the test sweeps and the ThemeSwitcher anti-repeat). */
 export const WARM_FAMILIES: ReadonlyArray<readonly [number, number]> =
   CURATED_PAIRS.map((p) => p.ground);
 
 export interface ShuffleParts {
+  /** Accent OKLCH hue (may exceed 360 when the pair arc wraps; wrapped for
+   * output, raw here so tests can check arc membership directly). */
   hue: number;
-  saturation: number;
+  /** Accent OKLCH chroma (pre-clamp target). */
+  chroma: number;
+  /** Accent OKLCH lightness. */
   lightness: number;
   /** Hue the background family landed on (always inside WARM_FAMILIES). */
   bgHue: number;
@@ -158,34 +233,35 @@ export function generateThemeParts(
   const pair = CURATED_PAIRS[
     Math.floor(rand() * CURATED_PAIRS.length) % CURATED_PAIRS.length
   ];
-  const hue = pair.accent[0] + rand() * (pair.accent[1] - pair.accent[0]);
-  // PUNK accents ("pastel backgrounds with punk accents" — the BRAND law):
-  // saturated mid-tones in #FF6B6B / #4ECDC4 / #9B59B6 territory. Never a
-  // whisper-pastel, never muted, and not too dark either (L58–66 — the
-  // L54 floor read "too dark"). Ink contrast rides the solved companion.
-  const saturation = 76 + rand() * 20; // 76–96 (warmer/juicier bands)
-  const lightness = 58 + rand() * 8; // 58–66
+  const span = (a: readonly [number, number]) => a[0] + rand() * (a[1] - a[0]);
+  const hue = span(pair.accent);
+  const lightness = span(pair.accentL);
+  const chroma = span(pair.accentC);
 
-  const accent = hslToHex(hue, saturation, lightness);
-  const strong = deriveStrong(hue, saturation);
-  // Dark hue-tinted ink (same recipe family as the hand-made themes).
-  const text = hslToHex(hue, 16 + rand() * 8, 16 + rand() * 4);
-  const textSecondary = hslToHex(hue, 10 + rand() * 6, 46 + rand() * 6);
+  const accent = oklchToHex(lightness, chroma, hue);
+  const strong = deriveStrong(hue, chroma);
+  // Ink is a COLOR: hue-tinted near-black, never grey (same recipe family
+  // as the hand-made themes).
+  const text = oklchToHex(0.3, 0.035, hue);
+  const textSecondary = oklchToHex(0.52, 0.03, hue);
 
   // Ground comes from the SAME curated pair — the couple was designed
   // together, so ground and accent always play off each other on purpose.
-  const bgHue = pair.ground[0] + rand() * (pair.ground[1] - pair.ground[0]);
+  const bgHue = span(pair.ground);
 
   // AIRY SKY: the ground is a colored sky at the TOP that FADES INTO CREAM
   // where the components live — a full-saturation full-bleed field read as
   // "a toy". Two family washes hug the top corners; the accent leaves one
-  // low-alpha whisper near the bottom. Never pigment-mix complementary
-  // pastels — sRGB mixing makes grey; washes are pure-hue pastels.
+  // low-chroma whisper near the bottom. Chroma rides each hue's own gamut
+  // ceiling (oklchToHex clamps), so aqua and dusk skies carry the same
+  // perceived weight as sunrise ones.
   const j = () => rand() * 10 - 5;
+  const gL = pair.groundL;
+  const gC = pair.groundC;
   const washes = [
-    hslToHex(wrap(bgHue - 8), 88 + rand() * 12, 79 + rand() * 3),
-    hslToHex(wrap(bgHue + 10), 86 + rand() * 14, 81 + rand() * 3),
-    hslToHex(hue, 78 + rand() * 14, 82 + rand() * 3),
+    oklchToHex(gL - 0.01, gC + 0.015, wrap(bgHue - 8)),
+    oklchToHex(gL + 0.01, gC, wrap(bgHue + 10)),
+    oklchToHex(gL + 0.05, Math.min(gC, 0.06), wrap(hue)),
   ];
   const washAlphas = [0.85, 0.7, 0.35];
   const positions: Array<[number, number]> = [
@@ -199,16 +275,16 @@ export function generateThemeParts(
     return `radial-gradient(circle at ${Math.round(x)}% ${Math.round(y)}%, ` +
       `rgba(${r},${g},${b},${washAlphas[i]}), transparent 52%)`;
   });
-  // Linear journey: saturated family sky → soft tint → warm cream. The
+  // Linear journey: colored family sky → soft tint → warm cream. The
   // cream floor is what makes it AIRY instead of toy-solid.
   const bgBase = [
-    hslToHex(wrap(bgHue - 4), 85 + rand() * 15, 80 + rand() * 3),
-    hslToHex(wrap(bgHue + 4), 75 + rand() * 15, 89),
+    oklchToHex(gL + 0.02, gC, wrap(bgHue - 4)),
+    oklchToHex(0.93, gC * 0.55, wrap(bgHue + 4)),
     "#fff4e8",
   ];
   const gradientBg = `${radials.join(", ")}, linear-gradient(168deg, ` +
     `${bgBase[0]} 0%, ${bgBase[1]} 38%, ${bgBase[2]} 78%)`;
-  const baseSolid = hslToHex(bgHue, 70, 90);
+  const baseSolid = oklchToHex(0.91, gC * 0.6, wrap(bgHue));
 
   const theme: Theme = {
     name: "SHUFFLE",
@@ -230,16 +306,26 @@ export function generateThemeParts(
       "--accent-strong": strong,
       "--accent-ink": strong,
       "--accent-fill": strong,
-      // Faceplate trio: two supporting band hues rotated off the accent
-      // (analogous spread — same recipe slot the named themes fill by hand).
-      "--band-hue-b": hslToHex(wrap(hue + 40), 70, 62),
-      "--band-hue-c": hslToHex(wrap(hue - 45), 70, 62),
+      // ONE supporting band hue: the accent's 16° neighbour at the same
+      // L/C — same key, different string on the instrument. (--band-hue-c
+      // is dead; see docs/COLOR-SYSTEM.md.) Solved, not assumed: rotation
+      // shifts WCAG luminance even at equal perceptual L (magenta-ward
+      // loses green), so L nudges up until the 62% band recipe carries the
+      // roll's ink at AA — same by-construction philosophy as --accent-strong.
+      "--band-hue-b": deriveBandNeighbour(
+        lightness,
+        chroma,
+        wrap(hue + pair.bandDir * BAND_NEIGHBOUR_DEG),
+        text,
+      ),
     },
   };
 
-  return { hue, saturation, lightness, bgHue, bgWashes: washes, bgBase, theme };
+  return { hue, chroma, lightness, bgHue, bgWashes: washes, bgBase, theme };
 }
 
 export function generateTheme(rand: () => number = Math.random): Theme {
   return generateThemeParts(rand).theme;
 }
+
+export { hexToOklch, maxChroma, oklchToHex };

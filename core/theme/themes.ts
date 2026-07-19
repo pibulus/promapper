@@ -56,8 +56,7 @@ export const daybreak: Theme = {
   cssVars: {
     "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(74, 123, 201, 0.14)",
-    "--band-hue-b": "#ff8f70",
-    "--band-hue-c": "#e9b64f",
+    "--band-hue-b": "#6773c9",
     "--gradient-bg": WARM_BG,
   },
 };
@@ -74,8 +73,7 @@ export const bubblegum: Theme = {
   cssVars: {
     "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(255, 77, 151, 0.12)",
-    "--band-hue-b": "#9d7bff",
-    "--band-hue-c": "#f5b83d",
+    "--band-hue-b": "#f239b2",
     "--gradient-bg": WARM_BG,
   },
 };
@@ -95,8 +93,7 @@ export const sky: Theme = {
   cssVars: {
     "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(10, 166, 255, 0.12)",
-    "--band-hue-b": "#2fc79f",
-    "--band-hue-c": "#ff9d6b",
+    "--band-hue-b": "#5e8aff",
     "--gradient-bg": WARM_BG,
   },
 };
@@ -116,8 +113,7 @@ export const grape: Theme = {
   cssVars: {
     "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(124, 92, 255, 0.12)",
-    "--band-hue-b": "#ff6fae",
-    "--band-hue-c": "#f0b429",
+    "--band-hue-b": "#9f31df",
     "--gradient-bg": WARM_BG,
   },
 };
@@ -137,8 +133,7 @@ export const lime: Theme = {
   cssVars: {
     "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(16, 181, 80, 0.12)",
-    "--band-hue-b": "#38b6ff",
-    "--band-hue-c": "#f5c04a",
+    "--band-hue-b": "#00af82",
     "--gradient-bg": WARM_BG,
   },
 };
@@ -158,8 +153,7 @@ export const gold: Theme = {
   cssVars: {
     "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(245, 179, 0, 0.14)",
-    "--band-hue-b": "#ff8f70",
-    "--band-hue-c": "#74b98a",
+    "--band-hue-b": "#ff9a46",
     "--accent-strong": "#a06a00",
     "--gradient-bg": WARM_BG,
   },

@@ -76,14 +76,17 @@ tablet). Core cards + `standard` modules span 2, `small` spans 1 (a true
 half-card tile), `wide` spans the row. Rows like small/small/standard compose
 themselves; `grid-auto-flow: dense` fills the holes.
 
-## Faceplates (July 19)
+## Faceplates (July 20 — the trio is dead)
 
-Every theme ships a band-hue trio (`--band-hue-b`/`--band-hue-c` + the accent)
-and grid cells cycle them (nth-child on `.dashboard-grid`), so cards read as
-different instruments in one rack. Defined in FOUR places that must stay in
-sync: `static/styles.css` (:root defaults + recipes), `core/theme/themes.ts`
-(per-theme cssVars), `routes/_app.tsx` (FOUC map), `core/theme/randomTheme.ts`
-(shuffle derives the trio from its accent hue).
+Every theme carries ONE supporting band hue (`--band-hue-b`): the accent
+rotated 16° in OKLCH at the same L/C, direction chosen away from the banned
+arcs (docs/COLOR-SYSTEM.md band law). Grid cells alternate accent band /
+neighbour (nth-child(2n) on `.dashboard-grid`), so cards read as instruments
+tuned to one key — the July 19 three-hue trio was overruled as a carnival.
+Defined in FOUR places that must stay in sync: `static/styles.css` (:root
+defaults + recipes), `core/theme/themes.ts` (per-theme cssVars),
+`routes/_app.tsx` (FOUC map), `core/theme/randomTheme.ts` (shuffle solves the
+neighbour off its accent, nudging L until ink passes AA on the band).
 
 ## On deck (from the July 10 riff)
 

@@ -440,8 +440,8 @@ export default function UploadIsland(
                         (recordingTime.value / MAX_RECORDING_TIME) * 100
                       }%`,
                       background: showTimeWarning.value
-                        ? "#EF4444"
-                        : "var(--accent-electric)",
+                        ? "var(--status-amber-ink)"
+                        : "var(--accent-fill)",
                     }}
                   >
                   </div>

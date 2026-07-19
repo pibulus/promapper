@@ -79,6 +79,34 @@ Deno.test("every theme's ink passes AA on the 62% header band", () => {
   }
 });
 
+Deno.test("every theme carries ONE supporting band hue — ink passes AA on it, and the trio stays dead", () => {
+  // COLOR-SYSTEM.md band law: --band-hue-b is the accent's 16° OKLCH
+  // neighbour; alternating cells run it through the same 62% recipe, so it
+  // owes the same AA as the accent band. --band-hue-c must never return.
+  for (const theme of proMapperThemes) {
+    const bandHueB = theme.cssVars?.["--band-hue-b"] as string;
+    assertEquals(
+      typeof bandHueB === "string" && bandHueB.startsWith("#"),
+      true,
+      `Theme "${theme.name}" is missing --band-hue-b`,
+    );
+    assertEquals(
+      theme.cssVars?.["--band-hue-c"],
+      undefined,
+      `Theme "${theme.name}" defines --band-hue-c — the three-hue carnival is banned`,
+    );
+    const band = mix(bandHueB, BAND_CREAM, 0.62);
+    const ratio = contrast(theme.text, band);
+    assertEquals(
+      ratio >= 4.5,
+      true,
+      `Theme "${theme.name}" ink on band-b ${band} is ${
+        ratio.toFixed(2)
+      }:1 — below the 4.5:1 AA floor`,
+    );
+  }
+});
+
 Deno.test("every theme body text passes AA on the card surface", () => {
   for (const theme of proMapperThemes) {
     const ratio = contrast(theme.text, CARD_SURFACE);
