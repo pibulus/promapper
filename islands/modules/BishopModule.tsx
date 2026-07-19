@@ -132,8 +132,8 @@ export default function BishopModule() {
           <h3>Bishop</h3>
           <span class="card-header-tagline">ask your memory</span>
         </div>
-        <div class="dashboard-card-body bishop-body">
-          <div class="bishop-log" ref={logRef}>
+        <div class="dashboard-card-body bishop-body" ref={logRef}>
+          <div class="bishop-log">
             {exchanges.value.length === 0 && (
               <p class="bishop-empty">
                 <i class="fa fa-chess-bishop" aria-hidden="true"></i>

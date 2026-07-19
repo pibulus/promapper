@@ -108,6 +108,31 @@ export const CURATED_PAIRS: ReadonlyArray<{
     groundL: 0.85,
     groundC: 0.085,
   },
+  // THE DARING PAIRS (July 20, "dare to be fresh and bold sometimes"):
+  // same trio law, chroma pushed to the fluoro ceiling. Roughly a quarter
+  // of rolls land here — sometimes, not always.
+  // vaporwave: lavender dusk sky × riso fluoro pink (#FF48B0 register,
+  // oklch 0.69 0.24 350 — high L AND near-ceiling C is the fluoro recipe)
+  {
+    name: "vaporwave",
+    ground: [292, 314],
+    accent: [346, 360],
+    accentL: [0.66, 0.7],
+    accentC: [0.21, 0.24],
+    groundL: 0.85,
+    groundC: 0.105,
+  },
+  // neon office: cool pool-paper ground × electric violet (the GRAPE
+  // #8335ff register) — fluorescent tube light over calm water
+  {
+    name: "neon-office",
+    ground: [196, 218],
+    accent: [288, 300],
+    accentL: [0.56, 0.61],
+    accentC: [0.24, 0.27],
+    groundL: 0.9,
+    groundC: 0.08,
+  },
 ];
 
 function hexToRgb(hex: string): [number, number, number] {

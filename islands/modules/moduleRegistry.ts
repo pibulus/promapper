@@ -47,7 +47,7 @@ export const moduleRegistry: ModuleEntry[] = [
     name: "Bishop",
     tagline: "Ask your memory — answers from this conversation only.",
     icon: "chess-bishop",
-    size: "standard",
+    size: "small",
     component: BishopModule,
   },
   {

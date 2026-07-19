@@ -1,10 +1,10 @@
 /**
  * Shuffle-theme guards for the OKLCH curated-pair scheme (docs/
  * COLOR-SYSTEM.md): every roll must land in a designed couple's arcs, keep
- * the accent in its per-pair punk register, carry exactly ONE supporting
- * band hue at ≤ 18° from the accent, and hold contrast BY CONSTRUCTION —
- * dark ink over the roll's 62% band tint, white over the solved
- * --accent-strong, the deep companion readable as ink on cream, and the
+ * the accent in its per-pair punk register, emit NO supporting band hues
+ * (headers are mono), and hold contrast BY CONSTRUCTION — dark ink over
+ * the roll's 62% band tint, white over the solved --accent-strong AND the
+ * 42% CTA plate, the deep companion readable as ink on cream, and the
  * background family light enough that body ink stays readable everywhere.
  *
  * The 300-roll seeded sweep is the guard that caught real failures — keep it.
@@ -35,7 +35,7 @@ function seededRand(seed: number): () => number {
 const wrap = (h: number) => ((h % 360) + 360) % 360;
 
 /** Circular hue distance in degrees. */
-function hueDist(a: number, b: number): number {
+function _hueDist(a: number, b: number): number {
   const d = Math.abs(wrap(a) - wrap(b));
   return Math.min(d, 360 - d);
 }

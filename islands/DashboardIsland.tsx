@@ -35,6 +35,8 @@ import FlipCard from "./FlipCard.tsx";
 import ReaderModal from "./ReaderModal.tsx";
 import ModuleRack from "./ModuleRack.tsx";
 import { moduleRegistry } from "./modules/moduleRegistry.ts";
+import NotesModule from "./modules/NotesModule.tsx";
+import TakesModule from "./modules/TakesModule.tsx";
 import { enabledModules } from "@signals/moduleStore.ts";
 
 /** Minimum seconds between auto-draws so it doesn't fire too often. */
@@ -492,16 +494,35 @@ export default function DashboardIsland() {
             module, so stale textareas/canvases/in-flight answers can't leak
             across conversations (Bumblefuzz's hall-of-fame find). */
         }
-        {moduleRegistry
-          .filter((m) => enabledModules.value.includes(m.id))
-          .map((m) => (
+        {(() => {
+          const enabled = moduleRegistry.filter((m) =>
+            enabledModules.value.includes(m.id)
+          );
+          // Notes + Takes share one cell when both are on: scraps on the
+          // front, recordings on the back (same-data-adjacent, both quiet
+          // surfaces). Either alone renders as its own card.
+          const paired = enabled.some((m) => m.id === "notes") &&
+            enabled.some((m) => m.id === "takes");
+          const cells = paired
+            ? enabled.filter((m) => m.id !== "takes")
+            : enabled;
+          return cells.map((m) => (
             <div
               key={`${conversation.id}-${m.id}`}
               class={`order-6 md:order-none min-w-0 module-cell module-cell--${m.size}`}
             >
-              <m.component />
+              {paired && m.id === "notes"
+                ? (
+                  <FlipCard
+                    label="Takes"
+                    front={<NotesModule />}
+                    back={<TakesModule />}
+                  />
+                )
+                : <m.component />}
             </div>
-          ))}
+          ));
+        })()}
 
         {/* The rack — ghost tile, always last. */}
         <div class="order-last md:order-none min-w-0 module-cell module-cell--small">
