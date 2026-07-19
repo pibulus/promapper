@@ -37,6 +37,18 @@ const ACCENT_PRESETS: ReadonlyArray<[string, string]> = [
   ["cobalt", "#4a7bc9"],
 ];
 
+/** Harmony modes — candidate ground hues derived from the accent hue
+ * (the conversation_mapper idea, OKLCH edition). Golden = the φ angle. */
+const HARMONY_MODES: ReadonlyArray<[string, ReadonlyArray<number>]> = [
+  ["mono", [0]],
+  ["analogous", [-30, 30]],
+  ["distinct", [-55, 55]],
+  ["split", [150, 210]],
+  ["triadic", [120, 240]],
+  ["complement", [180]],
+  ["golden", [137.5, 222.5]],
+];
+
 /** Ground-family hue presets. */
 const GROUND_PRESETS: ReadonlyArray<[string, number]> = [
   ["sunrise", 48],
@@ -127,7 +139,7 @@ export default function ColorLabIsland() {
   const accentHex = oklchToHex(aL.value, aC.value, aH.value);
   const strong = deriveStrong(aH.value, aC.value);
   const band = mixHex(accentHex, BAND_CREAM, 0.62);
-  const plate = mixHex(accentHex, SOFT_BLACK, 0.46);
+  const plate = mixHex(accentHex, BAND_CREAM, 0.7);
   const groundHex = oklchToHex(gL.value, gC.value, gH.value);
 
   const slider = (
@@ -195,6 +207,42 @@ export default function ColorLabIsland() {
         </div>
 
         <h2>Ground</h2>
+        <p class="color-lab-hint">
+          Harmony modes seed the ground hue from the accent — then tune.
+        </p>
+        <div class="color-lab-chips">
+          {HARMONY_MODES.map(([name, offsets]) => (
+            <span key={name} class="color-lab-harmony">
+              <em>{name}</em>
+              {offsets.map((off) => {
+                const hue = ((aH.value + off) % 360 + 360) % 360;
+                return (
+                  <button
+                    key={off}
+                    type="button"
+                    title={`ground hue ${Math.round(hue)}`}
+                    onClick={() => set(gH, Math.round(hue))}
+                    style={{ "--chip": oklchToHex(0.86, 0.09, hue) }}
+                  >
+                    {Math.round(hue)}
+                  </button>
+                );
+              })}
+            </span>
+          ))}
+        </div>
+        <button
+          type="button"
+          class="color-lab-swap"
+          onClick={() => {
+            const h = aH.value;
+            aH.value = gH.value;
+            gH.value = h;
+            apply();
+          }}
+        >
+          Swap accent and ground hues
+        </button>
         {slider("hue", gH, 0, 360, 1)}
         {slider("lightness", gL, 0.8, 0.94, 0.005)}
         {slider("chroma", gC, 0.02, 0.13, 0.005)}

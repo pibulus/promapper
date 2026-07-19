@@ -140,7 +140,9 @@
   /* Mixed against a WARMER cream than the card surface — sunshine in the
      band without raising the accent % (which fails GRAPE's AA sweep). */
   --header-band: color-mix(in srgb, var(--color-accent) 62%, #ffefdc);
-  --header-band-ink: var(--color-text);
+  /* Header ink leans toward true ink — theme-tinted but DARK (the plain
+     text color read smoky/fading on the band, July 20). */
+  --header-band-ink: color-mix(in srgb, var(--color-text) 65%, var(--soft-black));
   --header-band-sub: color-mix(in srgb, var(--color-text) 55%, transparent);
 
   /* MONO HEADERS (July 20 ruling): every card band is THE accent band —
@@ -148,21 +150,19 @@
      between the LAYERS (ground family ↔ band ↔ CTA plate — the trio law in
      docs/COLOR-SYSTEM.md), never between header hues. */
 
-  /* CTA PLATE — primary buttons are hued ink: the accent mixed deep into
-     warm black. Never stark all-black (July 20 veto), never a saturated
-     slab (July 19 veto) — 42% is the solved middle: reads as a plate,
-     carries the theme. Shadow = the band colour peeking (riso offset). */
-  --cta-plate: color-mix(in srgb, var(--color-accent) 46%, var(--soft-black));
-  --cta-plate-border: color-mix(
-    in srgb,
-    var(--color-accent) 30%,
-    var(--soft-black)
-  );
-  --cta-plate-hover: color-mix(
-    in srgb,
-    var(--color-accent) 55%,
-    var(--soft-black)
-  );
+  /* LINE INK — borders/outlines are a warm sepia-black, one notch off the
+     true ink ("borders should not be all absolute black", July 20). */
+  --line-ink: color-mix(in srgb, var(--soft-black) 85%, #fff7ef);
+
+  /* CTA CANDY PLATE (v3, July 20 — the TalkType-marigold move): primary
+     buttons are the accent as a BRIGHT candy fill with warm-black ink and
+     a chunky toybrut border. Dark-with-white-ink kept reading murky
+     ("still too dark and garish"); accent-with-dark-ink is the pastel-punk
+     classic. 70% over band cream = the header band's louder sibling —
+     warm-black ink clears AA on every theme and every roll (test-pinned). */
+  --cta-plate: color-mix(in srgb, var(--color-accent) 70%, #ffefdc);
+  --cta-plate-border: var(--line-ink);
+  --cta-plate-hover: color-mix(in srgb, var(--color-accent) 80%, #ffefdc);
 
   /* One button system: identical height + radius across every variant. */
   --btn-height: 2.75rem; /* 44px — iOS touch target */
@@ -213,7 +213,7 @@
 
   /* Module tokens */
   --module-ink: #1a130f;
-  --module-shell: rgba(255, 255, 255, 0.96);
+  --module-shell: rgba(253, 247, 238, 0.96);
   --module-wash: rgba(250, 244, 233, 0.6);
 
   /* ===================================================================
@@ -221,8 +221,8 @@
      ================================================================ */
   --soft-black: #1e1714; /* Main dark neutral - use for headlines, borders, button backgrounds */
   --soft-brown: #3a2a22; /* Secondary warm dark - use for accents/secondary text */
-  --soft-cream: #fff7ef; /* Warm cream for input backgrounds - NOT pure white */
-  --soft-cream-dark: #faf3e9; /* Slightly darker cream for subtle inset areas */
+  --soft-cream: #fbf1e4; /* The agreed paper cream — mildly creamy, never white */
+  --soft-cream-dark: #f5ebdb; /* Slightly darker cream for subtle inset areas */
 
   /* Card surface tokens. Default to warm cream (the soul of the 4 warm themes).
      Cool themes (MINT/LAVENDER) override these in core/theme/themes.ts so cards
@@ -587,17 +587,17 @@ body {
    hued ink slab, white label, band-color offset shadow. */
 .btn--accent {
   background: var(--cta-plate);
-  color: var(--surface-white-warm);
-  box-shadow: 2px 2px 0 var(--header-band);
+  color: var(--soft-black);
+  box-shadow: 2px 2px 0 var(--line-ink);
   border: 2px solid var(--cta-plate-border);
 }
 .btn--accent:hover {
   background: var(--cta-plate-hover);
-  box-shadow: 3px 3px 0 var(--header-band);
+  box-shadow: 3px 3px 0 var(--line-ink);
   transform: translateY(-1.5px);
 }
 .btn--accent:active {
-  box-shadow: 1px 1px 0 var(--header-band);
+  box-shadow: 1px 1px 0 var(--line-ink);
   transform: translateY(0.5px);
 }
 .btn--accent:disabled {
@@ -1413,7 +1413,7 @@ body {
   width: 100%;
   padding: 1rem 1.5rem;
   border-radius: 13px;
-  border: 2.5px solid var(--soft-black); /* use unified soft-black */
+  border: 2.5px solid var(--line-ink); /* use unified soft-black */
   background: var(--soft-black);
   color: var(--surface-white-warm);
   font-size: 0.92rem;
@@ -2194,7 +2194,7 @@ body {
     var(--color-accent) 11%,
     rgba(255, 252, 247, 0.72)
   );
-  border: 2px solid var(--soft-black);
+  border: 2px solid var(--line-ink);
   border-radius: 28px;
   padding: clamp(0.8rem, 1.8vw, 1.4rem);
   box-shadow: var(--shadow-slab);
@@ -2241,7 +2241,7 @@ body {
   .module-cell--small .radio-play {
     width: 2rem;
     height: 2rem;
-    box-shadow: 1.5px 1.5px 0 var(--header-band);
+    box-shadow: 1.5px 1.5px 0 var(--line-ink);
   }
   .module-cell--small .radio-next {
     width: 1.5rem;
@@ -2370,7 +2370,7 @@ body {
   border-radius: var(--border-radius-sm);
   background: var(--header-band);
   color: var(--header-band-ink);
-  border: var(--border-width) solid var(--soft-black);
+  border: var(--border-width) solid var(--line-ink);
   flex-shrink: 0;
 }
 .module-rack-copy {
@@ -2550,8 +2550,8 @@ body {
   border: 2px solid var(--cta-plate-border);
   border-radius: 50%;
   background: var(--cta-plate);
-  color: var(--surface-white-warm);
-  box-shadow: 2px 2px 0 var(--header-band);
+  color: var(--soft-black);
+  box-shadow: 2px 2px 0 var(--line-ink);
   cursor: pointer;
   transition:
     transform var(--transition-fast),
@@ -2560,12 +2560,12 @@ body {
 }
 .radio-play:hover {
   transform: translateY(-1.5px);
-  box-shadow: 3px 3px 0 var(--header-band);
-  filter: brightness(1.08);
+  box-shadow: 3px 3px 0 var(--line-ink);
+  background: var(--cta-plate-hover);
 }
 .radio-play:active {
   transform: translateY(0.5px);
-  box-shadow: 1px 1px 0 var(--header-band);
+  box-shadow: 1px 1px 0 var(--line-ink);
 }
 /* 44px tap target on touch — the compact visual stays. */
 @media (pointer: coarse) {
@@ -2880,12 +2880,12 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* CTA PLATE (COLOR-SYSTEM.md): hued ink slab, band-color offset. */
+  /* CANDY PLATE (COLOR-SYSTEM.md): bright accent fill, warm-black ink. */
   border: 2px solid var(--cta-plate-border);
   border-radius: var(--border-radius-sm);
   background: var(--cta-plate);
-  color: var(--surface-white-warm);
-  box-shadow: 2px 2px 0 var(--header-band);
+  color: var(--soft-black);
+  box-shadow: 2px 2px 0 var(--line-ink);
   cursor: pointer;
   transition:
     transform var(--transition-fast),
@@ -2894,12 +2894,12 @@ body {
 }
 .bishop-send:hover:not(:disabled) {
   transform: translateY(-1.5px);
-  box-shadow: 3px 3px 0 var(--header-band);
-  filter: brightness(1.08);
+  box-shadow: 3px 3px 0 var(--line-ink);
+  background: var(--cta-plate-hover);
 }
 .bishop-send:active:not(:disabled) {
   transform: translateY(0.5px);
-  box-shadow: 1px 1px 0 var(--header-band);
+  box-shadow: 1px 1px 0 var(--line-ink);
 }
 .bishop-send:disabled {
   opacity: 0.55;
@@ -2938,7 +2938,7 @@ body {
   /* project_mapper's chunky soul: a 2px warm-BLACK border (never brown) + a flat
      warm slab shadow (no blur). Gives the card a confident toy-brut edge
      that reads as ours, not corporate. 24px radius keeps it a touch refined. */
-  border: 2px solid var(--soft-black);
+  border: 2px solid var(--line-ink);
   box-shadow: var(--shadow-slab);
   height: 100%;
   overflow: hidden;
@@ -3244,7 +3244,7 @@ html::-webkit-scrollbar-thumb:hover,
   max-height: 88vh;
   display: flex;
   flex-direction: column;
-  border: 2px solid var(--soft-black);
+  border: 2px solid var(--line-ink);
   border-radius: var(--border-radius-lg);
   background: var(--surface-white-warm, #fffef7);
   box-shadow: var(--shadow-slab);
@@ -3826,7 +3826,7 @@ html::-webkit-scrollbar-thumb:hover,
   height: 1.25rem;
   /* Warm-black border, not pale cream — this is THE tap target of the whole
      card and it used to disappear into the background. */
-  border: 2px solid var(--soft-black);
+  border: 2px solid var(--line-ink);
   border-radius: 0.4rem;
   background: var(--surface-cream);
   color: var(--surface-cream);
@@ -3963,14 +3963,14 @@ html::-webkit-scrollbar-thumb:hover,
   border-radius: var(--border-radius-sm);
   box-shadow: var(--shadow-slab);
   background: var(--surface-cream);
-  border: 2px solid var(--soft-black);
+  border: 2px solid var(--line-ink);
   min-width: 170px;
   overflow: hidden;
 }
 
 .action-dropdown-input-wrapper {
   padding: 0.375rem 0.5rem;
-  border-bottom: 2px solid var(--soft-black);
+  border-bottom: 2px solid var(--line-ink);
   background: var(--surface-card-deep);
 }
 
@@ -4532,16 +4532,16 @@ html::-webkit-scrollbar-thumb:hover,
   font-weight: 700;
   border-color: var(--cta-plate-border);
   background: var(--cta-plate);
-  color: var(--surface-white-warm);
-  box-shadow: 2.5px 2.5px 0 var(--header-band);
+  color: var(--soft-black);
+  box-shadow: 2.5px 2.5px 0 var(--line-ink);
 }
 
 .topic-map-ctrl--add:hover,
 .topic-map-ctrl--add:focus-visible {
-  color: var(--surface-white-warm);
+  color: var(--soft-black);
   background: var(--cta-plate-hover);
   border-color: var(--cta-plate-border);
-  box-shadow: 3.5px 3.5px 0 var(--header-band);
+  box-shadow: 3.5px 3.5px 0 var(--line-ink);
 }
 
 /* Viz switcher — floats on the map's top-left, above the canvas. */
@@ -5571,7 +5571,7 @@ a:focus-visible {
   padding: 14px 20px;
   font-size: var(--heading-size);
   font-weight: 700;
-  border: 2px solid var(--soft-black);
+  border: 2px solid var(--line-ink);
   border-radius: 12px;
   background: var(--soft-black);
   color: var(--surface-white-warm);
@@ -7387,15 +7387,15 @@ label {
   height: 2.7rem;
   border: 2px solid var(--cta-plate-border);
   border-radius: 999px;
-  /* CTA PLATE (COLOR-SYSTEM.md): the mic is the loudest promise on the
-     dashboard — hued ink, the theme's band peeking as the offset. */
+  /* CANDY PLATE (COLOR-SYSTEM.md): the mic is the loudest promise on the
+     dashboard — bright accent candy, warm-black ink. */
   background: var(--cta-plate);
-  color: var(--surface-white-warm);
+  color: var(--soft-black);
   font-weight: 800;
   font-size: var(--small-size);
   letter-spacing: 0.02em;
   cursor: pointer;
-  box-shadow: 2px 2px 0 var(--header-band);
+  box-shadow: 2px 2px 0 var(--line-ink);
   transition:
     transform var(--transition-fast),
     box-shadow var(--transition-fast);
@@ -7403,12 +7403,13 @@ label {
 
 .recording-dock__record:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--header-band);
+  box-shadow: 3px 3px 0 var(--line-ink);
+  background: var(--cta-plate-hover);
 }
 
 .recording-dock__record:active {
   transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 var(--header-band);
+  box-shadow: 1px 1px 0 var(--line-ink);
 }
 
 .recording-dock__record-dot {
@@ -7514,7 +7515,7 @@ label {
   align-items: center;
   gap: 0.4rem;
   padding: 0.5rem 1rem;
-  border: 2px solid var(--soft-black);
+  border: 2px solid var(--line-ink);
   border-radius: 999px;
   background: var(--soft-black);
   color: var(--soft-cream);
@@ -7803,7 +7804,7 @@ label {
   gap: 0.6rem;
   padding: 0.85rem 1.1rem;
   margin-bottom: 1rem;
-  border: 2px solid var(--soft-black);
+  border: 2px solid var(--line-ink);
   border-radius: var(--border-radius);
   background: var(--accent-fill);
   color: var(--surface-white-warm);
@@ -7913,7 +7914,7 @@ label {
   padding: 1.1rem 1.2rem 2rem;
   overflow-y: auto;
   background: var(--surface-cream);
-  border-right: 2px solid var(--soft-black);
+  border-right: 2px solid var(--line-ink);
 }
 .color-lab-panel h1 {
   font-size: 1.1rem;
@@ -7947,7 +7948,7 @@ label {
   width: 1.15rem;
   height: 1.15rem;
   border-radius: 6px;
-  border: 1.5px solid var(--soft-black);
+  border: 1.5px solid var(--line-ink);
 }
 .color-lab-swatch code {
   font-size: 0.68rem;
@@ -7974,7 +7975,7 @@ label {
 }
 .color-lab-chips button {
   padding: 0.22rem 0.55rem 0.22rem 0.4rem;
-  border: 1.5px solid var(--soft-black);
+  border: 1.5px solid var(--line-ink);
   border-radius: 999px;
   background: var(--surface-white-warm);
   color: var(--color-text);
@@ -8007,7 +8008,7 @@ label {
   align-items: center;
   gap: 0.3rem;
   padding: 0.3rem 0.45rem;
-  border: 1.5px solid var(--soft-black);
+  border: 1.5px solid var(--line-ink);
   border-radius: var(--border-radius-sm);
   background: var(--surface-white-warm);
   color: var(--color-text);
@@ -8033,4 +8034,33 @@ label {
   transform: scale(0.75);
   transform-origin: 0 0;
   border: 0;
+}
+
+.color-lab-harmony {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.35rem;
+  border: 1px dashed var(--color-border);
+  border-radius: 8px;
+}
+.color-lab-harmony em {
+  font-style: normal;
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+.color-lab-swap {
+  margin: 0.5rem 0 0.2rem;
+  padding: 0.3rem 0.6rem;
+  border: 1.5px solid var(--line-ink);
+  border-radius: var(--border-radius-sm);
+  background: var(--surface-white-warm);
+  color: var(--color-text);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.color-lab-swap:hover {
+  transform: translateY(-1px);
 }

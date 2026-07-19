@@ -202,7 +202,7 @@ export function mixHex(a: string, b: string, pOfA: number): string {
 /** Solid card cream (--surface-cream). The deep companion is solved against
  * THIS, not white: it doubles as ink on cream surfaces, and cream is the
  * harder of the two checks — passing it guarantees white-on-strong too. */
-export const SURFACE_CREAM = "#fff7ef";
+export const SURFACE_CREAM = "#fbf1e4";
 
 /** The warmer cream the header band mixes against (styles.css
  * --header-band) — sunshine in the bands without raising the accent %.
@@ -350,7 +350,7 @@ export function composeTheme(input: ComposeInput): ShuffleParts {
     name: "SHUFFLE",
     vibe: VIBES[Math.floor(rand() * VIBES.length) % VIBES.length],
     base: `linear-gradient(135deg, ${bgBase[0]} 0%, ${bgBase[1]} 100%)`,
-    secondary: "rgba(255, 255, 255, 0.62)",
+    secondary: "rgba(255, 250, 243, 0.62)",
     accent,
     text,
     textSecondary,

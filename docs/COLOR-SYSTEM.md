@@ -46,7 +46,7 @@ colour + one pop.)
 | ---- | -------------- | -------------------------------------------------------- | ---------------------------------------------------- |
 | T0   | Sky ground     | washes L 0.84–0.90, C ≤ 0.10 per-hue clamped → `#fff4e8` | Two-hue family journey, airy, cream floor always     |
 | T1   | Shell          | accent 11% over near-white                               | unchanged recipe                                     |
-| T2   | Card face      | `#fff7ef` cream, L 0.98                                  | solid, never glass                                   |
+| T2   | Card face      | `#fbf1e4` paper cream, L 0.96                            | solid, never glass                                   |
 | T3   | Header band    | accent 62% over `#ffefdc`                                | **MONO — one colour on every card, no exceptions**   |
 | T4   | Chips / washes | accent 4–20% mixes                                       | unchanged recipes, all derive from `--color-accent`  |
 | T5   | CTA plates     | `--cta-plate` (below)                                    | hued ink — never stark black, never a saturated slab |
@@ -58,23 +58,21 @@ hued ink. Nothing else shouts.
 ## The CTA plate law (+Topic, mic/record, Bishop ask, btn--accent)
 
 ```css
---cta-plate: color-mix(in srgb, var(--color-accent) 46%, var(--soft-black));
---cta-plate-border: color-mix(in srgb, var(--color-accent) 30%, var(--soft-black));
---cta-plate-hover: color-mix(in srgb, var(--color-accent) 55%, var(--soft-black));
+--line-ink: color-mix(in srgb, var(--soft-black) 85%, #fff7ef); /* borders */
+--cta-plate: color-mix(in srgb, var(--color-accent) 70%, #ffefdc);
+--cta-plate-border: var(--line-ink);
+--cta-plate-hover: color-mix(in srgb, var(--color-accent) 80%, #ffefdc);
 ```
 
-Plates mix from the RAW accent, never `--accent-fill` — on shuffle rolls
-accent-fill routes to the solved deep companion, which collapsed plates to
-near-black ("still too dark", the July 20 screenshot). Icon-slab CTAs stay
-COMPACT: 2.25–2.4rem visuals with 44px coarse-pointer tap targets — small and
-juicy, never big dark pucks.
-
-Primary buttons are the accent mixed DEEP into warm black — hued ink. The
-history: 72% accent slabs were "garish" (July 19), 0% stark black was "too stark
-always" (July 20), ~46% of the raw accent is the solved middle — reads as a
-plate, carries the theme. Shadow = `--header-band` peeking (riso
-misregistration). White-on-plate ≥ 4.5:1 is test-pinned for every named theme
-and 300 rolls.
+CANDY PLATES (v3): primary buttons are the accent as a BRIGHT candy fill — 70%
+over band cream, the header band's louder sibling — with WARM-BLACK ink and a
+chunky toybrut border + hard offset shadow in `--line-ink` (the
+TalkType-marigold / slideomatic move). The taste history, pinned: 72% accent +
+white ink = "garish" (Jul 19); dark plates + white ink = "too dark", twice (Jul
+20). Bright fill + dark ink is the pastel-punk classic. Ink-on-candy ≥ 4.5:1 is
+test-pinned for every theme and 300 rolls (worst case: deep grape rolls at
+4.84). Icon slabs stay COMPACT: 2.25–2.4rem visuals, 44px coarse-pointer tap
+targets.
 
 `--accent-fill` still exists for small non-button accent solids (count badges,
 toggle knobs, progress). Anything button-shaped takes the plate.
@@ -155,6 +153,11 @@ enter the deck THROUGH the lab, not by hand-guessing.
 ## Standing law (inherited, still binding)
 
 - NO red on ordinary surfaces; destructive = recession + warm rose wash.
+- **Paper standard**: card interiors are `#fbf1e4` — mildly creamy, never
+  white-ish (July 20; the agreed cross-app off-white).
+- **Borders are `--line-ink`** (soft-black 85% over cream — warm sepia), and
+  header ink leans dark: `--header-band-ink` = text 65% into soft-black (plain
+  theme text read smoky/fading on the band).
 - **NEVER absolute white or absolute black** — on any surface, any ink, any app
   (July 20 decree). White ink is `--surface-white-warm` (#fffef7); dark is
   `--soft-black` (#1e1714). The contrast guards assert against the warm

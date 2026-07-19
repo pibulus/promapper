@@ -4,7 +4,7 @@
  * the accent in its per-pair punk register, emit NO supporting band hues
  * (headers are mono), and hold contrast BY CONSTRUCTION — dark ink over
  * the roll's 62% band tint, white over the solved --accent-strong AND the
- * 46% CTA plate, the deep companion readable as ink on cream, and the
+ * candy CTA plate, the deep companion readable as ink on cream, and the
  * background family light enough that body ink stays readable everywhere.
  *
  * The 300-roll seeded sweep is the guard that caught real failures — keep it.
@@ -90,19 +90,18 @@ Deno.test("headers are MONO — rolls emit no supporting band hues", () => {
   }
 });
 
-Deno.test("the CTA plate carries white ink on every roll", () => {
-  // styles.css: --cta-plate = color-mix(RAW accent 46%, soft-black). Raw,
-  // not --accent-fill: on rolls accent-fill routes to the solved DEEP
-  // companion, which collapsed plates to near-black ("still too dark",
-  // July 20). The raw accent keeps plates juicy; 46% into warm black is
-  // always deep enough for white ink — this sweep pins it.
+Deno.test("warm-black ink passes AA on the candy CTA plate for every roll", () => {
+  // styles.css: --cta-plate = color-mix(RAW accent 70%, band cream) with
+  // warm-black ink — the candy plate (v3): bright accent fill, dark label.
+  // Dark plates with light ink kept reading murky/garish; this pins the
+  // bright direction so no roll's accent can dip the ink below AA.
   const SOFT_BLACK = "#1e1714";
   const rand = seededRand(4242);
   for (let i = 0; i < 300; i++) {
     const { theme } = generateThemeParts(rand);
-    const plate = mixHex(theme.accent, SOFT_BLACK, 0.46);
-    const ratio = contrast("#fffef7", plate);
-    assert(ratio >= 4.5, `warmwhite/plate ${ratio.toFixed(2)} for ${plate}`);
+    const plate = mixHex(theme.accent, BAND_CREAM, 0.7);
+    const ratio = contrast(SOFT_BLACK, plate);
+    assert(ratio >= 4.5, `ink/candy ${ratio.toFixed(2)} for ${plate}`);
   }
 });
 
