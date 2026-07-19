@@ -11,10 +11,9 @@
  *     each carrying its own accent L/C target derived from the beloved
  *     anchors (Miami coral, rebel purple, raspberry, DAYBREAK cobalt).
  *     Free random pairing kept rolling combos nobody would choose.
- *   - ONE supporting band hue per roll: the accent rotated 16° at the same
- *     L/C, direction chosen per pair away from the banned arcs (alarm-red,
- *     mustard). --band-hue-c is dead — three unrelated header hues was the
- *     July 19 carnival, overruled.
+ *   - headers are MONO (July 20 ruling): every band is the accent band.
+ *     The colour relationships live between LAYERS (ground family ↔ band ↔
+ *     CTA plate — the trio law), never between header hues.
  *   - accents are CORAL / RASPBERRY / COBALT / ORCHID only (green-family
  *     accents incl. teal are dead: "hospital pink and green"). Aqua/lagoon
  *     survives as a GROUND, always under a warm accent. Blues live at hue
@@ -32,7 +31,7 @@ import { hexToOklch, maxChroma, oklchToHex } from "@core/theme/oklch.ts";
 /** CURATED PAIRS v2 — OKLCH hue arcs (arcs may pass 360: mod applied at
  * generation). Per-pair accent registers keep every family in its own
  * proven register instead of one global range that made coral scream and
- * cobalt sulk. bandDir picks the 16° neighbour's romantic side. */
+ * cobalt sulk. */
 export const CURATED_PAIRS: ReadonlyArray<{
   readonly name: string;
   /** Ground-family OKLCH hue arc (sky washes live here). */
@@ -48,8 +47,6 @@ export const CURATED_PAIRS: ReadonlyArray<{
   readonly groundL: number;
   /** Ground wash chroma target. */
   readonly groundC: number;
-  /** Which way the supporting band hue rotates (±16°). */
-  readonly bandDir: 1 | -1;
 }> = [
   // sunrise coral/peach × denim cobalt (the DAYBREAK register)
   {
@@ -60,7 +57,6 @@ export const CURATED_PAIRS: ReadonlyArray<{
     accentC: [0.13, 0.17],
     groundL: 0.85,
     groundC: 0.085,
-    bandDir: 1, // toward periwinkle — cyan-ward flirts with hospital teal
   },
   // coral glow × orchid punch (rebel-purple #9B59B6 territory)
   {
@@ -71,7 +67,6 @@ export const CURATED_PAIRS: ReadonlyArray<{
     accentC: [0.17, 0.22],
     groundL: 0.85,
     groundC: 0.085,
-    bandDir: 1, // toward magenta — juicier than violet-ward
   },
   // orchid dusk × juicy coral (#FF6B6B — the zombie-sheriff look)
   {
@@ -82,7 +77,6 @@ export const CURATED_PAIRS: ReadonlyArray<{
     accentC: [0.16, 0.19],
     groundL: 0.84,
     groundC: 0.1,
-    bandDir: 1, // toward apricot — minus lands in the alarm-red arc
   },
   // lagoon × coral pop (Miami inverted)
   {
@@ -93,7 +87,6 @@ export const CURATED_PAIRS: ReadonlyArray<{
     accentC: [0.16, 0.19],
     groundL: 0.9,
     groundC: 0.075,
-    bandDir: 1,
   },
   // aqua pool × raspberry (#E85D8F — the historic beloved accent)
   {
@@ -104,7 +97,6 @@ export const CURATED_PAIRS: ReadonlyArray<{
     accentC: [0.17, 0.2],
     groundL: 0.9,
     groundC: 0.075,
-    bandDir: -1, // toward magenta — plus crosses into red
   },
   // sunrise × raspberry (the peachyCream × rose historic default)
   {
@@ -115,7 +107,6 @@ export const CURATED_PAIRS: ReadonlyArray<{
     accentC: [0.17, 0.2],
     groundL: 0.85,
     groundC: 0.085,
-    bandDir: -1,
   },
 ];
 
@@ -170,25 +161,6 @@ export function deriveStrong(hue: number, chroma: number): string {
     if (contrast(hex, SURFACE_CREAM) >= 4.6) return hex;
   }
   return oklchToHex(0.2, c, hue);
-}
-
-/** The supporting band hue: accent rotated 16° at the same L/C (docs/
- * COLOR-SYSTEM.md band law — ONE neighbour, Δh ≤ 18°, never a trio). */
-export const BAND_NEIGHBOUR_DEG = 16;
-
-/** Band-b starts at the accent's L/C on the rotated hue, then nudges L up
- * (≤ +0.04) until ink clears AA on its 62%-over-cream band. */
-function deriveBandNeighbour(
-  L: number,
-  C: number,
-  hue: number,
-  ink: string,
-): string {
-  for (let l = L; l <= L + 0.041; l += 0.01) {
-    const hex = oklchToHex(l, C, hue);
-    if (contrast(ink, mixHex(hex, BAND_CREAM, 0.62)) >= 4.5) return hex;
-  }
-  return oklchToHex(L + 0.04, C, hue);
 }
 
 const wrap = (h: number) => ((h % 360) + 360) % 360;
@@ -258,9 +230,13 @@ export function generateThemeParts(
   const j = () => rand() * 10 - 5;
   const gL = pair.groundL;
   const gC = pair.groundC;
+  // Two-hue family JOURNEY (July 20, from the conversation_mapper study):
+  // the second wash sits a real analogous step away (+22°), so the sky
+  // travels inside its family instead of one hue fading out — present,
+  // never a carnival (washes live below the C 0.05–0.10 clash floor).
   const washes = [
     oklchToHex(gL - 0.01, gC + 0.015, wrap(bgHue - 8)),
-    oklchToHex(gL + 0.01, gC, wrap(bgHue + 10)),
+    oklchToHex(gL + 0.01, gC, wrap(bgHue + 22)),
     oklchToHex(gL + 0.05, Math.min(gC, 0.06), wrap(hue)),
   ];
   const washAlphas = [0.85, 0.7, 0.35];
@@ -306,18 +282,6 @@ export function generateThemeParts(
       "--accent-strong": strong,
       "--accent-ink": strong,
       "--accent-fill": strong,
-      // ONE supporting band hue: the accent's 16° neighbour at the same
-      // L/C — same key, different string on the instrument. (--band-hue-c
-      // is dead; see docs/COLOR-SYSTEM.md.) Solved, not assumed: rotation
-      // shifts WCAG luminance even at equal perceptual L (magenta-ward
-      // loses green), so L nudges up until the 62% band recipe carries the
-      // roll's ink at AA — same by-construction philosophy as --accent-strong.
-      "--band-hue-b": deriveBandNeighbour(
-        lightness,
-        chroma,
-        wrap(hue + pair.bandDir * BAND_NEIGHBOUR_DEG),
-        text,
-      ),
     },
   };
 

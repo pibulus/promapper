@@ -76,17 +76,17 @@ tablet). Core cards + `standard` modules span 2, `small` spans 1 (a true
 half-card tile), `wide` spans the row. Rows like small/small/standard compose
 themselves; `grid-auto-flow: dense` fills the holes.
 
-## Faceplates (July 20 — the trio is dead)
+## Faceplates (July 20 — MONO)
 
-Every theme carries ONE supporting band hue (`--band-hue-b`): the accent
-rotated 16° in OKLCH at the same L/C, direction chosen away from the banned
-arcs (docs/COLOR-SYSTEM.md band law). Grid cells alternate accent band /
-neighbour (nth-child(2n) on `.dashboard-grid`), so cards read as instruments
-tuned to one key — the July 19 three-hue trio was overruled as a carnival.
-Defined in FOUR places that must stay in sync: `static/styles.css` (:root
-defaults + recipes), `core/theme/themes.ts` (per-theme cssVars),
-`routes/_app.tsx` (FOUC map), `core/theme/randomTheme.ts` (shuffle solves the
-neighbour off its accent, nudging L until ink passes AA on the band).
+Card header bands are ONE colour: the accent band, on every card (the July
+19 trio and the brief duo experiment are both dead — Pablo's ruling:
+"headers are consistent"). The rack's colour relationships live between
+LAYERS instead: each theme's ground family ↔ the band ↔ the CTA plate — the
+trio law in docs/COLOR-SYSTEM.md. Per-theme grounds + accents are defined
+in FOUR places that must stay in sync: `static/styles.css` (:root defaults
++ recipes), `core/theme/themes.ts` (per-theme cssVars incl. `--gradient-bg`
+skies), `routes/_app.tsx` (FOUC map), `core/theme/randomTheme.ts` (shuffle
+pairs).
 
 ## On deck (from the July 10 riff)
 

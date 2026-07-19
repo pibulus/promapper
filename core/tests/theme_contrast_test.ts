@@ -79,28 +79,29 @@ Deno.test("every theme's ink passes AA on the 62% header band", () => {
   }
 });
 
-Deno.test("every theme carries ONE supporting band hue — ink passes AA on it, and the trio stays dead", () => {
-  // COLOR-SYSTEM.md band law: --band-hue-b is the accent's 16° OKLCH
-  // neighbour; alternating cells run it through the same 62% recipe, so it
-  // owes the same AA as the accent band. --band-hue-c must never return.
+Deno.test("headers are MONO and the CTA plate carries white ink on every theme", () => {
+  // July 20 ruling: no supporting band hues, ever — the colour
+  // relationships live between layers (ground ↔ band ↔ plate), not between
+  // header hues. The CTA plate (color-mix(accent-fill 42%, soft-black))
+  // must carry white text on every named theme.
+  const SOFT_BLACK = "#1e1714";
   for (const theme of proMapperThemes) {
-    const bandHueB = theme.cssVars?.["--band-hue-b"] as string;
     assertEquals(
-      typeof bandHueB === "string" && bandHueB.startsWith("#"),
-      true,
-      `Theme "${theme.name}" is missing --band-hue-b`,
+      theme.cssVars?.["--band-hue-b"],
+      undefined,
+      `Theme "${theme.name}" defines --band-hue-b — headers are mono`,
     );
     assertEquals(
       theme.cssVars?.["--band-hue-c"],
       undefined,
-      `Theme "${theme.name}" defines --band-hue-c — the three-hue carnival is banned`,
+      `Theme "${theme.name}" defines --band-hue-c — the carnival is banned`,
     );
-    const band = mix(bandHueB, BAND_CREAM, 0.62);
-    const ratio = contrast(theme.text, band);
+    const plate = mix(theme.accent, SOFT_BLACK, 0.42);
+    const ratio = contrast("#ffffff", plate);
     assertEquals(
       ratio >= 4.5,
       true,
-      `Theme "${theme.name}" ink on band-b ${band} is ${
+      `Theme "${theme.name}" CTA plate ${plate} vs white is ${
         ratio.toFixed(2)
       }:1 — below the 4.5:1 AA floor`,
     );

@@ -143,15 +143,26 @@
   --header-band-ink: var(--color-text);
   --header-band-sub: color-mix(in srgb, var(--color-text) 55%, transparent);
 
-  /* FACEPLATES — every theme carries ONE supporting band hue: the accent
-     rotated 16° in OKLCH at the same L/C (docs/COLOR-SYSTEM.md band law).
-     Cards alternate a/b so the rack reads as instruments tuned to one key —
-     the July 19 three-hue trio was overruled as a carnival. Same
-     62%-over-cream recipe as the accent band; themes override the hue
-     (themes.ts cssVars + the _app.tsx FOUC map + the shuffle generator —
-     keep all four in sync). Default = DAYBREAK's periwinkle neighbour. */
-  --band-hue-b: #6773c9;
-  --band-b: color-mix(in srgb, var(--band-hue-b) 62%, #ffefdc);
+  /* MONO HEADERS (July 20 ruling): every card band is THE accent band —
+     one colour, consistent across the rack. The colour relationships live
+     between the LAYERS (ground family ↔ band ↔ CTA plate — the trio law in
+     docs/COLOR-SYSTEM.md), never between header hues. */
+
+  /* CTA PLATE — primary buttons are hued ink: the accent mixed deep into
+     warm black. Never stark all-black (July 20 veto), never a saturated
+     slab (July 19 veto) — 42% is the solved middle: reads as a plate,
+     carries the theme. Shadow = the band colour peeking (riso offset). */
+  --cta-plate: color-mix(in srgb, var(--accent-fill) 42%, var(--soft-black));
+  --cta-plate-border: color-mix(
+    in srgb,
+    var(--accent-fill) 28%,
+    var(--soft-black)
+  );
+  --cta-plate-hover: color-mix(
+    in srgb,
+    var(--accent-fill) 50%,
+    var(--soft-black)
+  );
 
   /* One button system: identical height + radius across every variant. */
   --btn-height: 2.75rem; /* 44px — iOS touch target */
@@ -572,16 +583,16 @@ body {
   );
 }
 
-/* Primary button (Save edit, export, etc.) — INK PLATE (COLOR-SYSTEM.md
-   CTA law): warm-black slab, white label, band-color offset shadow. */
+/* Primary button (Save edit, export, etc.) — CTA PLATE (COLOR-SYSTEM.md):
+   hued ink slab, white label, band-color offset shadow. */
 .btn--accent {
-  background: var(--soft-black);
+  background: var(--cta-plate);
   color: white;
   box-shadow: 2px 2px 0 var(--header-band);
-  border: 2px solid var(--soft-black);
+  border: 2px solid var(--cta-plate-border);
 }
 .btn--accent:hover {
-  background: var(--soft-brown);
+  background: var(--cta-plate-hover);
   box-shadow: 3px 3px 0 var(--header-band);
   transform: translateY(-1.5px);
 }
@@ -2202,15 +2213,6 @@ body {
   grid-auto-flow: dense;
 }
 
-/* Faceplate alternation — cells alternate accent band / its 16° neighbour
-   (ONE close pair, never a trio — docs/COLOR-SYSTEM.md). Scoped as a
-   VARIABLE override so both flip faces and anything band-tinted inside the
-   card follow their cell's hue. Mono flip: delete this rule and every band
-   is the accent. */
-.dashboard-grid > :nth-child(2n) {
-  --header-band: var(--band-b);
-}
-
 .module-cell--small {
   align-self: start;
   /* Size container so the tile's INTERIOR can adapt to its socket width
@@ -2842,10 +2844,10 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* INK PLATE (COLOR-SYSTEM.md CTA law): black slab, band-color offset. */
-  border: 2px solid var(--soft-black);
+  /* CTA PLATE (COLOR-SYSTEM.md): hued ink slab, band-color offset. */
+  border: 2px solid var(--cta-plate-border);
   border-radius: var(--border-radius-sm);
-  background: var(--soft-black);
+  background: var(--cta-plate);
   color: #fff;
   box-shadow: 2px 2px 0 var(--header-band);
   cursor: pointer;
@@ -4492,8 +4494,8 @@ html::-webkit-scrollbar-thumb:hover,
   gap: 0.4rem;
   padding: 0 0.7rem;
   font-weight: 700;
-  border-color: var(--soft-black);
-  background: var(--soft-black);
+  border-color: var(--cta-plate-border);
+  background: var(--cta-plate);
   color: #fff;
   box-shadow: 2.5px 2.5px 0 var(--header-band);
 }
@@ -4501,7 +4503,8 @@ html::-webkit-scrollbar-thumb:hover,
 .topic-map-ctrl--add:hover,
 .topic-map-ctrl--add:focus-visible {
   color: #fff;
-  border-color: var(--soft-black);
+  background: var(--cta-plate-hover);
+  border-color: var(--cta-plate-border);
   box-shadow: 3.5px 3.5px 0 var(--header-band);
 }
 
@@ -7346,11 +7349,11 @@ label {
   gap: 0.5rem;
   padding: 0 1.15rem;
   height: 2.7rem;
-  border: 2px solid var(--soft-black);
+  border: 2px solid var(--cta-plate-border);
   border-radius: 999px;
-  /* INK PLATE (COLOR-SYSTEM.md CTA law): the mic is the loudest promise on
-     the dashboard — it speaks in ink, the theme peeks as the offset. */
-  background: var(--soft-black);
+  /* CTA PLATE (COLOR-SYSTEM.md): the mic is the loudest promise on the
+     dashboard — hued ink, the theme's band peeking as the offset. */
+  background: var(--cta-plate);
   color: white;
   font-weight: 800;
   font-size: var(--small-size);

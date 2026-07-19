@@ -13,7 +13,6 @@
 import { assert } from "./_assert.ts";
 import {
   BAND_CREAM,
-  BAND_NEIGHBOUR_DEG,
   contrast,
   CURATED_PAIRS,
   generateThemeParts,
@@ -76,30 +75,33 @@ Deno.test("accents stay in their pair's punk register — saturated mid-tones, n
   }
 });
 
-Deno.test("every roll carries ONE supporting band hue at ≤ 18° — the trio is dead", () => {
+Deno.test("headers are MONO — rolls emit no supporting band hues", () => {
   const rand = seededRand(719);
   for (let i = 0; i < 300; i++) {
-    const { theme, hue } = generateThemeParts(rand);
-    const bandB = theme.cssVars?.["--band-hue-b"] as string;
-    assert(!!bandB && bandB.startsWith("#"), "roll missing --band-hue-b");
+    const { theme } = generateThemeParts(rand);
+    assert(
+      theme.cssVars?.["--band-hue-b"] === undefined,
+      "--band-hue-b has returned — headers are mono (July 20 ruling)",
+    );
     assert(
       theme.cssVars?.["--band-hue-c"] === undefined,
-      "--band-hue-c has returned — the carnival is banned",
+      "--band-hue-c has returned — the carnival stays dead",
     );
-    const [bL, , bH] = hexToOklch(bandB);
-    // Same key, different string: hue within the neighbour distance (+2°
-    // slack for gamut-clamp drift), lightness within a hair of the accent.
-    assert(
-      hueDist(bH, hue) <= BAND_NEIGHBOUR_DEG + 2,
-      `band-b hue ${bH.toFixed(1)} is ${
-        hueDist(bH, hue).toFixed(1)
-      }° from accent ${wrap(hue).toFixed(1)} — carnival distance`,
-    );
-    const [aL] = hexToOklch(theme.accent);
-    assert(
-      Math.abs(bL - aL) <= 0.04,
-      `band-b L ${bL.toFixed(2)} drifted from accent L ${aL.toFixed(2)}`,
-    );
+  }
+});
+
+Deno.test("the CTA plate carries white ink on every roll", () => {
+  // styles.css: --cta-plate = color-mix(accent-fill 42%, soft-black). On a
+  // roll, accent-fill is the solved deep companion — the plate is darker
+  // still, but pin it so the recipe can never drift readable-to-not.
+  const SOFT_BLACK = "#1e1714";
+  const rand = seededRand(4242);
+  for (let i = 0; i < 300; i++) {
+    const { theme } = generateThemeParts(rand);
+    const fill = theme.cssVars?.["--accent-fill"] as string;
+    const plate = mixHex(fill, SOFT_BLACK, 0.42);
+    const ratio = contrast("#ffffff", plate);
+    assert(ratio >= 4.5, `white/plate ${ratio.toFixed(2)} for ${plate}`);
   }
 });
 
@@ -111,17 +113,6 @@ Deno.test("ink on the roll's header band tint passes AA for every roll", () => {
     const band = mixHex(theme.accent, BAND_CREAM, 0.62);
     const ratio = contrast(theme.text, band);
     assert(ratio >= 4.5, `ink/band ${ratio.toFixed(2)} for ${theme.accent}`);
-    // The alternating cells ride band-b through the same recipe.
-    const bandB = mixHex(
-      theme.cssVars?.["--band-hue-b"] as string,
-      BAND_CREAM,
-      0.62,
-    );
-    const ratioB = contrast(theme.text, bandB);
-    assert(
-      ratioB >= 4.5,
-      `ink/band-b ${ratioB.toFixed(2)} for ${theme.cssVars?.["--band-hue-b"]}`,
-    );
   }
 });
 

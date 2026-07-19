@@ -30,10 +30,11 @@ import type { Theme, ThemeSystemConfig } from "@core/theme/types.ts";
  * pink→cream→lilac wash behind. Light, lush, playful.
  * Header band uses a pale tint with dark ink (set via --header-band* below).
  */
-// The constant warm coral wash sits behind EVERY named theme (the references
-// always have a warm bg; only the accent pop changes). Shared so it stays one
-// source of truth. July 9 richness pass: the ground is genuinely COLORED
-// (saturated coral journey, not a tinted white) — cards get their freshness
+// DAYBREAK's sunrise wash — since July 20 each named theme carries its OWN
+// ground family (the trio law, docs/COLOR-SYSTEM.md: ground ↔ band ↔ pop are
+// designed together, so the sky changes with the theme). The ground is
+// genuinely COLORED (a two-hue family journey, not a tinted white) and ALWAYS
+// fades to the cream floor where components live — cards get their freshness
 // from figure/ground separation. Mirror any change into the _app.tsx FOUC map.
 export const WARM_BG =
   "radial-gradient(circle at 18% 0%, rgba(255,166,128,0.85), transparent 52%), radial-gradient(circle at 82% 6%, rgba(255,143,112,0.7), transparent 52%), linear-gradient(168deg, #ffb28c 0%, #ffe0c9 38%, #fff4e8 78%)";
@@ -56,7 +57,6 @@ export const daybreak: Theme = {
   cssVars: {
     "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(74, 123, 201, 0.14)",
-    "--band-hue-b": "#6773c9",
     "--gradient-bg": WARM_BG,
   },
 };
@@ -64,17 +64,17 @@ export const daybreak: Theme = {
 export const bubblegum: Theme = {
   name: "BUBBLEGUM",
   vibe: "warm & playful",
-  base: "linear-gradient(135deg, #ffe2cf 0%, #ffd0bd 100%)",
+  base: "linear-gradient(135deg, #ffd9e5 0%, #ffcbd7 100%)",
   secondary: "rgba(255, 255, 255, 0.62)",
   accent: "#ff2e88",
   text: "#2b2430",
   textSecondary: "#8a7e88",
   border: "rgba(43, 36, 48, 0.1)",
   cssVars: {
-    "--color-base-solid": "#ffe2cf",
+    "--color-base-solid": "#ffd9e5",
     "--shadow-soft": "0 4px 12px rgba(255, 77, 151, 0.12)",
-    "--band-hue-b": "#f239b2",
-    "--gradient-bg": WARM_BG,
+    "--gradient-bg":
+      "radial-gradient(circle at 18% 0%, rgba(255,185,184,0.85), transparent 52%), radial-gradient(circle at 82% 6%, rgba(255,186,215,0.7), transparent 52%), linear-gradient(168deg, #ffbcc7 0%, #ffddeb 38%, #fff4e8 78%)",
   },
 };
 
@@ -84,17 +84,17 @@ export const bubblegum: Theme = {
 export const sky: Theme = {
   name: "SKY",
   vibe: "fresh & electric",
-  base: "linear-gradient(135deg, #ffe2cf 0%, #ffd0bd 100%)",
+  base: "linear-gradient(135deg, #c2f2f9 0%, #adeaf9 100%)",
   secondary: "rgba(255, 255, 255, 0.65)",
   accent: "#0095ff",
   text: "#1f3344",
   textSecondary: "#6f8597",
   border: "rgba(31, 51, 68, 0.1)",
   cssVars: {
-    "--color-base-solid": "#ffe2cf",
+    "--color-base-solid": "#c2f2f9",
     "--shadow-soft": "0 4px 12px rgba(10, 166, 255, 0.12)",
-    "--band-hue-b": "#5e8aff",
-    "--gradient-bg": WARM_BG,
+    "--gradient-bg":
+      "radial-gradient(circle at 18% 0%, rgba(157,238,247,0.85), transparent 52%), radial-gradient(circle at 82% 6%, rgba(176,227,255,0.7), transparent 52%), linear-gradient(168deg, #a0edfb 0%, #cff2ff 38%, #fff4e8 78%)",
   },
 };
 
@@ -104,17 +104,17 @@ export const sky: Theme = {
 export const grape: Theme = {
   name: "GRAPE",
   vibe: "bold & creative",
-  base: "linear-gradient(135deg, #ffe2cf 0%, #ffd0bd 100%)",
+  base: "linear-gradient(135deg, #fdd7f3 0%, #f1ccf7 100%)",
   secondary: "rgba(255, 255, 255, 0.65)",
-  accent: "#7c3aed",
+  accent: "#8335ff",
   text: "#312a45",
   textSecondary: "#807a96",
   border: "rgba(49, 42, 69, 0.1)",
   cssVars: {
-    "--color-base-solid": "#ffe2cf",
-    "--shadow-soft": "0 4px 12px rgba(124, 92, 255, 0.12)",
-    "--band-hue-b": "#9f31df",
-    "--gradient-bg": WARM_BG,
+    "--color-base-solid": "#fdd7f3",
+    "--shadow-soft": "0 4px 12px rgba(131, 53, 255, 0.12)",
+    "--gradient-bg":
+      "radial-gradient(circle at 18% 0%, rgba(251,181,220,0.85), transparent 52%), radial-gradient(circle at 82% 6%, rgba(225,190,247,0.7), transparent 52%), linear-gradient(168deg, #f3bced 0%, #f5deff 38%, #fff4e8 78%)",
   },
 };
 
@@ -124,17 +124,17 @@ export const grape: Theme = {
 export const lime: Theme = {
   name: "LIME",
   vibe: "zingy & alive",
-  base: "linear-gradient(135deg, #ffe2cf 0%, #ffd0bd 100%)",
+  base: "linear-gradient(135deg, #c3f3ec 0%, #acece9 100%)",
   secondary: "rgba(255, 255, 255, 0.65)",
   accent: "#0fb255",
   text: "#1f3a2b",
   textSecondary: "#6f8c7c",
   border: "rgba(31, 58, 43, 0.1)",
   cssVars: {
-    "--color-base-solid": "#ffe2cf",
+    "--color-base-solid": "#c3f3ec",
     "--shadow-soft": "0 4px 12px rgba(16, 181, 80, 0.12)",
-    "--band-hue-b": "#00af82",
-    "--gradient-bg": WARM_BG,
+    "--gradient-bg":
+      "radial-gradient(circle at 18% 0%, rgba(162,240,224,0.85), transparent 52%), radial-gradient(circle at 82% 6%, rgba(162,237,244,0.7), transparent 52%), linear-gradient(168deg, #a0efe9 0%, #ccf5f4 38%, #fff4e8 78%)",
   },
 };
 
@@ -144,18 +144,18 @@ export const lime: Theme = {
 export const gold: Theme = {
   name: "GOLD",
   vibe: "sunny & confident",
-  base: "linear-gradient(135deg, #ffe2cf 0%, #ffd0bd 100%)",
+  base: "linear-gradient(135deg, #ffdec2 0%, #fdd2a6 100%)",
   secondary: "rgba(255, 255, 255, 0.65)",
   accent: "#f5a300",
   text: "#3a3016",
   textSecondary: "#8a7b54",
   border: "rgba(58, 48, 22, 0.1)",
   cssVars: {
-    "--color-base-solid": "#ffe2cf",
+    "--color-base-solid": "#ffdec2",
     "--shadow-soft": "0 4px 12px rgba(245, 179, 0, 0.14)",
-    "--band-hue-b": "#ff9a46",
     "--accent-strong": "#a06a00",
-    "--gradient-bg": WARM_BG,
+    "--gradient-bg":
+      "radial-gradient(circle at 18% 0%, rgba(255,195,149,0.85), transparent 52%), radial-gradient(circle at 82% 6%, rgba(250,203,141,0.7), transparent 52%), linear-gradient(168deg, #ffc895 0%, #fee3c5 38%, #fff4e8 78%)",
   },
 };
 

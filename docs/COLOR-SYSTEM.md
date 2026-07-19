@@ -1,145 +1,136 @@
 # ProMapper Color System — the law
 
-July 20, 2026. Replaces the faceplate trio + HSL shuffle. Everything below is
+v2, July 20, 2026 (v1 same night; Pablo's veto pass folded in: mono headers,
+no stark black, backgrounds join the relationship). Everything below is
 enforced by tests (`core/tests/theme_contrast_test.ts`,
-`core/tests/random_theme_test.ts`) and implemented across the FOUR sync points:
-`static/styles.css` :root, `core/theme/themes.ts`, `routes/_app.tsx` FOUC map,
-`core/theme/randomTheme.ts`. Change one → change all. The color math lives in
-`core/theme/oklch.ts`.
+`core/tests/random_theme_test.ts`) and implemented across the FOUR sync
+points: `static/styles.css` :root, `core/theme/themes.ts`, `routes/_app.tsx`
+FOUC map, `core/theme/randomTheme.ts`. Change one → change all. The color
+math lives in `core/theme/oklch.ts`.
 
 ## Why OKLCH
 
 All generation happens in OKLCH (stored as hex — no runtime dependency on
-browser `oklch()` support). Equal L = equal _perceived_ lightness across hues,
-which HSL never gave us: HSL's "same lightness" made coral scream and cobalt
-sulk. One tier = one L value; hue and chroma move inside it.
+browser `oklch()` support). Equal L = equal _perceived_ lightness across
+hues, which HSL never gave us: HSL's "same lightness" made coral scream and
+cobalt sulk. One tier = one L value; hue and chroma move inside it.
 
 Two physical facts drive everything:
 
-1. **The sRGB gamut is lopsided.** At wash lightness (L 0.88) yellow-green holds
-   chroma 0.2; blue holds 0.06. Fluoro-at-high-L is physically a
-   yellow/green/pink phenomenon; blues must drop to L 0.6–0.7 to get loud. So
-   chroma targets are always `min(target, ceiling(L,H))` — never a fixed number
-   across hues.
+1. **The sRGB gamut is lopsided.** At wash lightness (L 0.88) yellow-green
+   holds chroma 0.2; blue holds 0.06. So chroma targets are always
+   `min(target, ceiling(L,H))` — never a fixed number across hues.
 2. **The carnival threshold.** Perceived clash between two hues scales with
-   chroma: ≈ 2·C·sin(Δh/2). Below C 0.05 hue freedom is unlimited (washes can
-   wander). Above C ~0.12 — bands, accents — you get at most TWO hues, and they
-   must be neighbours. Three saturated hues 180° apart was the July 19 trio; it
-   dies here.
+   chroma: ≈ 2·C·sin(Δh/2). Below C ~0.05 hue freedom is unlimited (washes
+   can wander). Above C ~0.12 — bands, accents — hues must be few and
+   related. Three saturated header hues was the July 19 trio; it died.
+
+## THE TRIO (the relationship law)
+
+Every theme — named or rolled — is three ROLES designed together:
+
+1. **The GROUND**: a two-hue family journey in the sky (L 0.84–0.90, C at
+   the family's gamut-budget), always fading to the cream floor `#fff4e8`
+   where components live. The sky CHANGES with the theme.
+2. **The BAND**: ONE colour on every card header — the accent at 62% over
+   `#ffefdc`. Headers are consistent; they never carry a second hue.
+3. **The POP**: the accent family everywhere ink meets colour — CTA plates,
+   chips, washes, checkbox fills, the deep companion.
+
+Relationships live BETWEEN these layers, never inside one of them. (This is
+the conversation_mapper lesson: its best rolls were one field family + one
+chrome colour + one pop.)
 
 ## The tiers (value hierarchy, top of app → ink)
 
-| Tier | Layer            | OKLCH register                                                         | Rule                                                                                         |
-| ---- | ---------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| T0   | Sky ground       | washes L 0.84–0.90, C ≤ 0.10 (per-hue clamped) → cream floor `#fff4e8` | The airy part. Colored at the top, ALWAYS fades to cream where components live.              |
-| T1   | Shell            | accent 11% over near-white                                             | unchanged recipe                                                                             |
-| T2   | Card face        | `#fff7ef` cream, L 0.98                                                | solid, never glass                                                                           |
-| T3   | **Header bands** | accent 62% over `#ffefdc`                                              | **ONE hue per theme — plus at most ONE near-neighbour at Δh ≤ 18°, same L/C.** See band law. |
-| T4   | Chips / washes   | accent 4–20% mixes                                                     | unchanged recipes, all derive from `--color-accent`                                          |
-| T5   | **CTA plates**   | `--soft-black` slab + white label + accent-band hard offset shadow     | See CTA law. Saturated accent FILLS on buttons are dead.                                     |
-| T6   | Ink              | L ≈ 0.30, C 0.03, accent hue                                           | text is a color — hue-tinted near-black, never grey                                          |
+| Tier | Layer          | OKLCH register                                           | Rule                                                    |
+| ---- | -------------- | -------------------------------------------------------- | ------------------------------------------------------- |
+| T0   | Sky ground     | washes L 0.84–0.90, C ≤ 0.10 per-hue clamped → `#fff4e8` | Two-hue family journey, airy, cream floor always        |
+| T1   | Shell          | accent 11% over near-white                               | unchanged recipe                                        |
+| T2   | Card face      | `#fff7ef` cream, L 0.98                                  | solid, never glass                                      |
+| T3   | Header band    | accent 62% over `#ffefdc`                                | **MONO — one colour on every card, no exceptions**      |
+| T4   | Chips / washes | accent 4–20% mixes                                       | unchanged recipes, all derive from `--color-accent`     |
+| T5   | CTA plates     | `--cta-plate` (below)                                    | hued ink — never stark black, never a saturated slab    |
+| T6   | Ink            | L ≈ 0.30, C 0.03, accent hue                             | text is a color — hue-tinted near-black, never grey     |
 
-Saturation is a budget. T3 is where the theme SPENDS it. T0 whispers it, T4
-tints it, T5 and T6 are ink. Nothing else shouts.
+Saturation is a budget. T3 spends it, T0 whispers it, T4 tints it, T5/T6
+are hued ink. Nothing else shouts.
 
-## The band law (headers)
+## The CTA plate law (+Topic, mic/record, Bishop ask, btn--accent)
 
-- `--header-band` = accent × 62% over `#ffefdc` — the proven, AA-tested recipe.
-  Untouched.
-- Every theme carries exactly ONE supporting hue: `--band-hue-b`, defined as the
-  accent hue rotated **16° in OKLCH at the same L and C** (gamut-clamped). Grid
-  cells alternate a/b (`nth-child(2n)`), so the rack still reads as a row of
-  instruments — but tuned to the same key, not a carnival.
-- **Rotation direction is chosen, not random**: away from the banned arcs
-  (alarm-red 8–24°, mustard 85–100°), toward the romantic side of each hue.
-  Named themes store the hand-picked result; the shuffle stores a direction per
-  curated pair.
-- `--band-hue-c` is dead. Do not re-add a third band hue.
-- Mono flip (one line): delete the `.dashboard-grid > :nth-child(2n)` override
-  in styles.css and every band is the accent.
+```css
+--cta-plate: color-mix(in srgb, var(--accent-fill) 42%, var(--soft-black));
+--cta-plate-border: color-mix(in srgb, var(--accent-fill) 28%, var(--soft-black));
+--cta-plate-hover: color-mix(in srgb, var(--accent-fill) 50%, var(--soft-black));
+```
 
-## The CTA law (+Topic, mic/record, Bishop ask, btn--accent)
+Primary buttons are the accent mixed DEEP into warm black — hued ink. The
+history: 72% accent slabs were "garish" (July 19), 0% stark black was "too
+stark always" (July 20), 42% is the solved middle — reads as a plate,
+carries the theme. Shadow = `--header-band` peeking (riso misregistration).
+White-on-plate ≥ 4.5:1 is test-pinned for every named theme and 300 rolls.
 
-Primary action buttons are **ink plates**: `--soft-black` fill, white label, 2px
-`--soft-black` border, and a hard offset shadow in the theme's band color — the
-riso misregistration: black plate printed slightly off-register over the accent
-plate. Hover lifts and grows the shadow (existing motion).
+`--accent-fill` still exists for small non-button accent solids (count
+badges, toggle knobs, progress). Anything button-shaped takes the plate.
 
-Why: the loved Record slab was already this. Saturated cobalt slabs read as a
-louder species than their card; on coral shuffle rolls they read alarm-red. The
-border/plate carries the contrast, the accent peeks as joy. White-on-ink passes
-AA everywhere by construction, on every roll, forever.
+## Named themes (accent + its own sky)
 
-`--accent-fill` still exists for small non-button accent solids (count badges,
-toggle knobs, progress). Anything button-shaped takes the plate.
+| Theme              | accent                       | ground journey                     |
+| ------------------ | ---------------------------- | ---------------------------------- |
+| DAYBREAK (default) | `#4a7bc9` cobalt             | sunrise coral→cream (the original) |
+| BUBBLEGUM          | `#ff2e88` hot pink           | warm pink→rose (H 20→352)          |
+| SKY                | `#0095ff` electric blue      | pool cyan→periwinkle (H 205→232)   |
+| GRAPE              | `#8335ff` electric violet ⚡ | pink→lavender dusk (H 345→312)     |
+| LIME               | `#0fb255` fresh green        | mint pool (H 180→203)              |
+| GOLD               | `#f5a300` amber              | honey sunrise (H 58→74)            |
 
-## Named themes
+⚡ GRAPE was retuned July 20 from `#7c3aed` ("fresher or more neon or
+deeper") → neon-electric at oklch(0.56 0.27 293). Parked alternates:
+deeper `#6d0ede`, Pablo's reference electric `#7659FF` (bluer — rejected
+here as too close to DAYBREAK/SKY periwinkle territory).
 
-Six, unchanged accents (identity anchors), each with its computed neighbour:
-
-| Theme              | accent                                 | band-hue-b (Δ16°, direction)                     |
-| ------------------ | -------------------------------------- | ------------------------------------------------ |
-| DAYBREAK (default) | `#4a7bc9` cobalt, oklch(0.59 0.13 259) | `#6773c9` periwinkle (+16, toward violet)        |
-| BUBBLEGUM          | `#ff2e88`                              | `#f239b2` orchid-ward (−16; +16 is red — banned) |
-| SKY                | `#0095ff`                              | `#5e8aff` periwinkle (+16)                       |
-| GRAPE              | `#7c3aed`                              | `#9928d8` orchid-ward (+16)                      |
-| LIME               | `#0fb255`                              | `#00af82` sea-ward (+16; −16 is chartreuse mud)  |
-| GOLD               | `#f5a300`                              | `#ff9a46` apricot (−16; +16 is mustard — banned) |
-
-Ground = the shared WARM_BG sunrise wash for all named themes (unchanged).
+Ground hexes live in `themes.ts` cssVars (`--gradient-bg`, `--color-base*`)
+mirrored in the FOUC map. All grounds share the WARM_BG structure: two
+radial corner washes + 168deg linear fading to `#fff4e8` at 78%.
 
 ## The shuffle (OKLCH curated pairs)
 
-The dice picks between DESIGNED couples — same six pair identities as before,
-now defined in OKLCH with **per-pair accent targets** derived from the beloved
-anchors (Miami coral oklch(0.71 0.18 23), rebel purple oklch(0.58 0.15 315),
-raspberry oklch(0.67 0.18 1), DAYBREAK cobalt):
+The dice picks between DESIGNED couples with per-pair accent registers
+derived from the beloved anchors (Miami coral oklch(0.71 0.18 23), rebel
+purple oklch(0.58 0.15 315), raspberry oklch(0.67 0.18 ~0), DAYBREAK
+cobalt):
 
-| Pair          | ground hue arc | accent hue arc | accent L  | accent C  | band-b dir |
-| ------------- | -------------- | -------------- | --------- | --------- | ---------- |
-| sunset-cobalt | 40–58          | 245–262        | 0.58–0.63 | 0.13–0.16 | +16        |
-| coral-orchid  | 35–52          | 300–318        | 0.56–0.62 | 0.15–0.19 | +16        |
-| dusk-coral    | 305–325        | 25–38          | 0.66–0.71 | 0.16–0.19 | +16        |
-| lagoon-coral  | 190–210        | 25–38          | 0.66–0.71 | 0.16–0.19 | +16        |
-| poolside      | 185–205        | 350–360        | 0.63–0.68 | 0.17–0.20 | −16        |
-| dawn-rose     | 42–58          | 348–360        | 0.63–0.68 | 0.17–0.20 | −16        |
+| Pair          | ground hue arc | accent hue arc | accent L  | accent C  |
+| ------------- | -------------- | -------------- | --------- | --------- |
+| sunset-cobalt | 38–60          | 246–262        | 0.58–0.63 | 0.13–0.17 |
+| coral-orchid  | 30–52          | 306–322        | 0.57–0.63 | 0.17–0.22 |
+| dusk-coral    | 318–336        | 27–40          | 0.66–0.71 | 0.16–0.19 |
+| lagoon-coral  | 188–210        | 27–40          | 0.66–0.71 | 0.16–0.19 |
+| poolside      | 183–205        | 350–366 (wraps)| 0.63–0.68 | 0.17–0.20 |
+| dawn-rose     | 42–64          | 350–366        | 0.63–0.68 | 0.17–0.20 |
 
-Jitter: hue uniform in arc, L ±0.02, C ±0.015 — every roll is fresh, every roll
-is family. Blues live at hue 245–262, never 264–275 (the OKLCH blue trap:
-chroma-clipping near the blue primary drags perceived hue purple).
+- Jitter: hue uniform in arc, L ±0.02, C ±0.015 — fresh but family.
+- Blues live at 246–262, never 264–275 (the OKLCH blue trap).
+- Ground = two-hue journey: washes at bgHue−8 and bgHue+22, plus an accent
+  whisper near the bottom; per-pair groundL/groundC (aqua families ride
+  L 0.90 — the airy pool feel is a lightness fact).
+- `--accent-strong/ink/fill` = same hue, C ≤ 0.15, L walked down until ≥
+  4.6:1 on card cream (doubles as AA ink and white-carrier).
+- `text` = oklch(0.30 0.035 hue); `textSecondary` = oklch(0.52 0.03 hue).
+- Banned accents: green/teal/yellow (OKLCH 60–244), alarm-red (8–27);
+  coral rides L ≥ 0.65. Aqua/lagoon lives as GROUND only.
+- Contrast swept over 300 seeded rolls: ink/band, white/strong,
+  strong/cream, ink/every-bg-layer, white/CTA-plate.
 
-Derived per roll, all in OKLCH, all gamut-clamped:
-
-- `accent` = oklch(pairL±j, pairC±j, hue in arc)
-- `--band-hue-b` = same L/C, hue ± 16° per pair direction
-- `--accent-strong/ink/fill` = same hue, C capped 0.15, L walked down until
-  contrast ≥ 4.6:1 vs card cream (so it doubles as AA ink on cream AND carries
-  white text)
-- `text` = oklch(0.30, 0.035, accent hue); `textSecondary` = oklch(0.52, 0.03,
-  accent hue)
-- ground washes = L 0.84–0.90, C target 0.08–0.10 clamped to the hue's ceiling,
-  hues groundHue−8 / +10 / accent whisper; linear base fades to `#fff4e8`. Same
-  three-radial + linear structure as WARM_BG.
-- band/wash recipes downstream: the SAME static color-mix recipes as named
-  themes. No per-roll special cases.
-
-Contrast is guaranteed by construction + swept by 300-roll seeded tests: ink on
-band ≥ 4.5, white on strong ≥ 4.5, strong on cream ≥ 4.5, ink on every bg layer
-≥ 5.5, band-a↔band-b Δh ≤ 18°.
-
-`SHUFFLE_SCHEMA_VERSION = 7` (themeEngine + FOUC script) — old rolls are
+`SHUFFLE_SCHEMA_VERSION = 8` (themeEngine + FOUC script) — older rolls are
 discarded on load, falling back to DAYBREAK.
 
 ## Standing law (inherited, still binding)
 
-- NO red on ordinary surfaces; destructive = recession + warm rose wash. Accent
-  arcs stop at hue 25+ (coral, not alarm).
-- No green/teal ACCENTS in the shuffle (grounds may be lagoon/aqua). Named LIME
-  stays — it's a chosen theme, not a roll.
-- No pure black/white anywhere: ink is `#1e1714` warm black, grounds are cream.
-- Accent-colored TEXT routes through `--accent-ink` (solved), never raw accent
-  on cream (raw pastel accents score ~1.5:1 — decoration only).
-- Speaker palette (`speakerColors.ts`) is theme-independent identity — never
-  theme-derived, never touched by rolls.
+- NO red on ordinary surfaces; destructive = recession + warm rose wash.
+- No pure black/white anywhere: ink is `#1e1714` warm black, grounds cream.
+- Accent-colored TEXT routes through `--accent-ink` (solved), never raw
+  accent on cream (raw pastel accents score ~1.5:1 — decoration only).
+- Speaker palette (`speakerColors.ts`) is theme-independent identity.
 - ALL CAPS banned; FontAwesome icons only, no emoji in UI.
 - Glass/backdrop-filter banned on cards; figures are solid cream.
