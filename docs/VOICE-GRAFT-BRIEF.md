@@ -5,9 +5,18 @@ ultrathink. You are running OVERNIGHT and AUTONOMOUS on ProMapper
 localhost:8003). Mission: replace the broken voice relay with the
 free4chat/RealtimeKit architecture and get voice rooms WORKING, verified
 end-to-end locally. Do not stop to ask questions — make the call, document it,
-keep moving. Commit to main in reviewable chunks (Pablo's emoji style),
-`git pull --rebase` before every commit (another instance may also be working
-tonight).
+keep moving. Commit in reviewable chunks (Pablo's emoji style).
+
+**ISOLATION — do this before anything else.** A color-system instance may be
+working in the main checkout (on branch `color-system-pass`) at the same time as
+you. Never switch branches or run servers in the shared checkout. Instead:
+create your own git worktree off main
+(`git worktree add ~/Projects/active/apps/promapper-voice main`) — or use the
+harness's worktree isolation if offered — and do ALL work there. If :8003 is
+taken, run your dev server on another port (check how dev.ts/fresh config set
+the port; e.g. PORT=8013). Land your commits on `main` from the worktree
+(`git pull --rebase origin main` before each push); do not touch the
+`color-system-pass` branch or `docs/COLOR-SYSTEM.md`.
 
 ## Read first (in this order)
 
