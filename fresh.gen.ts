@@ -16,6 +16,7 @@ import * as $api_markdown from "./routes/api/markdown.ts";
 import * as $api_process from "./routes/api/process.ts";
 import * as $api_share_shareId_ from "./routes/api/share/[shareId].ts";
 import * as $api_share_create from "./routes/api/share/create.ts";
+import * as $dev_colors from "./routes/dev/colors.tsx";
 import * as $dev_nodemap from "./routes/dev/nodemap.tsx";
 import * as $index from "./routes/index.tsx";
 import * as $live_roomId_ from "./routes/live/[roomId].tsx";
@@ -25,6 +26,7 @@ import * as $ArcDiagramViz from "./islands/ArcDiagramViz.tsx";
 import * as $AudioRecorder from "./islands/AudioRecorder.tsx";
 import * as $AudioVisualizer from "./islands/AudioVisualizer.tsx";
 import * as $AuthModalIsland from "./islands/AuthModalIsland.tsx";
+import * as $ColorLabIsland from "./islands/ColorLabIsland.tsx";
 import * as $DashboardIsland from "./islands/DashboardIsland.tsx";
 import * as $EmojimapViz from "./islands/EmojimapViz.tsx";
 import * as $FlipCard from "./islands/FlipCard.tsx";
@@ -70,6 +72,7 @@ const manifest = {
     "./routes/api/process.ts": $api_process,
     "./routes/api/share/[shareId].ts": $api_share_shareId_,
     "./routes/api/share/create.ts": $api_share_create,
+    "./routes/dev/colors.tsx": $dev_colors,
     "./routes/dev/nodemap.tsx": $dev_nodemap,
     "./routes/index.tsx": $index,
     "./routes/live/[roomId].tsx": $live_roomId_,
@@ -81,6 +84,7 @@ const manifest = {
     "./islands/AudioRecorder.tsx": $AudioRecorder,
     "./islands/AudioVisualizer.tsx": $AudioVisualizer,
     "./islands/AuthModalIsland.tsx": $AuthModalIsland,
+    "./islands/ColorLabIsland.tsx": $ColorLabIsland,
     "./islands/DashboardIsland.tsx": $DashboardIsland,
     "./islands/EmojimapViz.tsx": $EmojimapViz,
     "./islands/FlipCard.tsx": $FlipCard,

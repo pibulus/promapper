@@ -51,7 +51,7 @@ Deno.test("every theme's VIVID header band passes AA with white text", () => {
     // GOLD overrides --accent-strong to a deeper shade (its hue is light).
     const strong = theme.cssVars?.["--accent-strong"] ??
       mix(theme.accent, DEEPEN, 0.72);
-    const ratio = contrast("#ffffff", strong);
+    const ratio = contrast("#fffef7", strong);
     assertEquals(
       ratio >= 4.5,
       true,
@@ -97,7 +97,7 @@ Deno.test("headers are MONO and the CTA plate carries white ink on every theme",
       `Theme "${theme.name}" defines --band-hue-c — the carnival is banned`,
     );
     const plate = mix(theme.accent, SOFT_BLACK, 0.46);
-    const ratio = contrast("#ffffff", plate);
+    const ratio = contrast("#fffef7", plate);
     assertEquals(
       ratio >= 4.5,
       true,

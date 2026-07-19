@@ -133,6 +133,40 @@ export const CURATED_PAIRS: ReadonlyArray<{
     groundL: 0.9,
     groundC: 0.08,
   },
+  // watermelon: mint-dew rind × pink flesh ("young succulent in the
+  // morning dew" — the July 20 inspo drop). Mint lives as GROUND only,
+  // so the pink/green combo stays fresh-fruit, never hospital.
+  {
+    name: "watermelon",
+    ground: [162, 180],
+    accent: [352, 368],
+    accentL: [0.64, 0.69],
+    accentC: [0.19, 0.22],
+    groundL: 0.9,
+    groundC: 0.08,
+  },
+  // sunset neon: amber glow × hot magenta (the hexbloop hexagon — the
+  // blue→magenta→orange spectrum folded into one couple)
+  {
+    name: "sunset-neon",
+    ground: [55, 75],
+    accent: [330, 344],
+    accentL: [0.62, 0.66],
+    accentC: [0.22, 0.25],
+    groundL: 0.85,
+    groundC: 0.105,
+  },
+  // gum-blueberry: periwinkle-indigo sky × gum pink (#5a4edb ground
+  // family under #ea88b9 punched up — the soft-bold pairing)
+  {
+    name: "gum-blueberry",
+    ground: [268, 288],
+    accent: [350, 366],
+    accentL: [0.66, 0.71],
+    accentC: [0.16, 0.19],
+    groundL: 0.87,
+    groundC: 0.085,
+  },
 ];
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -221,6 +255,22 @@ const VIBES = [
   "another mood",
 ];
 
+/** Everything composeTheme needs to build a full roll. The dice fills this
+ * from a curated pair; the /dev/colors lab fills it from sliders — SAME
+ * derivation, so what you tune in the lab is exactly what the dice deals. */
+export interface ComposeInput {
+  /** Accent OKLCH (hue may exceed 360 for wrap arcs). */
+  hue: number;
+  lightness: number;
+  chroma: number;
+  /** Ground-family OKLCH hue + wash registers. */
+  bgHue: number;
+  groundL: number;
+  groundC: number;
+  /** Jitter source for wash positions/vibe. Defaults to centered. */
+  rand?: () => number;
+}
+
 /**
  * Roll a complete theme. `rand` is injectable for deterministic tests.
  */
@@ -231,9 +281,22 @@ export function generateThemeParts(
     Math.floor(rand() * CURATED_PAIRS.length) % CURATED_PAIRS.length
   ];
   const span = (a: readonly [number, number]) => a[0] + rand() * (a[1] - a[0]);
-  const hue = span(pair.accent);
-  const lightness = span(pair.accentL);
-  const chroma = span(pair.accentC);
+  return composeTheme({
+    hue: span(pair.accent),
+    lightness: span(pair.accentL),
+    chroma: span(pair.accentC),
+    bgHue: span(pair.ground),
+    groundL: pair.groundL,
+    groundC: pair.groundC,
+    rand,
+  });
+}
+
+/** Build the full ShuffleParts from explicit OKLCH values — the one
+ * derivation behind both the dice and the /dev/colors lab. */
+export function composeTheme(input: ComposeInput): ShuffleParts {
+  const { hue, lightness, chroma, bgHue, groundL, groundC } = input;
+  const rand = input.rand ?? (() => 0.5);
 
   const accent = oklchToHex(lightness, chroma, hue);
   const strong = deriveStrong(hue, chroma);
@@ -242,10 +305,6 @@ export function generateThemeParts(
   const text = oklchToHex(0.3, 0.035, hue);
   const textSecondary = oklchToHex(0.52, 0.03, hue);
 
-  // Ground comes from the SAME curated pair — the couple was designed
-  // together, so ground and accent always play off each other on purpose.
-  const bgHue = span(pair.ground);
-
   // AIRY SKY: the ground is a colored sky at the TOP that FADES INTO CREAM
   // where the components live — a full-saturation full-bleed field read as
   // "a toy". Two family washes hug the top corners; the accent leaves one
@@ -253,8 +312,8 @@ export function generateThemeParts(
   // ceiling (oklchToHex clamps), so aqua and dusk skies carry the same
   // perceived weight as sunrise ones.
   const j = () => rand() * 10 - 5;
-  const gL = pair.groundL;
-  const gC = pair.groundC;
+  const gL = groundL;
+  const gC = groundC;
   // Two-hue family JOURNEY (July 20, from the conversation_mapper study):
   // the second wash sits a real analogous step away (+22°), so the sky
   // travels inside its family instead of one hue fading out — present,

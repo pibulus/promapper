@@ -379,7 +379,7 @@ body {
   font-weight: 600;
   font-size: var(--text-size);
   border: var(--border-width) solid var(--color-border);
-  background: white;
+  background: var(--surface-white-warm);
   color: var(--color-text);
   transition: var(--transition-medium);
   cursor: pointer;
@@ -391,7 +391,7 @@ body {
 
 .mode-tab.active {
   background: var(--accent-fill);
-  color: white;
+  color: var(--surface-white-warm);
   box-shadow: var(--shadow-soft);
 }
 
@@ -587,7 +587,7 @@ body {
    hued ink slab, white label, band-color offset shadow. */
 .btn--accent {
   background: var(--cta-plate);
-  color: white;
+  color: var(--surface-white-warm);
   box-shadow: 2px 2px 0 var(--header-band);
   border: 2px solid var(--cta-plate-border);
 }
@@ -802,7 +802,7 @@ body {
   font-weight: 700;
   border-radius: 999px;
   background: var(--accent-fill);
-  color: #fff;
+  color: var(--surface-white-warm);
   line-height: 1;
 }
 
@@ -1247,7 +1247,7 @@ body {
     transparent 60%
   ),
     rgba(10, 8, 6, 0.95);
-  color: #fff;
+  color: var(--surface-white-warm);
   cursor: default;
 }
 
@@ -1383,7 +1383,7 @@ body {
   font-size: clamp(2rem, 6vw, 2.6rem);
   font-family: var(--font-mono);
   font-weight: 700;
-  color: #fff;
+  color: var(--surface-white-warm);
 }
 
 .mapper-record-bar {
@@ -1415,7 +1415,7 @@ body {
   border-radius: 13px;
   border: 2.5px solid var(--soft-black); /* use unified soft-black */
   background: var(--soft-black);
-  color: white;
+  color: var(--surface-white-warm);
   font-size: 0.92rem;
   font-weight: 800;
   letter-spacing: 0.01em;
@@ -1536,7 +1536,7 @@ body {
 .mapper-slab-button--record {
   background: var(--soft-black); /* use unified color system */
   border-color: var(--soft-black);
-  color: #fff;
+  color: var(--surface-white-warm);
   /* Same base shadow as all buttons - consistency in hierarchy */
   box-shadow: 0 3px 8px rgba(30, 23, 20, 0.14);
 }
@@ -2434,7 +2434,7 @@ body {
 }
 .module-rack-toggle.is-on .module-rack-toggle__knob {
   transform: translateX(1.1rem);
-  background: #fff;
+  background: var(--surface-white-warm);
 }
 .module-rack-toggle.is-on:hover {
   filter: brightness(1.08);
@@ -2550,7 +2550,7 @@ body {
   border: 2px solid var(--cta-plate-border);
   border-radius: 50%;
   background: var(--cta-plate);
-  color: #fff;
+  color: var(--surface-white-warm);
   box-shadow: 2px 2px 0 var(--header-band);
   cursor: pointer;
   transition:
@@ -2884,7 +2884,7 @@ body {
   border: 2px solid var(--cta-plate-border);
   border-radius: var(--border-radius-sm);
   background: var(--cta-plate);
-  color: #fff;
+  color: var(--surface-white-warm);
   box-shadow: 2px 2px 0 var(--header-band);
   cursor: pointer;
   transition:
@@ -3876,7 +3876,7 @@ html::-webkit-scrollbar-thumb:hover,
      every theme (GOLD/LIME raw accents fail contrast with white). */
   background: var(--accent-strong);
   border-color: var(--soft-black);
-  color: white;
+  color: var(--surface-white-warm);
   box-shadow: 2px 2px 0px 0px var(--soft-black);
 }
 
@@ -4015,7 +4015,7 @@ html::-webkit-scrollbar-thumb:hover,
 
 .action-dropdown-option.is-active {
   background: var(--accent-fill);
-  color: white;
+  color: var(--surface-white-warm);
   border-bottom-color: var(--accent-ink);
 }
 
@@ -4378,7 +4378,7 @@ html::-webkit-scrollbar-thumb:hover,
    theme (raw GOLD/LIME accents fail AA with white). */
 .action-filter-pill[aria-pressed="true"] {
   background: var(--accent-strong);
-  color: #fff;
+  color: var(--surface-white-warm);
 }
 
 /* Modal primary action (soft-black button — delete / clear-done). */
@@ -4462,7 +4462,7 @@ html::-webkit-scrollbar-thumb:hover,
 
 .topic-map-add-button:hover,
 .topic-map-add-button:focus-visible {
-  background: #fff;
+  background: var(--surface-white-warm);
   outline: none;
   transform: translate(-1px, -1px);
   box-shadow: 3px 3px 0 rgba(30, 23, 20, 0.1);
@@ -4532,13 +4532,13 @@ html::-webkit-scrollbar-thumb:hover,
   font-weight: 700;
   border-color: var(--cta-plate-border);
   background: var(--cta-plate);
-  color: #fff;
+  color: var(--surface-white-warm);
   box-shadow: 2.5px 2.5px 0 var(--header-band);
 }
 
 .topic-map-ctrl--add:hover,
 .topic-map-ctrl--add:focus-visible {
-  color: #fff;
+  color: var(--surface-white-warm);
   background: var(--cta-plate-hover);
   border-color: var(--cta-plate-border);
   box-shadow: 3.5px 3.5px 0 var(--header-band);
@@ -4701,7 +4701,7 @@ html::-webkit-scrollbar-thumb:hover,
   justify-content: center;
   border: 2px solid var(--color-border);
   border-radius: 14px;
-  background: #fff;
+  background: var(--surface-white-warm);
   font-size: 1.75rem;
   box-shadow: 2px 2px 0 rgba(30, 23, 20, 0.08);
 }
@@ -4841,7 +4841,7 @@ html::-webkit-scrollbar-thumb:hover,
   min-height: 2.75rem;
   border: 2px solid var(--color-border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--surface-white-warm);
   padding: 0.55rem 0.7rem;
   font-size: var(--text-size);
 }
@@ -4861,12 +4861,12 @@ html::-webkit-scrollbar-thumb:hover,
 .topic-node-modal__actions button {
   flex: 1;
   border: 2px solid var(--color-border);
-  background: #fff;
+  background: var(--surface-white-warm);
 }
 
 .topic-node-modal__actions button:last-child {
   background: var(--accent-fill);
-  color: #fff;
+  color: var(--surface-white-warm);
 }
 
 .topic-node-modal__actions button:disabled {
@@ -5113,7 +5113,7 @@ a:focus-visible {
   top: -40px;
   left: 0;
   background: var(--accent-fill);
-  color: white;
+  color: var(--surface-white-warm);
   padding: 0.5rem 1rem;
   border-radius: 0 0 var(--border-radius-sm) 0;
   font-weight: 600;
@@ -5574,7 +5574,7 @@ a:focus-visible {
   border: 2px solid var(--soft-black);
   border-radius: 12px;
   background: var(--soft-black);
-  color: white;
+  color: var(--surface-white-warm);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 4px 4px 0 0 rgba(30, 23, 20, 0.12);
@@ -5612,7 +5612,7 @@ a:focus-visible {
 .history-filter-btn.is-active {
   border-color: var(--soft-black);
   background: var(--soft-black);
-  color: white;
+  color: var(--surface-white-warm);
 }
 
 /* Backup export/import buttons — CSS hover (no JS mouse handlers, which stick
@@ -5815,7 +5815,7 @@ a:focus-visible {
   border-radius: var(--border-radius-sm);
   border: none;
   background: var(--accent-fill);
-  color: #fff;
+  color: var(--surface-white-warm);
 }
 .share-copy-btn:hover {
   filter: brightness(1.1);
@@ -6118,7 +6118,7 @@ a:focus-visible {
   border-radius: 999px;
   /* accent-strong: white label must pass contrast on every theme */
   background: var(--accent-strong);
-  color: #fff;
+  color: var(--surface-white-warm);
   font-weight: 700;
   box-shadow: var(--shadow-lg);
   cursor: pointer;
@@ -6132,7 +6132,7 @@ a:focus-visible {
   margin-left: 0.35rem;
   padding: 0 0.3rem;
   border-radius: 999px;
-  background: #fff;
+  background: var(--surface-white-warm);
   color: var(--accent-strong);
   font-size: var(--tiny-size);
   font-weight: 800;
@@ -6234,7 +6234,7 @@ a:focus-visible {
 /* Send button in chat input. */
 .chat-send-btn {
   background: var(--accent-strong);
-  color: #fff;
+  color: var(--surface-white-warm);
   cursor: pointer;
   padding: 0 0.75rem;
   border-radius: var(--border-radius-sm);
@@ -6415,7 +6415,7 @@ a:focus-visible {
 .context-menu {
   position: fixed;
   z-index: var(--z-context-menu);
-  background: #fff;
+  background: var(--surface-white-warm);
   border: 2px solid var(--color-accent);
   border-radius: var(--border-radius-sm);
   box-shadow: 4px 4px 0px 0px var(--soft-black, #0a0a0a);
@@ -6623,7 +6623,7 @@ a:focus-visible {
   min-width: 1.125rem;
   height: 1.125rem;
   background: var(--accent-fill);
-  color: #fff;
+  color: var(--surface-white-warm);
   font-size: 0.6rem;
   margin-top: 0.15rem;
 }
@@ -6711,7 +6711,7 @@ a:focus-visible {
 
 .speaker-btn--save {
   background: var(--accent-fill);
-  color: #fff;
+  color: var(--surface-white-warm);
   border: none;
 }
 
@@ -6727,7 +6727,7 @@ a:focus-visible {
   font-size: var(--tiny-size);
   font-weight: 500;
   background: var(--accent-fill);
-  color: #fff;
+  color: var(--surface-white-warm);
   border: 2px solid var(--color-border);
   min-height: 2rem;
   cursor: pointer;
@@ -7077,7 +7077,7 @@ a:focus-visible {
   gap: 0.5rem;
   padding: 0.45rem 0.75rem 0.45rem 1rem;
   background: var(--accent-strong);
-  color: white;
+  color: var(--surface-white-warm);
   font-weight: 700;
   font-size: var(--font-size-sm);
 }
@@ -7278,13 +7278,13 @@ label {
   padding: 0 0.6rem;
   gap: 0.4rem;
   background: var(--accent-strong);
-  color: #fff;
+  color: var(--surface-white-warm);
 }
 .recording-hub__pulse {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 50%;
-  background: #fff;
+  background: var(--surface-white-warm);
   animation: dock-breathe 2.4s ease-in-out infinite;
 }
 .recording-hub__time {
@@ -7308,7 +7308,7 @@ label {
   justify-content: center;
   border-radius: 999px;
   background: var(--accent-strong);
-  color: #fff;
+  color: var(--surface-white-warm);
   font-size: 0.6rem;
   font-weight: 800;
 }
@@ -7390,7 +7390,7 @@ label {
   /* CTA PLATE (COLOR-SYSTEM.md): the mic is the loudest promise on the
      dashboard — hued ink, the theme's band peeking as the offset. */
   background: var(--cta-plate);
-  color: white;
+  color: var(--surface-white-warm);
   font-weight: 800;
   font-size: var(--small-size);
   letter-spacing: 0.02em;
@@ -7415,7 +7415,7 @@ label {
   width: 0.6rem;
   height: 0.6rem;
   border-radius: 50%;
-  background: white;
+  background: var(--surface-white-warm);
   animation: dock-breathe 2.4s ease-in-out infinite;
 }
 
@@ -7806,7 +7806,7 @@ label {
   border: 2px solid var(--soft-black);
   border-radius: var(--border-radius);
   background: var(--accent-fill);
-  color: white;
+  color: var(--surface-white-warm);
   font-weight: 800;
   font-size: var(--small-size);
   text-decoration: none;
@@ -7898,4 +7898,139 @@ label {
 
 .card-back-person-share:active {
   transform: translateY(1px) scale(0.95);
+}
+
+/* ===================================================================
+   COLOR LAB — /dev/colors tuning bench (dev-only route)
+   ================================================================ */
+.color-lab {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  height: 100vh;
+  background: var(--gradient-bg);
+}
+.color-lab-panel {
+  padding: 1.1rem 1.2rem 2rem;
+  overflow-y: auto;
+  background: var(--surface-cream);
+  border-right: 2px solid var(--soft-black);
+}
+.color-lab-panel h1 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-text);
+}
+.color-lab-panel h2 {
+  margin-top: 1.1rem;
+  font-size: var(--small-size);
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+.color-lab-hint {
+  font-size: var(--tiny-size);
+  color: var(--color-text-secondary);
+  margin: 0.3rem 0 0.8rem;
+}
+.color-lab-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.9rem;
+}
+.color-lab-swatch {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--tiny-size);
+  color: var(--color-text-secondary);
+}
+.color-lab-swatch i {
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 6px;
+  border: 1.5px solid var(--soft-black);
+}
+.color-lab-swatch code {
+  font-size: 0.68rem;
+}
+.color-lab-slider {
+  display: block;
+  margin: 0.45rem 0;
+  font-size: var(--tiny-size);
+  color: var(--color-text);
+}
+.color-lab-slider span {
+  display: flex;
+  justify-content: space-between;
+}
+.color-lab-slider input {
+  width: 100%;
+  accent-color: var(--color-accent);
+}
+.color-lab-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+.color-lab-chips button {
+  padding: 0.22rem 0.55rem 0.22rem 0.4rem;
+  border: 1.5px solid var(--soft-black);
+  border-radius: 999px;
+  background: var(--surface-white-warm);
+  color: var(--color-text);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+}
+.color-lab-chips button::before {
+  content: "";
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: var(--chip);
+  border: 1px solid rgba(30, 23, 20, 0.35);
+}
+.color-lab-chips button:hover {
+  transform: translateY(-1px);
+}
+.color-lab-pairs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  margin: 0.4rem 0 0.9rem;
+}
+.color-lab-pairs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.45rem;
+  border: 1.5px solid var(--soft-black);
+  border-radius: var(--border-radius-sm);
+  background: var(--surface-white-warm);
+  color: var(--color-text);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.color-lab-pairs button i {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 4px;
+  border: 1px solid rgba(30, 23, 20, 0.3);
+  flex-shrink: 0;
+}
+.color-lab-pairs button:hover {
+  transform: translateY(-1px);
+}
+.color-lab-frame {
+  /* Render the app at desktop width inside the pane (scaled down) so the
+     preview shows the real grid, not the tablet stack. */
+  width: 133.4%;
+  height: 133.4%;
+  transform: scale(0.75);
+  transform-origin: 0 0;
+  border: 0;
 }

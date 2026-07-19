@@ -101,8 +101,8 @@ Deno.test("the CTA plate carries white ink on every roll", () => {
   for (let i = 0; i < 300; i++) {
     const { theme } = generateThemeParts(rand);
     const plate = mixHex(theme.accent, SOFT_BLACK, 0.46);
-    const ratio = contrast("#ffffff", plate);
-    assert(ratio >= 4.5, `white/plate ${ratio.toFixed(2)} for ${plate}`);
+    const ratio = contrast("#fffef7", plate);
+    assert(ratio >= 4.5, `warmwhite/plate ${ratio.toFixed(2)} for ${plate}`);
   }
 });
 
@@ -123,8 +123,8 @@ Deno.test("white on the solved --accent-strong passes AA for every roll", () => 
     const { theme } = generateThemeParts(rand);
     const strong = theme.cssVars?.["--accent-strong"] as string;
     assert(!!strong && strong.startsWith("#"), "roll missing --accent-strong");
-    const ratio = contrast("#ffffff", strong);
-    assert(ratio >= 4.5, `white/strong ${ratio.toFixed(2)} for ${strong}`);
+    const ratio = contrast("#fffef7", strong);
+    assert(ratio >= 4.5, `warmwhite/strong ${ratio.toFixed(2)} for ${strong}`);
     // Ink and fill route through the same solved companion.
     assert(theme.cssVars?.["--accent-ink"] === strong, "ink != strong");
     assert(theme.cssVars?.["--accent-fill"] === strong, "fill != strong");
