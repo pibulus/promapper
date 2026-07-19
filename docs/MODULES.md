@@ -62,9 +62,28 @@ formats.
 | Notes  | standard | Scratch pad stored in the conversation JSON.                                                      |
 | Bishop | standard | Ask your memory — reads this conversation to answer.                                              |
 | Takes  | standard | Every recording kept — listen back + append receipts (reads recordingsDB, same rows as the dock). |
-| Radio  | small    | KPAB + SomaFM tile; born gap-filler.                                                              |
-| Tones  | small    | WebAudio moods — focus, rain, warm, deep.                                                         |
-| Canvas | wide     | The whiteboard outside meetings; same scene.                                                      |
+| Sound  | small    | Radio + Tones as one dial: SomaFM/KPAB streams up top, WebAudio moods below the seam.             |
+
+Retired (July 19 compression): Radio + Tones merged into Sound; Canvas left the
+rack entirely — the whiteboard is now the node map's FLIP SIDE (the AI draws the
+front, you draw the back; news dots mark hidden-face activity). `moduleStore`
+migrates legacy enabled ids on load.
+
+## Width units (July 19)
+
+Sizes are real WIDTHS now: the dashboard grid runs 6 units on desktop (4 on
+tablet). Core cards + `standard` modules span 2, `small` spans 1 (a true
+half-card tile), `wide` spans the row. Rows like small/small/standard compose
+themselves; `grid-auto-flow: dense` fills the holes.
+
+## Faceplates (July 19)
+
+Every theme ships a band-hue trio (`--band-hue-b`/`--band-hue-c` + the accent)
+and grid cells cycle them (nth-child on `.dashboard-grid`), so cards read as
+different instruments in one rack. Defined in FOUR places that must stay in
+sync: `static/styles.css` (:root defaults + recipes), `core/theme/themes.ts`
+(per-theme cssVars), `routes/_app.tsx` (FOUC map), `core/theme/randomTheme.ts`
+(shuffle derives the trio from its accent hue).
 
 ## On deck (from the July 10 riff)
 

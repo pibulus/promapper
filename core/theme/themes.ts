@@ -56,6 +56,8 @@ export const daybreak: Theme = {
   cssVars: {
     "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(74, 123, 201, 0.14)",
+    "--band-hue-b": "#ff8f70",
+    "--band-hue-c": "#e9b64f",
     "--gradient-bg": WARM_BG,
   },
 };
@@ -72,6 +74,8 @@ export const bubblegum: Theme = {
   cssVars: {
     "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(255, 77, 151, 0.12)",
+    "--band-hue-b": "#9d7bff",
+    "--band-hue-c": "#f5b83d",
     "--gradient-bg": WARM_BG,
   },
 };
@@ -91,6 +95,8 @@ export const sky: Theme = {
   cssVars: {
     "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(10, 166, 255, 0.12)",
+    "--band-hue-b": "#2fc79f",
+    "--band-hue-c": "#ff9d6b",
     "--gradient-bg": WARM_BG,
   },
 };
@@ -110,6 +116,8 @@ export const grape: Theme = {
   cssVars: {
     "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(124, 92, 255, 0.12)",
+    "--band-hue-b": "#ff6fae",
+    "--band-hue-c": "#f0b429",
     "--gradient-bg": WARM_BG,
   },
 };
@@ -129,6 +137,8 @@ export const lime: Theme = {
   cssVars: {
     "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(16, 181, 80, 0.12)",
+    "--band-hue-b": "#38b6ff",
+    "--band-hue-c": "#f5c04a",
     "--gradient-bg": WARM_BG,
   },
 };
@@ -148,6 +158,8 @@ export const gold: Theme = {
   cssVars: {
     "--color-base-solid": "#ffe2cf",
     "--shadow-soft": "0 4px 12px rgba(245, 179, 0, 0.14)",
+    "--band-hue-b": "#ff8f70",
+    "--band-hue-c": "#74b98a",
     "--accent-strong": "#a06a00",
     "--gradient-bg": WARM_BG,
   },

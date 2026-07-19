@@ -143,6 +143,17 @@
   --header-band-ink: var(--color-text);
   --header-band-sub: color-mix(in srgb, var(--color-text) 55%, transparent);
 
+  /* FACEPLATES — every theme ships a trio of band hues (accent + two
+     supporting colors) and cards cycle them, so the rack reads as a row of
+     instruments instead of eight clones. Same 62%-over-cream recipe as the
+     accent band; themes override the hues (themes.ts cssVars + the
+     _app.tsx FOUC map + the shuffle generator — keep all three in sync).
+     Defaults = DAYBREAK's trio. */
+  --band-hue-b: #ff8f70;
+  --band-hue-c: #e9b64f;
+  --band-b: color-mix(in srgb, var(--band-hue-b) 62%, #ffefdc);
+  --band-c: color-mix(in srgb, var(--band-hue-c) 62%, #ffefdc);
+
   /* One button system: identical height + radius across every variant. */
   --btn-height: 2.75rem; /* 44px — iOS touch target */
   --btn-radius: var(--border-radius-sm); /* 8px — standard inline buttons */
@@ -2192,6 +2203,16 @@ body {
    by wide cards, so a mixed-width board never gapes. */
 .dashboard-grid {
   grid-auto-flow: dense;
+}
+
+/* Faceplate rotation — cells cycle the theme's band trio (a = accent band
+   from :root, b/c below). Scoped as a VARIABLE override so both flip faces
+   and anything band-tinted inside the card follow their cell's hue. */
+.dashboard-grid > :nth-child(3n + 2) {
+  --header-band: var(--band-b);
+}
+.dashboard-grid > :nth-child(3n) {
+  --header-band: var(--band-c);
 }
 
 .module-cell--small {

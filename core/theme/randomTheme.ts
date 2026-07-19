@@ -230,6 +230,10 @@ export function generateThemeParts(
       "--accent-strong": strong,
       "--accent-ink": strong,
       "--accent-fill": strong,
+      // Faceplate trio: two supporting band hues rotated off the accent
+      // (analogous spread — same recipe slot the named themes fill by hand).
+      "--band-hue-b": hslToHex(wrap(hue + 40), 70, 62),
+      "--band-hue-c": hslToHex(wrap(hue - 45), 70, 62),
     },
   };
 
