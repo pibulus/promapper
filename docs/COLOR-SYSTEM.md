@@ -105,21 +105,27 @@ The dice picks between DESIGNED couples with per-pair accent registers derived
 from the beloved anchors (Miami coral oklch(0.71 0.18 23), rebel purple
 oklch(0.58 0.15 315), raspberry oklch(0.67 0.18 ~0), DAYBREAK cobalt):
 
-| Pair           | ground hue arc | accent hue arc  | accent L  | accent C  |
-| -------------- | -------------- | --------------- | --------- | --------- |
-| sunset-cobalt  | 38–60          | 246–262         | 0.58–0.63 | 0.13–0.17 |
-| coral-orchid   | 30–52          | 306–322         | 0.57–0.63 | 0.17–0.22 |
-| dusk-coral     | 318–336        | 27–40           | 0.66–0.71 | 0.16–0.19 |
-| lagoon-coral   | 188–210        | 27–40           | 0.66–0.71 | 0.16–0.19 |
-| poolside       | 183–205        | 350–366 (wraps) | 0.63–0.68 | 0.17–0.20 |
-| dawn-rose      | 42–64          | 350–366         | 0.63–0.68 | 0.17–0.20 |
-| vaporwave ⚡   | 292–314        | 346–360         | 0.66–0.70 | 0.21–0.24 |
-| neon-office ⚡ | 196–218        | 288–300         | 0.56–0.61 | 0.24–0.27 |
+| Pair             | ground hue arc | accent hue arc  | accent L  | accent C  |
+| ---------------- | -------------- | --------------- | --------- | --------- |
+| sunset-cobalt    | 38–60          | 246–262         | 0.58–0.63 | 0.13–0.17 |
+| coral-orchid     | 30–52          | 306–322         | 0.57–0.63 | 0.17–0.22 |
+| dusk-coral       | 318–336        | 27–40           | 0.66–0.71 | 0.16–0.19 |
+| lagoon-coral     | 188–210        | 27–40           | 0.66–0.71 | 0.16–0.19 |
+| poolside         | 183–205        | 350–366 (wraps) | 0.63–0.68 | 0.17–0.20 |
+| dawn-rose        | 42–64          | 350–366         | 0.63–0.68 | 0.17–0.20 |
+| vaporwave ⚡     | 292–314        | 346–360         | 0.66–0.70 | 0.21–0.24 |
+| neon-office ⚡   | 196–218        | 288–300         | 0.56–0.61 | 0.24–0.27 |
+| watermelon ⚡    | 162–180        | 352–368         | 0.64–0.69 | 0.19–0.22 |
+| sunset-neon ⚡   | 55–75          | 330–344         | 0.62–0.66 | 0.22–0.25 |
+| gum-blueberry ⚡ | 268–288        | 350–366         | 0.66–0.71 | 0.16–0.19 |
 
 ⚡ THE DARING PAIRS ("dare to be fresh and bold sometimes", July 20): same trio
 law, chroma pushed to the fluoro ceiling — vaporwave is riso fluoro pink on a
 lavender dusk, neon-office is electric violet over cool pool-paper. Two of eight
-pairs, so roughly a quarter of rolls come out electric. Sometimes, not always.
+pairs → five of eleven after the July 20 inspo drop (watermelon = mint-dew rind
+× pink flesh; sunset-neon = the hexbloop amber × magenta glow; gum-blueberry =
+periwinkle-indigo sky × gum pink). Bold sometimes — just under half of rolls —
+never a loosening of the cohesion rules.
 
 - Jitter: hue uniform in arc, L ±0.02, C ±0.015 — fresh but family.
 - Blues live at 246–262, never 264–275 (the OKLCH blue trap).
@@ -137,10 +143,22 @@ pairs, so roughly a quarter of rolls come out electric. Sometimes, not always.
 `SHUFFLE_SCHEMA_VERSION = 8` (themeEngine + FOUC script) — older rolls are
 discarded on load, falling back to DAYBREAK.
 
+## The lab (/dev/colors)
+
+Dev-only tuning bench (`routes/dev/colors.tsx` + `islands/ColorLabIsland.tsx`,
+needs `DENO_ENV=development`): OKLCH sliders for accent × ground drive the same
+`composeTheme()` derivation the dice uses, persistence goes through the real
+theme engine, and the live preview reloads through the actual FOUC path. "Copy
+as pair" emits a CURATED_PAIRS entry — tune, copy, paste, done. New couples
+enter the deck THROUGH the lab, not by hand-guessing.
+
 ## Standing law (inherited, still binding)
 
 - NO red on ordinary surfaces; destructive = recession + warm rose wash.
-- No pure black/white anywhere: ink is `#1e1714` warm black, grounds cream.
+- **NEVER absolute white or absolute black** — on any surface, any ink, any app
+  (July 20 decree). White ink is `--surface-white-warm` (#fffef7); dark is
+  `--soft-black` (#1e1714). The contrast guards assert against the warm
+  near-white, not #ffffff.
 - Accent-colored TEXT routes through `--accent-ink` (solved), never raw accent
   on cream (raw pastel accents score ~1.5:1 — decoration only).
 - Speaker palette (`speakerColors.ts`) is theme-independent identity.
