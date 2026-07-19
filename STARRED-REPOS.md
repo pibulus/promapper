@@ -1,6 +1,6 @@
 # Pablo's Starred Repo Reference
 
-Last sweep: June 24, 2026 — 316 starred repos.
+Last sweep: July 14, 2026 — 348 starred repos (culled 12 dead ones).
 
 ---
 
@@ -79,6 +79,14 @@ Last sweep: June 24, 2026 — 316 starred repos.
 | jgraph/drawio         | 6.3k  | Diagramming library. Alternative to Excalidraw.  |
 | kunchenguid/autopreso | 386   | Realtime speech → whiteboard. Reference project. |
 
+## Oracle / Weird
+
+| Repo                              | Stars | Notes                                             |
+| --------------------------------- | ----- | ------------------------------------------------- |
+| ekelen/tarot-api                  | 395   | Simple REST API for tarot cards (Rider-Waite).    |
+| ViciousSquid/Dosidicus            | 303   | Tamagotchi-style pet with Hebbian learning. Wild. |
+| evoluteur/motivational-numerology | 93    | Interactive numerology from name/birth date.      |
+
 ## AI / LLM
 
 | Repo                                 | Stars | Notes                                        |
@@ -91,6 +99,8 @@ Last sweep: June 24, 2026 — 316 starred repos.
 | deepseek-cli                         | 279   | CLI AI coding assistant. Already using.      |
 | basicmachines-co/basic-memory        | 3.2k  | AI conversations with persistent memory.     |
 | arc53/DocsGPT                        | 17k   | Private AI platform for document analysis.   |
+| fcakyon/claude-codex-settings         | 773   | Battle-tested Claude Code/Codex configs.     |
+| holasoymalva/deepseek-cli             | 290   | DeepSeek CLI coding assistant.               |
 
 ## Claude Code Ecosystem
 
@@ -172,6 +182,10 @@ Last sweep: June 24, 2026 — 316 starred repos.
 | karlstav/cava               | 6.2k  | Terminal audio visualizer.   |
 | Swordfish90/cool-retro-term | 25k   | Retro CRT terminal emulator. |
 | chalk/chalk                 | 23k   | Terminal string styling.     |
+| wojciech-graj/doom-ascii    | 860   | Doom in the terminal.        |
+| wojciech-graj/TermGL        | 396   | 2D/3D graphics engine in the terminal. |
+| mirus-ua/hugo-theme-re-terminal | 182 | Retro terminal theme for Hugo. |
+| Cod-e-Codes/ascii-colorizer | 19    | ASCII colorizer (Rust).      |
 
 ## Hardware / Security
 
@@ -181,6 +195,7 @@ Last sweep: June 24, 2026 — 316 starred repos.
 | ESP32Marauder               | 11k   | WiFi/Bluetooth tools for ESP32. |
 | aircrack-ng                 | 7.3k  | WiFi security auditing.         |
 | rapid7/metasploit-framework | 38k   | Security testing framework.     |
+| davmlaw/they_live_adblocker  | 1.3k  | Replace ads with They Live slogans. |
 
 ## Dotfiles / Config
 
