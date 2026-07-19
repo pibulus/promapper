@@ -2217,13 +2217,53 @@ body {
 
 .module-cell--small {
   align-self: start;
+  /* Size container so the tile's INTERIOR can adapt to its socket width
+     (see the @container rules below) — half-tiles stay legible wherever
+     the ladder puts them. */
+  container-type: inline-size;
 }
+/* The width ladder: small only drops to a true half-card when the half is
+   comfortably ≥ ~210px. Below that it rides at card width — a drag from
+   wide to narrow steps 3-across → 2-across → single column with no crush. */
 @media (min-width: 768px) {
-  .module-cell--standard {
+  .module-cell--standard,
+  .module-cell--small {
     grid-column: span 2;
   }
+}
+@media (min-width: 1440px) {
   .module-cell--small {
     grid-column: span 1;
+  }
+}
+/* Tile interior adapts to the socket, not the viewport: controls shrink and
+   type tightens first; the description line goes when there's truly no room.
+   The words get the width — a mini player, not a crushed big one. */
+/* Scoped under the cell class: the base .radio-* rules live LATER in this
+   file, so equal-specificity overrides here would lose the cascade. */
+@container (max-width: 240px) {
+  .module-cell--small .radio-body {
+    gap: 0.45rem;
+  }
+  .module-cell--small .radio-play {
+    width: 2.1rem;
+    height: 2.1rem;
+    box-shadow: 1.5px 1.5px 0 var(--soft-black);
+  }
+  .module-cell--small .radio-next {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+  .module-cell--small .radio-station,
+  .module-cell--small .radio-now {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+@container (max-width: 185px) {
+  .module-cell--small .radio-now {
+    display: none;
   }
 }
 .module-cell--wide {
