@@ -10,13 +10,24 @@ import { signal } from "@preact/signals";
 
 const KEY = "promapper-modules";
 
+/** Retired ids → their successors. radio/tones merged into sound
+ * (July 19); canvas left the rack to become the node map's flip side. */
+const MIGRATIONS: Record<string, string | null> = {
+  radio: "sound",
+  tones: "sound",
+  canvas: null,
+};
+
 function load(): string[] {
   if (typeof localStorage === "undefined") return [];
   try {
     const parsed = JSON.parse(localStorage.getItem(KEY) ?? "[]");
-    return Array.isArray(parsed)
-      ? parsed.filter((x): x is string => typeof x === "string")
-      : [];
+    if (!Array.isArray(parsed)) return [];
+    const ids = parsed
+      .filter((x): x is string => typeof x === "string")
+      .map((id) => MIGRATIONS[id] === undefined ? id : MIGRATIONS[id])
+      .filter((id): id is string => id !== null);
+    return [...new Set(ids)];
   } catch {
     return [];
   }

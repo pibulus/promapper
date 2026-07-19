@@ -15,9 +15,7 @@ import type { ComponentType } from "preact";
 import NotesModule from "./NotesModule.tsx";
 import BishopModule from "./BishopModule.tsx";
 import TakesModule from "./TakesModule.tsx";
-import RadioModule from "./RadioModule.tsx";
-import CanvasModule from "./CanvasModule.tsx";
-import TonesModule from "./TonesModule.tsx";
+import SoundModule from "./SoundModule.tsx";
 
 /** small = short tile (tucks into leftover cells), standard = a core-card
  * cell, wide = full row. */
@@ -61,27 +59,11 @@ export const moduleRegistry: ModuleEntry[] = [
     component: TakesModule,
   },
   {
-    id: "radio",
-    name: "Radio",
-    tagline: "KPAB and friends, while you map.",
+    id: "sound",
+    name: "Sound",
+    tagline: "Radio and a hum for your head — one dial.",
     icon: "radio",
     size: "small",
-    component: RadioModule,
-  },
-  {
-    id: "tones",
-    name: "Tones",
-    tagline: "A hum for your head — focus, rain, warm, deep.",
-    icon: "wave-square",
-    size: "small",
-    component: TonesModule,
-  },
-  {
-    id: "canvas",
-    name: "Canvas",
-    tagline: "Draw by hand — your sketch is already there when you go live.",
-    icon: "pen-ruler",
-    size: "wide",
-    component: CanvasModule,
+    component: SoundModule,
   },
 ];

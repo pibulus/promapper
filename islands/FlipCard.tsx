@@ -28,15 +28,26 @@ interface FlipCardProps {
   back: ComponentChildren;
   /** Accessible label for the flip control (e.g. "Action Items options"). */
   label?: string;
+  /** Notified after every flip — lets a parent lazy-mount a heavy back face
+   * or clear its own "news" state. */
+  onFlip?: (flipped: boolean) => void;
+  /** News dot on the FRONT face's flip button ("the back has something new").
+   */
+  frontBadge?: boolean;
+  /** News dot on the BACK face's flip button ("the front moved on"). */
+  backBadge?: boolean;
 }
 
-export default function FlipCard({ front, back, label }: FlipCardProps) {
+export default function FlipCard(
+  { front, back, label, onFlip, frontBadge, backBadge }: FlipCardProps,
+) {
   const flipped = useSignal(false);
 
   function toggle() {
     flipped.value = !flipped.value;
     hapticTap();
     soundToggle(flipped.value);
+    onFlip?.(flipped.value);
   }
 
   return (
@@ -61,6 +72,9 @@ export default function FlipCard({ front, back, label }: FlipCardProps) {
             aria-label={label ? `${label} — flip` : "Flip card"}
           >
             <i class="fa fa-rotate" aria-hidden="true"></i>
+            {frontBadge && (
+              <span class="flip-card-btn__dot" aria-hidden="true"></span>
+            )}
           </button>
         </div>
 
@@ -79,6 +93,9 @@ export default function FlipCard({ front, back, label }: FlipCardProps) {
             aria-label="Flip back to front"
           >
             <i class="fa fa-rotate-left" aria-hidden="true"></i>
+            {backBadge && (
+              <span class="flip-card-btn__dot" aria-hidden="true"></span>
+            )}
           </button>
         </div>
       </div>

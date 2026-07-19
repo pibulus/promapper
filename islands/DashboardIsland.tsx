@@ -12,6 +12,7 @@ import {
 } from "@core/orchestration/conversation-ops.ts";
 import { liveSession } from "@signals/liveSessionStore.ts";
 import { sendWhiteboardUpdate } from "@signals/partyService.ts";
+import { remoteWhiteboardUpdate } from "@signals/partyConnectionStore.ts";
 import { useEffect, useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import { showToast } from "@utils/toast.ts";
@@ -67,14 +68,14 @@ export default function DashboardIsland() {
     }
 
     // Debounce conversationData write — only persist after user stops drawing.
+    // Capture the conversation the stroke belongs to: switching mid-debounce
+    // must DROP the sketch, not stamp it onto the new conversation.
+    const forId = conversationData.value?.conversation.id;
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => {
-      if (conversationData.value) {
-        conversationData.value = {
-          ...conversationData.value,
-          whiteboardScene: scene,
-        };
-      }
+      const current = conversationData.value;
+      if (!current || current.conversation.id !== forId) return;
+      conversationData.value = { ...current, whiteboardScene: scene };
     }, 2000);
   }
 
@@ -87,6 +88,49 @@ export default function DashboardIsland() {
   const lastAutoDraw = useRef(0);
   const lastDrawnLength = useRef(0);
   const whiteboardRef = useRef<HTMLDivElement>(null);
+
+  // Map ↔ Canvas flip state. The canvas (Excalidraw + a React root) is heavy,
+  // so solo boards mount on first flip; live sessions mount immediately —
+  // remote strokes and AI draws need a live API even while the map shows.
+  const canvasShowing = useSignal(false);
+  const canvasMounted = useSignal(false);
+  // News dots: something landed on the face you're not looking at.
+  const canvasNews = useSignal(false);
+  const mapNews = useSignal(false);
+
+  useEffect(() => {
+    if (liveSession.value) canvasMounted.value = true;
+  }, [liveSession.value]);
+
+  // Remote strokes while the map is up → dot on the flip button.
+  useEffect(() => {
+    let first = true;
+    const unsubscribe = remoteWhiteboardUpdate.subscribe(() => {
+      // subscribe() fires immediately with the current value — that's
+      // history, not news.
+      if (first) {
+        first = false;
+        return;
+      }
+      if (!canvasShowing.value) canvasNews.value = true;
+    });
+    return unsubscribe;
+  }, []);
+
+  // Topic changes while the canvas is up → dot on the flip-back button.
+  const prevNodesSig = useRef("");
+  useEffect(() => {
+    const sig = (conversationData.value?.nodes ?? [])
+      .map((n: { id: string }) => n.id)
+      .join("|");
+    if (
+      prevNodesSig.current && sig !== prevNodesSig.current &&
+      canvasShowing.value
+    ) {
+      mapNews.value = true;
+    }
+    prevNodesSig.current = sig;
+  }, [conversationData.value]);
 
   // Takes (with append receipts) for the Summary card's Pulse back. Reloaded
   // whenever the conversation changes — an append finishing updates the store,
@@ -131,7 +175,9 @@ export default function DashboardIsland() {
   }
 
   function getExcalidrawAPI() {
-    const el = whiteboardRef.current as
+    // The API rides the .shared-whiteboard container INSIDE the flip wrapper
+    // (SharedWhiteboard attaches it to its own div, not to our ref).
+    const el = whiteboardRef.current?.querySelector(".shared-whiteboard") as
       | (HTMLElement & {
         excalidrawAPI?: {
           getSceneElements?: () => unknown[];
@@ -215,6 +261,8 @@ export default function DashboardIsland() {
         sendWhiteboardUpdate(
           JSON.stringify({ elements: updated, appState: {} }),
         );
+        // The AI drew on the hidden face — light the flip button.
+        if (!canvasShowing.value) canvasNews.value = true;
         if (!silent) showToast("Added to the board", "success");
       }
     } catch {
@@ -276,7 +324,11 @@ export default function DashboardIsland() {
   return (
     <div class="dashboard-shell">
       {/* Grid Container - Simple CSS Grid */}
-      <div class="dashboard-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+      {
+        /* 6-unit rack grid (4 on tablet): core cards span 2, small modules
+          span 1, wide spans the row — docs/MODULES.md */
+      }
+      <div class="dashboard-grid grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
         {
           /* Mobile hierarchy: a returning user's question is "what do I do
             next" — Action Items lead the single-column stack, transcript
@@ -285,7 +337,7 @@ export default function DashboardIsland() {
         }
 
         {/* Card 1: Transcript — flips to Voices (who held the floor) */}
-        <div class="order-3 md:order-none min-w-0">
+        <div class="order-3 md:order-none min-w-0 md:col-span-2">
           <FlipCard
             label="Transcript insights"
             front={
@@ -304,7 +356,7 @@ export default function DashboardIsland() {
         </div>
 
         {/* Card 2: Summary — flips to Pulse (takes + receipts, the append story) */}
-        <div class="order-2 md:order-none min-w-0">
+        <div class="order-2 md:order-none min-w-0 md:col-span-2">
           <FlipCard
             label="Project pulse"
             front={<SummaryCard summary={summary ?? null} />}
@@ -323,7 +375,7 @@ export default function DashboardIsland() {
         </div>
 
         {/* Card 3: Action Items — flips to an overview/bulk-actions back */}
-        <div class="order-1 md:order-none min-w-0">
+        <div class="order-1 md:order-none min-w-0 md:col-span-2">
           <FlipCard
             label="Action Items"
             front={
@@ -353,8 +405,82 @@ export default function DashboardIsland() {
           />
         </div>
 
-        {/* Card 4: Topic Visualizations - FULL WIDTH (spans all columns) */}
-        <TopicVisualizationsCard />
+        {
+          /* Card 4: the centerpiece, two authors — the AI draws the front
+            (topic map), you draw the back (canvas). One spatial surface,
+            flipped. News dots mark activity on the hidden face. Keyed by
+            conversation so a switch resets flip state AND remounts the
+            board (no stale scene bleeding across conversations). */
+        }
+        <div
+          class="w-full md:col-span-4 lg:col-span-6 order-4 md:order-none"
+          ref={whiteboardRef}
+        >
+          <FlipCard
+            key={conversation.id}
+            label="Canvas"
+            frontBadge={canvasNews.value}
+            backBadge={mapNews.value}
+            onFlip={(flipped) => {
+              canvasShowing.value = flipped;
+              if (flipped) {
+                canvasMounted.value = true;
+                canvasNews.value = false;
+              } else {
+                mapNews.value = false;
+              }
+            }}
+            front={<TopicVisualizationsCard />}
+            back={
+              <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                  <h3>Canvas</h3>
+                  <span class="card-header-tagline">
+                    {liveSession.value
+                      ? "live with the room"
+                      : "draw alongside the map"}
+                  </span>
+                  <div class="card-header-actions">
+                    <button
+                      type="button"
+                      onClick={() => downloadBoard()}
+                      data-tip="Download as PNG"
+                      aria-label="Download the board as an image"
+                    >
+                      <i class="fa fa-download" aria-hidden="true"></i>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => drawFromConversation(false)}
+                      disabled={isDrawing.value}
+                      data-tip="AI adds to the board"
+                      aria-label="Ask the AI to draw from the conversation"
+                    >
+                      <i
+                        class={`fa ${
+                          isDrawing.value
+                            ? "fa-hourglass-half"
+                            : "fa-wand-magic-sparkles"
+                        }`}
+                        aria-hidden="true"
+                      >
+                      </i>
+                    </button>
+                  </div>
+                </div>
+                <div class="dashboard-card-body canvas-flip-body">
+                  {canvasMounted.value && (
+                    <SharedWhiteboard
+                      roomId={liveSession.value?.roomId ?? "local"}
+                      initialScene={conversationData.value?.whiteboardScene}
+                      onSceneChange={handleSceneChange}
+                    />
+                  )}
+                </div>
+              </div>
+            }
+          />
+        </div>
 
         {
           /* Optional modules — registry order (the board stays arranged),
@@ -381,42 +507,6 @@ export default function DashboardIsland() {
         <div class="order-last md:order-none min-w-0 module-cell module-cell--small">
           <ModuleRack />
         </div>
-
-        {/* Card 5: Whiteboard — only in live meetings, full width */}
-        {liveSession.value && (
-          <div
-            class="order-5 md:order-none"
-            style={{ gridColumn: "1 / -1" }}
-            ref={whiteboardRef}
-          >
-            <div class="whiteboard-toolbar">
-              <span class="whiteboard-toolbar-label">
-                <i class="fa fa-pen-ruler" aria-hidden="true"></i> Whiteboard
-              </span>
-              <div style="display: flex; gap: 0.4rem; align-items: center;">
-                <button
-                  onClick={() => downloadBoard()}
-                  class="whiteboard-draw-btn"
-                  title="Download board as PNG"
-                >
-                  ⬇️
-                </button>
-                <button
-                  onClick={() => drawFromConversation(false)}
-                  disabled={isDrawing.value}
-                  class="whiteboard-draw-btn"
-                >
-                  {isDrawing.value ? "…" : "✏️  Draw"}
-                </button>
-              </div>
-            </div>
-            <SharedWhiteboard
-              roomId={liveSession.value.roomId}
-              initialScene={conversationData.value?.whiteboardScene}
-              onSceneChange={handleSceneChange}
-            />
-          </div>
-        )}
       </div>
 
       {

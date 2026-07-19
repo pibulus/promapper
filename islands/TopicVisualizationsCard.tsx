@@ -37,30 +37,25 @@ export default function TopicVisualizationsCard() {
   }, []);
 
   return (
-    // order-4 keeps the map BELOW the action items in the mobile single-column
-    // stack — grid items without an order default to 0 and would jump above
-    // the order-1/2/3 cards.
-    <div
-      ref={cardRef}
-      class="w-full md:col-span-2 lg:col-span-3 order-4 md:order-none"
-    >
-      <div class="dashboard-card">
-        <div class="dashboard-card-header">
-          <h3>Topic Visualizations</h3>
-        </div>
-        <div class="topic-visualizations-shell">
-          {isVisible.value ? <VisualizationSelector /> : (
-            // Loading placeholder
-            <div class="topic-visualizations-placeholder flex items-center justify-center">
-              <div class="topic-visualizations-placeholder__inner">
-                <div class="mb-2 topic-visualizations-placeholder__emoji">
-                  📊
-                </div>
-                <div>Loading visualization...</div>
+    // Just the card — the grid cell (spans + mobile order) and the flip wrap
+    // live in DashboardIsland, where this is the front face of the
+    // map ↔ canvas centerpiece.
+    <div class="dashboard-card" ref={cardRef}>
+      <div class="dashboard-card-header">
+        <h3>Topic Visualizations</h3>
+      </div>
+      <div class="topic-visualizations-shell">
+        {isVisible.value ? <VisualizationSelector /> : (
+          // Loading placeholder
+          <div class="topic-visualizations-placeholder flex items-center justify-center">
+            <div class="topic-visualizations-placeholder__inner">
+              <div class="mb-2 topic-visualizations-placeholder__emoji">
+                📊
               </div>
+              <div>Loading visualization...</div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
