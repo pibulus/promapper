@@ -119,10 +119,19 @@ export default function TakesModule() {
 
   function deleteTake(take: StoredRecording) {
     if (playingTakeId.value === take.id) stopPlayback();
-    deleteRecording(take.id);
+    deleteRecording(take.id).catch(() => {
+      // IDB delete failed (quota weirdness, Safari private mode) — put the
+      // row back so the list doesn't drift from storage.
+      takes.value = [...takes.value, take].sort((a, b) =>
+        b.createdAt.localeCompare(a.createdAt)
+      );
+      showToast("Couldn't delete that take", "warning");
+    });
     takes.value = takes.value.filter((t) => t.id !== take.id);
     showUndoToast(`Deleted ${take.fileName}`, () => {
-      saveRecording(take);
+      saveRecording(take).catch(() => {
+        showToast("Couldn't restore the take's audio", "warning");
+      });
       takes.value = [...takes.value, take].sort((a, b) =>
         b.createdAt.localeCompare(a.createdAt)
       );

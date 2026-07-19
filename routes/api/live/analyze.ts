@@ -181,7 +181,12 @@ export const handler: Handlers = {
       // Server-push path (parity with /api/append). The in-app loop omits
       // roomId on purpose: the host applies the result and liveSync
       // broadcasts ONE conversation_update — no double write.
-      const roomId = typeof body.roomId === "string" ? body.roomId : null;
+      // Same room-id shape rule as shareProtocol's sanitizeShareLive —
+      // anything else never reaches the party worker.
+      const roomId = typeof body.roomId === "string" &&
+          /^[A-Za-z0-9_-]{3,64}$/.test(body.roomId.trim())
+        ? body.roomId.trim()
+        : null;
       await pushResultToRoom(roomId, finalResult);
 
       return new Response(
