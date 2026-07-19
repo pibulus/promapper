@@ -67,6 +67,12 @@ function createMockAIService(): AIService {
     async chatText(_prompt, _hint, _signal?: AbortSignal) {
       return '{"operations": []}';
     },
+    async chatMessages(_messages, _hint, _signal?: AbortSignal) {
+      return "";
+    },
+    async *chatStream(_messages, _hint, _signal?: AbortSignal) {
+      yield "";
+    },
   };
 }
 

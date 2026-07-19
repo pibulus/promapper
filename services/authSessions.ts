@@ -33,7 +33,7 @@ function base64url(input: Uint8Array): string {
     .replace(/=+$/, "");
 }
 
-function base64urlDecode(str: string): Uint8Array {
+function base64urlDecode(str: string): Uint8Array<ArrayBuffer> {
   const padded = str.replace(/-/g, "+").replace(/_/g, "/") +
     "===".slice(0, (4 - (str.length % 4)) % 4);
   return Uint8Array.from(atob(padded), (c) => c.charCodeAt(0));

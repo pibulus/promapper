@@ -32,10 +32,15 @@ export default function App({ Component }: PageProps) {
           property="og:description"
           content="A friendly way to turn ongoing conversations and notes into transcripts, summaries, actions, topic maps, docs, and shared context."
         />
-        {/* ABSOLUTE image URL — link scrapers (iMessage, WhatsApp, Slack)
+        {
+          /* ABSOLUTE image URL — link scrapers (iMessage, WhatsApp, Slack)
             silently drop relative og:image paths, so the card showed no
-            thumbnail. Width/height let them render before downloading. */}
-        <meta property="og:image" content="https://promapper.app/og-image.png" />
+            thumbnail. Width/height let them render before downloading. */
+        }
+        <meta
+          property="og:image"
+          content="https://promapper.app/og-image.png"
+        />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta

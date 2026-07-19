@@ -127,9 +127,10 @@ Turn the same project map into different useful documents:
 4. **First API call**
 
    When you trigger any feature that reads the conversation from the UI, the
-   browser will prompt you for the `API_AUTH_TOKEN`. Paste the same value you set in `.env`—it’s
-   only used to open a short-lived HttpOnly session cookie, so it’s never stored
-   in LocalStorage and you’ll be prompted again when the session expires.
+   browser will prompt you for the `API_AUTH_TOKEN`. Paste the same value you
+   set in `.env`—it’s only used to open a short-lived HttpOnly session cookie,
+   so it’s never stored in LocalStorage and you’ll be prompted again when the
+   session expires.
 
    Whenever you stop a clip that’s at least 30 seconds long, we automatically
    save a `.webm` backup in your Downloads folder so you can re-upload if

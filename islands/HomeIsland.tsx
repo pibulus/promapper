@@ -81,6 +81,13 @@ export default function HomeIsland() {
   const demoStage = useSignal("");
   const showConfetti = useSignal(false);
 
+  // Plain consts for hook dependency arrays — ternaries/optional chains
+  // inside a deps array trip deno lint's react-rules-of-hooks CFG and mark
+  // every later hook "conditional".
+  const liveRoomId = liveSession.value?.roomId;
+  const livePartyHost = liveSession.value?.partyHost;
+  const hasConversation = conversationData.value ? 1 : 0;
+
   // Auto-start live mode if arriving via /live/:roomId link
   useEffect(() => {
     if (!IS_BROWSER) return;
@@ -172,7 +179,7 @@ export default function HomeIsland() {
       globalThis.removeEventListener("resize", update);
       el?.removeEventListener("scroll", update);
     };
-  }, [liveSession.value?.roomId, conversationData.value ? 1 : 0]);
+  }, [liveRoomId, hasConversation]);
 
   // ✨ typed.js — typewriter effect on the hero heading
   useEffect(() => {
@@ -265,7 +272,7 @@ export default function HomeIsland() {
       }
     }, 10000);
     return () => clearTimeout(timer);
-  }, [session?.roomId, connected]);
+  }, [liveRoomId, connected]);
 
   // Live recording — shared hook handles MediaRecorder lifecycle.
   const liveTranscript = useSignal<
@@ -361,7 +368,7 @@ export default function HomeIsland() {
       // round still lands — it's the host's own conversation).
       resetLiveAnalysis();
     };
-  }, [session?.roomId, session?.partyHost]);
+  }, [liveRoomId, livePartyHost]);
 
   // Join/leave toasts. Keep the previous roster (not just ids) so leavers get
   // named too — "Someone left" while everyone's avatar is right there read

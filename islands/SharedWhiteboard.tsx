@@ -67,7 +67,7 @@ export default function SharedWhiteboard(
       // Excalidraw's browser bundle reads `process.env` at module init and
       // the esbuild pipeline doesn't shim Node globals — without this the
       // import throws "process is not defined" and the board never mounts.
-      const g = globalThis as typeof globalThis & {
+      const g = globalThis as unknown as {
         process?: { env: Record<string, string> };
       };
       g.process ??= { env: {} };

@@ -106,7 +106,10 @@ export default function ShareButton() {
 
   // Native share sheet on mobile (falls back to clipboard). Returns true if the
   // OS sheet handled it, so callers can skip the copy toast.
-  async function tryNativeShare(url: string, message: string): Promise<boolean> {
+  async function tryNativeShare(
+    url: string,
+    message: string,
+  ): Promise<boolean> {
     const nav = navigator as Navigator & {
       share?: (data: ShareData) => Promise<void>;
     };

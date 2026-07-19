@@ -320,7 +320,7 @@ export function clearAllConversations(): void {
 // AUTO-SAVE HELPERS
 // ===================================================================
 
-let saveTimeout: number | null = null;
+let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
 /**
  * Debounced save - prevents too frequent writes

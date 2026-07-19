@@ -43,6 +43,7 @@
   ],
   "imports": {
     "$fresh/": "https://deno.land/x/fresh@1.7.3/",
+    "@std/dotenv": "jsr:@std/dotenv@^0.225.7",
     "html-to-image": "npm:html-to-image@^1.11.13",
     "animejs": "npm:animejs@^3.2.2",
     "typed.js": "npm:typed.js@^2.1.0",

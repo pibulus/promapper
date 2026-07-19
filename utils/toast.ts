@@ -64,7 +64,7 @@ export function showUndoToast(
   };
   const toast = buildToastShell(message, icon, bg, "info");
 
-  let timer = 0;
+  let timer: ReturnType<typeof setTimeout> | 0 = 0;
   const close = () => {
     if (timer) clearTimeout(timer);
     timer = 0;
@@ -120,7 +120,7 @@ export function showActionToast(
   };
   const toast = buildToastShell(message, icon, bg, "info");
 
-  let timer = 0;
+  let timer: ReturnType<typeof setTimeout> | 0 = 0;
   const close = () => {
     if (timer) clearTimeout(timer);
     timer = 0;

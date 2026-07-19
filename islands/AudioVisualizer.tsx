@@ -14,7 +14,7 @@ interface AudioVisualizerProps {
 export default function AudioVisualizer({ analyser }: AudioVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameIdRef = useRef<number | null>(null);
-  const dataArrayRef = useRef<Uint8Array | null>(null);
+  const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
   const accentColorRef = useRef<string>("rgba(232, 131, 156, 0.8)");
 
   useEffect(() => {
@@ -39,7 +39,9 @@ export default function AudioVisualizer({ analyser }: AudioVisualizerProps) {
     }
 
     // Initialize data array for frequency data
-    dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
+    dataArrayRef.current = new Uint8Array(
+      new ArrayBuffer(analyser.frequencyBinCount),
+    );
 
     // Animation draw function - ELEGANT BARS
     function draw() {

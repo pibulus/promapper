@@ -73,6 +73,14 @@ function createMockAIService(
       calls.push("chatText");
       return "";
     },
+    async chatMessages(_messages, _hint, _signal?: AbortSignal) {
+      calls.push("chatMessages");
+      return "";
+    },
+    async *chatStream(_messages, _hint, _signal?: AbortSignal) {
+      calls.push("chatStream");
+      yield "";
+    },
     ...overrides,
   };
 }
