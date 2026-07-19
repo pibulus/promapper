@@ -39,7 +39,7 @@ export const moduleRegistry: ModuleEntry[] = [
     name: "Notes",
     tagline: "A scratch pad that stays with this conversation.",
     icon: "note-sticky",
-    size: "standard",
+    size: "small",
     component: NotesModule,
   },
   {

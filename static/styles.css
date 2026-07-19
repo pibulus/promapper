@@ -2265,6 +2265,18 @@ body {
 .module-cell--small .dashboard-card {
   height: auto;
 }
+/* Two half-tall instruments sharing one pillar — the vertical version of
+   the notes↔takes pairing. Gap matches the grid so the seam reads as a
+   row boundary, not a crack. */
+.module-cell--stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--card-gap);
+}
+.module-stack-slot {
+  min-width: 0;
+  min-height: 0;
+}
 /* Half-module height: room for Bishop's log + pinned ask row; Sound stays
    naturally shorter (height is a cap, not a demand). */
 .module-cell--small .dashboard-card-body {

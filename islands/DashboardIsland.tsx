@@ -506,20 +506,43 @@ export default function DashboardIsland() {
           const cells = paired
             ? enabled.filter((m) => m.id !== "takes")
             : enabled;
-          return cells.map((m) => (
+          const renderModule = (m: (typeof cells)[number]) =>
+            paired && m.id === "notes"
+              ? (
+                <FlipCard
+                  label="Takes"
+                  front={<NotesModule />}
+                  back={<TakesModule />}
+                />
+              )
+              : <m.component />;
+          // Half-tall smalls STACK in pairs — two short instruments share
+          // one pillar (Pablo's 1/1/2, the height half), so the module row
+          // closes flat instead of leaving dead air under short tiles.
+          const groups: (typeof cells)[] = [];
+          for (const m of cells) {
+            const last = groups[groups.length - 1];
+            if (
+              m.size === "small" && last && last.length === 1 &&
+              last[0].size === "small"
+            ) {
+              last.push(m);
+            } else {
+              groups.push([m]);
+            }
+          }
+          return groups.map((group) => (
             <div
-              key={`${conversation.id}-${m.id}`}
-              class={`order-6 md:order-none min-w-0 module-cell module-cell--${m.size}`}
+              key={`${conversation.id}-${group.map((m) => m.id).join("-")}`}
+              class={`order-6 md:order-none min-w-0 module-cell module-cell--${
+                group[0].size
+              }${group.length > 1 ? " module-cell--stack" : ""}`}
             >
-              {paired && m.id === "notes"
-                ? (
-                  <FlipCard
-                    label="Takes"
-                    front={<NotesModule />}
-                    back={<TakesModule />}
-                  />
-                )
-                : <m.component />}
+              {group.map((m) => (
+                <div key={m.id} class="module-stack-slot">
+                  {renderModule(m)}
+                </div>
+              ))}
             </div>
           ));
         })()}
