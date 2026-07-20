@@ -1643,9 +1643,12 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .mapper-scene::before,
   .mapper-card,
-  .mapper-slab-button {
+  .mapper-slab-button,
+  .mapper-hero-line {
     animation: none !important;
     transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 
   .mapper-card:hover,

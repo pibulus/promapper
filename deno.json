@@ -64,7 +64,6 @@
     "@std/dotenv": "jsr:@std/dotenv@^0.225.7",
     "html-to-image": "npm:html-to-image@^1.11.13",
     "animejs": "npm:animejs@^3.2.2",
-    "typed.js": "npm:typed.js@^2.1.0",
     "partysocket": "npm:partysocket@^1.0.2",
     "@dicebear/core": "npm:@dicebear/core@9.4.2",
     "@dicebear/collection": "npm:@dicebear/collection@9.4.2",

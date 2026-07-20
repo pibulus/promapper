@@ -181,41 +181,8 @@ export default function HomeIsland() {
     };
   }, [liveRoomId, hasConversation]);
 
-  // ✨ typed.js — typewriter effect on the hero heading
-  useEffect(() => {
-    if (!IS_BROWSER || conversationData.value) return;
-    const el = document.querySelector(".mapper-hero-title");
-    if (!el) return;
-
-    let cancelled = false;
-    import("typed.js").then(({ default: Typed }) => {
-      if (cancelled) return;
-      new Typed(el, {
-        strings: ["See what you're^500<br>really saying"],
-        typeSpeed: 55,
-        backSpeed: 20,
-        startDelay: 400,
-        smartBackspace: false,
-        showCursor: true,
-        cursorChar: "▌",
-        // The cursor is typewriter charm WHILE typing; afterwards it lingers
-        // as a stray grey block on the hero. Fade it out on completion.
-        onComplete: (self: { cursor?: HTMLElement }) => {
-          if (self.cursor) self.cursor.style.display = "none";
-        },
-        contentType: "html",
-        loop: false,
-      });
-    }).catch(() => {
-      // Chunk failed to load (network blip) — restore the static heading so
-      // the hero isn't left blank.
-      el.innerHTML = "See what you're<br>really saying";
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Hero heading entrance is CSS-only (.mapper-hero-line / mapperLineIn in
+  // styles.css) — full text is server-rendered immediately, no JS retype.
 
   // ✨ anime.js — spring card entrance when conversation data appears
   useEffect(() => {
@@ -906,7 +873,7 @@ export default function HomeIsland() {
           © 2026 ProMapper
           <i class="fa fa-heart" aria-hidden="true"></i>
           <span class="app-footer__tagline">
-            made in Melbourne · everything stays on your device
+            made in Melbourne
           </span>
         </span>
         <span class="app-footer__controls">
