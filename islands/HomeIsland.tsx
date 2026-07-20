@@ -802,7 +802,13 @@ export default function HomeIsland() {
           /* Dock protection (pb-36) lives on the CONTENT grid, not <main> —
             padding under the footer read as a giant dead band at page end. */
         }
-        <main class="app-scroll flex-1 overflow-y-auto px-4 pt-4 sm:px-6 lg:px-8">
+        {
+          /* Horizontal gutter matches header/footer exactly (px-4 sm:px-6,
+            no extra lg:px-8) — .mapper-stage used to stack its OWN padding
+            on top of this, so the card's edge gutter drifted to ~96px
+            while header/footer chrome sat at ~24px. */
+        }
+        <main class="app-scroll flex-1 overflow-y-auto px-4 pt-4 sm:px-6">
           <div
             class={`max-w-7xl mx-auto grid gap-4 sm:gap-6 ${
               conversationData.value ? "pb-28" : "pb-8"
@@ -859,37 +865,39 @@ export default function HomeIsland() {
           bottom (sticky), full-bleed, holding the dials. */
       }
       <footer class="app-footer">
-        {
-          /* Phones only (CSS-gated): the conversation title docks here in the
-            thumb zone — the h1 stays in the header for screen readers and
-            desktop, so this copy is decorative. */
-        }
-        {conversationData.value?.conversation.title && (
-          <span class="app-footer__title" aria-hidden="true">
-            {conversationData.value.conversation.title}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 w-full app-footer__container">
+          {
+            /* Phones only (CSS-gated): the conversation title docks here in the
+              thumb zone — the h1 stays in the header for screen readers and
+              desktop, so this copy is decorative. */
+          }
+          {conversationData.value?.conversation.title && (
+            <span class="app-footer__title" aria-hidden="true">
+              {conversationData.value.conversation.title}
+            </span>
+          )}
+          <span class="app-footer__brand">
+            © 2026 ProMapper
+            <i class="fa fa-heart" aria-hidden="true"></i>
+            <span class="app-footer__tagline">
+              made in Melbourne
+            </span>
           </span>
-        )}
-        <span class="app-footer__brand">
-          © 2026 ProMapper
-          <i class="fa fa-heart" aria-hidden="true"></i>
-          <span class="app-footer__tagline">
-            made in Melbourne
+          <span class="app-footer__controls">
+            <ThemeSwitcher />
+            <SoundToggle />
+            <button
+              type="button"
+              class="header-icon-btn"
+              onClick={() => shortcutsOpen.value = true}
+              aria-label="Keyboard shortcuts"
+              data-tip="Shortcuts"
+              data-tip-align="right"
+            >
+              <i class="fa fa-keyboard" aria-hidden="true"></i>
+            </button>
           </span>
-        </span>
-        <span class="app-footer__controls">
-          <ThemeSwitcher />
-          <SoundToggle />
-          <button
-            type="button"
-            class="header-icon-btn"
-            onClick={() => shortcutsOpen.value = true}
-            aria-label="Keyboard shortcuts"
-            data-tip="Shortcuts"
-            data-tip-align="right"
-          >
-            <i class="fa fa-keyboard" aria-hidden="true"></i>
-          </button>
-        </span>
+        </div>
       </footer>
 
       {/* Auth modal — triggered by requestAuthToken() from anywhere */}

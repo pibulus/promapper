@@ -956,16 +956,24 @@ body {
 
 .mapper-stage {
   position: relative;
-  padding: clamp(2.4rem, 6vw, 5rem) clamp(1.2rem, 5vw, 4rem)
-    clamp(1.8rem, 4vw, 3.5rem);
-  min-height: max(560px, 68vh);
+  /* Vertical only — horizontal gutter now comes from <main>'s own
+     px-4 sm:px-6 (matches header/footer exactly). This used to stack its
+     OWN clamp() padding on top of main's, drifting the card's edge gutter
+     to ~96px while header/footer sat at ~24px.
+     Even top/bottom clamps too — was 2.4-5rem top vs 1.8-3.5rem bottom,
+     which pinned the card high with dead air stacking underneath it. */
+  padding: clamp(2rem, 5vw, 4rem) 0;
+  min-height: max(500px, 60vh);
   display: flex;
   align-items: center;
 }
 
 .mapper-card {
   position: relative;
-  width: min(100%, 1100px);
+  /* Tighter + narrower: a full 1100px card left the hero column reading
+     ~40% full against a packed input column. 880px brings both columns
+     into balance without the wide half-empty float. */
+  width: min(100%, 880px);
   border: 3px solid
     var(--soft-black); /* use shared soft black for clean neutrals */
   border-radius: 26px;
@@ -983,7 +991,7 @@ body {
     0 6px 12px rgba(30, 23, 20, 0.12),
     0 0 60px color-mix(in srgb, var(--color-accent) 12%, transparent),
     0 0 75px rgba(173, 232, 219, 0.10);
-  min-height: clamp(430px, 60vh, 540px);
+  min-height: clamp(380px, 52vh, 480px);
   overflow: visible; /* prevents text/controls from clipping */
   isolation: isolate; /* keeps the glow underneath the slab */
   transition: transform 220ms ease, box-shadow 220ms ease;
@@ -1028,11 +1036,14 @@ body {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(320px, 0.85fr) minmax(340px, 1fr);
-  gap: clamp(1.8rem, 4vw, 3rem);
-  padding: clamp(2.3rem, 3.5vw, 3.2rem);
+  /* Even split, not 0.85/1 — on the narrower 880px card the old ratio left
+     the copy column looking squeezed relative to the input. Equal fr's read
+     balanced at this width. */
+  grid-template-columns: minmax(280px, 1fr) minmax(300px, 1fr);
+  gap: clamp(1.5rem, 3.5vw, 2.25rem);
+  padding: clamp(1.8rem, 3vw, 2.5rem);
   align-items: center;
-  min-height: 430px;
+  min-height: unset;
 }
 
 .mapper-hero-copy {
@@ -1111,22 +1122,15 @@ body {
 }
 
 .mapper-capture-block {
-  border: 2px solid rgba(30, 23, 20, 0.12);
-  border-radius: 20px;
-  padding: 1.35rem;
-  background:
-    linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.62) 0%,
-    rgba(255, 246, 239, 0.92) 100%
-  ),
-    color-mix(in srgb, var(--module-shell, #fff8f1) 85%, #ffffff);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  /* Medium shadow - sits below hero, above button */
-  box-shadow:
-    0 6px 14px rgba(30, 23, 20, 0.10),
-    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+  /* Was its own soft-bordered/blurred panel wrapping .mapper-unified-input
+     — that middle layer was the whole "input is lost inside soft nested
+     boxes" problem (card > this panel > the input = 3 fading rectangles,
+     no clear "type here"). Now a plain layout shell; the input itself
+     carries the one confident border. */
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
 }
 
 .mapper-block-header {
@@ -1163,13 +1167,19 @@ body {
 }
 
 .mapper-unified-input {
-  border: 2px solid rgba(30, 23, 20, 0.16);
-  border-radius: 18px;
+  /* Same hard-border language as .mapper-slab-button (the one thing on this
+     card that already reads instantly): --line-ink, real weight, a toy
+     offset-shadow instead of a soft inset glow. This IS the input now —
+     there's no middle panel diluting it, so it needs to hold its own
+     against the card the way the CTAs already do. */
+  border: 2.5px solid var(--line-ink);
+  border-radius: 16px;
   padding: 1.1rem;
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease,
-    background 150ms ease;
+    background 150ms ease,
+    transform 150ms ease;
   background:
     linear-gradient(
     180deg,
@@ -1179,20 +1189,27 @@ body {
     var(--soft-cream); /* warm cream golden master */
   cursor: text;
   position: relative;
-  /* Proper inner framing - gives it texture and depth */
-  box-shadow:
-    inset 0 1px 2px rgba(30, 23, 20, 0.06),
-    inset 0 0 0 1px rgba(30, 23, 20, 0.08);
+  box-shadow: 3px 3px 0 0 var(--line-ink);
 }
 
 .mapper-unified-input:not(.is-recording):hover {
-  border-color: rgba(232, 131, 156, 0.45);
+  border-color: var(--accent-ink);
   background: var(--soft-cream-dark);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 0 var(--accent-ink);
+}
+
+/* Focus-within — the input had NO focus state at all before; on a page
+   whose two buttons already scream "tap me" via hard contrast, a soft-blur
+   textarea with nothing happening on focus was the quietest element on the
+   whole card. This makes "you are now typing" unmistakable. */
+.mapper-unified-input:focus-within {
+  border-color: var(--accent-ink);
+  background: var(--surface-white-warm, #fffef7);
+  transform: translate(-1px, -1px);
   box-shadow:
-    inset 0 1px 2px rgba(30, 23, 20, 0.08),
-    inset 0 0 0 1px rgba(30, 23, 20, 0.10),
-    0 10px 22px rgba(30, 23, 20, 0.08),
-    0 0 0 1px rgba(255, 255, 255, 0.35) inset;
+    4px 4px 0 0 var(--accent-ink),
+    0 0 0 4px color-mix(in srgb, var(--color-accent) 18%, transparent);
 }
 
 .mapper-unified-input textarea {
@@ -1230,8 +1247,9 @@ body {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 239, 245, 0.9)),
     color-mix(in srgb, var(--color-accent) 10%, transparent);
-  box-shadow: 0 20px 45px color-mix(in srgb, var(--color-accent) 18%,
-    transparent);
+  box-shadow:
+    4px 4px 0 0 var(--accent-ink),
+    0 20px 45px color-mix(in srgb, var(--color-accent) 18%, transparent);
 }
 
 .mapper-unified-input.has-file textarea {
@@ -6776,12 +6794,10 @@ a:focus-visible {
   left: 0;
   right: 0;
   z-index: calc(var(--z-drawer) - 5);
-  padding: 0.3rem 1.4rem calc(0.3rem + env(safe-area-inset-bottom, 0px));
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: nowrap;
+  /* Horizontal gutter now lives on .app-footer__container (matches the
+     header's max-w-7xl mx-auto px-4 sm:px-6 exactly) — this bar only owns
+     vertical padding + the safe-area inset. */
+  padding: 0.3rem 0 calc(0.3rem + env(safe-area-inset-bottom, 0px));
   border-top: 2px solid var(--color-border);
   background: rgba(255, 250, 245, 0.92);
   backdrop-filter: blur(12px);
@@ -6790,21 +6806,30 @@ a:focus-visible {
   font-size: var(--tiny-size);
   color: var(--color-text-secondary);
 }
+
+.app-footer__container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: nowrap;
+}
 /* Conversation title strip — the footer's top row on phones (the thumb
    zone). Hidden on desktop, where the title sits beside the wordmark. */
 .app-footer__title {
   display: none;
 }
 @media (max-width: 640px) {
-  .app-footer {
+  .app-footer__container {
     flex-wrap: wrap;
   }
   .app-footer__title {
     display: block;
     flex: 1 1 100%;
-    /* Bleed through the footer's own padding to run full-width. */
-    margin: -0.3rem -1.4rem 0.05rem;
-    padding: 0.34rem 1.4rem 0.38rem 2.25rem;
+    /* Bleed through the container's own gutter (Tailwind px-4 = 1rem on
+       phones) to run full-width. */
+    margin: -0.3rem -1rem 0.05rem;
+    padding: 0.34rem 1rem 0.38rem 1.85rem;
     position: relative;
     font-family: var(--font-primary, Inter, sans-serif);
     font-size: 0.78rem;
@@ -6820,7 +6845,7 @@ a:focus-visible {
   .app-footer__title::before {
     content: "";
     position: absolute;
-    left: 1.45rem;
+    left: 1.05rem;
     top: 50%;
     transform: translateY(-50%);
     width: 0.32rem;
