@@ -57,10 +57,25 @@ export interface PartyCallbacks {
 }
 
 export interface PartyConnectOptions {
-  host: string; // PartyKit host (e.g. localhost:1999 or *.partykit.dev)
+  /**
+   * Collab server host — the Durable Objects worker
+   * (e.g. promapper-collab.pibulus.workers.dev), or localhost:8799 in dev.
+   * Scheme-less is fine; ws/wss is chosen from the host below.
+   */
+  host: string;
   roomId: string;
   avatar: string;
   alias?: string;
+}
+
+/**
+ * Local dev hosts speak plain ws://; everything else (the workers.dev DO
+ * worker, any custom domain) is TLS-only and must be wss://.
+ */
+export function isLocalHost(host: string): boolean {
+  return /^(localhost|127\.0\.0\.1)(:|$)/.test(
+    host.trim().replace(/^\w+:\/\//, ""),
+  );
 }
 
 let socket: PartySocket | null = null;
@@ -87,14 +102,19 @@ export function connectToRoom(
 
   let thisSocket: PartySocket;
   try {
+    // partysocket builds `${protocol}://${host}/parties/${party}/${room}` —
+    // which is EXACTLY the path the Durable Objects worker serves, by design.
+    // So the PartyKit -> DO migration needs no change here beyond the host
+    // (and the scheme, since workers.dev is always TLS).
     thisSocket = new PartySocket({
       host: options.host,
       party: "conversation",
       room: options.roomId,
       query,
+      ...(isLocalHost(options.host) ? {} : { protocol: "wss" as const }),
     });
   } catch (err) {
-    console.error("PartySocket constructor failed:", err);
+    console.error("Collab socket constructor failed:", err);
     partyConnected.value = false;
     connectedRoomId.value = null;
     return;

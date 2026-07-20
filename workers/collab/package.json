@@ -1,0 +1,14 @@
+{
+  "name": "promapper-collab",
+  "private": true,
+  "description": "Cloudflare Durable Objects worker for ProMapper live collaboration — ported from PartyKit, identical wire protocol.",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.104.0"
+  }
+}

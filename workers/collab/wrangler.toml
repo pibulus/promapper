@@ -1,0 +1,16 @@
+name = "promapper-collab"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+
+workers_dev = true
+
+# The room class. new_sqlite_classes (not new_classes) is required for the
+# SQLite-backed storage backend, which is the only option on the Workers free
+# plan and is also the going-forward default for new Durable Objects.
+[[durable_objects.bindings]]
+name = "CONVERSATION_ROOM"
+class_name = "ConversationRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ConversationRoom"]

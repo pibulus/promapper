@@ -2,17 +2,14 @@
  * Party Updates — server-side push of AI results into a live room.
  *
  * After /api/process or /api/append computes a result, if the request carried a
- * roomId we POST the conversation snapshot to the PartyKit room so every
- * connected client gets it in real time. No-ops silently when PartyKit isn't
- * configured (PARTYKIT_HOST unset), so single-player flows are unaffected.
+ * roomId we POST the conversation snapshot to the live room so every connected
+ * client gets it in real time. The room is a Cloudflare Durable Object
+ * (workers/collab) — formerly PartyKit. No-ops silently when the collab host
+ * isn't configured, so single-player flows are unaffected.
  */
 
 import type { ConversationFlowResult } from "@core/orchestration/conversation-flow.ts";
-
-function partyHost(): string {
-  return (Deno.env.get("PARTYKIT_HOST") ??
-    Deno.env.get("PUBLIC_PARTYKIT_HOST") ?? "").trim();
-}
+import { collabHost as partyHost } from "@services/collabHost.ts";
 
 /** Map a flow result into the conversation-snapshot shape the room sanitizes. */
 function toSnapshot(result: ConversationFlowResult) {

@@ -10,6 +10,7 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { Head } from "$fresh/runtime.ts";
 import HomeIsland from "../../islands/HomeIsland.tsx";
+import { collabHost } from "@services/collabHost.ts";
 
 interface LiveData {
   roomId: string;
@@ -18,8 +19,7 @@ interface LiveData {
 
 export const handler: Handlers<LiveData> = {
   GET(_req, ctx) {
-    const partyHost = (Deno.env.get("PUBLIC_PARTYKIT_HOST") ??
-      Deno.env.get("PARTYKIT_HOST") ?? "").trim();
+    const partyHost = collabHost();
     // Sanitize the roomId before it reaches the template — V8's JSON.stringify
     // does NOT guarantee escaping of </ (engine-dependent). A roomId containing
     // </script> would break out of the inline bootstrap script.
