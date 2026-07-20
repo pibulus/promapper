@@ -22,7 +22,6 @@ import * as $index from "./routes/index.tsx";
 import * as $live_roomId_ from "./routes/live/[roomId].tsx";
 import * as $shared_shareId_ from "./routes/shared/[shareId].tsx";
 import * as $shared_index from "./routes/shared/index.tsx";
-import * as $ArcDiagramViz from "./islands/ArcDiagramViz.tsx";
 import * as $AudioRecorder from "./islands/AudioRecorder.tsx";
 import * as $AudioVisualizer from "./islands/AudioVisualizer.tsx";
 import * as $AuthModalIsland from "./islands/AuthModalIsland.tsx";
@@ -80,7 +79,6 @@ const manifest = {
     "./routes/shared/index.tsx": $shared_index,
   },
   islands: {
-    "./islands/ArcDiagramViz.tsx": $ArcDiagramViz,
     "./islands/AudioRecorder.tsx": $AudioRecorder,
     "./islands/AudioVisualizer.tsx": $AudioVisualizer,
     "./islands/AuthModalIsland.tsx": $AuthModalIsland,

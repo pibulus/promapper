@@ -56,48 +56,15 @@ export function showUndoToast(
   onUndo: () => void,
   duration: number = 6000,
 ): { dismiss: () => void } {
-  if (typeof window === "undefined") return { dismiss: () => {} };
-
-  const { icon, bg } = {
-    icon: "fa-rotate-left",
-    bg: "#d4a01a", // warning amber
-  };
-  const toast = buildToastShell(message, icon, bg, "info");
-
-  let timer: ReturnType<typeof setTimeout> | 0 = 0;
-  const close = () => {
-    if (timer) clearTimeout(timer);
-    timer = 0;
-    dismissToast(toast);
-  };
-
-  // Real <button> element + addEventListener (no innerHTML) — keeps the
-  // anti-XSS guarantee even though label text here is static.
-  const undoBtn = document.createElement("button");
-  undoBtn.type = "button";
-  undoBtn.textContent = "Undo";
-  undoBtn.style.cssText =
-    `margin-left:auto;flex-shrink:0;cursor:pointer;border:none;` +
-    `background:rgba(255,255,255,0.22);color:#fff;font-weight:700;` +
-    `font-size:0.8rem;padding:0.25rem 0.7rem;border-radius:8px;`;
-  undoBtn.addEventListener("click", () => {
-    try {
-      onUndo();
-    } catch (err) {
-      console.error("Undo failed:", err);
-    }
-    close();
-  });
-
-  toast.appendChild(undoBtn);
-  document.body.appendChild(toast);
-
-  timer = setTimeout(() => {
-    timer = 0;
-    dismissToast(toast);
-  }, duration);
-
-  return { dismiss: close };
+  // warning amber + rotate-left icon
+  return buildActionableToast(
+    message,
+    "fa-rotate-left",
+    "#d4a01a",
+    "Undo",
+    onUndo,
+    duration,
+  );
 }
 
 /**
@@ -112,12 +79,32 @@ export function showActionToast(
   onAction: () => void,
   duration: number = 8000,
 ): { dismiss: () => void } {
+  // info blue
+  return buildActionableToast(
+    message,
+    "fa-info-circle",
+    "#5b8def",
+    actionLabel,
+    onAction,
+    duration,
+  );
+}
+
+/**
+ * Shared builder for toasts with a clickable button (Undo/Action variants).
+ * Clicking the button runs `onClick`, cancels the auto-dismiss, and removes
+ * the toast immediately. Returns a handle to dismiss it programmatically.
+ */
+function buildActionableToast(
+  message: string,
+  icon: string,
+  bg: string,
+  buttonLabel: string,
+  onClick: () => void,
+  duration: number,
+): { dismiss: () => void } {
   if (typeof window === "undefined") return { dismiss: () => {} };
 
-  const { icon, bg } = {
-    icon: "fa-info-circle",
-    bg: "#5b8def", // info blue
-  };
   const toast = buildToastShell(message, icon, bg, "info");
 
   let timer: ReturnType<typeof setTimeout> | 0 = 0;
@@ -127,23 +114,25 @@ export function showActionToast(
     dismissToast(toast);
   };
 
-  const actionBtn = document.createElement("button");
-  actionBtn.type = "button";
-  actionBtn.textContent = actionLabel;
-  actionBtn.style.cssText =
+  // Real <button> element + addEventListener (no innerHTML) — keeps the
+  // anti-XSS guarantee: label is set via textContent, never innerHTML.
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.textContent = buttonLabel;
+  btn.style.cssText =
     `margin-left:auto;flex-shrink:0;cursor:pointer;border:none;` +
     `background:rgba(255,255,255,0.22);color:#fff;font-weight:700;` +
     `font-size:0.8rem;padding:0.25rem 0.7rem;border-radius:8px;`;
-  actionBtn.addEventListener("click", () => {
+  btn.addEventListener("click", () => {
     try {
-      onAction();
+      onClick();
     } catch (err) {
-      console.error("Action toast handler failed:", err);
+      console.error("Toast action failed:", err);
     }
     close();
   });
 
-  toast.appendChild(actionBtn);
+  toast.appendChild(btn);
   document.body.appendChild(toast);
 
   timer = setTimeout(() => {

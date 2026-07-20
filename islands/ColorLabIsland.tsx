@@ -22,7 +22,6 @@ import { proMapperThemeConfig } from "@core/theme/themes.ts";
 
 const themeSystem = createThemeSystem(proMapperThemeConfig);
 
-const SOFT_BLACK = "#1e1714";
 const BAND_CREAM = "#ffefdc";
 
 /** Accent inspo anchors (July 20 drop) — each sets the accent sliders. */
