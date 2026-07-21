@@ -6454,7 +6454,7 @@ a:focus-visible {
    ================================================================ */
 
 .dashboard-section {
-  padding-top: clamp(0.75rem, 2vh, 1.5rem);
+  padding-top: clamp(1rem, 2vh, 1.5rem);
 }
 
 /* App Header styling - integration of inline styles */
@@ -6502,6 +6502,10 @@ a:focus-visible {
    in the file, same specificity) silently lost the cascade — file order
    decides between equal selectors, media queries add no weight. */
 @media (max-width: 640px) {
+  .dashboard-section {
+    padding-top: 1.25rem;
+  }
+
   .live-badge {
     font-size: 0;
     gap: 0;
