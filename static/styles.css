@@ -1070,26 +1070,11 @@ body {
 
 .mapper-hero-line {
   display: block;
-  /* The slide-up entrance needs overflow:hidden, but that clips descenders
-     (g/y tails). Pad the bottom inside the clip box to give tails room, then
-     pull the next line back up so the visual rhythm stays tight. */
   overflow: hidden;
   padding-bottom: 0.12em;
   margin-bottom: -0.12em;
-  opacity: 0;
-  transform: translateY(16px);
-  animation: mapperLineIn 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-}
-
-@keyframes mapperLineIn {
-  from {
-    opacity: 0;
-    transform: translateY(22px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .mapper-hero-desc {
