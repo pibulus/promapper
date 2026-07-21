@@ -43,7 +43,10 @@ export const handler: Handlers = {
     // Accept either shape: if the caller sent only {conversation}, wrap it.
     const raw = (body ?? {}) as Record<string, unknown>;
     const snapshot = raw.transcript === undefined && raw.conversation
-      ? { ...raw, transcript: (raw.conversation as Record<string, unknown>)?.transcript }
+      ? {
+        ...raw,
+        transcript: (raw.conversation as Record<string, unknown>)?.transcript,
+      }
       : raw;
     // Short, cute room ids (cm_ + 14 base36 chars ≈ 72 bits) instead of a
     // 36-char UUID — the link is the key, so entropy stays well above the

@@ -92,7 +92,8 @@ export default function FlipCard(
             data-tip="Flip back"
             aria-label="Flip back to front"
           >
-            <i class="fa fa-rotate-left flip-card-btn__icon" aria-hidden="true"></i>
+            <i class="fa fa-rotate-left flip-card-btn__icon" aria-hidden="true">
+            </i>
             {backBadge && (
               <span class="flip-card-btn__dot" aria-hidden="true"></span>
             )}
