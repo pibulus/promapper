@@ -1,7 +1,9 @@
 /**
  * Dashboard Island - Simplified with Extracted Components
  *
- * Clean grid layout coordinating cards
+ * Clean grid layout coordinating cards. Every card is a draggable cell
+ * (useGridSortable): grab a header, the dense grid re-packs around you,
+ * the arrangement persists in @signals/boardOrderStore.
  */
 
 import { conversationData } from "@signals/conversationStore.ts";
@@ -38,11 +40,37 @@ import { moduleRegistry } from "./modules/moduleRegistry.ts";
 import NotesModule from "./modules/NotesModule.tsx";
 import TakesModule from "./modules/TakesModule.tsx";
 import { enabledModules } from "@signals/moduleStore.ts";
+import { boardOrder, setBoardOrder } from "@signals/boardOrderStore.ts";
+import {
+  type CellPlan,
+  CORE_CELL_IDS,
+  effectiveOrder,
+  mergeVisibleOrder,
+  planCells,
+} from "@utils/boardLayout.ts";
+import { useGridSortable } from "@utils/useGridSortable.ts";
 
 /** Minimum seconds between auto-draws so it doesn't fire too often. */
 const AUTO_DRAW_COOLDOWN_MS = 30_000;
 /** Fire an auto-draw every Nth transcript chunk. */
 const AUTO_DRAW_EVERY = 3;
+
+/** The board as data: the full id order (hidden modules included) and the
+ * visible cells in user order. Cells are what you drag; the flat id list is
+ * what persists (@signals/boardOrderStore). */
+function planBoard(): { full: string[]; cells: CellPlan[] } {
+  const defaults = [...CORE_CELL_IDS, ...moduleRegistry.map((m) => m.id)];
+  const full = effectiveOrder(boardOrder.value, defaults);
+  const core = new Set<string>(CORE_CELL_IDS);
+  const enabled = enabledModules.value;
+  const visible = full.filter((id) => core.has(id) || enabled.includes(id));
+  const cells = planCells(
+    visible,
+    (id) =>
+      core.has(id) ? undefined : moduleRegistry.find((m) => m.id === id)?.size,
+  );
+  return { full, cells };
+}
 
 export default function DashboardIsland() {
   // Throttle whiteboard broadcasts during active drawing: Excalidraw's
@@ -301,6 +329,18 @@ export default function DashboardIsland() {
     };
   }, []);
 
+  // Drag-to-rearrange. Cells move in 2-D, the dense grid packs the board,
+  // the arrangement persists per user (not per conversation).
+  const sortable = useGridSortable({
+    cellIds: () => planBoard().cells.map((c) => c.id),
+    onReorder: (cellOrder) => {
+      const { full, cells } = planBoard();
+      const members = new Map(cells.map((c) => [c.id, c.members]));
+      const nextVisible = cellOrder.flatMap((cid) => members.get(cid) ?? []);
+      setBoardOrder(mergeVisibleOrder(full, nextVisible));
+    },
+  });
+
   if (!conversationData.value) {
     return (
       <div class="dashboard-skeleton-grid">
@@ -322,24 +362,51 @@ export default function DashboardIsland() {
   const { conversation, transcript, actionItems, nodes, summary } =
     conversationData.value;
 
-  // Mutations delegate to the action-items store (pure transforms in core/).
-  return (
-    <div class="dashboard-shell">
-      {/* Grid Container - Simple CSS Grid */}
-      {
-        /* 6-unit rack grid (4 on tablet): core cards span 2, small modules
-          span 1, wide spans the row — docs/MODULES.md */
-      }
-      <div class="dashboard-grid grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-        {
-          /* Mobile hierarchy: a returning user's question is "what do I do
-            next" — Action Items lead the single-column stack, transcript
-            recedes to the bottom. Desktop reading order (Transcript |
-            Summary | Actions) is restored with md:order-none. */
-        }
+  const { cells } = planBoard();
+  const customized = boardOrder.value !== null;
+  const cellById = new Map(cells.map((c) => [c.id, c]));
+  const renderOrder = (sortable.previewOrder.value ?? cells.map((c) => c.id))
+    .filter((id) => cellById.has(id));
 
-        {/* Card 1: Transcript — flips to Voices (who held the floor) */}
-        <div class="order-3 md:order-none min-w-0 md:col-span-2">
+  // Mobile hierarchy (until the user arranges the board themselves): a
+  // returning user's question is "what do I do next" — Action Items lead the
+  // single-column stack, transcript recedes. Desktop reading order
+  // (Transcript | Summary | Actions) is restored with md:order-none. An
+  // explicit user order replaces both, at every breakpoint.
+  const mobileOrderFor = (cellId: string) =>
+    customized ? "" : ` ${
+      ({
+        transcript: "order-3",
+        summary: "order-2",
+        actions: "order-1",
+        canvas: "order-4",
+      } as Record<string, string>)[cellId] ?? "order-6"
+    } md:order-none`;
+
+  const renderModuleSlot = (slot: string[]) => {
+    // Two ids in one slot = notes + takes sharing a cell: scraps on the
+    // front, recordings on the back (same-data-adjacent, both quiet
+    // surfaces). Either alone renders as its own card.
+    if (slot.length === 2) {
+      return (
+        <FlipCard
+          label="Takes"
+          front={<NotesModule />}
+          back={<TakesModule />}
+        />
+      );
+    }
+    const entry = moduleRegistry.find((m) => m.id === slot[0]);
+    if (!entry) return null;
+    const Module = entry.component;
+    return <Module />;
+  };
+
+  function renderCore(id: string) {
+    switch (id) {
+      // Transcript — flips to Voices (who held the floor)
+      case "transcript":
+        return (
           <FlipCard
             label="Transcript insights"
             front={
@@ -355,10 +422,10 @@ export default function DashboardIsland() {
               />
             }
           />
-        </div>
-
-        {/* Card 2: Summary — flips to Pulse (takes + receipts, the append story) */}
-        <div class="order-2 md:order-none min-w-0 md:col-span-2">
+        );
+      // Summary — flips to Pulse (takes + receipts, the append story)
+      case "summary":
+        return (
           <FlipCard
             label="Project pulse"
             front={<SummaryCard summary={summary ?? null} />}
@@ -374,10 +441,10 @@ export default function DashboardIsland() {
               />
             }
           />
-        </div>
-
-        {/* Card 3: Action Items — flips to an overview/bulk-actions back */}
-        <div class="order-1 md:order-none min-w-0 md:col-span-2">
+        );
+      // Action Items — flips to an overview/bulk-actions back
+      case "actions":
+        return (
           <FlipCard
             label="Action Items"
             front={
@@ -405,19 +472,14 @@ export default function DashboardIsland() {
               />
             }
           />
-        </div>
-
-        {
-          /* Card 4: the centerpiece, two authors — the AI draws the front
-            (topic map), you draw the back (canvas). One spatial surface,
-            flipped. News dots mark activity on the hidden face. Keyed by
-            conversation so a switch resets flip state AND remounts the
-            board (no stale scene bleeding across conversations). */
-        }
-        <div
-          class="w-full md:col-span-4 lg:col-span-6 order-4 md:order-none"
-          ref={whiteboardRef}
-        >
+        );
+      // The centerpiece, two authors — the AI draws the front (topic map),
+      // you draw the back (canvas). One spatial surface, flipped. News dots
+      // mark activity on the hidden face. Keyed by conversation so a switch
+      // resets flip state AND remounts the board (no stale scene bleeding
+      // across conversations).
+      case "canvas":
+        return (
           <FlipCard
             key={conversation.id}
             label="Canvas"
@@ -482,72 +544,76 @@ export default function DashboardIsland() {
               </div>
             }
           />
-        </div>
+        );
+      default:
+        return null;
+    }
+  }
 
+  // Mutations delegate to the action-items store (pure transforms in core/).
+  return (
+    <div class="dashboard-shell">
+      {/* Grid Container - Simple CSS Grid */}
+      {
+        /* 6-unit rack grid (4 on tablet): core cards span 2, small modules
+          span 1, wide spans the row — docs/MODULES.md. Cells render in the
+          user's order (or the preview order mid-drag); dense packing settles
+          the board around whatever gets moved. */
+      }
+      <div class="dashboard-grid grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
         {
-          /* Optional modules — registry order (the board stays arranged),
-            switched on in the rack. Sizes: small tucks into leftover cells,
-            standard matches core cards, wide spans the row. */
+          /* Conversation-scoped keys on module cells: switching conversations
+            REMOUNTS every module, so stale textareas/canvases/in-flight
+            answers can't leak across conversations (Bumblefuzz's
+            hall-of-fame find). */
         }
-        {
-          /* Conversation-scoped keys: switching conversations REMOUNTS every
-            module, so stale textareas/canvases/in-flight answers can't leak
-            across conversations (Bumblefuzz's hall-of-fame find). */
-        }
-        {(() => {
-          const enabled = moduleRegistry.filter((m) =>
-            enabledModules.value.includes(m.id)
-          );
-          // Notes + Takes share one cell when both are on: scraps on the
-          // front, recordings on the back (same-data-adjacent, both quiet
-          // surfaces). Either alone renders as its own card.
-          const paired = enabled.some((m) => m.id === "notes") &&
-            enabled.some((m) => m.id === "takes");
-          const cells = paired
-            ? enabled.filter((m) => m.id !== "takes")
-            : enabled;
-          const renderModule = (m: (typeof cells)[number]) =>
-            paired && m.id === "notes"
-              ? (
-                <FlipCard
-                  label="Takes"
-                  front={<NotesModule />}
-                  back={<TakesModule />}
-                />
-              )
-              : <m.component />;
-          // Half-tall smalls STACK in pairs — two short instruments share
-          // one pillar (Pablo's 1/1/2, the height half), so the module row
-          // closes flat instead of leaving dead air under short tiles.
-          const groups: (typeof cells)[] = [];
-          for (const m of cells) {
-            const last = groups[groups.length - 1];
-            if (
-              m.size === "small" && last && last.length === 1 &&
-              last[0].size === "small"
-            ) {
-              last.push(m);
-            } else {
-              groups.push([m]);
-            }
-          }
-          return groups.map((group) => (
+        {renderOrder.map((cellId) => {
+          const cell = cellById.get(cellId)!;
+          const lifting = sortable.draggingId.value === cellId;
+          const settling = sortable.settlingId.value === cellId;
+          const shape = cell.core
+            ? (cellId === "canvas"
+              ? "w-full md:col-span-4 lg:col-span-6"
+              : "min-w-0 md:col-span-2")
+            : `min-w-0 module-cell module-cell--${cell.size}${
+              (cell.slots?.length ?? 0) > 1 ? " module-cell--stack" : ""
+            }`;
+          return (
             <div
-              key={`${conversation.id}-${group.map((m) => m.id).join("-")}`}
-              class={`order-6 md:order-none min-w-0 module-cell module-cell--${
-                group[0].size
-              }${group.length > 1 ? " module-cell--stack" : ""}`}
+              key={cell.core
+                ? cellId
+                : `${conversation.id}-${cell.members.join("-")}`}
+              data-cell-id={cellId}
+              data-flip-id={cell.core ? cellId : undefined}
+              class={`board-cell ${shape}${mobileOrderFor(cellId)}${
+                lifting ? " is-lifting" : ""
+              }${settling ? " is-settling" : ""}`}
+              ref={cellId === "canvas" ? whiteboardRef : undefined}
+              onPointerDown={(e) => sortable.onCellPointerDown(e, cellId)}
             >
-              {group.map((m) => (
-                <div key={m.id} class="module-stack-slot">
-                  {renderModule(m)}
+              <button
+                type="button"
+                class="board-grip"
+                aria-label="Move this card — drag it, or nudge with the arrow keys"
+                onPointerDown={(e) => sortable.onGripPointerDown(e, cellId)}
+                onKeyDown={(e) => sortable.onGripKeyDown(e, cellId)}
+              >
+                <i class="fa fa-grip" aria-hidden="true"></i>
+              </button>
+              {cell.core ? renderCore(cellId) : cell.slots!.map((slot) => (
+                <div
+                  key={slot.join("+")}
+                  class="module-stack-slot"
+                  data-flip-id={slot.join("+")}
+                >
+                  {renderModuleSlot(slot)}
                 </div>
               ))}
             </div>
-          ));
-        })()}
+          );
+        })}
 
-        {/* The rack — ghost tile, always last. */}
+        {/* The rack — ghost tile, always last, not part of the shuffle. */}
         <div class="order-last md:order-none min-w-0 module-cell module-cell--small">
           <ModuleRack />
         </div>

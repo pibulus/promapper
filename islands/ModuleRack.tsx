@@ -10,8 +10,10 @@ import { useSignal } from "@preact/signals";
 import Modal from "../components/Modal.tsx";
 import { moduleRegistry } from "./modules/moduleRegistry.ts";
 import { enabledModules, toggleModule } from "@signals/moduleStore.ts";
+import { boardOrder, resetBoardOrder } from "@signals/boardOrderStore.ts";
 import { hapticTap } from "@utils/haptics.ts";
 import { soundToggle } from "@utils/sound.ts";
+import { showToast } from "@utils/toast.ts";
 
 export default function ModuleRack() {
   const open = useSignal(false);
@@ -70,6 +72,20 @@ export default function ModuleRack() {
             );
           })}
         </ul>
+        {boardOrder.value !== null && (
+          <button
+            type="button"
+            class="module-rack-reset"
+            onClick={() => {
+              resetBoardOrder();
+              hapticTap();
+              showToast("Board back to its designed arrangement", "success");
+            }}
+          >
+            <i class="fa fa-rotate-left" aria-hidden="true"></i>
+            Reset the arrangement
+          </button>
+        )}
       </Modal>
     </>
   );

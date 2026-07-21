@@ -7,8 +7,9 @@
  * docs/MODULES.md.
  *
  * Modules ship OFF by default and are switched on in the rack (the ghost
- * tile at the end of the dashboard). Render order = registry order — the
- * board stays arranged.
+ * tile at the end of the dashboard). Render order defaults to registry
+ * order; dragging cards writes the user's own arrangement
+ * (@signals/boardOrderStore).
  */
 
 import type { ComponentType } from "preact";

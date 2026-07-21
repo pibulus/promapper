@@ -2,8 +2,9 @@
  * Module store — which optional dashboard modules the user has switched on.
  *
  * Modules ship OFF by default; the rack (ModuleRack island) toggles them.
- * The board stays ARRANGED: render order is always registry order, never
- * user-dragged — turning a module on slots it into its designed place.
+ * Render order starts at registry order (the designed board); dragging
+ * cards writes an explicit arrangement to @signals/boardOrderStore, and a
+ * switched-off module remembers its slot for when it comes back.
  */
 
 import { signal } from "@preact/signals";

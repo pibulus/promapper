@@ -29,8 +29,10 @@ formats.
 
 1. **Three sizes, one grid.** `small` = a short tile that tucks into leftover
    cells; `standard` = a core-card cell; `wide` = full row. The grid packs dense
-   (`.dashboard-grid`) so holes get filled. No freeform drag, no masonry — the
-   board stays arranged (registry order).
+   (`.dashboard-grid`) so holes get filled. Cards drag to rearrange
+   (`useGridSortable` + `boardOrderStore`): order defaults to registry order, a
+   drag writes the user's own arrangement, dense packing settles the board. No
+   freeform x/y positions — cells always pack.
 2. **The JSON is the bus.** Persist through `conversationData` (see NotesModule
    / whiteboardScene for the pattern: optional field on `ConversationData`,
    debounced signal update, autosave does the rest). Session-ephemeral state

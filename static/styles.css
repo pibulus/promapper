@@ -8090,3 +8090,105 @@ label {
 .color-lab-swap:hover {
   transform: translateY(-1px);
 }
+
+/* ===================================================================
+   BOARD DRAG — pick up a card, the board re-packs around it
+   (useGridSortable + boardOrderStore; grid-auto-flow: dense is the
+   masonry engine, FLIP transforms are the settle animation)
+   ================================================================ */
+.board-cell {
+  position: relative;
+}
+/* Card headers are grab surfaces for mouse/pen (buttons still click). */
+.board-cell .dashboard-card-header {
+  cursor: grab;
+}
+.board-cell.is-lifting,
+.board-cell.is-lifting .dashboard-card-header,
+.board-cell.is-lifting .board-grip {
+  cursor: grabbing;
+}
+/* Lifted = picked up: accent hard shadow + accent edge, the same language
+   as the action-row drag. The transform stays inline (JS owns the
+   pointer-follow), so no transform here. */
+.board-cell.is-lifting .dashboard-card {
+  box-shadow: 6px 6px 0 0
+    color-mix(in srgb, var(--accent-ink) 55%, var(--soft-black));
+  border-color: var(--accent-ink);
+}
+/* The landed cell stays on top while it glides into its settled slot. */
+.board-cell.is-settling {
+  z-index: 30;
+}
+
+/* The grip — a little notch tucked on the card's top edge, the universal
+   "pick me up". Faint until the card is hovered; always faintly there on
+   touch (no hover to reveal it), where it is THE drag handle. */
+.board-grip {
+  position: absolute;
+  top: 0.3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 1.1rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: color-mix(in srgb, var(--soft-black) 45%, transparent);
+  font-size: 0.62rem;
+  line-height: 1;
+  cursor: grab;
+  touch-action: none;
+  opacity: 0;
+  transition:
+    opacity var(--transition-fast),
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+.board-cell:hover .board-grip,
+.board-grip:focus-visible {
+  opacity: 1;
+}
+.board-grip:hover,
+.board-grip:focus-visible {
+  background: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  color: var(--accent-ink);
+}
+@media (hover: none) {
+  .board-grip {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-grip {
+    transition: none;
+  }
+}
+
+/* Reset row in the rack modal — only shows once an arrangement exists. */
+.module-rack-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+  padding: 0.4rem 0.9rem;
+  font-size: var(--small-size);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: var(--border-width) dashed var(--color-border);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+.module-rack-reset:hover {
+  border-color: color-mix(in srgb, var(--accent-ink) 35%, var(--color-border));
+  color: var(--accent-ink);
+  transform: translateY(-1px);
+}
