@@ -2220,20 +2220,10 @@ body {
 }
 
 .module-cell--small {
-  align-self: start;
   /* Size container so the tile's INTERIOR can adapt to its socket width
      (see the @container rules below) — half-tiles stay legible wherever
      the ladder puts them. */
   container-type: inline-size;
-}
-/* Small = one PILLAR wide (a card column), HALF a module tall — short
-   instruments that tuck under the full cards. (The half-WIDTH experiment
-   died July 20: Pablo wants pillar width at every screen size.) */
-@media (min-width: 768px) {
-  .module-cell--standard,
-  .module-cell--small {
-    grid-column: span 2;
-  }
 }
 /* Tile interior adapts to the socket, not the viewport: controls shrink and
    type tightens first; the description line goes when there's truly no room.
@@ -2265,29 +2255,9 @@ body {
     display: none;
   }
 }
-.module-cell--wide {
-  grid-column: 1 / -1;
-}
-.module-cell--small .dashboard-card {
-  height: auto;
-}
-/* Two half-tall instruments sharing one pillar — the vertical version of
-   the notes↔takes pairing. Gap matches the grid so the seam reads as a
-   row boundary, not a crack. */
-.module-cell--stack {
-  display: flex;
-  flex-direction: column;
-  gap: var(--card-gap);
-}
-.module-stack-slot {
-  min-width: 0;
-  min-height: 0;
-}
-/* Half-module height: room for Bishop's log + pinned ask row; Sound stays
-   naturally shorter (height is a cap, not a demand). */
-.module-cell--small .dashboard-card-body {
-  max-height: 13rem;
-}
+/* Widths live in the JSX (md:col-span-2 on every card); heights live in
+   the BOARD SIZE SYSTEM rules near the end of this file — the old
+   standard/wide/stack machinery is gone, the grid's row units do it all. */
 @media (min-width: 768px) {
   .module-cell--small .dashboard-card-body {
     min-height: 0;
@@ -8089,6 +8059,42 @@ label {
 }
 .color-lab-swap:hover {
   transform: translateY(-1px);
+}
+
+/* ===================================================================
+   BOARD SIZE SYSTEM — 1 : 2 : 4, halving all the way.
+   Every card is one pillar wide; heights are fixed row units:
+   small = 1, medium = 2, tall = 4. Two smalls make a medium, two
+   mediums make a tall, a tall levels with medium + two smalls — the
+   grid computes it exactly, gaps included. The canvas is the one
+   exception: full row, fixed height, not resizable.
+   ================================================================ */
+.dashboard-grid {
+  --board-row: 10.5rem;
+  grid-auto-rows: var(--board-row);
+}
+.board-cell--small {
+  grid-row: span 1;
+}
+.board-cell--medium {
+  grid-row: span 2;
+}
+.board-cell--tall {
+  grid-row: span 4;
+}
+.board-cell--canvas {
+  grid-column: 1 / -1;
+  grid-row: span 3;
+}
+/* Cards fill their cells; bodies take the leftover height and scroll. */
+.board-cell .dashboard-card {
+  display: flex;
+  flex-direction: column;
+}
+.board-cell .dashboard-card-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
 }
 
 /* ===================================================================

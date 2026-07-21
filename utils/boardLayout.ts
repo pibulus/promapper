@@ -1,7 +1,15 @@
 /**
- * Board layout math — the pure half of drag-to-rearrange (useGridSortable
+ * Board layout math — the pure half of the modular dashboard (useGridSortable
  * does the pointers, this does the thinking). No DOM, no Preact: everything
  * here is covered by core/tests/board_layout_test.ts.
+ *
+ * THE SIZE SYSTEM (1 : 2 : 4 — halving all the way):
+ * every card is ONE pillar wide (3 pillars desktop / 2 tablet / 1 phone) and
+ * spans fixed grid row-units: small = 1, medium = 2, tall = 4. Two smalls
+ * make a medium, two mediums make a tall, a tall levels with medium+2 smalls
+ * — the GRID does that math natively (grid-auto-rows + dense flow), gaps
+ * included, so this module never computes positions or pillars. The node
+ * map (canvas) is the one exception: full row, fixed height, not resizable.
  *
  * The dashboard is one flat id order: four core cards + every registered
  * module. The user's saved arrangement reorders that list; switched-off
@@ -15,7 +23,25 @@ export const CORE_CELL_IDS = [
   "canvas",
 ] as const;
 
-export type BoardSize = "small" | "standard" | "wide";
+export type BoardSize = "small" | "medium" | "tall";
+
+/** Tap the grip: small → medium → tall → small. */
+export const NEXT_SIZE: Record<BoardSize, BoardSize> = {
+  small: "medium",
+  medium: "tall",
+  tall: "small",
+};
+
+/** One board cell in render order — a core card or a module card. */
+export interface CellPlan {
+  /** Stable cell id: the core id, or the member ids joined with "+". */
+  id: string;
+  /** Every id living in this cell — what a drag moves together. */
+  members: string[];
+  core: boolean;
+  /** Row-span size; undefined only for the canvas (the full-row exception). */
+  size?: BoardSize;
+}
 
 /** Saved order reconciled with today's board: known ids keep their saved
  * order, ids the save has never met join at the end of the rack. */
@@ -46,88 +72,39 @@ export function mergeVisibleOrder(
   return fullOrder.map((id) => (visible.has(id) ? newVisible[next++] : id));
 }
 
-/** One board cell in render order — a core card or a module cell. */
-export interface CellPlan {
-  /** Stable cell id: the core id, or the member ids joined with "+". */
-  id: string;
-  /** Every id living in this cell — what a drag moves together. */
-  members: string[];
-  core: boolean;
-  size?: BoardSize;
-  /** Module cells only: cards inside the cell (top→bottom), each slot one
-   * module — or the notes+takes pair sharing a card. */
-  slots?: string[][];
-}
-
-/** Turn the visible id order into cells. The grouping walk, in user order:
- *  - notes + takes both present → they share one small card (scraps on the
- *    front, recordings on the back), anchored where the first of the two sits
- *  - consecutive small cards stack two-up in one pillar — consecutive ON THE
- *    BOARD: a core card between two smalls breaks the run, so dragging a
- *    module far away never teleports its old neighbours after it
+/** Turn the visible id order into cards. One grouping rule lives here:
+ * notes + takes both present share one card (scraps on the front,
+ * recordings on the back), anchored where the first of the two sits.
+ * Heights and pillar composition are the grid's job, not ours.
  *
- * `sizeOf` returns a module's size, or undefined for core cards.
- */
+ * `sizeOf` resolves a card's size (defaults + user overrides); it may
+ * return undefined only for the canvas. */
 export function planCells(
   visible: string[],
   sizeOf: (id: string) => BoardSize | undefined,
 ): CellPlan[] {
-  const paired = ["notes", "takes"].every((id) =>
-    visible.includes(id) && sizeOf(id) !== undefined
-  );
+  const core = new Set<string>(CORE_CELL_IDS);
+  const paired = ["notes", "takes"].every((id) => visible.includes(id));
 
   const cells: CellPlan[] = [];
-  // The most recent module cell with no core card since — stack target.
-  let runTail: CellPlan | null = null;
-  // The card holding the first-seen pair member; the later one joins it.
-  let pairCard: string[] | null = null;
-
-  const finishCell = (cell: CellPlan) => {
-    cell.members = cell.slots!.flat();
-    cell.id = cell.members.join("+");
-  };
-
+  let pairCell: CellPlan | null = null;
   for (const id of visible) {
-    const size = sizeOf(id);
-    if (size === undefined) {
-      cells.push({ id, members: [id], core: true });
-      runTail = null;
+    if (core.has(id)) {
+      cells.push({ id, members: [id], core: true, size: sizeOf(id) });
       continue;
     }
-
     if (paired && (id === "notes" || id === "takes")) {
-      if (pairCard) {
+      if (pairCell) {
         // Rides the earlier member's card, wherever that card lives.
-        pairCard.push(id);
-        for (const cell of cells) {
-          if (!cell.core && cell.slots!.includes(pairCard)) finishCell(cell);
-        }
+        pairCell.members.push(id);
+        pairCell.id = pairCell.members.join("+");
         continue;
       }
-      pairCard = [id];
-      // falls through as a small card holding the pair
+      pairCell = { id, members: [id], core: false, size: sizeOf(id) };
+      cells.push(pairCell);
+      continue;
     }
-
-    const card = pairCard && pairCard[0] === id ? pairCard : [id];
-    const cardSize: BoardSize = card === pairCard ? "small" : size;
-    if (
-      cardSize === "small" && runTail?.size === "small" &&
-      runTail.slots!.length === 1
-    ) {
-      runTail.slots!.push(card);
-      finishCell(runTail);
-    } else {
-      const cell: CellPlan = {
-        id,
-        members: [id],
-        core: false,
-        size: cardSize,
-        slots: [card],
-      };
-      finishCell(cell);
-      cells.push(cell);
-      runTail = cell;
-    }
+    cells.push({ id, members: [id], core: false, size: sizeOf(id) });
   }
   return cells;
 }

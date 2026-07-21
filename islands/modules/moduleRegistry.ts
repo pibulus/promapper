@@ -13,14 +13,15 @@
  */
 
 import type { ComponentType } from "preact";
+import type { BoardSize } from "@utils/boardLayout.ts";
 import NotesModule from "./NotesModule.tsx";
 import BishopModule from "./BishopModule.tsx";
 import TakesModule from "./TakesModule.tsx";
 import SoundModule from "./SoundModule.tsx";
 
-/** small = short tile (tucks into leftover cells), standard = a core-card
- * cell, wide = full row. */
-export type ModuleSize = "small" | "standard" | "wide";
+/** The 1:2:4 row system (utils/boardLayout.ts): small = 1 unit, medium = 2,
+ * tall = 4. This is the module's DEFAULT — users cycle sizes per card. */
+export type ModuleSize = BoardSize;
 
 export interface ModuleEntry {
   id: string;
@@ -56,7 +57,7 @@ export const moduleRegistry: ModuleEntry[] = [
     name: "Takes",
     tagline: "Every recording kept — listen back, see what each one changed.",
     icon: "record-vinyl",
-    size: "standard",
+    size: "medium",
     component: TakesModule,
   },
   {

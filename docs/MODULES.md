@@ -16,7 +16,7 @@ A module is:
   name: string; // sentence case, warm, no jargon ("Notes", "Bishop")
   tagline: string; // one line for the rack, in the app's voice
   icon: string; // FontAwesome name without the fa- prefix
-  size: "small" | "standard" | "wide";
+  size: "small" | "medium" | "tall"; // the DEFAULT — users cycle per card
   component: ComponentType; // an island, renders a .dashboard-card
 }
 ```
@@ -27,12 +27,15 @@ formats.
 
 ## The rules
 
-1. **Three sizes, one grid.** `small` = a short tile that tucks into leftover
-   cells; `standard` = a core-card cell; `wide` = full row. The grid packs dense
-   (`.dashboard-grid`) so holes get filled. Cards drag to rearrange
-   (`useGridSortable` + `boardOrderStore`): order defaults to registry order, a
-   drag writes the user's own arrangement, dense packing settles the board. No
-   freeform x/y positions — cells always pack.
+1. **Three sizes, one grid — 1:2:4, halving all the way.** Every card is ONE
+   pillar wide (3 desktop / 2 tablet / 1 phone) and spans fixed row units:
+   `small` = 1, `medium` = 2, `tall` = 4. Two smalls make a medium, two mediums
+   make a tall — the grid computes the packing natively (`grid-auto-rows` +
+   `grid-auto-flow: dense`), holes back-fill themselves. Cards drag to rearrange
+   and TAP-resize on the grip (`useGridSortable` + `boardOrderStore`): order +
+   sizes persist per user; the canvas is the one exception (full row, fixed, not
+   resizable). No freeform x/y positions — cells always pack. Deep reading stays
+   with the ReaderModal.
 2. **The JSON is the bus.** Persist through `conversationData` (see NotesModule
    / whiteboardScene for the pattern: optional field on `ConversationData`,
    debounced signal update, autosave does the rest). Session-ephemeral state
@@ -59,24 +62,28 @@ formats.
 
 ## Current rack
 
-| Module | Size     | What it does                                                                                      |
-| ------ | -------- | ------------------------------------------------------------------------------------------------- |
-| Notes  | standard | Scratch pad stored in the conversation JSON.                                                      |
-| Bishop | standard | Ask your memory — reads this conversation to answer.                                              |
-| Takes  | standard | Every recording kept — listen back + append receipts (reads recordingsDB, same rows as the dock). |
-| Sound  | small    | Radio + Tones as one dial: SomaFM/KPAB streams up top, WebAudio moods below the seam.             |
+| Module | Size   | What it does                                                                                      |
+| ------ | ------ | ------------------------------------------------------------------------------------------------- |
+| Notes  | small  | Scratch pad stored in the conversation JSON.                                                      |
+| Bishop | small  | Ask your memory — reads this conversation to answer.                                              |
+| Takes  | medium | Every recording kept — listen back + append receipts (reads recordingsDB, same rows as the dock). |
+| Sound  | small  | Radio + Tones as one dial: SomaFM/KPAB streams up top, WebAudio moods below the seam.             |
 
 Retired (July 19 compression): Radio + Tones merged into Sound; Canvas left the
 rack entirely — the whiteboard is now the node map's FLIP SIDE (the AI draws the
 front, you draw the back; news dots mark hidden-face activity). `moduleStore`
 migrates legacy enabled ids on load.
 
-## Width units (July 19)
+## Height units (July 22 — replaced the July 19 width units)
 
-Sizes are real WIDTHS now: the dashboard grid runs 6 units on desktop (4 on
-tablet). Core cards + `standard` modules span 2, `small` spans 1 (a true
-half-card tile), `wide` spans the row. Rows like small/small/standard compose
-themselves; `grid-auto-flow: dense` fills the holes.
+Sizes are fixed HEIGHTS on a row rhythm (`--board-row` in styles.css): every
+card spans 2 grid columns (one pillar), and `small`/`medium`/`tall` span 1/2/4
+row units. Core cards default `medium`; users cycle any card's size by tapping
+its grip and drag anything anywhere — order + size overrides live in
+`promapper-board-order` / `promapper-board-sizes`
+(`@signals/boardOrderStore.ts`). The grid's dense flow does all packing; the
+notes+takes pair sharing one card is the only grouping logic left in code
+(`utils/boardLayout.ts` planCells).
 
 ## Faceplates (July 20 — MONO)
 

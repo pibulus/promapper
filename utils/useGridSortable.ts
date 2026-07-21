@@ -2,20 +2,26 @@
  * useGridSortable — pointer drag-to-rearrange for the dashboard grid.
  *
  * The 2-D sibling of usePointerSortable (the ziplist-feel list hook): same
- * data-driven architecture — the component renders cells in `previewOrder`,
+ * data-driven architecture — the component renders cards in `previewOrder`,
  * Preact always owns the DOM, FLIP animates the real re-renders — extended
- * for a dense CSS grid where cells move on both axes and every reorder
+ * for a dense CSS grid where cards move on both axes and every reorder
  * re-packs the whole board (grid-auto-flow: dense is the masonry engine).
+ *
+ * The draggable unit is the CARD — including cards living inside a stacked
+ * pillar. Lifting a card renders it solo (planCells soloMembers), which can
+ * REMOUNT it out of its pillar; beginDrag re-acquires the fresh element one
+ * frame later and keeps it glued under the pointer with a base offset.
+ * Bystander cards regrouping mid-drag (a pillar splitting open as you hover
+ * into it) also remount — FLIP measures by id, not element, so everything
+ * still glides.
  *
  *   - mouse/pen: grab a card by its header (or the grip) and drag right away
  *   - touch:     drag by the grip — a dedicated handle, so no long-press and
  *                no fight with page scroll (the grip is touch-action: none)
- *   - the grabbed cell lifts and follows the pointer; the others re-pack
- *     around it and FLIP-slide to their new homes; a short cooldown between
- *     reorders keeps the dense re-pack from chain-reacting under the pointer
- *   - drop: everyone springs to their settled spot — measured at member level
- *     ([data-flip-id]) so cards gliding into or out of a shared pillar
- *     animate the regroup instead of teleporting — with haptics + soft thunk
+ *   - a short cooldown between reorders keeps the dense re-pack from
+ *     chain-reacting under a stationary pointer
+ *   - drop AND cancel both glide every card home; a real drop adds the
+ *     spring, hapticSnap + soundSettle, and persists through onReorder
  *   - the grip is a real button: arrow keys nudge the card through the order
  *   - Escape aborts; pointercancel reverts (the browser stole the gesture)
  */
@@ -28,7 +34,7 @@ import { soundSettle } from "./sound.ts";
 const EDGE_ZONE_PX = 72;
 const EDGE_SPEED_PX = 14;
 const SETTLE_MS = 400;
-/** Dense re-packing moves cells under a stationary pointer; without a beat
+/** Dense re-packing moves cards under a stationary pointer; without a beat
  * between reorders the board can churn. One beat = one settled read. */
 const REORDER_COOLDOWN_MS = 120;
 const LIFT_TRANSFORM = "scale(1.02) rotate(0.4deg)";
@@ -36,13 +42,16 @@ const FLIP_EASE = "transform 280ms cubic-bezier(0.16, 1, 0.3, 1)";
 const DROP_EASE = "transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1)";
 
 interface GridSortableOptions {
-  /** Stable cell ids in current visual order (the reorderable set). */
+  /** Stable card ids in current visual order (the reorderable set). */
   cellIds: () => string[];
-  /** Called with the new cell-id order once a drag/nudge commits. */
+  /** Called with the new card-id order once a drag/nudge commits. */
   onReorder: (ids: string[]) => void;
+  /** A still, quick release on the grip — "press to expand". Mutate state
+   * only; the hook folds the change into the drop glide. */
+  onTap?: (id: string) => void;
   cellSelector?: string;
-  /** Finer-grained elements to animate on commit (defaults to cells). */
-  flipSelector?: string;
+  /** The grid that owns every card, at any nesting depth. */
+  containerSelector?: string;
 }
 
 interface Point {
@@ -54,13 +63,14 @@ export function useGridSortable(options: GridSortableOptions) {
   const {
     cellIds,
     onReorder,
+    onTap,
     cellSelector = "[data-cell-id]",
-    flipSelector = "[data-flip-id]",
+    containerSelector = ".dashboard-grid",
   } = options;
 
   const draggingId = useSignal<string | null>(null);
   const settlingId = useSignal<string | null>(null);
-  // While dragging, the cell order the component should render in.
+  // While dragging, the card order the component should render in.
   const previewOrder = useSignal<string[] | null>(null);
 
   const session = useRef<
@@ -69,9 +79,17 @@ export function useGridSortable(options: GridSortableOptions) {
       pointerId: number;
       startX: number;
       startY: number;
+      startedAt: number;
+      source: "grip" | "cell";
       cellEl: HTMLElement;
       container: HTMLElement;
       scroller: HTMLElement | null; // null = the page itself scrolls
+      // Lifting can remount the card out of a pillar into its own cell; the
+      // base offset keeps its visual exactly where it was grabbed.
+      baseDx: number;
+      baseDy: number;
+      lastDx: number;
+      lastDy: number;
       lastReorderAt: number;
       currentIndex: number;
       autoScrollRAF: number | null;
@@ -83,8 +101,8 @@ export function useGridSortable(options: GridSortableOptions) {
     typeof matchMedia !== "undefined" &&
     matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  function keyOf(el: HTMLElement): string | undefined {
-    return el.dataset.cellId ?? el.dataset.flipId;
+  function cardQuery(id: string): string {
+    return `[data-cell-id="${CSS.escape(id)}"]`;
   }
 
   function cells(container: HTMLElement): HTMLElement[] {
@@ -93,34 +111,28 @@ export function useGridSortable(options: GridSortableOptions) {
     ).filter((el) => el.dataset.cellId);
   }
 
-  function captureRects(
-    container: HTMLElement,
-    selector: string,
-  ): Map<string, Point> {
+  function captureRects(container: HTMLElement): Map<string, Point> {
     const rects = new Map<string, Point>();
-    for (const el of container.querySelectorAll<HTMLElement>(selector)) {
-      const key = keyOf(el);
-      if (!key) continue;
+    for (const el of cells(container)) {
       const r = el.getBoundingClientRect();
-      rects.set(key, { left: r.left, top: r.top });
+      rects.set(el.dataset.cellId!, { left: r.left, top: r.top });
     }
     return rects;
   }
 
-  /** FLIP: from the just-captured `before` positions to wherever the
-   * elements are now — both axes, since the grid re-packs in 2-D. */
+  /** FLIP: from the just-captured `before` positions to wherever the cards
+   * are now — both axes, measured by id so remounted cards still glide. */
   function flip(
     container: HTMLElement,
     before: Map<string, Point>,
-    selector: string,
     skipId: string | null,
     ease: string,
   ) {
     if (reducedMotion()) return;
-    for (const el of container.querySelectorAll<HTMLElement>(selector)) {
-      const key = keyOf(el);
-      if (!key || key === skipId) continue;
-      const prev = before.get(key);
+    for (const el of cells(container)) {
+      const id = el.dataset.cellId!;
+      if (id === skipId) continue;
+      const prev = before.get(id);
       if (!prev) continue;
       const rect = el.getBoundingClientRect();
       const dx = prev.left - rect.left;
@@ -155,33 +167,62 @@ export function useGridSortable(options: GridSortableOptions) {
     el.style.transform = `translate(${dx}px, ${dy}px) ${LIFT_TRANSFORM}`;
   }
 
-  function beginDrag(id: string, event: PointerEvent, cellEl: HTMLElement) {
+  function beginDrag(
+    id: string,
+    event: PointerEvent,
+    cellEl: HTMLElement,
+    source: "grip" | "cell",
+  ) {
     if (session.current) return;
-    const container = cellEl.parentElement;
+    const container = cellEl.closest<HTMLElement>(containerSelector);
     if (!container) return;
     const ids = cellIds();
     const fromIndex = ids.indexOf(id);
     if (fromIndex < 0) return;
+
+    const grabRect = cellEl.getBoundingClientRect();
+    const before = captureRects(container);
 
     session.current = {
       id,
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
+      startedAt: Date.now(),
+      source,
       cellEl,
       container,
       scroller: nearestScroller(cellEl),
+      baseDx: 0,
+      baseDy: 0,
+      lastDx: 0,
+      lastDy: 0,
       lastReorderAt: 0,
       currentIndex: fromIndex,
       autoScrollRAF: null,
       autoScrollDir: 0,
     };
 
-    previewOrder.value = [...ids];
-    draggingId.value = id; // the render adds .is-lifting
+    // This render can remount the grabbed card out of its pillar (soloed)
+    // and shift its old pillar-mate — re-acquire and FLIP one frame later.
+    batch(() => {
+      previewOrder.value = [...ids];
+      draggingId.value = id;
+    });
     hapticTap();
-    cellEl.style.zIndex = "30";
-    cellEl.style.transition = "none";
+
+    requestAnimationFrame(() => {
+      const s = session.current;
+      if (!s || s.id !== id) return;
+      const fresh = s.container.querySelector<HTMLElement>(cardQuery(id));
+      if (fresh) s.cellEl = fresh;
+      const now = s.cellEl.getBoundingClientRect();
+      s.baseDx = grabRect.left - now.left;
+      s.baseDy = grabRect.top - now.top;
+      s.cellEl.style.zIndex = "30";
+      applyLift(s.cellEl, s.baseDx + s.lastDx, s.baseDy + s.lastDy);
+      flip(s.container, before, id, FLIP_EASE);
+    });
 
     globalThis.addEventListener("pointermove", onMove, { passive: false });
     globalThis.addEventListener("pointerup", onUp);
@@ -203,12 +244,15 @@ export function useGridSortable(options: GridSortableOptions) {
     if (!s || event.pointerId !== s.pointerId) return;
     event.preventDefault();
 
-    // The lifted cell follows the pointer (its data position stays put).
-    applyLift(s.cellEl, event.clientX - s.startX, event.clientY - s.startY);
+    // The lifted card follows the pointer (its data position stays put).
+    s.lastDx = event.clientX - s.startX;
+    s.lastDy = event.clientY - s.startY;
+    applyLift(s.cellEl, s.baseDx + s.lastDx, s.baseDy + s.lastDy);
 
     const now = Date.now();
     if (now - s.lastReorderAt >= REORDER_COOLDOWN_MS) {
-      // Target slot: the cell under the pointer takes the hit; past the
+      // Target slot: the card under the pointer takes the hit — including a
+      // card inside a pillar, which is how you drop INTO one. Past the
       // bottom of everything means "the end of the board".
       const others = cells(s.container).filter(
         (el) => el.dataset.cellId !== s.id,
@@ -229,7 +273,7 @@ export function useGridSortable(options: GridSortableOptions) {
       if (target < 0 && pastAll) target = others.length;
 
       if (target >= 0 && target !== s.currentIndex) {
-        const before = captureRects(s.container, cellSelector);
+        const before = captureRects(s.container);
         const current = previewOrder.value ?? cellIds();
         const without = current.filter((cid) => cid !== s.id);
         without.splice(target, 0, s.id);
@@ -237,15 +281,23 @@ export function useGridSortable(options: GridSortableOptions) {
         s.currentIndex = target;
         s.lastReorderAt = now;
         hapticTap();
-        // FLIP after the re-render paints; keep the lifted cell glued to
-        // the pointer through the reflow.
+        // FLIP after the re-render paints; the grabbed card can remount
+        // when regrouping touches it, so re-acquire before re-gluing.
         requestAnimationFrame(() => {
-          if (!session.current) return;
-          flip(s.container, before, cellSelector, s.id, FLIP_EASE);
+          const sess = session.current;
+          if (!sess) return;
+          const fresh = sess.container.querySelector<HTMLElement>(
+            cardQuery(sess.id),
+          );
+          if (fresh && fresh !== sess.cellEl) {
+            sess.cellEl = fresh;
+            sess.cellEl.style.zIndex = "30";
+          }
+          flip(sess.container, before, sess.id, FLIP_EASE);
           applyLift(
-            s.cellEl,
-            event.clientX - s.startX,
-            event.clientY - s.startY,
+            sess.cellEl,
+            sess.baseDx + sess.lastDx,
+            sess.baseDy + sess.lastDy,
           );
         });
       }
@@ -297,51 +349,45 @@ export function useGridSortable(options: GridSortableOptions) {
     // a drop. Revert instead of committing a half-finished rearrange.
     const cancelled = event.type === "pointercancel";
     const finalOrder = previewOrder.value ?? cellIds();
-    const moved = !cancelled &&
-      finalOrder.join("|") !== cellIds().join("|");
+    const moved = !cancelled && finalOrder.join("|") !== cellIds().join("|");
+    // A still, quick release on the grip = "press to expand", not a drag.
+    const tapped = !cancelled && !moved && s.source === "grip" &&
+      Date.now() - s.startedAt < 400 &&
+      Math.abs(s.lastDx) < 5 && Math.abs(s.lastDy) < 5;
     const { id, cellEl, container } = s;
     session.current = null;
-    draggingId.value = null;
 
-    if (!moved) {
-      // Spring back into the unchanged slot.
-      previewOrder.value = null;
-      if (reducedMotion()) {
-        cellEl.style.transition = "none";
-        cellEl.style.transform = "";
-        cellEl.style.zIndex = "";
-      } else {
-        cellEl.style.transition = DROP_EASE;
-        cellEl.style.transform = "";
-        setTimeout(() => {
-          cellEl.style.zIndex = "";
-          cellEl.style.transition = "";
-        }, SETTLE_MS);
-      }
-      return;
-    }
-
-    // Commit. Capture member positions first (the dragged one at its lifted
-    // spot), clear the drag transform, hand the new order to the data, then
-    // FLIP everyone — including members regrouping into or out of shared
-    // pillars — so the whole board glides to its settled shape.
-    const before = captureRects(container, flipSelector);
+    // Drop, cancel, and tap-resize share one glide: capture every card (the
+    // grabbed one at its lifted spot), hand rendering back to the data —
+    // which may resize or regroup cards — then FLIP everyone home.
+    const before = captureRects(container);
     cellEl.style.transition = "none";
     cellEl.style.transform = "";
     batch(() => {
+      draggingId.value = null;
       previewOrder.value = null;
-      onReorder(finalOrder);
+      if (moved) onReorder(finalOrder);
+      if (tapped) onTap?.(id);
     });
-    hapticSnap();
-    soundSettle();
-    settlingId.value = id; // keeps the landed cell on top while it glides
+    if (moved) {
+      hapticSnap();
+      soundSettle();
+    } else if (tapped) {
+      hapticTap();
+    }
+    settlingId.value = id; // keeps the landed card on top while it glides
     requestAnimationFrame(() => {
-      flip(container, before, flipSelector, null, DROP_EASE);
+      flip(container, before, null, DROP_EASE);
     });
     setTimeout(() => {
       if (settlingId.value === id) settlingId.value = null;
       cellEl.style.zIndex = "";
       cellEl.style.transition = "";
+      const live = container.querySelector<HTMLElement>(cardQuery(id));
+      if (live) {
+        live.style.zIndex = "";
+        live.style.transition = "";
+      }
     }, SETTLE_MS);
   }
 
@@ -365,10 +411,11 @@ export function useGridSortable(options: GridSortableOptions) {
     );
     if (!cellEl) return;
     event.preventDefault();
-    beginDrag(id, event, cellEl);
+    beginDrag(id, event, cellEl, "cell");
   }
 
-  /** The grip is a dedicated handle: every pointer type drags immediately. */
+  /** The grip is a dedicated handle: every pointer type drags immediately
+   * (and a still, quick release fires onTap — press to expand). */
   function onGripPointerDown(event: PointerEvent, id: string) {
     if (event.pointerType === "mouse" && event.button !== 0) return;
     const cellEl = (event.currentTarget as HTMLElement).closest<HTMLElement>(
@@ -377,7 +424,7 @@ export function useGridSortable(options: GridSortableOptions) {
     if (!cellEl) return;
     event.preventDefault();
     event.stopPropagation();
-    beginDrag(id, event, cellEl);
+    beginDrag(id, event, cellEl, "grip");
   }
 
   /** Arrow keys on the grip nudge the card one slot through the order. */
@@ -397,18 +444,28 @@ export function useGridSortable(options: GridSortableOptions) {
     next.splice(from, 1);
     next.splice(to, 0, id);
 
-    const cellEl = (event.currentTarget as HTMLElement).closest<HTMLElement>(
-      cellSelector,
+    const container = (event.currentTarget as HTMLElement).closest<HTMLElement>(
+      containerSelector,
     );
-    const container = cellEl?.parentElement ?? null;
-    const before = container ? captureRects(container, flipSelector) : null;
+    const before = container ? captureRects(container) : null;
     onReorder(next);
     hapticTap();
     if (container && before) {
       requestAnimationFrame(() => {
-        flip(container, before, flipSelector, null, FLIP_EASE);
+        flip(container, before, null, FLIP_EASE);
+        // Regrouping can remount the nudged card — keep focus on its grip.
+        container.querySelector<HTMLElement>(`${cardQuery(id)} .board-grip`)
+          ?.focus();
       });
     }
+  }
+
+  /** Run a state change (resize, toggle) with the board FLIP-gliding to its
+   * new packing — same spring as a drop. */
+  function animateReflow(container: HTMLElement, mutate: () => void) {
+    const before = captureRects(container);
+    mutate();
+    requestAnimationFrame(() => flip(container, before, null, DROP_EASE));
   }
 
   return {
@@ -418,5 +475,6 @@ export function useGridSortable(options: GridSortableOptions) {
     onCellPointerDown,
     onGripPointerDown,
     onGripKeyDown,
+    animateReflow,
   };
 }

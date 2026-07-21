@@ -40,12 +40,19 @@ import { moduleRegistry } from "./modules/moduleRegistry.ts";
 import NotesModule from "./modules/NotesModule.tsx";
 import TakesModule from "./modules/TakesModule.tsx";
 import { enabledModules } from "@signals/moduleStore.ts";
-import { boardOrder, setBoardOrder } from "@signals/boardOrderStore.ts";
 import {
+  boardOrder,
+  boardSizes,
+  setBoardOrder,
+  setCardSize,
+} from "@signals/boardOrderStore.ts";
+import {
+  type BoardSize,
   type CellPlan,
   CORE_CELL_IDS,
   effectiveOrder,
   mergeVisibleOrder,
+  NEXT_SIZE,
   planCells,
 } from "@utils/boardLayout.ts";
 import { useGridSortable } from "@utils/useGridSortable.ts";
@@ -55,21 +62,40 @@ const AUTO_DRAW_COOLDOWN_MS = 30_000;
 /** Fire an auto-draw every Nth transcript chunk. */
 const AUTO_DRAW_EVERY = 3;
 
+/** A card's row-span size: user override, else its designed default. The
+ * canvas returns undefined — full row, fixed height, not resizable. */
+function sizeOf(id: string): BoardSize | undefined {
+  if (id === "canvas") return undefined;
+  const override = boardSizes.value[id];
+  if (override) return override;
+  if ((CORE_CELL_IDS as readonly string[]).includes(id)) return "medium";
+  return moduleRegistry.find((m) => m.id === id)?.size ?? "small";
+}
+
 /** The board as data: the full id order (hidden modules included) and the
- * visible cells in user order. Cells are what you drag; the flat id list is
- * what persists (@signals/boardOrderStore). */
-function planBoard(): { full: string[]; cells: CellPlan[] } {
+ * visible cards in user order. Cards are what you drag; the flat id list is
+ * what persists (@signals/boardOrderStore). During a drag the preview's
+ * card order is the render truth. */
+function planBoard(
+  previewCards?: string[] | null,
+): { full: string[]; cells: CellPlan[] } {
   const defaults = [...CORE_CELL_IDS, ...moduleRegistry.map((m) => m.id)];
   const full = effectiveOrder(boardOrder.value, defaults);
   const core = new Set<string>(CORE_CELL_IDS);
   const enabled = enabledModules.value;
-  const visible = full.filter((id) => core.has(id) || enabled.includes(id));
-  const cells = planCells(
-    visible,
-    (id) =>
-      core.has(id) ? undefined : moduleRegistry.find((m) => m.id === id)?.size,
-  );
-  return { full, cells };
+  const visible = previewCards
+    ? previewCards.flatMap((cid) => cid.split("+"))
+    : full.filter((id) => core.has(id) || enabled.includes(id));
+  return { full, cells: planCells(visible, sizeOf) };
+}
+
+/** Tap the grip: small → medium → tall → small. Sizes persist per card
+ * (the pair stores under its anchor member). */
+function cycleSize(cardId: string) {
+  const anchor = cardId.split("+")[0];
+  const current = sizeOf(anchor);
+  if (!current) return; // the canvas doesn't resize
+  setCardSize(anchor, NEXT_SIZE[current]);
 }
 
 export default function DashboardIsland() {
@@ -329,17 +355,33 @@ export default function DashboardIsland() {
     };
   }, []);
 
-  // Drag-to-rearrange. Cells move in 2-D, the dense grid packs the board,
-  // the arrangement persists per user (not per conversation).
+  // Drag-to-rearrange + tap-to-resize. Cards move in 2-D, the dense grid
+  // does the pillar math (1:2:4 row units), the arrangement persists per
+  // user (not per conversation).
   const sortable = useGridSortable({
     cellIds: () => planBoard().cells.map((c) => c.id),
-    onReorder: (cellOrder) => {
-      const { full, cells } = planBoard();
-      const members = new Map(cells.map((c) => [c.id, c.members]));
-      const nextVisible = cellOrder.flatMap((cid) => members.get(cid) ?? []);
+    onReorder: (cardOrder) => {
+      const { full } = planBoard();
+      const nextVisible = cardOrder.flatMap((cid) => cid.split("+"));
       setBoardOrder(mergeVisibleOrder(full, nextVisible));
     },
+    onTap: cycleSize,
   });
+
+  // Keyboard mirror of the grip gestures: Enter/Space resizes (with the
+  // same reflow glide), arrows nudge through the order.
+  function onGripKey(event: KeyboardEvent, cardId: string) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      const grid = (event.currentTarget as HTMLElement).closest<HTMLElement>(
+        ".dashboard-grid",
+      );
+      if (grid) sortable.animateReflow(grid, () => cycleSize(cardId));
+      else cycleSize(cardId);
+      return;
+    }
+    sortable.onGripKeyDown(event, cardId);
+  }
 
   if (!conversationData.value) {
     return (
@@ -362,11 +404,8 @@ export default function DashboardIsland() {
   const { conversation, transcript, actionItems, nodes, summary } =
     conversationData.value;
 
-  const { cells } = planBoard();
+  const { cells } = planBoard(sortable.previewOrder.value);
   const customized = boardOrder.value !== null;
-  const cellById = new Map(cells.map((c) => [c.id, c]));
-  const renderOrder = (sortable.previewOrder.value ?? cells.map((c) => c.id))
-    .filter((id) => cellById.has(id));
 
   // Mobile hierarchy (until the user arranges the board themselves): a
   // returning user's question is "what do I do next" — Action Items lead the
@@ -383,11 +422,11 @@ export default function DashboardIsland() {
       } as Record<string, string>)[cellId] ?? "order-6"
     } md:order-none`;
 
-  const renderModuleSlot = (slot: string[]) => {
-    // Two ids in one slot = notes + takes sharing a cell: scraps on the
+  const renderModuleCard = (members: string[]) => {
+    // Two members in one card = notes + takes sharing a cell: scraps on the
     // front, recordings on the back (same-data-adjacent, both quiet
     // surfaces). Either alone renders as its own card.
-    if (slot.length === 2) {
+    if (members.length === 2) {
       return (
         <FlipCard
           label="Takes"
@@ -396,7 +435,7 @@ export default function DashboardIsland() {
         />
       );
     }
-    const entry = moduleRegistry.find((m) => m.id === slot[0]);
+    const entry = moduleRegistry.find((m) => m.id === members[0]);
     if (!entry) return null;
     const Module = entry.component;
     return <Module />;
@@ -567,16 +606,17 @@ export default function DashboardIsland() {
             answers can't leak across conversations (Bumblefuzz's
             hall-of-fame find). */
         }
-        {renderOrder.map((cellId) => {
-          const cell = cellById.get(cellId)!;
+        {cells.map((cell) => {
+          const cellId = cell.id;
           const lifting = sortable.draggingId.value === cellId;
           const settling = sortable.settlingId.value === cellId;
-          const shape = cell.core
-            ? (cellId === "canvas"
-              ? "w-full md:col-span-4 lg:col-span-6"
-              : "min-w-0 md:col-span-2")
-            : `min-w-0 module-cell module-cell--${cell.size}${
-              (cell.slots?.length ?? 0) > 1 ? " module-cell--stack" : ""
+          const isCanvas = cellId === "canvas";
+          const shape = isCanvas
+            ? "w-full board-cell--canvas"
+            : `min-w-0 md:col-span-2 board-cell--${cell.size}${
+              cell.core ? "" : " module-cell"
+            }${
+              !cell.core && cell.size === "small" ? " module-cell--small" : ""
             }`;
           return (
             <div
@@ -584,31 +624,24 @@ export default function DashboardIsland() {
                 ? cellId
                 : `${conversation.id}-${cell.members.join("-")}`}
               data-cell-id={cellId}
-              data-flip-id={cell.core ? cellId : undefined}
               class={`board-cell ${shape}${mobileOrderFor(cellId)}${
                 lifting ? " is-lifting" : ""
               }${settling ? " is-settling" : ""}`}
-              ref={cellId === "canvas" ? whiteboardRef : undefined}
+              ref={isCanvas ? whiteboardRef : undefined}
               onPointerDown={(e) => sortable.onCellPointerDown(e, cellId)}
             >
               <button
                 type="button"
                 class="board-grip"
-                aria-label="Move this card — drag it, or nudge with the arrow keys"
+                aria-label={isCanvas
+                  ? "Move this card — drag it, or nudge with the arrow keys"
+                  : "Move this card — drag it, tap to resize, arrow keys nudge"}
                 onPointerDown={(e) => sortable.onGripPointerDown(e, cellId)}
-                onKeyDown={(e) => sortable.onGripKeyDown(e, cellId)}
+                onKeyDown={(e) => onGripKey(e, cellId)}
               >
                 <i class="fa fa-grip" aria-hidden="true"></i>
               </button>
-              {cell.core ? renderCore(cellId) : cell.slots!.map((slot) => (
-                <div
-                  key={slot.join("+")}
-                  class="module-stack-slot"
-                  data-flip-id={slot.join("+")}
-                >
-                  {renderModuleSlot(slot)}
-                </div>
-              ))}
+              {cell.core ? renderCore(cellId) : renderModuleCard(cell.members)}
             </div>
           );
         })}
