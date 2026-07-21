@@ -421,5 +421,6 @@ sensitive meetings. macOS arm64/x64 binaries available.
   formats, share links
 
 Implementation status: Phases 2a/2b/2c are built (see Architecture Map above —
-`workers/voice-relay/`, `islands/VoicePanel.tsx`, `islands/SharedWhiteboard.tsx`,
-`core/ai/whiteboardAgent.ts`). Phases 3 (OCR) and 4 (offline) are not started.
+`workers/voice-relay/`, `islands/VoicePanel.tsx`,
+`islands/SharedWhiteboard.tsx`, `core/ai/whiteboardAgent.ts`). Phases 3 (OCR)
+and 4 (offline) are not started.
