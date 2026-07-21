@@ -771,7 +771,7 @@ export default function ForceDirectedGraph(
       <div
         ref={svgContainerRef}
         class="topic-map-canvas topic-map-canvas--bleed w-full overflow-hidden"
-        style="height: clamp(360px, 56vh, 560px); height: clamp(360px, 56svh, 560px);"
+        style="height: clamp(440px, 68vh, 720px); height: clamp(440px, 68svh, 720px);"
       />
 
       {renderNodeDetail()}

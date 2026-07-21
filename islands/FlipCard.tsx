@@ -71,7 +71,7 @@ export default function FlipCard(
             data-tip="Flip"
             aria-label={label ? `${label} — flip` : "Flip card"}
           >
-            <i class="fa fa-rotate" aria-hidden="true"></i>
+            <i class="fa fa-rotate flip-card-btn__icon" aria-hidden="true"></i>
             {frontBadge && (
               <span class="flip-card-btn__dot" aria-hidden="true"></span>
             )}
@@ -92,7 +92,7 @@ export default function FlipCard(
             data-tip="Flip back"
             aria-label="Flip back to front"
           >
-            <i class="fa fa-rotate-left" aria-hidden="true"></i>
+            <i class="fa fa-rotate-left flip-card-btn__icon" aria-hidden="true"></i>
             {backBadge && (
               <span class="flip-card-btn__dot" aria-hidden="true"></span>
             )}
