@@ -2309,6 +2309,8 @@ body {
 }
 .dashboard-grid {
   grid-auto-flow: dense;
+  --board-row: 10.5rem;
+  grid-auto-rows: var(--board-row);
 }
 .module-cell--small {
   container-type: inline-size;
@@ -6962,10 +6964,6 @@ textarea {
 }
 .color-lab-swap:hover {
   transform: translateY(-1px);
-}
-.dashboard-grid {
-  --board-row: 10.5rem;
-  grid-auto-rows: var(--board-row);
 }
 .board-cell--small {
   grid-row: span 1;

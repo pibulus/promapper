@@ -2213,10 +2213,14 @@ body {
    span 1 (a true half-card tile), wide spans the row. Rows like
    small/small/standard compose themselves; dense packing fills holes.
    ================================================================ */
-/* Dense packing: later small/standard cards slide backward into holes left
-   by wide cards, so a mixed-width board never gapes. */
+/* Dense packing + the 1:2:4 row rhythm, ONE rule (splitting it across the
+   file made the grid depend on cascade order): later small cards slide
+   backward into holes, and every card spans fixed row units — small 1,
+   medium 2, tall 4 (see BOARD SIZE SYSTEM near the end of this file). */
 .dashboard-grid {
   grid-auto-flow: dense;
+  --board-row: 10.5rem;
+  grid-auto-rows: var(--board-row);
 }
 
 .module-cell--small {
@@ -8069,10 +8073,8 @@ label {
    grid computes it exactly, gaps included. The canvas is the one
    exception: full row, fixed height, not resizable.
    ================================================================ */
-.dashboard-grid {
-  --board-row: 10.5rem;
-  grid-auto-rows: var(--board-row);
-}
+/* (grid-auto-rows + --board-row live on .dashboard-grid up in the MODULES
+   section — one rule, no cascade-order dependency.) */
 .board-cell--small {
   grid-row: span 1;
 }

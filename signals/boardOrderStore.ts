@@ -10,6 +10,7 @@
  */
 
 import { signal } from "@preact/signals";
+import { isViewingShared } from "@signals/conversationStore.ts";
 import type { BoardSize } from "@utils/boardLayout.ts";
 
 const ORDER_KEY = "promapper-board-order";
@@ -52,6 +53,9 @@ export const boardSizes = signal<Record<string, BoardSize>>(loadSizes());
 
 export function setBoardOrder(ids: string[]): void {
   boardOrder.value = ids;
+  // Shared views promise "changes aren't saved": the drag still works for
+  // the session, but never writes over the visitor's own board.
+  if (isViewingShared.value) return;
   try {
     localStorage.setItem(ORDER_KEY, JSON.stringify(ids));
   } catch {
@@ -61,6 +65,7 @@ export function setBoardOrder(ids: string[]): void {
 
 export function setCardSize(id: string, size: BoardSize): void {
   boardSizes.value = { ...boardSizes.value, [id]: size };
+  if (isViewingShared.value) return; // same promise as setBoardOrder
   try {
     localStorage.setItem(SIZES_KEY, JSON.stringify(boardSizes.value));
   } catch {

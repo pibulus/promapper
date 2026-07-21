@@ -27,7 +27,7 @@
  */
 
 import { batch, useSignal } from "@preact/signals";
-import { useRef } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 import { hapticSnap, hapticTap } from "./haptics.ts";
 import { soundSettle } from "./sound.ts";
 
@@ -390,6 +390,19 @@ export function useGridSortable(options: GridSortableOptions) {
       }
     }, SETTLE_MS);
   }
+
+  // Drags don't survive unmount: if the island goes away mid-drag
+  // (conversation switch, route change), release the global listeners and
+  // stop the auto-scroll loop instead of leaking them onto the page.
+  useEffect(() => {
+    return () => {
+      if (session.current?.autoScrollRAF != null) {
+        cancelAnimationFrame(session.current.autoScrollRAF);
+      }
+      teardown();
+      session.current = null;
+    };
+  }, []);
 
   // --- entry points -------------------------------------------------------
 
