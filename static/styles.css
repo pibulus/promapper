@@ -4710,6 +4710,13 @@ html::-webkit-scrollbar-thumb:hover,
   line-height: 1.35;
 }
 
+/* Merge memory, visible: the names this topic absorbed. Quiet second line. */
+.topic-node-detail__aliases {
+  margin-top: 0.2rem;
+  font-size: var(--tiny-size);
+  opacity: 0.85;
+}
+
 /* Action row in the node detail panel — Rename / Delete, discoverable instead
    of buried in dbl-click / right-click. */
 .topic-node-detail__actions {
@@ -6091,6 +6098,78 @@ a:focus-visible {
   min-height: 200px;
   color: var(--color-text-secondary);
   font-size: var(--small-size);
+}
+
+/* Excalidraw wears the house palette. 0.17.x themes itself via CSS custom
+   properties on .excalidraw, so this is an override, not a fork: cream paper,
+   warm-black ink, the active theme's accent instead of stock violet, and
+   warm near-white islands (never lavender-grey, never absolute white). */
+.shared-whiteboard .excalidraw {
+  --color-primary: var(--color-accent);
+  --color-primary-darker: var(--accent-strong);
+  --color-primary-darkest: var(--accent-strong);
+  --color-primary-light: color-mix(
+    in srgb,
+    var(--color-accent) 18%,
+    var(--surface-white-warm)
+  );
+  --color-surface-primary-container: color-mix(
+    in srgb,
+    var(--color-accent) 16%,
+    var(--surface-white-warm)
+  );
+  --color-on-primary-container: var(--soft-black);
+  --color-brand-hover: var(--accent-strong);
+  --color-brand-active: var(--accent-strong);
+  --island-bg-color: var(--surface-white-warm);
+  --default-bg-color: var(--soft-cream);
+  --color-surface-low: color-mix(
+    in srgb,
+    var(--soft-black) 5%,
+    var(--surface-white-warm)
+  );
+  --color-surface-mid: color-mix(
+    in srgb,
+    var(--soft-black) 8%,
+    var(--surface-white-warm)
+  );
+  --color-surface-high: color-mix(
+    in srgb,
+    var(--soft-black) 12%,
+    var(--surface-white-warm)
+  );
+  --color-on-surface: var(--soft-black);
+}
+
+/* The card header already provides Canvas chrome; the library browser and the
+   keyboard-shortcut helper are whole sub-apps that don't fit a scratch
+   surface on a card. 80/20 the toolbar too: hand, select, rectangle, ellipse,
+   arrow, draw, text, eraser — the lock toggle, diamond, bare line, image
+   insert, the frame/laser drawer, and the tutorial hint are power-user noise
+   on a card-sized board. (All !important because Excalidraw injects its
+   stylesheet AFTER ours at runtime, so load order favors its rules.) */
+.shared-whiteboard .default-sidebar-trigger,
+.shared-whiteboard [data-testid="sidebar-trigger"],
+.shared-whiteboard .help-icon,
+.shared-whiteboard .HintViewer,
+.shared-whiteboard .App-toolbar__extra-tools-trigger,
+.shared-whiteboard label[title^="Keep selected tool"],
+.shared-whiteboard label[title^="Diamond"],
+.shared-whiteboard label[title^="Line"],
+.shared-whiteboard label[title^="Insert image"],
+.shared-whiteboard .Island:has(label[title="Laser pointer"]),
+.shared-whiteboard fieldset[data-pm-hidden] {
+  display: none !important;
+}
+
+/* House chrome on Excalidraw's floating panels: the module grammar (warm
+   near-white, chunky sepia border, hard slab shadow) so the board's UI reads
+   as OURS, not a guest library. Same !important story as above. */
+.shared-whiteboard .excalidraw .Island {
+  background: var(--surface-white-warm) !important;
+  border: 2px solid var(--line-ink) !important;
+  border-radius: 14px !important;
+  box-shadow: 3px 3px 0 var(--line-ink) !important;
 }
 
 /* ===================================================================

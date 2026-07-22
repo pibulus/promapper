@@ -4301,6 +4301,11 @@ html::-webkit-scrollbar-thumb:hover {
   line-height: 1.35;
   margin: 0;
 }
+.topic-node-detail__aliases {
+  font-size: var(--tiny-size);
+  margin-top: .2rem;
+  opacity: .85;
+}
 .topic-node-detail__actions {
   display: flex;
   gap: .5rem;
@@ -5344,6 +5349,41 @@ button:focus-visible {
   height: 100%;
   justify-content: center;
   min-height: 200px;
+}
+.shared-whiteboard .excalidraw {
+  --color-primary: var(--color-accent);
+  --color-primary-darker: var(--accent-strong);
+  --color-primary-darkest: var(--accent-strong);
+  --color-primary-light: color-mix(in srgb,var(--color-accent) 18%,var(--surface-white-warm));
+  --color-surface-primary-container: color-mix(in srgb,var(--color-accent) 16%,var(--surface-white-warm));
+  --color-on-primary-container: var(--soft-black);
+  --color-brand-hover: var(--accent-strong);
+  --color-brand-active: var(--accent-strong);
+  --island-bg-color: var(--surface-white-warm);
+  --default-bg-color: var(--soft-cream);
+  --color-surface-low: color-mix(in srgb,var(--soft-black) 5%,var(--surface-white-warm));
+  --color-surface-mid: color-mix(in srgb,var(--soft-black) 8%,var(--surface-white-warm));
+  --color-surface-high: color-mix(in srgb,var(--soft-black) 12%,var(--surface-white-warm));
+  --color-on-surface: var(--soft-black);
+}
+.shared-whiteboard .App-toolbar__extra-tools-trigger,
+.shared-whiteboard .HintViewer,
+.shared-whiteboard .Island:has(label[title="Laser pointer"]),
+.shared-whiteboard .default-sidebar-trigger,
+.shared-whiteboard .help-icon,
+.shared-whiteboard [data-testid=sidebar-trigger],
+.shared-whiteboard fieldset[data-pm-hidden],
+.shared-whiteboard label[title^="Insert image"],
+.shared-whiteboard label[title^="Keep selected tool"],
+.shared-whiteboard label[title^=Diamond],
+.shared-whiteboard label[title^=Line] {
+  display: none!important;
+}
+.shared-whiteboard .excalidraw .Island {
+  background: var(--surface-white-warm)!important;
+  border: 2px solid var(--line-ink)!important;
+  border-radius: 14px!important;
+  box-shadow: 3px 3px 0 var(--line-ink)!important;
 }
 .chat-fab {
   background: var(--accent-strong);

@@ -19,6 +19,22 @@ interface SharedWhiteboardProps {
   onSceneChange?: (scene: string) => void;
 }
 
+// The drawing paper is the house cream, never absolute white (Pablo's decree —
+// docs/COLOR-SYSTEM.md). Scrubbed onto restored scenes too, because older
+// saves carry Excalidraw's stock #ffffff.
+const WARM_PAPER = "#fbf1e4";
+
+// 80/20 the properties panel: power-user sections a scratch board doesn't
+// need. Excalidraw's section fieldsets carry no classes or testids — only
+// their legend text — so CSS can't target them alone; an observer tags them
+// (data-pm-hidden) and styles.css hides the tag.
+const HIDDEN_PANEL_SECTIONS = new Set([
+  "Stroke style",
+  "Sloppiness",
+  "Edges",
+  "Layers",
+]);
+
 /**
  * Strip per-viewer state from Excalidraw's appState before syncing. Without
  * this, a remote edit carries the sender's scroll/zoom/selection and silently
@@ -103,8 +119,19 @@ export default function SharedWhiteboard(
           if (parsed?.appState && "collaborators" in parsed.appState) {
             delete parsed.appState.collaborators;
           }
+          // Warm the paper: stock/legacy scenes carry #ffffff.
+          const bg = parsed?.appState?.viewBackgroundColor;
+          if (!bg || bg === "#ffffff") {
+            parsed.appState = {
+              ...(parsed.appState ?? {}),
+              viewBackgroundColor: WARM_PAPER,
+            };
+          }
         } catch {
-          parsed = { elements: [], appState: { theme: "light" } };
+          parsed = {
+            elements: [],
+            appState: { theme: "light", viewBackgroundColor: WARM_PAPER },
+          };
         }
       }
 
@@ -113,7 +140,7 @@ export default function SharedWhiteboard(
         {
           initialData: parsed ?? {
             elements: [],
-            appState: { theme: "light" },
+            appState: { theme: "light", viewBackgroundColor: WARM_PAPER },
           },
           isCollaborating: true,
           UIOptions: {
@@ -164,6 +191,27 @@ export default function SharedWhiteboard(
       excalidrawAPI?: typeof apiRef.current;
     }).excalidrawAPI = apiRef.current;
   }, [apiRef.current]);
+
+  // Tag the trimmed properties-panel sections whenever Excalidraw re-renders
+  // its panel (selection changes re-create the fieldsets, so a one-shot pass
+  // isn't enough). The callback only runs on DOM mutations and only touches
+  // legends — cheap.
+  useEffect(() => {
+    if (!IS_BROWSER) return;
+    const root = containerRef.current;
+    if (!root) return;
+    const tag = () => {
+      root.querySelectorAll("fieldset > legend").forEach((legend) => {
+        if (HIDDEN_PANEL_SECTIONS.has(legend.textContent?.trim() ?? "")) {
+          legend.parentElement?.setAttribute("data-pm-hidden", "");
+        }
+      });
+    };
+    const observer = new MutationObserver(tag);
+    observer.observe(root, { childList: true, subtree: true });
+    tag();
+    return () => observer.disconnect();
+  }, []);
 
   // Subscribe to remote whiteboard updates from PartyKit reactively.
   useEffect(() => {

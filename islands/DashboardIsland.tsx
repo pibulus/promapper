@@ -6,7 +6,10 @@
  * the arrangement persists in @signals/boardOrderStore.
  */
 
-import { conversationData } from "@signals/conversationStore.ts";
+import {
+  conversationData,
+  isViewingShared,
+} from "@signals/conversationStore.ts";
 import { renameSpeaker, setActionItems } from "@signals/actionItemsStore.ts";
 import {
   clearCompletedActionItems,
@@ -29,7 +32,10 @@ import {
   listRecordings,
   type StoredRecording,
 } from "@core/storage/recordingsDB.ts";
-import { getAllConversations } from "../core/storage/localStorage.ts";
+import {
+  getAllConversations,
+  saveConversation,
+} from "../core/storage/localStorage.ts";
 import { serializeBackup } from "../core/storage/backup.ts";
 import TopicVisualizationsCard from "./TopicVisualizationsCard.tsx";
 import SharedWhiteboard from "./SharedWhiteboard.tsx";
@@ -188,6 +194,26 @@ export default function DashboardIsland() {
   useEffect(() => {
     if (liveSession.value) canvasMounted.value = true;
   }, [liveSession.value]);
+
+  // Tab close/background: the scene debounce (2s) and the store autosave
+  // (500ms) both die with the tab — flush the pending strokes into the store
+  // AND persist synchronously, or the last seconds of drawing vanish.
+  useEffect(() => {
+    const flush = () => {
+      flushSceneWrite();
+      const data = conversationData.value;
+      if (data && !isViewingShared.value) saveConversation(data);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    globalThis.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      globalThis.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
 
   // Remote strokes while the map is up → dot on the flip button.
   useEffect(() => {
