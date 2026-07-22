@@ -8,6 +8,7 @@ import { Handlers } from "$fresh/server.ts";
 import { guardAudioBudget, guardRequest } from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
 import { MAX_AUDIO_SIZE, uploadAudioFile } from "@services/audio.ts";
+import { deepgramKey, transcribeChunkDeepgram } from "@services/deepgram.ts";
 
 /** Live chunks can be very small (Opus compressed silence <200 bytes).
  *  Raise the floor only for clearly invalid blobs (<64 bytes = no audio). */
@@ -43,14 +44,34 @@ export const handler: Handlers = {
       const budgetBlock = guardAudioBudget(req, audioFile.size);
       if (budgetBlock) return budgetBlock;
 
-      const { part: audioPart } = await uploadAudioFile(audioFile);
-      const aiService = getAIService();
-
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), CHUNK_TRANSCRIBE_TIMEOUT_MS);
       let transcription: { text: string; speakers: string[] };
       try {
-        transcription = await aiService.transcribeAudio(audioPart, ctrl.signal);
+        // Deepgram first when configured (~300ms/chunk vs a multi-second
+        // LLM turn); any Deepgram failure falls through to the LLM path.
+        if (deepgramKey()) {
+          try {
+            transcription = await transcribeChunkDeepgram(
+              audioFile,
+              ctrl.signal,
+            );
+          } catch (dgError) {
+            if (ctrl.signal.aborted) throw dgError;
+            console.warn("Deepgram chunk failed, falling back:", dgError);
+            const { part: audioPart } = await uploadAudioFile(audioFile);
+            transcription = await getAIService().transcribeAudio(
+              audioPart,
+              ctrl.signal,
+            );
+          }
+        } else {
+          const { part: audioPart } = await uploadAudioFile(audioFile);
+          transcription = await getAIService().transcribeAudio(
+            audioPart,
+            ctrl.signal,
+          );
+        }
       } finally {
         clearTimeout(timer);
       }
