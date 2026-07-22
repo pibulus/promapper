@@ -84,8 +84,16 @@ export function useGridSortable(options: GridSortableOptions) {
       cellEl: HTMLElement;
       container: HTMLElement;
       scroller: HTMLElement | null; // null = the page itself scrolls
-      // Lifting can remount the card out of a pillar into its own cell; the
-      // base offset keeps its visual exactly where it was grabbed.
+      // Where the card sat (layout position, untransformed) when grabbed.
+      // Every re-base solves against this anchor: home + base = grab, so the
+      // pointer delta always rides on the same origin no matter how many
+      // times the dense grid re-slots the lifted card.
+      grabLeft: number;
+      grabTop: number;
+      // Offset between the card's CURRENT home slot and the grab anchor.
+      // Re-measured after every reorder — the dense re-pack gives the lifted
+      // card a new home, and a stale base made it teleport sideways by
+      // (newHome - oldHome) under a still pointer.
       baseDx: number;
       baseDy: number;
       lastDx: number;
@@ -167,6 +175,18 @@ export function useGridSortable(options: GridSortableOptions) {
     el.style.transform = `translate(${dx}px, ${dy}px) ${LIFT_TRANSFORM}`;
   }
 
+  /** Solve the base offset against the grab anchor from the lifted card's
+   * CURRENT home slot: home + base = grab, so the pointer delta always rides
+   * the same origin. Clears the transform to read pure layout — safe inside
+   * rAF (before paint), nothing flashes. */
+  function rebase(s: NonNullable<typeof session.current>) {
+    s.cellEl.style.transition = "none";
+    s.cellEl.style.transform = "";
+    const home = s.cellEl.getBoundingClientRect();
+    s.baseDx = s.grabLeft - home.left;
+    s.baseDy = s.grabTop - home.top;
+  }
+
   function beginDrag(
     id: string,
     event: PointerEvent,
@@ -193,6 +213,8 @@ export function useGridSortable(options: GridSortableOptions) {
       cellEl,
       container,
       scroller: nearestScroller(cellEl),
+      grabLeft: grabRect.left,
+      grabTop: grabRect.top,
       baseDx: 0,
       baseDy: 0,
       lastDx: 0,
@@ -216,9 +238,7 @@ export function useGridSortable(options: GridSortableOptions) {
       if (!s || s.id !== id) return;
       const fresh = s.container.querySelector<HTMLElement>(cardQuery(id));
       if (fresh) s.cellEl = fresh;
-      const now = s.cellEl.getBoundingClientRect();
-      s.baseDx = grabRect.left - now.left;
-      s.baseDy = grabRect.top - now.top;
+      rebase(s);
       s.cellEl.style.zIndex = "30";
       applyLift(s.cellEl, s.baseDx + s.lastDx, s.baseDy + s.lastDy);
       flip(s.container, before, id, FLIP_EASE);
@@ -293,6 +313,10 @@ export function useGridSortable(options: GridSortableOptions) {
             sess.cellEl = fresh;
             sess.cellEl.style.zIndex = "30";
           }
+          // The re-pack just gave the lifted card a NEW home slot — re-solve
+          // the base against the grab anchor or the card teleports sideways
+          // by (newHome - oldHome) while the pointer stands still.
+          rebase(sess);
           flip(sess.container, before, sess.id, FLIP_EASE);
           applyLift(
             sess.cellEl,
