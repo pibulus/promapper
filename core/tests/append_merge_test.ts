@@ -5,6 +5,7 @@ import {
   mergeAppendNodes,
   mergeAppendSummary,
   normalizeDescription,
+  remapExtractedByAlias,
 } from "../orchestration/append-merge.ts";
 import type { ActionItem } from "../types/index.ts";
 
@@ -274,4 +275,89 @@ Deno.test("no-op status flips don't stamp ai_checked (phantom sparkle guard)", (
   ]);
   assertEquals(merged[0].ai_checked, undefined);
   assertEquals(merged[0].updated_at, "2026-07-18T00:00:00.000Z");
+});
+
+// ===================================================================
+// MERGE MEMORY — remapExtractedByAlias routes dead names to survivors
+// ===================================================================
+
+const swampNodes = [
+  {
+    id: "radio",
+    label: "swamp radio",
+    emoji: "📻",
+    color: "#111111",
+    aliases: ["frog choir"],
+  },
+  { id: "shed", label: "moon shed", emoji: "🌙", color: "#222222" },
+];
+
+Deno.test("remapExtractedByAlias: an alias-named extraction folds into its survivor", () => {
+  const { nodes, edges } = remapExtractedByAlias(
+    swampNodes,
+    [
+      { id: "fresh-1", label: "Frog Choir", emoji: "🐸", color: "#333333" },
+      { id: "fresh-2", label: "tape hiss", emoji: "📼", color: "#444444" },
+    ],
+    [
+      {
+        source_topic_id: "fresh-1",
+        target_topic_id: "fresh-2",
+        color: "",
+      },
+    ],
+  );
+  // The dead name is NOT re-added; the genuinely-new topic survives.
+  assertEquals(nodes.map((n) => n.id), ["fresh-2"]);
+  // Its edge now hangs off the survivor.
+  assertEquals(edges[0].source_topic_id, "radio");
+  assertEquals(edges[0].target_topic_id, "fresh-2");
+});
+
+Deno.test("remapExtractedByAlias: a same-label new id folds in too (no twin nodes)", () => {
+  const { nodes } = remapExtractedByAlias(
+    swampNodes,
+    [{ id: "fresh-9", label: "Moon Shed", emoji: "🌙", color: "#555555" }],
+    [],
+  );
+  assertEquals(nodes.length, 0);
+});
+
+Deno.test("remapExtractedByAlias: reused ids and new topics pass through untouched", () => {
+  const extracted = [
+    { id: "radio", label: "swamp radio hour", emoji: "📻", color: "#666666" },
+    { id: "fresh-3", label: "night walks", emoji: "🦉", color: "#777777" },
+  ];
+  const extractedEdges = [
+    { source_topic_id: "radio", target_topic_id: "fresh-3", color: "" },
+  ];
+  const { nodes, edges } = remapExtractedByAlias(
+    swampNodes,
+    extracted,
+    extractedEdges,
+  );
+  assertEquals(nodes, extracted);
+  assertEquals(edges, extractedEdges);
+});
+
+Deno.test("remap + union: a resurrected edge to the survivor dies as a self-loop", () => {
+  // Extraction re-emits "frog choir" AND links it to swamp radio — after the
+  // remap that edge is radio->radio, and the union must drop it.
+  const { nodes, edges } = remapExtractedByAlias(
+    swampNodes,
+    [{ id: "fresh-1", label: "frog choir", emoji: "🐸", color: "#333333" }],
+    [{ source_topic_id: "fresh-1", target_topic_id: "radio", color: "" }],
+  );
+  const mergedNodes = mergeAppendNodes(swampNodes, nodes);
+  const merged = mergeAppendEdges(
+    [],
+    edges,
+    new Set(mergedNodes.map((n) => n.id)),
+  );
+  assertEquals(merged.length, 0);
+  // And the survivor still holds its alias after the union.
+  assertEquals(
+    mergedNodes.find((n) => n.id === "radio")?.aliases,
+    ["frog choir"],
+  );
 });

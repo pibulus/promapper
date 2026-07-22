@@ -327,3 +327,34 @@ Deno.test("addTopic honors a provided emoji and color", () => {
   assertEquals(added?.emoji, "🦇");
   assertEquals(added?.color, "#123456");
 });
+
+// ===================================================================
+// MERGE MEMORY — the survivor remembers what it absorbed (aliases)
+// ===================================================================
+
+Deno.test("mergeTopics: survivor absorbs the source label as an alias", () => {
+  const data = graphData();
+  const next = mergeTopics(data, "risk", "budget");
+  const survivor = next.nodes.find((n) => n.id === "budget");
+  assertEquals(survivor?.aliases, ["Risk"]);
+  // Source is gone; survivor keeps its own label.
+  assertEquals(next.nodes.some((n) => n.id === "risk"), false);
+  assertEquals(survivor?.label, "Budget");
+});
+
+Deno.test("mergeTopics: chained merges carry aliases forward, deduped case-insensitively", () => {
+  const data = graphData();
+  // budget absorbs risk, then timeline absorbs budget — timeline should
+  // hold both dead names, once each, and never alias its own label.
+  const step1 = mergeTopics(data, "risk", "budget");
+  const withDupe = {
+    ...step1,
+    nodes: step1.nodes.map((n) =>
+      n.id === "budget" ? { ...n, aliases: ["risk", "Risk", "Timeline"] } : n
+    ),
+  };
+  const step2 = mergeTopics(withDupe, "budget", "timeline");
+  const survivor = step2.nodes.find((n) => n.id === "timeline");
+  // "Timeline" (its own label) filtered; "risk"/"Risk" collapsed to one.
+  assertEquals(survivor?.aliases, ["Budget", "risk"]);
+});

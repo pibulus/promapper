@@ -15,6 +15,7 @@ interface MergeNode {
   emoji: string;
   color: string;
   position?: { x: number; y: number };
+  aliases?: string[];
 }
 
 interface MergeEdge {
@@ -62,6 +63,61 @@ export function mergeAppendNodes<T extends MergeNode>(
   }
 
   return [...byId.values()];
+}
+
+/**
+ * Route extracted topics through the user's merge decisions BEFORE the union.
+ *
+ * A merge teaches the map vocabulary: the survivor carries absorbed labels as
+ * `aliases`. The prompt asks the model to reuse existing ids for known topics,
+ * but the cheap extraction model forgets — so any extracted node whose label
+ * matches an existing node's label OR alias (normalized) is treated as that
+ * node: it's dropped from the extracted list (so the union can't rename the
+ * survivor to the dead name) and extracted edges are rewired to the survivor.
+ * Without this, merging "frog choir" into "swamp radio" resurrected frog
+ * choir as a fresh node on the very next append.
+ */
+export function remapExtractedByAlias<
+  TN extends MergeNode,
+  TE extends MergeEdge,
+>(
+  existingNodes: TN[],
+  extractedNodes: TN[],
+  extractedEdges: TE[],
+): { nodes: TN[]; edges: TE[] } {
+  const survivorByName = new Map<string, string>();
+  const existingIds = new Set<string>();
+  for (const node of existingNodes) {
+    if (!node?.id) continue;
+    existingIds.add(node.id);
+    for (const name of [node.label, ...(node.aliases ?? [])]) {
+      const key = normalizeDescription(name ?? "");
+      if (key && !survivorByName.has(key)) survivorByName.set(key, node.id);
+    }
+  }
+
+  const idMap = new Map<string, string>();
+  const nodes = extractedNodes.filter((node) => {
+    if (!node?.id) return false;
+    // The model reused an existing id — that's the cooperative path, keep it
+    // (the union decides label/position policy for id matches).
+    if (existingIds.has(node.id)) return true;
+    const survivorId = survivorByName.get(
+      normalizeDescription(node.label ?? ""),
+    );
+    if (!survivorId) return true; // genuinely new topic
+    idMap.set(node.id, survivorId);
+    return false;
+  });
+
+  if (idMap.size === 0) return { nodes, edges: extractedEdges };
+
+  const edges = extractedEdges.map((edge) => ({
+    ...edge,
+    source_topic_id: idMap.get(edge.source_topic_id) ?? edge.source_topic_id,
+    target_topic_id: idMap.get(edge.target_topic_id) ?? edge.target_topic_id,
+  }));
+  return { nodes, edges };
 }
 
 /**

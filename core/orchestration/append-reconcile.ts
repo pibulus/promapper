@@ -101,12 +101,21 @@ function reconcileNodes(base: Node[], mine: Node[], theirs: Node[]): Node[] {
       return theirsNode[key];
     };
 
+    // Aliases only grow (either side may have absorbed a merge while the
+    // request was in flight) — union both, order: mine first.
+    const aliases = [
+      ...new Set([
+        ...(mineNode.aliases ?? []),
+        ...(theirsNode.aliases ?? []),
+      ]),
+    ];
     result.push({
       ...theirsNode,
       label: pick("label"),
       emoji: pick("emoji"),
       color: pick("color"),
       position,
+      ...(aliases.length ? { aliases } : {}),
     });
   }
 

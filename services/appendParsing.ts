@@ -103,6 +103,14 @@ function sanitizeNode(raw: unknown, conversationId: string): Node | null {
   const position = p && typeof p.x === "number" && typeof p.y === "number"
     ? { x: p.x, y: p.y }
     : undefined;
+  // Merge memory: absorbed labels ride through so the prompt and the alias
+  // remap can route their mentions back to this node. Capped like labels.
+  const aliases = Array.isArray(r.aliases)
+    ? r.aliases
+      .filter((a): a is string => typeof a === "string" && !!a.trim())
+      .map((a) => cap(a, 120).trim())
+      .slice(0, 12)
+    : [];
   return {
     id,
     conversation_id: cap(r.conversation_id, 128) || conversationId,
@@ -113,6 +121,7 @@ function sanitizeNode(raw: unknown, conversationId: string): Node | null {
       ? r.created_at
       : new Date().toISOString(),
     ...(position ? { position } : {}),
+    ...(aliases.length ? { aliases } : {}),
   };
 }
 

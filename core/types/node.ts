@@ -12,6 +12,8 @@ export interface Node {
     x: number;
     y: number;
   };
+  /** Labels absorbed via merge — routes future mentions back to this node. */
+  aliases?: string[];
   created_at: string;
 }
 
@@ -20,4 +22,5 @@ export interface NodeInput {
   label: string;
   color: string;
   emoji: string;
+  aliases?: string[];
 }

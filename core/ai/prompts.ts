@@ -157,10 +157,16 @@ export const buildTopicExtractionPrompt = (
   // Build existing nodes context to reuse them
   const existingNodesContext = existingNodes.length > 0
     ? `\n\nEXISTING TOPICS (reuse these if applicable):\n${
-      existingNodes.map((node) =>
-        `- ID: "${node.id}" | ${node.emoji} ${node.label}`
-      ).join("\n")
-    }\n\nIMPORTANT: If you identify a topic that is the same as or very similar to an existing topic above, REUSE the existing node ID instead of creating a new one. Only create NEW node IDs for genuinely new topics that don't match any existing ones.`
+      existingNodes.map((node) => {
+        // Merge memory: names this topic absorbed. Mentions of an absorbed
+        // name belong to THIS node — without this hint the model re-creates
+        // merged-away topics on every append.
+        const aka = node.aliases?.length
+          ? ` (also covers: ${node.aliases.join(", ")})`
+          : "";
+        return `- ID: "${node.id}" | ${node.emoji} ${node.label}${aka}`;
+      }).join("\n")
+    }\n\nIMPORTANT: If you identify a topic that is the same as or very similar to an existing topic above — including its "also covers" names — REUSE the existing node ID instead of creating a new one. Only create NEW node IDs for genuinely new topics that don't match any existing ones.`
     : "";
 
   // Build existing edges context to preserve relationships across appends.

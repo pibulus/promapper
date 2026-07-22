@@ -17,6 +17,7 @@ import {
   mergeAppendEdges,
   mergeAppendNodes,
   mergeAppendSummary,
+  remapExtractedByAlias,
 } from "@core/orchestration/append-merge.ts";
 import { guardAudioBudget, guardRequest } from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
@@ -188,11 +189,19 @@ export const handler: Handlers = {
       // deleting established topics, their relationships, and hand-dragged
       // positions on every recording. New wins on label/emoji; existing
       // positions are preserved; existing topics never vanish.
-      const mergedNodes = mergeAppendNodes(existingNodes, result.nodes);
+      // Merge memory first: extracted topics whose label matches an existing
+      // node's label or alias get rewired to that node, so a user's merge
+      // isn't resurrected by the next extraction.
+      const remapped = remapExtractedByAlias(
+        existingNodes,
+        result.nodes,
+        result.edges,
+      );
+      const mergedNodes = mergeAppendNodes(existingNodes, remapped.nodes);
       const validNodeIds = new Set(mergedNodes.map((n) => n.id));
       const mergedEdges = mergeAppendEdges(
         existingEdges,
-        result.edges,
+        remapped.edges,
         validNodeIds,
       );
 

@@ -36,6 +36,7 @@ import {
   mergeAppendEdges,
   mergeAppendNodes,
   mergeAppendSummary,
+  remapExtractedByAlias,
 } from "@core/orchestration/append-merge.ts";
 import { guardRequest } from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
@@ -163,11 +164,18 @@ export const handler: Handlers = {
         result.actionItems,
         result.statusUpdates,
       );
-      const mergedNodes = mergeAppendNodes(existingNodes, result.nodes);
+      // Merge memory: route alias-matching extractions to their survivor
+      // node before the union (same as /api/append).
+      const remapped = remapExtractedByAlias(
+        existingNodes,
+        result.nodes,
+        result.edges,
+      );
+      const mergedNodes = mergeAppendNodes(existingNodes, remapped.nodes);
       const validNodeIds = new Set(mergedNodes.map((n) => n.id));
       const mergedEdges = mergeAppendEdges(
         existingEdges,
-        result.edges,
+        remapped.edges,
         validNodeIds,
       );
 

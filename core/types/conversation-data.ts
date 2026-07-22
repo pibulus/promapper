@@ -25,6 +25,10 @@ export interface ConversationData {
     emoji: string;
     color: string;
     position?: { x: number; y: number };
+    /** Labels this topic absorbed via merge — the map's synonym memory.
+     * Appends route these names back to this node instead of resurrecting
+     * the merged-away topic. */
+    aliases?: string[];
   }>;
   edges: Array<{
     id?: string;

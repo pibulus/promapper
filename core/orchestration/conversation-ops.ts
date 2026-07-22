@@ -177,7 +177,28 @@ export function mergeTopics(
   const ids = new Set(data.nodes.map((n) => n.id));
   if (!ids.has(sourceId) || !ids.has(targetId)) return data;
 
-  const nodes = data.nodes.filter((n) => n.id !== sourceId);
+  // The survivor remembers what it absorbed: the merged-away label (and any
+  // aliases IT had already absorbed) become aliases, so the next append
+  // routes those names back here instead of resurrecting the dead topic.
+  // Merge = "these words mean the same thing in this project."
+  const source = data.nodes.find((n) => n.id === sourceId)!;
+  const target = data.nodes.find((n) => n.id === targetId)!;
+  const norm = (s: string) => s.trim().toLowerCase();
+  const seen = new Set([norm(target.label)]);
+  const aliases = [
+    ...(target.aliases ?? []),
+    source.label,
+    ...(source.aliases ?? []),
+  ].filter((alias) => {
+    const key = norm(alias);
+    if (!alias.trim() || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  const nodes = data.nodes
+    .filter((n) => n.id !== sourceId)
+    .map((n) => n.id === targetId && aliases.length ? { ...n, aliases } : n);
   const rewired = data.edges.map((edge) => ({
     ...edge,
     source_topic_id: edge.source_topic_id === sourceId

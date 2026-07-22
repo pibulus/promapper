@@ -162,6 +162,7 @@ function sanitizeNode(input: unknown) {
     emoji: string;
     color: string;
     position?: { x: number; y: number };
+    aliases?: string[];
   } = {
     id,
     label,
@@ -174,6 +175,15 @@ function sanitizeNode(input: unknown) {
   // (Keep in sync with party/conversationProtocol.ts sanitizeNode.)
   const position = sanitizePosition(input.position);
   if (position) node.position = position;
+  // Merge memory (absorbed labels) — dropping these would undo a user's
+  // merges on every live-sync echo.
+  if (Array.isArray(input.aliases)) {
+    const aliases = input.aliases
+      .map((a) => normalizeString(a, SHARE_ROOM_LIMITS.MAX_NODE_LABEL_LENGTH))
+      .filter((a): a is string => !!a)
+      .slice(0, 12);
+    if (aliases.length) node.aliases = aliases;
+  }
   return node;
 }
 
