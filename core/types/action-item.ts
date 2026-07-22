@@ -7,7 +7,9 @@ export interface ActionItem {
   conversation_id: string;
   description: string;
   assignee: string | null;
-  due_date: string | null; // YYYY-MM-DD format
+  /** Human words ("friday", "before the gig"). AI extraction may emit
+   * YYYY-MM-DD — ISO strings render as friendly dates in the UI. */
+  due_date: string | null;
   status: "pending" | "completed";
   created_at: string;
   updated_at: string;
