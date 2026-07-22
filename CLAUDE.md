@@ -28,13 +28,29 @@ app by dunking on other tools, subscriptions, managers, or corporate software.
 Just say what this thing is and why it is useful. Avoid fake authority,
 productivity-coach voice, and strings of imperatives like "Talk. Paste. Append."
 
+Positioning: ProMapper is a workshop table, not an AI product. User-facing copy
+never leads with AI or mechanisms — it shows behavior ("say it's done in a later
+take and the item ticks itself"), and the word "AI" earns its place or stays
+out. The tone is opinionated aesthetic neutrality: warm and a little alive,
+never cutesy-kitsch, never corporate — the aesthetic itself does the audience
+filtering. Use cases are discovered, not prescribed: copy offers a spread of
+weird human examples (film scenes, court cases, band practice, thesis piles,
+community projects) and lets people find their own. When someone discovers a use
+for it, it becomes theirs — that moment is the product.
+
 The AI provider is OpenRouter only. (The direct-Gemini fallback and its
 `AI_PROVIDER` switch were removed in June 2026 — one API key, per-task model
 routing.)
 
-The killer feature is AI self-checkoff: when a follow-up recording mentions that
-work is done, the app can mark matching action items complete, or move them back
-to pending if the later context says they are not actually done.
+The killer feature (internal name: the append loop) is that the map stays true
+as material keeps arriving. Action items check themselves off when a later take
+says the work happened — and reopen if it didn't. Merged topics stay merged
+because the survivor remembers what it absorbed. New material folds in without
+trampling edits made while it processed. Self-checkoff, merge memory, and append
+reconcile are the same promise from three angles; in user-facing copy none of
+them are named — the map just keeps up with you. (Self-checkoff is a SoftStack
+house signature now — ziplist does it too. What defines each app is what the AI
+keeps true: ziplist keeps a list, ProMapper keeps a whole project's shape.)
 
 Run locally with `deno task dev` or `deno task start` on `localhost:8003`.
 Required local env for the default setup:
@@ -67,8 +83,8 @@ Gemini for native diarisation.
 | ------------------------------------------- | -------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Audio transcription (appends + live)        | `~google/gemini-flash-latest`    | `OPENROUTER_TRANSCRIPTION_MODEL`                      | Native diarisation — "who's talking" is baked into the model. $1.50/$9. Highest-volume audio path.                                                    |
 | Topics + summary                            | `~anthropic/claude-haiku-latest` | `OPENROUTER_TOPIC_MODEL` / `OPENROUTER_SUMMARY_MODEL` | Quality where users read/see it. $1/$5.                                                                                                               |
-| Bishop (/api/ask)                           | `~anthropic/claude-haiku-latest` | `OPENROUTER_ASK_MODEL`                                | Most reasoning-heavy, least frequent call. Splurge option: `~anthropic/claude-sonnet-latest` ($2/$10).                                                |
-| Markdown exports                            | `~anthropic/claude-haiku-latest` | `OPENROUTER_MARKDOWN_MODEL`                           | Rare, user-initiated deliverables — same profile as Bishop.                                                                                           |
+| Ask (/api/ask)                              | `~anthropic/claude-haiku-latest` | `OPENROUTER_ASK_MODEL`                                | Most reasoning-heavy, least frequent call. Splurge option: `~anthropic/claude-sonnet-latest` ($2/$10).                                                |
+| Markdown exports                            | `~anthropic/claude-haiku-latest` | `OPENROUTER_MARKDOWN_MODEL`                           | Rare, user-initiated deliverables — same profile as Ask.                                                                                              |
 | Action extraction, titles, whiteboard agent | `google/gemini-3.1-flash-lite`   | `OPENROUTER_MODEL`                                    | High-volume structured extraction. $0.25/$1.50 — cheap on purpose.                                                                                    |
 | Status self-checkoff                        | `google/gemini-3.1-flash-lite`   | `OPENROUTER_STATUS_MODEL`                             | DELIBERATE volume choice (runs every append + every live round). The knob exists so a quality upgrade after real-meeting testing is config, not code. |
 

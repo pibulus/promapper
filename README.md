@@ -2,14 +2,17 @@
 
 > Turn messy conversations into living project maps.
 
-**ProMapper** is a friendly, local-first way to capture the shape of something
-while it is still unfolding. A voice note, a weekly check-in, a research
-session, a film scene, a court case, a messy written rant—it instantly maps into
-a transcript, a summary, action items, an interactive topic map, and exportable
-markdown docs.
+**ProMapper** is a friendly, local-first workshop table for whatever you're
+circling. A voice note, a weekly check-in, a research session, a film scene, a
+court case, a messy written rant — put it on the table and it takes shape: a
+transcript, a summary, action items, a topic map you can push around, and clean
+documents when you need them.
 
-The useful part is that a project map can keep growing. Add more audio or text
-later and ProMapper folds the new material into the same project memory.
+The useful part is that the map keeps growing. Add more talk or text later and
+ProMapper folds it into the same map — it keeps up with you instead of starting
+over. A band working out a setlist, a thesis pile, a D&D campaign, a kitchen
+renovation, a community project: it isn't built for one job. When you discover
+what yours is, it becomes yours.
 
 ## 📸 A look around
 
@@ -17,9 +20,9 @@ later and ProMapper folds the new material into the same project memory.
 | :-----------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------: |
 | ![Front page — talk it out, paste a rant, or drop a recording](static/promo/front-page.png) | ![Dashboard — transcript, summary, action items, topic map](static/promo/dashboard.png) |
 
-|                              The module rack                               |                           In a pocket                           |
-| :------------------------------------------------------------------------: | :-------------------------------------------------------------: |
-| ![Modules — Notes, Bishop, Radio, Tones, Canvas](static/promo/modules.png) | ![Mobile — the same board, one column](static/promo/mobile.png) |
+|                         The module rack                         |                           In a pocket                           |
+| :-------------------------------------------------------------: | :-------------------------------------------------------------: |
+| ![Modules — Notes, Ask, Takes, Sound](static/promo/modules.png) | ![Mobile — the same board, one column](static/promo/mobile.png) |
 
 Every roll of the dice re-tints the whole app from curated color pairs — your
 screenshots may be wearing a different sky.
@@ -34,18 +37,21 @@ screenshots may be wearing a different sky.
   all at once
 - **Real-time visualizer** during recording sessions
 
-### 🤖 Self-Checkoff (The Magic Feature)
+### ✅ The list keeps itself honest
 
-User says: _"I finished writing that report"_ → the "Write report" action item
-quietly marks itself ✓ Complete. New audio or text gets read against the open
-action items, and their status updates to match what was said.
+Say _"I finished writing that report"_ in a later take and the "Write report"
+item quietly ticks itself ✓. If it turns out the thing fell through, it comes
+back. New audio and text get read against the open action items, so the list
+stays true without you tending it.
 
-### 🕸️ Interactive Topic Graph (EmojimapViz)
+### 🕸️ A topic map you can push around
 
-- **Non-chronological visualization** of conversation themes
-- **Emoji-based nodes** with colored relationship edges
-- **Force-directed layout** for organic topic clustering, helping participants
-  circle back to interrupted thoughts
+- **Emoji-based nodes** with colored relationship edges, clustering organically
+  so interrupted thoughts are easy to circle back to
+- **Drag one topic onto another to merge them** — the map learns what you call
+  things, so merged topics stay merged as the project grows
+- **Flip the map over** and there's a sketchboard — draw the thing the way you
+  see it, and it remembers too
 
 ### 🎙️ Collaborative Meeting Rooms (Live Mode)
 
@@ -58,13 +64,10 @@ action items, and their status updates to match what was said.
 
 ### 📤 Markdown Exports
 
-Turn the same project map into different useful documents:
-
-- Blog posts & Technical documentation
-- Meeting summaries & FAQ sections
-- Person-by-person action lists
-- Diarised transcripts
-- Haiku poems (why not?)
+The same map can leave the table as eight different documents: **What got
+done**, **Meeting**, **Summary**, **Plan**, **Research**, **Journal**,
+**Unasked** (the questions nobody said out loud), and **Haiku** (why not?) —
+plus a custom prompt when you want something stranger.
 
 ### 🎨 Soft Neo-Toybrut UI
 
@@ -82,8 +85,8 @@ Turn the same project map into different useful documents:
 
 - **Deno** (v1.40+):
   [Install Deno](https://deno.land/manual/getting_started/installation)
-- **OpenRouter API Key**: [Get API key](https://openrouter.ai/keys)
-  - Gemini can still be used as a fallback provider.
+- **OpenRouter API Key**: [Get API key](https://openrouter.ai/keys) — one key,
+  every model the app uses routes through it
 
 ### Setup
 
@@ -100,10 +103,11 @@ Turn the same project map into different useful documents:
 
    Edit `.env` and add your provider API key:
    ```bash
-   AI_PROVIDER=openrouter
    OPENROUTER_API_KEY=your_openrouter_api_key_here
-   OPENROUTER_MODEL=google/gemini-2.5-flash-lite
    API_AUTH_TOKEN=choose_a_secret_value
+
+   # Optional: per-task model overrides (see CLAUDE.md for the routing table)
+   # OPENROUTER_MODEL=google/gemini-3.1-flash-lite
 
    # Optional: harden server routes & sessions
    ALLOWED_ORIGINS=http://localhost:8003
@@ -111,10 +115,6 @@ Turn the same project map into different useful documents:
    API_RATE_WINDOW_MS=60000
    API_SESSION_TTL_MS=14400000
    API_COOKIE_SECURE=false
-
-   # Optional Gemini fallback
-   # AI_PROVIDER=gemini
-   # GEMINI_API_KEY=your_gemini_api_key_here
    ```
 
 3. **Start the development server**
@@ -192,7 +192,7 @@ deno task check      # Run linting and type checking
 ### Tech Stack
 
 - **Framework**: [Fresh](https://fresh.deno.dev/) (Deno + Preact)
-- **Reading engine**: OpenRouter primary, Google Gemini fallback
+- **Reading engine**: OpenRouter, with per-task model routing
 - **Visualization**: [D3.js](https://d3js.org/) (force-directed graphs)
 - **State**: [Preact Signals](https://preactjs.com/guide/v10/signals/)
 - **Storage**: LocalStorage, URL shares, optional Supabase share store
