@@ -620,8 +620,7 @@ export default function MarkdownMakerDrawer(
                 onClick={() => generateFromPreset(promptOption.id)}
                 disabled={loading.value}
               >
-                <i class={`fa ${promptOption.icon}`} aria-hidden="true"></i>
-                <span>{promptOption.label}</span>
+                {promptOption.label}
               </button>
             ))}
           </div>
