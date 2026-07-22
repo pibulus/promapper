@@ -47,6 +47,12 @@ API_AUTH_TOKEN=...
 Optional model overrides: `OPENROUTER_MODEL`, `OPENROUTER_TRANSCRIPTION_MODEL`,
 `OPENROUTER_SUMMARY_MODEL`, `OPENROUTER_TOPIC_MODEL`.
 
+Optional: `DEEPGRAM_API_KEY` (or `PROMAPPER_DEEPGRAM_KEY`) switches LIVE chunk
+transcription to Deepgram's REST endpoint (~300ms/chunk vs a multi-second LLM
+turn; diarised `Speaker1:` lines; any failure falls back to the LLM path).
+`DEEPGRAM_MODEL` overrides the default `nova-3`. The key lives in
+`~/.config/fleet/keys.env`; unset = nothing changes.
+
 ## AI Model Architecture
 
 All AI calls go through the `AIService` boundary (`core/ai/types.ts`). The
