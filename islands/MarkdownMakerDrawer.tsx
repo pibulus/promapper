@@ -40,6 +40,10 @@ export default function MarkdownMakerDrawer(
   // markdown could flash into another visitor's first paint.
   const selectedPromptId = useSignal<string | null>(null);
   const customPrompt = useSignal("");
+  // Custom prompt is tucked behind a disclosure — most exports are one tap on
+  // a preset, and an always-open textarea + dead Generate button read as
+  // homework. Opening it is a deliberate "I want something else".
+  const customOpen = useSignal(false);
   const markdown = useSignal("");
   const loading = useSignal(false);
   const error = useSignal<string | null>(null);
@@ -589,30 +593,20 @@ export default function MarkdownMakerDrawer(
           isAnimating ? "is-open" : ""
         }`}
       >
-        {/* Header */}
+        {/* Header — same band grammar as every dashboard card */}
         <div class="dashboard-card-header">
           <h3>Export</h3>
-          <button
-            onClick={onClose}
-            class="export-drawer-close-btn"
-            title="Close"
-            aria-label="Close export"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <span class="card-header-tagline">turn the talk into a document</span>
+          <div class="card-header-actions">
+            <button
+              onClick={onClose}
+              class="export-drawer-close-btn"
+              title="Close"
+              aria-label="Close export"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+              <i class="fa fa-xmark" aria-hidden="true"></i>
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -669,35 +663,48 @@ export default function MarkdownMakerDrawer(
             ))}
           </div>
 
-          {/* Custom Prompt Input */}
+          {/* Custom prompt — tucked away until asked for */}
           <div class="mb-4">
-            <label
-              class="card-back-label export-section-label"
-              htmlFor="custom-prompt-input"
+            <button
+              type="button"
+              class="export-custom-toggle"
+              aria-expanded={customOpen.value}
+              onClick={() => customOpen.value = !customOpen.value}
             >
-              Custom prompt
-            </label>
-            <textarea
-              id="custom-prompt-input"
-              class="export-textarea h-24"
-              placeholder="Ask for any format you can describe…"
-              maxLength={5000}
-              value={customPrompt.value}
-              onInput={(e) =>
-                customPrompt.value = (e.target as HTMLTextAreaElement).value}
-            />
+              <i
+                class={`fa ${
+                  customOpen.value ? "fa-chevron-down" : "fa-chevron-right"
+                }`}
+                aria-hidden="true"
+              >
+              </i>
+              <span>Or describe your own format</span>
+            </button>
+            {customOpen.value && (
+              <div class="export-custom-body">
+                <textarea
+                  id="custom-prompt-input"
+                  class="export-textarea h-24"
+                  placeholder="A letter to my future self… a packing list… anything you can describe."
+                  maxLength={5000}
+                  value={customPrompt.value}
+                  onInput={(e) =>
+                    customPrompt.value =
+                      (e.target as HTMLTextAreaElement).value}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  class="btn btn--accent w-full"
+                  onClick={generateFromCustom}
+                  disabled={loading.value || !customPrompt.value.trim() ||
+                    !transcript.trim()}
+                >
+                  Generate
+                </button>
+              </div>
+            )}
           </div>
-
-          {/* Generate Custom Button */}
-          <button
-            type="button"
-            class="btn btn--accent w-full mb-4"
-            onClick={generateFromCustom}
-            disabled={loading.value || !customPrompt.value.trim() ||
-              !transcript.trim()}
-          >
-            Generate Custom
-          </button>
 
           {
             /* One clear loading state — names the format being generated, so you

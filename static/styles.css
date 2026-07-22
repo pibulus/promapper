@@ -6978,10 +6978,9 @@ a:focus-visible {
   overflow: hidden;
   top: var(--header-height);
   border-left: var(--border-width) solid var(--color-border);
-  /* Glass surface needs the card blur or the dashboard bleeds through */
-  background: var(--color-secondary);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  /* SOLID paper, not glass — the dashboard bleeding through read as "no
+     background colour" (same law as cards, July 9 contract). */
+  background: var(--soft-cream);
   box-shadow: var(--shadow-lifted);
   transform: translateX(100%);
   transition: transform 400ms cubic-bezier(0.4, 0, 1, 1);
@@ -6998,7 +6997,7 @@ a:focus-visible {
 }
 
 .export-drawer-close-btn {
-  color: var(--color-text-secondary);
+  color: inherit;
   cursor: pointer;
   transition: color var(--transition-fast), transform var(--transition-fast);
   display: inline-flex;
@@ -7007,6 +7006,7 @@ a:focus-visible {
   border: none;
   background: transparent;
   position: relative;
+  font-size: 1rem;
 }
 /* The visible glyph is a 24px svg; give the primary way to close this drawer
    on mobile a real 44px tap zone instead of a bare icon-sized hitbox. */
@@ -7022,6 +7022,78 @@ a:focus-visible {
 .export-drawer-close-btn:hover {
   color: var(--accent-ink);
   transform: scale(1.1);
+}
+
+/* The header Export CTA — the payoff button wears the candy plate (bright
+   accent fill + warm-black ink + chunky border + hard offset shadow, the
+   COLOR-SYSTEM CTA recipe) so "your documents come from here" is visible at
+   a glance among the quiet ghost icons. */
+.header-export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  font-size: var(--tiny-size);
+  font-weight: 700;
+  color: var(--soft-black);
+  background: var(--cta-plate);
+  border: 2px solid var(--cta-plate-border);
+  border-radius: 10px;
+  box-shadow: 2px 2px 0 var(--line-ink);
+  cursor: pointer;
+  position: relative;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background var(--transition-fast);
+}
+.header-export-btn:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 3px 3px 0 var(--line-ink);
+  background: var(--cta-plate-hover);
+}
+.header-export-btn:active {
+  transform: translateY(0.5px);
+  box-shadow: 1px 1px 0 var(--line-ink);
+}
+/* 44px tap zone on touch — the compact visual stays. */
+@media (pointer: coarse) {
+  .header-export-btn::after {
+    content: "";
+    position: absolute;
+    inset: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Custom-format disclosure — a quiet invitation, not homework. */
+.export-custom-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.35rem 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  transition: color var(--transition-fast);
+}
+.export-custom-toggle:hover {
+  color: var(--accent-ink);
+}
+.export-custom-toggle i {
+  font-size: 0.6rem;
+  width: 0.8rem;
+}
+.export-custom-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
 }
 
 /* Export drawer content — token-based, theme-reactive (replaces the dead

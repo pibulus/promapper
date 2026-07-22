@@ -34,6 +34,11 @@ export const FORMAT_MISMATCH_PREFIX = "FORMAT_MISMATCH:";
 const CONTEXT_PREAMBLE =
   `You will receive structured context blocks: PROJECT TITLE, CURRENT SUMMARY, OPEN/COMPLETED ACTION ITEMS (with assignees and due dates), TOPICS with their connections, and the TRANSCRIPT. Ground your output in those blocks — reuse the real names, tasks, and topics rather than re-deriving or inventing them. Output clean markdown only, with no preamble and no code fences.`;
 
+// Curated to EIGHT on purpose (July 22 trim — was 12 and read as a wall).
+// Every format maps to a real ProMapper persona: meetings (Meeting, What got
+// done, Plan), research groups (Research), voice notes (Journal), everything
+// (Summary, Unasked), joy (Haiku). One-off formats are what the custom
+// prompt is for — resist re-adding overlapping presets.
 export const markdownPrompts: MarkdownPrompt[] = [
   {
     id: "done-report",
@@ -43,15 +48,6 @@ export const markdownPrompts: MarkdownPrompt[] = [
     prompt:
       `Write a warm, factual progress report from this conversation's action items and context. Lead with what has been COMPLETED (group by person where assignees exist, note anything the AI checked off from later conversation). Follow with what's still open. Close with a one-line pulse of the project. Plain headings, short lines, no corporate fluff.`,
     suggestInstead: [],
-  },
-  {
-    id: "blog-post",
-    label: "Blog",
-    icon: "fa-newspaper",
-    description: "A readable article with a headline and narrative flow",
-    prompt:
-      `If this content contains narrative-worthy material, transform it into an engaging article in the style of modern web portals like Pedestrian or Kotaku.`,
-    suggestInstead: ["summary-report", "meeting-minutes"],
   },
   {
     id: "meeting-minutes",
@@ -65,20 +61,6 @@ export const markdownPrompts: MarkdownPrompt[] = [
 • Decisions made
 • Action items`,
     suggestInstead: ["summary-report", "research-notes"],
-  },
-  {
-    id: "technical-spec",
-    label: "Specifications",
-    icon: "fa-ruler-combined",
-    description: "Requirements and technical details, spec-style",
-    prompt:
-      `If this conversation contains technical discussion or specifications, transform it into a technical specification document with:
-• Overview
-• Requirements
-• Technical Details
-• Implementation Notes
-• Considerations`,
-    suggestInstead: ["summary-report", "action-plan"],
   },
   {
     id: "summary-report",
@@ -124,31 +106,7 @@ export const markdownPrompts: MarkdownPrompt[] = [
 • Personal/professional impact
 • Mindful observations
 • A touch of wisdom (quote, tarot insight, or philosophical perspective)`,
-    suggestInstead: ["summary-report", "technical-spec"],
-  },
-  {
-    id: "case-study",
-    label: "Report",
-    icon: "fa-magnifying-glass-chart",
-    description: "Case study: background, challenges, results, lessons",
-    prompt:
-      `If this conversation describes a specific situation, problem, or solution implementation, convert it into a case study with:
-• Background
-• Challenges
-• Solutions
-• Results
-• Lessons Learned`,
-    suggestInstead: ["summary-report", "meeting-minutes"],
-  },
-  {
-    id: "technical-manual",
-    label: "Manual",
-    icon: "fa-book",
-    description: "A practical operating guide with ordered steps",
-    prompt:
-      `Transform this conversation into a practical technical manual or operating guide.
-Use clear sections, ordered steps where useful, assumptions, caveats, and any implementation details mentioned in the source material.`,
-    suggestInstead: ["summary-report", "action-plan"],
+    suggestInstead: ["summary-report"],
   },
   {
     id: "unasked",

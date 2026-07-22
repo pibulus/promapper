@@ -573,7 +573,12 @@ export default function HomeIsland() {
                   </h1>
                 </div>
                 <div class="app-header__actions">
-                  {/* Export — icon only */}
+                  {
+                    /* Export — the payoff button, so it wears the candy plate
+                      instead of hiding as the sixth identical ghost icon.
+                      One promoted action in the header, everything else
+                      stays quiet. */
+                  }
                   <button
                     onClick={() => {
                       // One drawer at a time — the header stays tappable
@@ -582,11 +587,12 @@ export default function HomeIsland() {
                       if (!drawerOpen.value) historyDrawerOpen.value = false;
                       drawerOpen.value = !drawerOpen.value;
                     }}
-                    class="header-icon-btn"
-                    data-tip="Export"
+                    class="header-export-btn"
+                    data-tip="Turn this into a document"
                     aria-label="Export conversation"
                   >
                     <i class="fa fa-file-export" aria-hidden="true"></i>
+                    <span class="hidden sm:inline">Export</span>
                   </button>
 
                   {/* History — icon only */}
