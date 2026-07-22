@@ -7,9 +7,10 @@
 import { assert, assertEquals } from "./_assert.ts";
 import {
   buildExportPrompt,
+  EXPORT_SLOTS,
   FORMAT_MISMATCH_PREFIX,
   markdownPrompts,
-  suggestFormatIds,
+  pickExportFormats,
 } from "../../utils/markdownPrompts.ts";
 
 Deno.test("every suggestInstead id resolves to a real format", () => {
@@ -47,45 +48,58 @@ Deno.test("every format has an icon and a description for the picker", () => {
   }
 });
 
-Deno.test("suggestions: tasks + multiple voices reads like a meeting", () => {
-  const ids = suggestFormatIds({
+Deno.test("picker: a meeting with finished work leads with Meeting + What got done", () => {
+  const picked = pickExportFormats({
     actionItemCount: 5,
+    completedActionCount: 2,
     topicCount: 4,
     transcriptLength: 4000,
     speakerCount: 3,
-  });
-  assertEquals(ids[0], "meeting-minutes");
-  assert(ids.includes("action-plan"));
+  }).map((p) => p.id);
+  assertEquals(picked[0], "meeting-minutes");
+  assert(picked.includes("done-report"));
+  assert(picked.includes("action-plan"));
+  assert(!picked.includes("journal-entry"), "no journal for a room of voices");
 });
 
-Deno.test("suggestions: one voice, no tasks reads like a journal", () => {
-  const ids = suggestFormatIds({
+Deno.test("picker: one voice, no tasks reads like a journal; meeting stays home", () => {
+  const picked = pickExportFormats({
     actionItemCount: 0,
+    completedActionCount: 0,
     topicCount: 3,
     transcriptLength: 2000,
     speakerCount: 1,
-  });
-  assertEquals(ids[0], "journal-entry");
+  }).map((p) => p.id);
+  assertEquals(picked[0], "journal-entry");
+  assert(!picked.includes("meeting-minutes"));
+  assert(
+    !picked.includes("done-report"),
+    "nothing finished, nothing to report",
+  );
 });
 
-Deno.test("suggestions: something tiny is best distilled", () => {
-  const ids = suggestFormatIds({
+Deno.test("picker: something tiny is best distilled", () => {
+  const picked = pickExportFormats({
     actionItemCount: 0,
+    completedActionCount: 0,
     topicCount: 1,
     transcriptLength: 200,
     speakerCount: 1,
-  });
-  assertEquals(ids[0], "summary-report");
-  assert(ids.includes("haiku"));
+  }).map((p) => p.id);
+  assertEquals(picked[0], "summary-report");
+  assert(picked.includes("haiku"));
 });
 
-Deno.test("suggestions: never more than three, always at least one", () => {
-  const ids = suggestFormatIds({
+Deno.test("picker: always exactly six, unique, real formats", () => {
+  const picked = pickExportFormats({
     actionItemCount: 10,
+    completedActionCount: 4,
     topicCount: 10,
     transcriptLength: 100,
     speakerCount: 5,
   });
-  assert(ids.length >= 1 && ids.length <= 3);
-  assertEquals(new Set(ids).size, ids.length);
+  assertEquals(picked.length, EXPORT_SLOTS);
+  assertEquals(new Set(picked.map((p) => p.id)).size, EXPORT_SLOTS);
+  const ids = new Set(markdownPrompts.map((p) => p.id));
+  for (const p of picked) assert(ids.has(p.id));
 });

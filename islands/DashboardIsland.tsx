@@ -598,12 +598,13 @@ export default function DashboardIsland() {
               back={
                 <div class="dashboard-card">
                   <div class="dashboard-card-header">
-                    <h3>Canvas</h3>
-                    <span class="card-header-tagline">
-                      {liveSession.value
-                        ? "live with the room"
-                        : "draw alongside the map"}
-                    </span>
+                    <h3
+                      data-tip={liveSession.value
+                        ? "Drawing live with the room"
+                        : "Draw alongside the map — it remembers"}
+                    >
+                      Canvas
+                    </h3>
                     <div class="card-header-actions">
                       <button
                         type="button"

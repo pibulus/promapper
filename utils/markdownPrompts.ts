@@ -34,7 +34,8 @@ export const FORMAT_MISMATCH_PREFIX = "FORMAT_MISMATCH:";
 const CONTEXT_PREAMBLE =
   `You will receive structured context blocks: PROJECT TITLE, CURRENT SUMMARY, OPEN/COMPLETED ACTION ITEMS (with assignees and due dates), TOPICS with their connections, and the TRANSCRIPT. Ground your output in those blocks — reuse the real names, tasks, and topics rather than re-deriving or inventing them. Output clean markdown only, with no preamble and no code fences.`;
 
-// Curated to EIGHT on purpose (July 22 trim — was 12 and read as a wall).
+// Curated to EIGHT on purpose (July 22 trim — was 12 and read as a wall);
+// the drawer SHOWS a contextual six of these (pickExportFormats, July 23).
 // Every format maps to a real ProMapper persona: meetings (Meeting, What got
 // done, Plan), research groups (Research), voice notes (Journal), everything
 // (Summary, Unasked), joy (Haiku). One-off formats are what the custom
@@ -47,7 +48,7 @@ export const markdownPrompts: MarkdownPrompt[] = [
     description: "Completed work so far — what, by whom, and what's left",
     prompt:
       `Write a warm, factual progress report from this conversation's action items and context. Lead with what has been COMPLETED (group by person where assignees exist, note anything the AI checked off from later conversation). Follow with what's still open. Close with a one-line pulse of the project. Plain headings, short lines, no corporate fluff.`,
-    suggestInstead: [],
+    suggestInstead: ["summary-report"],
   },
   {
     id: "meeting-minutes",
@@ -154,35 +155,51 @@ export function buildExportPrompt(preset: MarkdownPrompt): string {
   return parts.join("\n\n");
 }
 
-/** Traits the suggestion ranker looks at — kept primitive so it's testable. */
+/** Traits the format picker looks at — kept primitive so it's testable. */
 export interface ConversationTraits {
   actionItemCount: number;
+  completedActionCount: number;
   topicCount: number;
   transcriptLength: number;
   speakerCount: number;
 }
 
+/** The drawer shows exactly this many formats — contextual six of the
+ * eight-format registry (July 23 ruling). */
+export const EXPORT_SLOTS = 6;
+
 /**
- * Rank which formats fit this conversation — up to three ids, best first.
- * Cheap heuristics on shape, not content: tasks + multiple voices reads like
- * a meeting, many topics reads like research, one voice reads like a journal,
- * something tiny is best distilled.
+ * Pick the six formats that fit this conversation, best fit first. Cheap
+ * heuristics on shape, not content: multiple voices reads like a meeting,
+ * one voice like a journal, finished work earns "What got done", something
+ * tiny is best distilled. The two left out aren't gone — the custom prompt
+ * can still describe anything, and every format keeps its mismatch clause.
  */
-export function suggestFormatIds(traits: ConversationTraits): string[] {
-  const ids: string[] = [];
-  const { actionItemCount, topicCount, transcriptLength, speakerCount } =
-    traits;
+export function pickExportFormats(
+  traits: ConversationTraits,
+): MarkdownPrompt[] {
+  const {
+    actionItemCount,
+    completedActionCount,
+    topicCount,
+    transcriptLength,
+    speakerCount,
+  } = traits;
 
-  if (transcriptLength > 0 && transcriptLength < 600) {
-    ids.push("summary-report", "haiku");
-  }
-  if (actionItemCount >= 3) {
-    ids.push(speakerCount >= 2 ? "meeting-minutes" : "action-plan");
-    ids.push(speakerCount >= 2 ? "action-plan" : "summary-report");
-  }
-  if (topicCount >= 6) ids.push("research-notes");
-  if (speakerCount <= 1 && transcriptLength >= 600) ids.push("journal-entry");
-  ids.push("summary-report");
+  const score: Record<string, number> = {
+    "meeting-minutes": speakerCount >= 2 ? 90 : 0,
+    "journal-entry": speakerCount <= 1 && transcriptLength >= 300 ? 88 : 5,
+    "done-report": completedActionCount >= 1 ? 85 : 0,
+    "action-plan": actionItemCount >= 1 ? 80 : 12,
+    "research-notes": topicCount >= 6 ? 75 : 15,
+    "summary-report": 70,
+    "unasked": transcriptLength >= 600 ? 60 : 8,
+    "haiku": transcriptLength > 0 && transcriptLength < 600 ? 65 : 30,
+  };
 
-  return [...new Set(ids)].slice(0, 3);
+  return markdownPrompts
+    .map((p, i) => ({ p, s: score[p.id] ?? 0, i }))
+    .sort((a, b) => b.s - a.s || a.i - b.i)
+    .slice(0, EXPORT_SLOTS)
+    .map((x) => x.p);
 }

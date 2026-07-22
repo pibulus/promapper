@@ -42,7 +42,7 @@ export default function TopicVisualizationsCard() {
     // map ↔ canvas centerpiece.
     <div class="dashboard-card" ref={cardRef}>
       <div class="dashboard-card-header">
-        <h3>Topic Visualizations</h3>
+        <h3 data-tip="The conversation as a living map">Map</h3>
       </div>
       <div class="topic-visualizations-shell">
         {isVisible.value ? <VisualizationSelector /> : (

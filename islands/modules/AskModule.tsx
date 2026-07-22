@@ -129,16 +129,15 @@ export default function AskModule() {
     <div class="w-full h-full">
       <div class="dashboard-card">
         <div class="dashboard-card-header">
-          <h3>Ask</h3>
-          <span class="card-header-tagline">answers from the record</span>
+          <h3 data-tip="Ask anything — it answers from this conversation only">
+            Ask
+          </h3>
         </div>
         <div class="dashboard-card-body ask-body" ref={logRef}>
           <div class="ask-log">
             {exchanges.value.length === 0 && (
-              <p class="ask-empty">
-                <i class="fa fa-circle-question" aria-hidden="true"></i>
-                Ask anything about this conversation — who said what, what's
-                still open, what it all means.
+              <p class="ask-empty" aria-hidden="true">
+                <span class="empty-state-face">( ˙ ᵕ ˙ )</span>
               </p>
             )}
             {exchanges.value.map((ex, i) => (

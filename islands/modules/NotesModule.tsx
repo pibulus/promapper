@@ -71,7 +71,6 @@ export default function NotesModule() {
           <textarea
             ref={taRef}
             class="notes-module-textarea"
-            placeholder="Scraps, thoughts, anything — it stays with this conversation."
             defaultValue={notes}
             onInput={(e) => save((e.target as HTMLTextAreaElement).value)}
             aria-label="Conversation notes"

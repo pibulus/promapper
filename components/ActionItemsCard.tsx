@@ -699,7 +699,7 @@ export default function ActionItemsCard(
       <div class="w-full h-full">
         <div class="dashboard-card">
           <div class="dashboard-card-header">
-            <h3>Action Items</h3>
+            <h3>Actions</h3>
             {
               /* card-header-actions like every other card — this header used
                 its own btn--ghost cluster and read as a different species. */
@@ -810,21 +810,16 @@ export default function ActionItemsCard(
                 visibleItems.value.length === 0
                   ? (
                     <div class="empty-state">
-                      <div class="empty-state-face" aria-hidden="true">
-                        ( • ᴗ • )
-                      </div>
-                      <div class="empty-state-text">
-                        Nothing to do. Lovely.
-                      </div>
+                      {/* The face IS the add button — hover wakes it up. */}
                       <button
+                        type="button"
+                        class="empty-state-face"
                         onClick={startCreatingInline}
-                        class="action-header-btn px-3 py-1 rounded mt-2"
-                        style={{
-                          fontSize: "var(--small-size)",
-                          border: "2px solid var(--color-border)",
-                        }}
+                        data-tip="Add an item"
+                        aria-label="Add an action item"
                       >
-                        + Add one
+                        <span class="face-rest">( • ᴗ • )</span>
+                        <span class="face-hover">( ✧ ᴗ ✧ )</span>
                       </button>
                     </div>
                   )

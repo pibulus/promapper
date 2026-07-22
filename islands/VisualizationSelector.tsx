@@ -89,10 +89,9 @@ export default function VisualizationSelector() {
             </>
           )
           : (
-            <span class="topic-viz-label">
-              <i class={`fa fa-${active.icon}`} aria-hidden="true"></i>
-              <span>{active.label}</span>
-            </span>
+            // One registered viz — the card header already names it "Map";
+            // a lone pill repeating that was double labeling. Nothing here.
+            null
           )}
       </div>
 

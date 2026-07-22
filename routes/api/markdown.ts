@@ -67,11 +67,20 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
       );
     }
 
+    // Server-side so presets AND custom prompts both carry it: the export is
+    // a document people hand to others — don't launder hate through it.
+    const guardedPrompt = `${prompt}\n\n` +
+      `If the material is hateful or demeaning toward people or groups, decline in one warm sentence instead of producing the document.`;
+
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), MARKDOWN_TIMEOUT_MS);
     let markdown: string;
     try {
-      markdown = await aiService.generateMarkdown(prompt, context, ctrl.signal);
+      markdown = await aiService.generateMarkdown(
+        guardedPrompt,
+        context,
+        ctrl.signal,
+      );
     } finally {
       clearTimeout(timer);
     }

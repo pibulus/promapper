@@ -11,7 +11,7 @@ import {
   buildExportPrompt,
   FORMAT_MISMATCH_PREFIX,
   markdownPrompts,
-  suggestFormatIds,
+  pickExportFormats,
 } from "../utils/markdownPrompts.ts";
 import { markdownService } from "../utils/markdownService.ts";
 import { showToast, showUndoToast } from "../utils/toast.ts";
@@ -60,26 +60,21 @@ export default function MarkdownMakerDrawer(
   const [shouldRender, setShouldRender] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Which formats fit THIS conversation — shape-based heuristics, no extra AI
-  // call. Suggested formats get their own "For this map" section with visible
-  // descriptions; the rest sit in a compact grid below.
-  const suggestedIds = useComputed(() => {
+  // The contextual six — shape-based heuristics pick which formats fit THIS
+  // conversation (no extra AI call), best fit first. One row of chips, no
+  // sections; descriptions live in the tooltips.
+  const visiblePrompts = useComputed(() => {
     const data = conversationData.value;
-    return suggestFormatIds({
+    return pickExportFormats({
       actionItemCount: data?.actionItems?.length ?? 0,
+      completedActionCount: data?.actionItems?.filter((a) =>
+        a.status === "completed"
+      ).length ?? 0,
       topicCount: data?.nodes?.length ?? 0,
       transcriptLength: transcript.length,
       speakerCount: data?.transcript?.speakers?.length ?? 0,
     });
   });
-  const suggestedPrompts = useComputed(() =>
-    suggestedIds.value
-      .map((id) => markdownPrompts.find((p) => p.id === id))
-      .filter((p): p is NonNullable<typeof p> => Boolean(p))
-  );
-  const otherPrompts = useComputed(() =>
-    markdownPrompts.filter((p) => !suggestedIds.value.includes(p.id))
-  );
 
   // Load saved outputs from localStorage
   useEffect(() => {
@@ -596,7 +591,6 @@ export default function MarkdownMakerDrawer(
         {/* Header — same band grammar as every dashboard card */}
         <div class="dashboard-card-header">
           <h3>Export</h3>
-          <span class="card-header-tagline">turn the talk into a document</span>
           <div class="card-header-actions">
             <button
               onClick={onClose}
@@ -611,49 +605,18 @@ export default function MarkdownMakerDrawer(
 
         {/* Content */}
         <div class="flex-1 overflow-y-auto p-4">
-          {
-            /* For this map — the formats that fit this conversation's shape,
-              descriptions in the open (they were buried in tooltips) */
-          }
-          <p class="card-back-label export-section-label">
-            <i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i>
-            For this map
-          </p>
-          <div class="export-suggested">
-            {suggestedPrompts.value.map((promptOption) => (
+          {/* The contextual six — best fit top-left, tooltips explain. */}
+          <div class="mb-1 export-format-grid">
+            {visiblePrompts.value.map((promptOption) => (
               <button
                 key={promptOption.id}
                 type="button"
-                class={`export-suggested-btn${
+                class={`export-chip${
                   selectedPromptId.value === promptOption.id
                     ? " is-selected"
                     : ""
                 }`}
-                onClick={() => generateFromPreset(promptOption.id)}
-                disabled={loading.value}
-              >
-                <i class={`fa ${promptOption.icon}`} aria-hidden="true"></i>
-                <span class="export-suggested-name">{promptOption.label}</span>
-                <span class="export-suggested-desc">
-                  {promptOption.description}
-                </span>
-              </button>
-            ))}
-          </div>
-
-          {/* Everything else, compact */}
-          <p class="card-back-label export-section-label">All formats</p>
-          <div class="mb-1 export-format-grid">
-            {otherPrompts.value.map((promptOption) => (
-              <button
-                key={promptOption.id}
-                type="button"
-                class={`btn ${
-                  selectedPromptId.value === promptOption.id
-                    ? "btn--accent"
-                    : "btn--secondary"
-                }`}
-                title={promptOption.description}
+                data-tip={promptOption.description}
                 onClick={() => generateFromPreset(promptOption.id)}
                 disabled={loading.value}
               >

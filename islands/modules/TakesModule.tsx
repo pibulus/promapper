@@ -146,7 +146,6 @@ export default function TakesModule() {
       <div class="dashboard-card">
         <div class="dashboard-card-header">
           <h3>Takes</h3>
-          <span class="card-header-tagline">every recording, kept</span>
         </div>
         <div class="dashboard-card-body takes-module-body">
           {takes.value.length === 0
