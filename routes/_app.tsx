@@ -78,6 +78,22 @@ export default function App({ Component }: PageProps) {
         {/* Theme Color */}
         <meta name="theme-color" content="#FFE5EC" />
 
+        {
+          /* Inter — as <link>s so the font fetch runs parallel to the
+            stylesheet (the old @import inside styles.css serialized it
+            behind the whole CSS download). */
+        }
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        />
+
         {/* Icons — FontAwesome (the whole app uses `fa fa-*` icons in chrome). */}
         <link
           rel="stylesheet"

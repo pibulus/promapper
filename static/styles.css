@@ -1,14 +1,9 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+/* Inter loads via <link> in _app.tsx (parallel fetch) — an @import here
+   serialized it behind the whole stylesheet download. */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@property --gradient-angle {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 120deg;
-}
 
 @property --mapper-scale {
   syntax: "<number>";
@@ -879,7 +874,11 @@ body {
      container, which kills the footer's position:sticky. clip crops the
      decorative splashes without capturing sticky. */
   overflow: clip;
-  animation: mapperGradient 18s ease-in-out infinite alternate;
+  /* No animation here on purpose: the old 18s --gradient-angle sweep
+     re-rasterized this viewport-sized gradient every frame, forever, on
+     every page (typed @property animations run on the main thread). The
+     living-light motion now rides sceneDrift's transform below — the
+     compositor moves the painted wash for free. */
 }
 
 .mapper-scene::before {
@@ -888,7 +887,7 @@ body {
   inset: -30% -20% auto -20%;
   height: 70%;
   background: linear-gradient(
-    var(--gradient-angle),
+    128deg,
     rgba(255, 255, 255, 0.55) 0%,
     rgba(255, 255, 255, 0) 65%
   );
@@ -918,20 +917,13 @@ body {
 }
 
 @keyframes sceneDrift {
+  /* Slightly wider swing than before — this transform-only drift carries
+     the living-light feel the gradient-angle sweep used to provide. */
   from {
-    transform: rotate(0.5deg) translateY(0);
+    transform: rotate(1.1deg) translateY(0);
   }
   to {
-    transform: rotate(-0.75deg) translateY(14px);
-  }
-}
-
-@keyframes mapperGradient {
-  from {
-    --gradient-angle: 108deg;
-  }
-  to {
-    --gradient-angle: 152deg;
+    transform: rotate(-1.1deg) translateY(16px);
   }
 }
 
