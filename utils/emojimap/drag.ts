@@ -19,6 +19,13 @@ export const MERGE_THRESHOLD = 60;
 // double-click from randomly merging a node into a settled neighbour.
 const MIN_DRAG_TO_MERGE = 12;
 
+// While a node is in hand, collision shrinks to this soft floor (24+24=48 <
+// MERGE_THRESHOLD) and the carried node stops repelling its neighbours, so you
+// can actually carry it ONTO a target. Restored on release. Without this,
+// collide(70)+charge held the target ~105 units off a deliberate slow drag —
+// only a fast flick could ever outrun the physics and land a merge.
+const DRAG_COLLIDE_RADIUS = 24;
+
 /**
  * Find the nearest other node within merge range of the dragged node, or null.
  * Shared by the live drag preview and the commit-on-release, so "what lights up"
@@ -73,6 +80,7 @@ export function dragstarted(
   event: any,
   d: NodeData,
   simulation: d3.Simulation<NodeData, undefined>,
+  config: Config,
 ) {
   // Remember where the grab started so dragended can tell a real drag from a
   // click (a click moves ~0px and must NOT merge).
@@ -83,6 +91,16 @@ export function dragstarted(
   if (!event.active) simulation.alphaTarget(0.5).restart();
   d.fx = d.x;
   d.fy = d.y;
+  // Let the merge gesture through: soften collision and stop THIS node's
+  // charge from shoving its target away while it's pinned to the cursor.
+  const collide = simulation.force("collide") as
+    | d3.ForceCollide<NodeData>
+    | undefined;
+  collide?.radius(DRAG_COLLIDE_RADIUS);
+  const charge = simulation.force("charge") as
+    | d3.ForceManyBody<NodeData>
+    | undefined;
+  charge?.strength((n) => n.id === d.id ? 0 : config.chargeStrength);
 }
 
 export function dragged(
@@ -110,6 +128,17 @@ export function dragended(
   if (!event.active) simulation.alphaTarget(0);
   d.fx = null;
   d.fy = null;
+
+  // Restore the drag-softened physics (see dragstarted). Forces only apply on
+  // the next tick, so this can't move anything before the merge check below.
+  const collide = simulation.force("collide") as
+    | d3.ForceCollide<NodeData>
+    | undefined;
+  collide?.radius(config.collisionRadius);
+  const charge = simulation.force("charge") as
+    | d3.ForceManyBody<NodeData>
+    | undefined;
+  charge?.strength(config.chargeStrength);
 
   // Only a REAL drag (the node actually moved) can merge — otherwise a click or
   // double-click on a node that happens to sit near a neighbour would silently

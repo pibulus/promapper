@@ -192,7 +192,10 @@ export default function ForceDirectedGraph(
       config: {
         width,
         height,
-        backgroundColor: "rgba(255,255,255,0.65)",
+        // Warm paper glass, same family as the whiteboard's cream — the map
+        // and the canvas are two faces of one card and should feel like one
+        // material (was a cool white that fought the flip side).
+        backgroundColor: "rgba(251, 241, 228, 0.6)",
         linkDistance: linkDistance.value,
         chargeStrength: chargeStrength.value,
         collisionRadius: collisionRadius.value,
@@ -570,6 +573,11 @@ export default function ForceDirectedGraph(
                 connectedEdges.length === 1 ? "" : "s"
               } so far.`}
           </p>
+          {!!selectedNode.aliases?.length && (
+            <p class="topic-node-detail__aliases">
+              Also holds: {selectedNode.aliases.join(", ")}
+            </p>
+          )}
         </div>
         <div class="topic-node-detail__actions">
           <button

@@ -123,6 +123,23 @@ export function forceDirectedEmojimap(
   // center. Survives the node-object churn (the island hands update() fresh
   // clones every time), because it's keyed by stable id, not object identity.
   const livePositions = new Map<string, { x: number; y: number }>();
+
+  // Focus mode (set via setFocus). While active, settle re-frames the focused
+  // neighborhood instead of the whole map — a drag mid-focus used to zoom back
+  // out to everything while the dim classes stayed on (a confusing half-state).
+  let focusedId: string | null = null;
+  function focusSubset(): NodeData[] {
+    if (!focusedId) return nodes;
+    const set = new Set<string>([focusedId]);
+    for (const e of currentEdges) {
+      const s = getNodeId(e.source);
+      const t = getNodeId(e.target);
+      if (s === focusedId) set.add(t);
+      if (t === focusedId) set.add(s);
+    }
+    return nodes.filter((n) => set.has(n.id));
+  }
+
   function rememberPositions() {
     for (const n of nodes) {
       if (n.id && Number.isFinite(n.x) && Number.isFinite(n.y)) {
@@ -254,7 +271,7 @@ export function forceDirectedEmojimap(
         n.fy = null;
       }
       simulation.stop();
-      fitAllIcons(svg, zoom, node, nodes);
+      fitAllIcons(svg, zoom, node, focusSubset());
       // Persist the settled layout — before this, positions only saved on drag
       // end, so a never-dragged map re-scattered on every reload. (The island
       // diffs structure before calling update(), so this write can't loop.)
@@ -492,6 +509,7 @@ export function forceDirectedEmojimap(
 
     setFocus(focusedNodeId) {
       const { nodeElements, linkElements } = renderedElements;
+      focusedId = focusedNodeId;
 
       if (!focusedNodeId) {
         // Clear focus: undim everything, zoom back out to the whole map.
@@ -501,17 +519,10 @@ export function forceDirectedEmojimap(
         return;
       }
 
-      // The focus set = the node + every node one edge away from it.
-      const focusSet = new Set<string>([focusedNodeId]);
-      for (const e of currentEdges) {
-        const s = getNodeId(e.source);
-        const t = getNodeId(e.target);
-        if (s === focusedNodeId) focusSet.add(t);
-        if (t === focusedNodeId) focusSet.add(s);
-      }
-
-      // Dim everything outside the focus set; keep edges that link two in-set
-      // nodes bright.
+      // The focus set = the node + every node one edge away from it. Dim
+      // everything outside it; keep edges that link two in-set nodes bright.
+      const inFocus = focusSubset();
+      const focusSet = new Set(inFocus.map((n) => n.id));
       nodeElements.classed("is-dimmed", (n) => !focusSet.has(n.id));
       linkElements.classed(
         "is-dimmed",
@@ -521,8 +532,7 @@ export function forceDirectedEmojimap(
       );
 
       // Zoom to fit just the focus subset.
-      const focusNodes = nodes.filter((n) => focusSet.has(n.id));
-      fitAllIcons(svg, zoom, node, focusNodes);
+      fitAllIcons(svg, zoom, node, inFocus);
     },
 
     resetVisualization() {
