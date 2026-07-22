@@ -5,6 +5,7 @@
  */
 
 import { useEffect } from "preact/hooks";
+import BodyPortal from "./BodyPortal.tsx";
 
 interface ContextMenuProps {
   visible: boolean;
@@ -46,29 +47,34 @@ export default function ContextMenu(
 
   if (!visible) return null;
 
+  // Portaled: x/y are viewport coords (clientX/Y) — rendered inside a
+  // transformed flip card, position:fixed resolves against the card and the
+  // menu lands offset from the cursor.
   return (
-    <div
-      class="context-menu"
-      style={{
-        left: `${x}px`,
-        top: `${y}px`,
-      }}
-      onClick={(e) => e.stopPropagation()}
-      onContextMenu={(e) => e.preventDefault()}
-    >
-      {items.map((item, index) => (
-        <button
-          key={index}
-          class="context-menu__item"
-          onClick={() => {
-            item.onClick();
-            onClose();
-          }}
-        >
-          {item.icon && <i class={`fa ${item.icon}`} aria-hidden="true"></i>}
-          <span>{item.label}</span>
-        </button>
-      ))}
-    </div>
+    <BodyPortal>
+      <div
+        class="context-menu"
+        style={{
+          left: `${x}px`,
+          top: `${y}px`,
+        }}
+        onClick={(e) => e.stopPropagation()}
+        onContextMenu={(e) => e.preventDefault()}
+      >
+        {items.map((item, index) => (
+          <button
+            key={index}
+            class="context-menu__item"
+            onClick={() => {
+              item.onClick();
+              onClose();
+            }}
+          >
+            {item.icon && <i class={`fa ${item.icon}`} aria-hidden="true"></i>}
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </div>
+    </BodyPortal>
   );
 }

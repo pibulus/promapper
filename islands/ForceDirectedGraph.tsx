@@ -34,6 +34,7 @@ import {
 import { MAX_LABEL_LENGTH } from "@core/orchestration/conversation-ops.ts";
 import { showToast, showUndoToast } from "@utils/toast.ts";
 import * as htmlToImage from "html-to-image";
+import BodyPortal from "../components/BodyPortal.tsx";
 import ContextMenu from "../components/ContextMenu.tsx";
 import Modal from "../components/Modal.tsx";
 
@@ -778,64 +779,68 @@ export default function ForceDirectedGraph(
       {renderEdgeDetail()}
 
       {showAddNode.value && (
-        <div class="topic-node-modal-backdrop">
-          <div class="topic-node-modal" role="dialog" aria-modal="true">
-            <div class="topic-node-modal__header">
-              <h4>Add topic</h4>
-              <button
-                type="button"
-                onClick={() => showAddNode.value = false}
-                aria-label="Close add topic"
-              >
-                ×
-              </button>
-            </div>
-            <label>
-              <span>Emoji</span>
-              <input
-                type="text"
-                value={newNodeEmoji.value}
-                onInput={(event) =>
-                  newNodeEmoji.value = (event.target as HTMLInputElement).value}
-                placeholder="✨"
-                // 16 not 4 — maxLength counts UTF-16 units, and a single ZWJ
-                // emoji (👨‍👩‍👧‍👦, flags) is up to ~11 units. 4 truncated them into
-                // mojibake.
-                maxLength={16}
-              />
-            </label>
-            <label>
-              <span>Topic</span>
-              <input
-                type="text"
-                value={newNodeLabel.value}
-                onInput={(event) =>
-                  newNodeLabel.value = (event.target as HTMLInputElement).value}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") addManualNode();
-                }}
-                placeholder="New thread"
-                maxLength={MAX_LABEL_LENGTH}
-                autoFocus
-              />
-            </label>
-            <div class="topic-node-modal__actions">
-              <button
-                type="button"
-                onClick={() => showAddNode.value = false}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={addManualNode}
-                disabled={!newNodeLabel.value.trim()}
-              >
-                Add
-              </button>
+        <BodyPortal>
+          <div class="topic-node-modal-backdrop">
+            <div class="topic-node-modal" role="dialog" aria-modal="true">
+              <div class="topic-node-modal__header">
+                <h4>Add topic</h4>
+                <button
+                  type="button"
+                  onClick={() => showAddNode.value = false}
+                  aria-label="Close add topic"
+                >
+                  ×
+                </button>
+              </div>
+              <label>
+                <span>Emoji</span>
+                <input
+                  type="text"
+                  value={newNodeEmoji.value}
+                  onInput={(event) =>
+                    newNodeEmoji.value =
+                      (event.target as HTMLInputElement).value}
+                  placeholder="✨"
+                  // 16 not 4 — maxLength counts UTF-16 units, and a single ZWJ
+                  // emoji (👨‍👩‍👧‍👦, flags) is up to ~11 units. 4 truncated them into
+                  // mojibake.
+                  maxLength={16}
+                />
+              </label>
+              <label>
+                <span>Topic</span>
+                <input
+                  type="text"
+                  value={newNodeLabel.value}
+                  onInput={(event) =>
+                    newNodeLabel.value =
+                      (event.target as HTMLInputElement).value}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") addManualNode();
+                  }}
+                  placeholder="New thread"
+                  maxLength={MAX_LABEL_LENGTH}
+                  autoFocus
+                />
+              </label>
+              <div class="topic-node-modal__actions">
+                <button
+                  type="button"
+                  onClick={() => showAddNode.value = false}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={addManualNode}
+                  disabled={!newNodeLabel.value.trim()}
+                >
+                  Add
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </BodyPortal>
       )}
 
       {/* Rename topic modal */}
@@ -1011,35 +1016,42 @@ export default function ForceDirectedGraph(
         onClose={() => contextMenuVisible.value = false}
       />
 
+      {
+        /* Portaled: the flip card's perspective/rotateY would otherwise trap
+          this fixed overlay inside the card box — on mobile "fullscreen"
+          was the size of a playing card. */
+      }
       {isFullscreen.value && (
-        <div class="topic-map-fullscreen" role="dialog" aria-modal="true">
-          <div class="topic-map-fullscreen__panel">
-            <div class="topic-map-fullscreen__header">
-              <div>
-                <h3>Topic Map</h3>
-                <p>Drag nodes, click topics or lines, scroll to zoom.</p>
+        <BodyPortal>
+          <div class="topic-map-fullscreen" role="dialog" aria-modal="true">
+            <div class="topic-map-fullscreen__panel">
+              <div class="topic-map-fullscreen__header">
+                <div>
+                  <h3>Topic Map</h3>
+                  <p>Drag nodes, click topics or lines, scroll to zoom.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleFullscreen}
+                  aria-label="Close fullscreen map"
+                >
+                  ×
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={toggleFullscreen}
-                aria-label="Close fullscreen map"
-              >
-                ×
-              </button>
-            </div>
-            <div
-              ref={fullscreenContainerRef}
-              class="topic-map-canvas topic-map-fullscreen__canvas"
-            />
-            {
-              /* Same full control cluster as the inline map — one source of
+              <div
+                ref={fullscreenContainerRef}
+                class="topic-map-canvas topic-map-fullscreen__canvas"
+              />
+              {
+                /* Same full control cluster as the inline map — one source of
                 truth, so they can't drift. */
-            }
-            {renderControls()}
-            {renderNodeDetail()}
-            {renderEdgeDetail()}
+              }
+              {renderControls()}
+              {renderNodeDetail()}
+              {renderEdgeDetail()}
+            </div>
           </div>
-        </div>
+        </BodyPortal>
       )}
     </div>
   );

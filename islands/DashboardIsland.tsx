@@ -33,6 +33,7 @@ import { getAllConversations } from "../core/storage/localStorage.ts";
 import { serializeBackup } from "../core/storage/backup.ts";
 import TopicVisualizationsCard from "./TopicVisualizationsCard.tsx";
 import SharedWhiteboard from "./SharedWhiteboard.tsx";
+import BodyPortal from "../components/BodyPortal.tsx";
 import FlipCard from "./FlipCard.tsx";
 import ReaderModal from "./ReaderModal.tsx";
 import ModuleRack from "./ModuleRack.tsx";
@@ -126,13 +127,26 @@ export default function DashboardIsland() {
     // Debounce conversationData write — only persist after user stops drawing.
     // Capture the conversation the stroke belongs to: switching mid-debounce
     // must DROP the sketch, not stamp it onto the new conversation.
-    const forId = conversationData.value?.conversation.id;
+    pendingScene.current = {
+      scene,
+      forId: conversationData.value?.conversation.id,
+    };
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => {
-      const current = conversationData.value;
-      if (!current || current.conversation.id !== forId) return;
-      conversationData.value = { ...current, whiteboardScene: scene };
-    }, 2000);
+    debounceTimer.current = setTimeout(flushSceneWrite, 2000);
+  }
+
+  // Write the debounced scene NOW. Expand/collapse remounts the whiteboard
+  // from conversationData — without this flush the last 2s of strokes would
+  // vanish across the toggle.
+  const pendingScene = useRef<{ scene: string; forId?: string } | null>(null);
+  function flushSceneWrite() {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    const pending = pendingScene.current;
+    pendingScene.current = null;
+    if (!pending) return;
+    const current = conversationData.value;
+    if (!current || current.conversation.id !== pending.forId) return;
+    conversationData.value = { ...current, whiteboardScene: pending.scene };
   }
 
   // ---------------------------------------------------------------
@@ -153,6 +167,23 @@ export default function DashboardIsland() {
   // News dots: something landed on the face you're not looking at.
   const canvasNews = useSignal(false);
   const mapNews = useSignal(false);
+  // Expanded: the board rides a body portal at viewport size — on a phone
+  // the inline card is too cramped to actually draw in.
+  const canvasExpanded = useSignal(false);
+
+  function toggleCanvasExpand() {
+    flushSceneWrite();
+    canvasExpanded.value = !canvasExpanded.value;
+  }
+
+  useEffect(() => {
+    if (!canvasExpanded.value) return;
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") canvasExpanded.value = false;
+    };
+    document.addEventListener("keydown", onEsc);
+    return () => document.removeEventListener("keydown", onEsc);
+  }, [canvasExpanded.value]);
 
   useEffect(() => {
     if (liveSession.value) canvasMounted.value = true;
@@ -232,21 +263,24 @@ export default function DashboardIsland() {
 
   function getExcalidrawAPI() {
     // The API rides the .shared-whiteboard container INSIDE the flip wrapper
-    // (SharedWhiteboard attaches it to its own div, not to our ref).
-    const el = whiteboardRef.current?.querySelector(".shared-whiteboard") as
-      | (HTMLElement & {
-        excalidrawAPI?: {
-          getSceneElements?: () => unknown[];
-          updateScene(
-            opts: { elements: unknown[]; commitToHistory?: boolean },
-          ): void;
-          exportToBlob(opts: {
-            mimeType?: string;
-            quality?: number;
-          }): Promise<Blob>;
-        };
-      })
-      | null;
+    // (SharedWhiteboard attaches it to its own div, not to our ref). When the
+    // board is expanded it lives in a body portal, outside whiteboardRef —
+    // the document fallback finds it there (only one board exists at a time).
+    const el = (whiteboardRef.current?.querySelector(".shared-whiteboard") ??
+      document.querySelector(".shared-whiteboard")) as
+        | (HTMLElement & {
+          excalidrawAPI?: {
+            getSceneElements?: () => unknown[];
+            updateScene(
+              opts: { elements: unknown[]; commitToHistory?: boolean },
+            ): void;
+            exportToBlob(opts: {
+              mimeType?: string;
+              quality?: number;
+            }): Promise<Blob>;
+          };
+        })
+        | null;
     return el?.excalidrawAPI;
   }
 
@@ -519,70 +553,146 @@ export default function DashboardIsland() {
       // across conversations).
       case "canvas":
         return (
-          <FlipCard
-            key={conversation.id}
-            label="Canvas"
-            frontBadge={canvasNews.value}
-            backBadge={mapNews.value}
-            onFlip={(flipped) => {
-              canvasShowing.value = flipped;
-              if (flipped) {
-                canvasMounted.value = true;
-                canvasNews.value = false;
-              } else {
-                mapNews.value = false;
-              }
-            }}
-            front={<TopicVisualizationsCard />}
-            back={
-              <div class="dashboard-card">
-                <div class="dashboard-card-header">
-                  <h3>Canvas</h3>
-                  <span class="card-header-tagline">
-                    {liveSession.value
-                      ? "live with the room"
-                      : "draw alongside the map"}
-                  </span>
-                  <div class="card-header-actions">
-                    <button
-                      type="button"
-                      onClick={() => downloadBoard()}
-                      data-tip="Download as PNG"
-                      aria-label="Download the board as an image"
-                    >
-                      <i class="fa fa-download" aria-hidden="true"></i>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => drawFromConversation(false)}
-                      disabled={isDrawing.value}
-                      data-tip="AI adds to the board"
-                      aria-label="Ask the AI to draw from the conversation"
-                    >
-                      <i
-                        class={`fa ${
-                          isDrawing.value
-                            ? "fa-hourglass-half"
-                            : "fa-wand-magic-sparkles"
-                        }`}
-                        aria-hidden="true"
+          <>
+            <FlipCard
+              key={conversation.id}
+              label="Canvas"
+              frontBadge={canvasNews.value}
+              backBadge={mapNews.value}
+              onFlip={(flipped) => {
+                canvasShowing.value = flipped;
+                if (flipped) {
+                  canvasMounted.value = true;
+                  canvasNews.value = false;
+                } else {
+                  mapNews.value = false;
+                }
+              }}
+              front={<TopicVisualizationsCard />}
+              back={
+                <div class="dashboard-card">
+                  <div class="dashboard-card-header">
+                    <h3>Canvas</h3>
+                    <span class="card-header-tagline">
+                      {liveSession.value
+                        ? "live with the room"
+                        : "draw alongside the map"}
+                    </span>
+                    <div class="card-header-actions">
+                      <button
+                        type="button"
+                        onClick={() => downloadBoard()}
+                        data-tip="Download as PNG"
+                        aria-label="Download the board as an image"
                       >
-                      </i>
-                    </button>
+                        <i class="fa fa-download" aria-hidden="true"></i>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => drawFromConversation(false)}
+                        disabled={isDrawing.value}
+                        data-tip="AI adds to the board"
+                        aria-label="Ask the AI to draw from the conversation"
+                      >
+                        <i
+                          class={`fa ${
+                            isDrawing.value
+                              ? "fa-hourglass-half"
+                              : "fa-wand-magic-sparkles"
+                          }`}
+                          aria-hidden="true"
+                        >
+                        </i>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={toggleCanvasExpand}
+                        data-tip="Draw big"
+                        aria-label="Expand the board fullscreen"
+                      >
+                        <i class="fa fa-maximize" aria-hidden="true"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="dashboard-card-body canvas-flip-body">
+                    {
+                      /* Unmounts while expanded — the board lives in the
+                        portal overlay; the scene survives the move via the
+                        flushed conversationData write. */
+                    }
+                    {canvasMounted.value && !canvasExpanded.value && (
+                      <SharedWhiteboard
+                        roomId={liveSession.value?.roomId ?? "local"}
+                        initialScene={conversationData.value?.whiteboardScene}
+                        onSceneChange={handleSceneChange}
+                      />
+                    )}
                   </div>
                 </div>
-                <div class="dashboard-card-body canvas-flip-body">
-                  {canvasMounted.value && (
-                    <SharedWhiteboard
-                      roomId={liveSession.value?.roomId ?? "local"}
-                      initialScene={conversationData.value?.whiteboardScene}
-                      onSceneChange={handleSceneChange}
-                    />
-                  )}
-                </div>
-              </div>
+              }
+            />
+            {
+              /* Portaled: flip-card transforms trap fixed overlays, same as
+                the map fullscreen. */
             }
-          />
+            {canvasExpanded.value && (
+              <BodyPortal>
+                <div
+                  class="topic-map-fullscreen"
+                  role="dialog"
+                  aria-modal="true"
+                >
+                  <div class="topic-map-fullscreen__panel">
+                    <div class="topic-map-fullscreen__header">
+                      <div>
+                        <h3>Canvas</h3>
+                        <p>Draw big. Esc or ✕ brings the card back.</p>
+                      </div>
+                      <div class="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => downloadBoard()}
+                          aria-label="Download the board as an image"
+                        >
+                          <i class="fa fa-download" aria-hidden="true"></i>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => drawFromConversation(false)}
+                          disabled={isDrawing.value}
+                          aria-label="Ask the AI to draw from the conversation"
+                        >
+                          <i
+                            class={`fa ${
+                              isDrawing.value
+                                ? "fa-hourglass-half"
+                                : "fa-wand-magic-sparkles"
+                            }`}
+                            aria-hidden="true"
+                          >
+                          </i>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={toggleCanvasExpand}
+                          aria-label="Close the expanded board"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                    <div class="canvas-flip-body">
+                      <SharedWhiteboard
+                        roomId={liveSession.value?.roomId ?? "local"}
+                        initialScene={conversationData.value?.whiteboardScene}
+                        onSceneChange={handleSceneChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </BodyPortal>
+            )}
+          </>
         );
       default:
         return null;

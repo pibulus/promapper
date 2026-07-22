@@ -6,6 +6,7 @@
 import { ComponentChildren } from "preact";
 import type { RefObject } from "preact";
 import { useEffect, useRef } from "preact/hooks";
+import BodyPortal from "./BodyPortal.tsx";
 
 interface ModalProps {
   open: boolean;
@@ -104,25 +105,29 @@ export default function Modal(
 
   if (!open) return null;
 
+  // Portaled to body: modals open from inside flip cards, whose transforms
+  // would otherwise trap this fixed overlay inside the card box.
   return (
-    <div
-      class="fixed inset-0 flex items-center justify-center z-50"
-      style={{ background: "rgba(30,23,20,0.5)" }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
+    <BodyPortal>
       <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        class={`dashboard-card ${panelClass} w-full mx-4`}
-        style={{ padding: "var(--card-padding)" }}
-        onClick={(e) => e.stopPropagation()}
+        class="fixed inset-0 flex items-center justify-center z-50"
+        style={{ background: "rgba(30,23,20,0.5)" }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
       >
-        {children}
+        <div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          class={`dashboard-card ${panelClass} w-full mx-4`}
+          style={{ padding: "var(--card-padding)" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {children}
+        </div>
       </div>
-    </div>
+    </BodyPortal>
   );
 }
