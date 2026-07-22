@@ -3,21 +3,31 @@
  *
  * Creates share links for conversations with copy-to-clipboard,
  * animated copy confirmation, and expiry countdown.
+ *
+ * Also the home of "Start a live room" (absorbed from GoLiveButton, July 23
+ * icon audit): share-a-snapshot and bring-people-in-live are one intent —
+ * ONE header entry point, the popover offers both.
  */
 
 import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import { conversationData } from "@signals/conversationStore.ts";
-import { liveSession } from "@signals/liveSessionStore.ts";
+import {
+  liveSession,
+  startLiveMode,
+  stopLiveMode,
+} from "@signals/liveSessionStore.ts";
 import {
   createBestShareLink,
   type ShareCreationResult,
 } from "../core/storage/shareService.ts";
+import { ensureApiSession } from "../utils/apiAuth.ts";
 import { showToast } from "../utils/toast.ts";
 
 export default function ShareButton() {
   const share = useSignal<ShareCreationResult | null>(null);
   const isGenerating = useSignal(false);
+  const liveStarting = useSignal(false);
   const popoverOpen = useSignal(false);
   // What the current share.value was minted from — lets a re-click reopen the
   // existing link instead of minting a fresh server row every time.
@@ -25,6 +35,54 @@ export default function ShareButton() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const canShare = useComputed(() => conversationData.value !== null);
+
+  // We pushState to /live/<roomId> when a meeting starts; honor the browser
+  // back button by actually leaving the session (before this, back showed "/"
+  // while the session silently stayed live).
+  useEffect(() => {
+    const onPopState = () => {
+      if (
+        liveSession.value &&
+        !globalThis.location.pathname.startsWith("/live/")
+      ) {
+        stopLiveMode();
+        showToast("Left the live session", "info");
+      }
+    };
+    globalThis.addEventListener("popstate", onPopState);
+    return () => globalThis.removeEventListener("popstate", onPopState);
+  }, []);
+
+  async function startMeeting() {
+    if (liveStarting.value) return;
+    liveStarting.value = true;
+    try {
+      await ensureApiSession();
+      const res = await fetch("/api/live/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversation: conversationData.value }),
+      });
+      if (!res.ok) {
+        const msg = res.status === 503
+          ? "Live collaboration isn't set up yet."
+          : "Couldn't start a meeting room.";
+        showToast(msg, "error");
+        return;
+      }
+      const { roomId, host } = await res.json();
+      startLiveMode(roomId, host);
+      // Update URL without navigation so the room is shareable. The popover
+      // stays open — liveSession flips and the live-room link row appears
+      // right where the button was.
+      globalThis.history.pushState({}, "", `/live/${roomId}`);
+      showToast("Meeting room started", "info");
+    } catch (_e) {
+      showToast("Couldn't start a meeting room.", "error");
+    } finally {
+      liveStarting.value = false;
+    }
+  }
 
   // Dismissable popover: Esc or clicking anywhere outside closes it.
   useEffect(() => {
@@ -275,6 +333,37 @@ export default function ShareButton() {
             >
               Expires in {remaining} day{remaining !== 1 ? "s" : ""}
             </p>
+          )}
+
+          {/* Not live yet → the other way to bring people in, right here. */}
+          {!liveSession.value && (
+            <div class="share-golive-row">
+              <button
+                type="button"
+                class="share-golive-btn"
+                onClick={startMeeting}
+                disabled={liveStarting.value}
+              >
+                <i
+                  class={`fa ${
+                    liveStarting.value
+                      ? "fa-spinner fa-spin"
+                      : "fa-tower-broadcast"
+                  }`}
+                  aria-hidden="true"
+                >
+                </i>
+                <span>
+                  {liveStarting.value ? "Starting…" : "Start a live room"}
+                </span>
+              </button>
+              <p
+                class="text-xs"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
+                Talk and edit together in real time — the link appears here.
+              </p>
+            </div>
           )}
         </div>
       )}

@@ -6060,6 +6060,9 @@ button:focus-visible {
   transition: transform var(--transition-fast),box-shadow
     var(--transition-fast),background var(--transition-fast);
 }
+.header-export-btn i {
+  font-size: .9rem;
+}
 .header-export-btn:hover {
   background: var(--cta-plate-hover);
   box-shadow: 3px 3px 0 var(--line-ink);
@@ -6077,6 +6080,49 @@ button:focus-visible {
     position: absolute;
     transform: translate(-50%,-50%);
     width: 44px;
+  }
+}
+.share-golive-row {
+  border-top: 1px solid var(--border-cream-medium);
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  padding-top: .6rem;
+}
+.share-golive-btn {
+  align-items: center;
+  background: var(--cta-plate);
+  border: 2px solid var(--cta-plate-border);
+  border-radius: 10px;
+  box-shadow: 2px 2px 0 var(--line-ink);
+  color: var(--soft-black);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  gap: .5rem;
+  justify-content: center;
+  padding: .5rem .8rem;
+  transition: transform var(--transition-fast),box-shadow
+    var(--transition-fast),background var(--transition-fast);
+  width: 100%;
+}
+.share-golive-btn:hover:not(:disabled) {
+  background: var(--cta-plate-hover);
+  box-shadow: 3px 3px 0 var(--line-ink);
+  transform: translateY(-1.5px);
+}
+.share-golive-btn:active:not(:disabled) {
+  box-shadow: 1px 1px 0 var(--line-ink);
+  transform: translateY(.5px);
+}
+.share-golive-btn:disabled {
+  cursor: default;
+  opacity: .6;
+}
+@media (pointer:coarse) {
+  .footer-shortcuts-btn {
+    display: none;
   }
 }
 .export-custom-toggle {

@@ -30,7 +30,6 @@ import * as $DashboardIsland from "./islands/DashboardIsland.tsx";
 import * as $EmojimapViz from "./islands/EmojimapViz.tsx";
 import * as $FlipCard from "./islands/FlipCard.tsx";
 import * as $ForceDirectedGraph from "./islands/ForceDirectedGraph.tsx";
-import * as $GoLiveButton from "./islands/GoLiveButton.tsx";
 import * as $HomeIsland from "./islands/HomeIsland.tsx";
 import * as $MarkdownMakerDrawer from "./islands/MarkdownMakerDrawer.tsx";
 import * as $MobileHistoryMenu from "./islands/MobileHistoryMenu.tsx";
@@ -87,7 +86,6 @@ const manifest = {
     "./islands/EmojimapViz.tsx": $EmojimapViz,
     "./islands/FlipCard.tsx": $FlipCard,
     "./islands/ForceDirectedGraph.tsx": $ForceDirectedGraph,
-    "./islands/GoLiveButton.tsx": $GoLiveButton,
     "./islands/HomeIsland.tsx": $HomeIsland,
     "./islands/MarkdownMakerDrawer.tsx": $MarkdownMakerDrawer,
     "./islands/MobileHistoryMenu.tsx": $MobileHistoryMenu,

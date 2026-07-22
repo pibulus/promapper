@@ -51,7 +51,6 @@ import UploadIsland from "./UploadIsland.tsx";
 import DashboardIsland from "./DashboardIsland.tsx";
 import MobileHistoryMenu from "./MobileHistoryMenu.tsx";
 import ShareButton from "./ShareButton.tsx";
-import GoLiveButton from "./GoLiveButton.tsx";
 import MarkdownMakerDrawer from "./MarkdownMakerDrawer.tsx";
 import AudioRecorder from "./AudioRecorder.tsx";
 import ThemeSwitcher from "./ThemeSwitcher.tsx";
@@ -615,7 +614,6 @@ export default function HomeIsland() {
                         ""}
                     />
                   )}
-                  <GoLiveButton />
                   <ShareButton />
 
                   {/* Live session controls — shown when a meeting is active */}
@@ -894,7 +892,7 @@ export default function HomeIsland() {
             <SoundToggle />
             <button
               type="button"
-              class="header-icon-btn"
+              class="header-icon-btn footer-shortcuts-btn"
               onClick={() => shortcutsOpen.value = true}
               aria-label="Keyboard shortcuts"
               data-tip="Shortcuts"

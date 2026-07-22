@@ -1,10 +1,13 @@
 /**
  * Recording Dock — the heartbeat of the app.
  *
- * A floating bottom-center dock on the dashboard: tap to record another take,
- * tap the count to relive previous takes. Each take is persisted to IndexedDB
- * BEFORE the AI pipeline runs (audio survives a failed append), then stamped
- * with a receipt of what it changed (+topics · new tasks · ✓ done).
+ * The header mic: tap to record another take. Each take is persisted to
+ * IndexedDB BEFORE the AI pipeline runs (audio survives a failed append),
+ * then stamped with a receipt of what it changed (+topics · new tasks ·
+ * ✓ done). Listening back / download / delete live in the Takes card on the
+ * dashboard (the header takes sheet was retired in the July 23 icon audit —
+ * one surface, not two). A retry chip appears here only when the last take
+ * failed to map.
  *
  * Mount rules (see HomeIsland): stays mounted while a conversation exists —
  * unmounting mid-recording kills the take without onStop. Hidden via CSS
@@ -24,7 +27,6 @@ import {
 } from "@core/orchestration/append-receipt.ts";
 import { showActionToast } from "@utils/toast.ts";
 import {
-  deleteRecording as deleteStoredRecording,
   listRecordings,
   saveRecording,
   type StoredRecording,
@@ -32,7 +34,7 @@ import {
   updateRecording,
 } from "@core/storage/recordingsDB.ts";
 import { getAllConversations } from "@core/storage/localStorage.ts";
-import { showToast, showUndoToast } from "../utils/toast.ts";
+import { showToast } from "../utils/toast.ts";
 import { ensureApiSession } from "../utils/apiAuth.ts";
 import { saveAudioBackup } from "../utils/downloadBackup.ts";
 import { enqueueApiRequest } from "../utils/requestQueue.ts";
@@ -51,15 +53,13 @@ let sweptThisLoad = false;
 export default function AudioRecorder(
   { conversationId, onRecordingComplete }: AudioRecorderProps,
 ) {
-  const takesOpen = useSignal(false);
   const retryRecordingReady = useSignal(false);
+  // Takes are still tracked here for numbering, receipts, and the unmapped
+  // nudge — the browsing UI lives in the dashboard Takes card.
   const takes = useSignal<StoredRecording[]>([]);
-  const playingTakeId = useSignal<string | null>(null);
 
   const lastRecordingBlobRef = useRef<Blob | null>(null);
   const lastTakeIdRef = useRef<string | null>(null);
-  const audioElementRef = useRef<HTMLAudioElement | null>(null);
-  const currentObjectURLRef = useRef<string | null>(null);
 
   const MAX_RECORDING_TIME = 10 * 60;
   const WARNING_TIME = 30;
@@ -203,15 +203,6 @@ export default function AudioRecorder(
     );
   }
 
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  }
-
   // Process audio and append to conversation. `takeId` is the take this blob
   // was captured as — the receipt is stamped onto exactly that take.
   async function processAudioAppend(audioBlob: Blob, takeId: string | null) {
@@ -334,100 +325,6 @@ export default function AudioRecorder(
     }
   }
 
-  function stopPlayback() {
-    if (audioElementRef.current) {
-      // Detach handlers BEFORE clearing src — src = "" itself fires an
-      // `error` event, which toasted "Error playing audio" after every
-      // take that simply finished playing.
-      audioElementRef.current.onended = null;
-      audioElementRef.current.onerror = null;
-      audioElementRef.current.pause();
-      audioElementRef.current.src = "";
-      audioElementRef.current = null;
-    }
-    if (currentObjectURLRef.current) {
-      URL.revokeObjectURL(currentObjectURLRef.current);
-      currentObjectURLRef.current = null;
-    }
-    playingTakeId.value = null;
-  }
-
-  // Exclusive play/pause — starting one take pauses any other.
-  function togglePlayback(take: StoredRecording) {
-    if (playingTakeId.value === take.id) {
-      stopPlayback();
-      return;
-    }
-    stopPlayback();
-
-    const objectURL = URL.createObjectURL(take.data);
-    currentObjectURLRef.current = objectURL;
-    const audio = new Audio(objectURL);
-
-    audio.onended = stopPlayback;
-    audio.onerror = () => {
-      stopPlayback();
-      showToast("Error playing audio. The file may be corrupted.", "error");
-    };
-    audio.play().catch((error) => {
-      console.error("Failed to play audio:", error);
-      stopPlayback();
-      showToast(
-        "Failed to play audio. Please check your browser settings.",
-        "error",
-      );
-    });
-
-    audioElementRef.current = audio;
-    playingTakeId.value = take.id;
-  }
-
-  function downloadTake(take: StoredRecording) {
-    const url = URL.createObjectURL(take.data);
-    const a = document.createElement("a");
-    a.href = url;
-
-    let extension = "webm";
-    if (take.mimeType.includes("ogg")) extension = "ogg";
-    else if (take.mimeType.includes("mp4")) extension = "m4a";
-    else if (take.mimeType.includes("wav")) extension = "wav";
-
-    a.download = `${
-      take.fileName.replace(/\s+/g, "-").toLowerCase()
-    }.${extension}`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 100);
-  }
-
-  function deleteTake(take: StoredRecording) {
-    if (playingTakeId.value === take.id) stopPlayback();
-    deleteStoredRecording(take.id);
-    takes.value = takes.value.filter((t) => t.id !== take.id);
-    showUndoToast(`Deleted ${take.fileName}`, () => {
-      saveRecording(take);
-      takes.value = [...takes.value, take].sort((a, b) =>
-        a.createdAt.localeCompare(b.createdAt)
-      );
-    });
-  }
-
-  // Playback cleanup on unmount
-  useEffect(() => {
-    return () => stopPlayback();
-  }, []);
-
-  // ESC closes the takes sheet (not while recording — Stop stays primary).
-  useEffect(() => {
-    if (!takesOpen.value) return;
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape" && !isRecording.value) {
-        takesOpen.value = false;
-      }
-    }
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [takesOpen.value, isRecording.value]);
-
   return (
     <div
       class={`recording-hub relative${liveSession.value ? " is-hidden" : ""}`}
@@ -491,123 +388,23 @@ export default function AudioRecorder(
           </button>
         )}
 
-      {/* Takes pulldown — listen back, download, delete */}
-      <button
-        type="button"
-        class="header-icon-btn"
-        onClick={() => takesOpen.value = !takesOpen.value}
-        aria-expanded={takesOpen.value}
-        aria-label={`${takes.value.length} recorded take${
-          takes.value.length === 1 ? "" : "s"
-        }`}
-        data-tip="Takes"
-        data-tip-align="right"
-      >
-        <i class="fa fa-headphones" aria-hidden="true" />
-        {takes.value.length > 0 && (
-          <span class="recording-hub__count">{takes.value.length}</span>
-        )}
-      </button>
-
-      {takesOpen.value && (
-        <div
-          class="recording-dock__sheet recording-hub__panel"
-          role="dialog"
-          aria-label="Recorded takes"
+      {
+        /* Rescue chip — appears ONLY when the last take failed to map, so the
+          retry path survives the takes sheet's retirement (browsing takes
+          lives in the dashboard Takes card now). */
+      }
+      {retryRecordingReady.value && !isRecording.value &&
+        !isProcessing.value && (
+        <button
+          type="button"
+          class="header-icon-btn"
+          onClick={retryLastRecording}
+          aria-label="Retry mapping the last take"
+          data-tip="Retry mapping the last take"
+          data-tip-align="right"
         >
-          <div class="recording-dock__sheet-header">
-            <h3>Takes</h3>
-            <button
-              type="button"
-              class="recording-dock__sheet-close"
-              aria-label="Close takes"
-              onClick={() => takesOpen.value = false}
-            >
-              <i class="fa fa-times" aria-hidden="true" />
-            </button>
-          </div>
-          <div class="recording-dock__sheet-body">
-            {retryRecordingReady.value && (
-              <button
-                type="button"
-                class="recording-hub__retry"
-                onClick={retryLastRecording}
-                disabled={isProcessing.value}
-              >
-                <i class="fa fa-rotate-left" aria-hidden="true" />{" "}
-                Retry mapping the last take
-              </button>
-            )}
-            {takes.value.length === 0
-              ? (
-                <p class="recording-dock__empty">
-                  No takes yet — hit the mic and keep talking. Each take lands
-                  here so you can listen back.
-                </p>
-              )
-              : (
-                [...takes.value].reverse().map((take) => (
-                  <div key={take.id} class="recording-dock__take">
-                    <div class="recording-dock__take-info">
-                      <p class="recording-dock__take-name">
-                        {take.fileName}
-                        {take.durationSec
-                          ? (
-                            <span class="recording-dock__take-duration">
-                              {formatTime(take.durationSec)}
-                            </span>
-                          )
-                          : null}
-                      </p>
-                      <p class="recording-dock__take-date">
-                        {formatDate(take.createdAt)}
-                      </p>
-                      {take.receipt && formatAppendReceipt(take.receipt) && (
-                        <p class="recording-dock__take-receipt">
-                          {formatAppendReceipt(take.receipt)}
-                        </p>
-                      )}
-                    </div>
-                    <div class="recording-dock__take-actions">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          togglePlayback(take)}
-                        aria-label={playingTakeId.value === take.id
-                          ? `Pause ${take.fileName}`
-                          : `Play ${take.fileName}`}
-                      >
-                        <i
-                          class={`fa ${
-                            playingTakeId.value === take.id
-                              ? "fa-pause animate-pulse"
-                              : "fa-play"
-                          }`}
-                          aria-hidden="true"
-                        />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          downloadTake(take)}
-                        aria-label={`Download ${take.fileName}`}
-                      >
-                        <i class="fa fa-download" aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        class="is-delete"
-                        onClick={() => deleteTake(take)}
-                        aria-label={`Delete ${take.fileName}`}
-                      >
-                        <i class="fa fa-times" aria-hidden="true" />
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-          </div>
-        </div>
+          <i class="fa fa-rotate-left" aria-hidden="true" />
+        </button>
       )}
     </div>
   );

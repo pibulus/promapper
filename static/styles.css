@@ -7047,6 +7047,11 @@ a:focus-visible {
     box-shadow var(--transition-fast),
     background var(--transition-fast);
 }
+/* Same optical icon size as the ghost .header-icon-btn neighbors — the
+   plate promotes the button, not the glyph. */
+.header-export-btn i {
+  font-size: 0.9rem;
+}
 .header-export-btn:hover {
   transform: translateY(-1.5px);
   box-shadow: 3px 3px 0 var(--line-ink);
@@ -7065,6 +7070,58 @@ a:focus-visible {
     width: 44px;
     height: 44px;
     transform: translate(-50%, -50%);
+  }
+}
+
+/* "Start a live room" inside the share popover — the second way to bring
+   people in, living with the first. Divider above separates it from the
+   snapshot-link block. */
+.share-golive-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border-cream-medium);
+}
+.share-golive-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.8rem;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--soft-black);
+  background: var(--cta-plate);
+  border: 2px solid var(--cta-plate-border);
+  border-radius: 10px;
+  box-shadow: 2px 2px 0 var(--line-ink);
+  cursor: pointer;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background var(--transition-fast);
+}
+.share-golive-btn:hover:not(:disabled) {
+  transform: translateY(-1.5px);
+  box-shadow: 3px 3px 0 var(--line-ink);
+  background: var(--cta-plate-hover);
+}
+.share-golive-btn:active:not(:disabled) {
+  transform: translateY(0.5px);
+  box-shadow: 1px 1px 0 var(--line-ink);
+}
+.share-golive-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Keyboard-shortcut help is meaningless on a touch screen — one less
+   mystery glyph in the footer there. */
+@media (pointer: coarse) {
+  .footer-shortcuts-btn {
+    display: none;
   }
 }
 
