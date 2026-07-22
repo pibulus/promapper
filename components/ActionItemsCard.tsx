@@ -700,10 +700,13 @@ export default function ActionItemsCard(
         <div class="dashboard-card">
           <div class="dashboard-card-header">
             <h3>Action Items</h3>
-            <div class="flex gap-1 items-center">
+            {
+              /* card-header-actions like every other card — this header used
+                its own btn--ghost cluster and read as a different species. */
+            }
+            <div class="card-header-actions">
               <button
                 onClick={toggleSearch}
-                class="btn btn--ghost btn--icon btn--compact"
                 aria-label={searchOpen.value ? "Close search" : "Search tasks"}
                 aria-pressed={searchOpen.value}
                 data-tip="Search"
@@ -718,7 +721,6 @@ export default function ActionItemsCard(
               <div class="relative action-options-wrap">
                 <button
                   onClick={() => optionsOpen.value = !optionsOpen.value}
-                  class="btn btn--ghost btn--icon btn--compact"
                   aria-label="Sort and filter"
                   aria-expanded={optionsOpen.value}
                   data-tip="Sort & filter"

@@ -56,6 +56,11 @@
 
   /* Spacing - Responsive (compacted for vertical efficiency) */
   --card-padding: clamp(0.75rem, 1.5vw, 1.1rem);
+  /* Card-header paddings as vars so the FlipCard button (an absolutely
+     positioned sibling, not a header child) can sit at the exact same
+     coordinates as the in-flow header action icons — on every breakpoint. */
+  --header-pad-y: 0.45rem;
+  --header-pad-x: var(--card-padding);
   --card-gap: clamp(0.75rem, 1.5vw, 1.1rem);
   --section-gap: clamp(1rem, 2.5vw, 1.25rem);
 
@@ -296,12 +301,21 @@ body {
 }
 
 /* ===================================================================
-   SCROLLBARS - Clean and minimal
+   SCROLLBARS — ONE app-wide recipe (July 23 audit). Slim 7px, rounded,
+   theme-accent thumb on a transparent track, everywhere: the document,
+   drawers, card scroll boxes, textareas, dial lists. Three competing
+   systems (grey 8px generic / 10px doc / 7px cards) collapsed into this.
    ================================================================ */
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-accent) 45%, transparent)
+    transparent;
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
@@ -309,12 +323,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.15);
+  background: color-mix(in srgb, var(--color-accent) 62%, transparent);
 }
 
 /* ===================================================================
@@ -2031,8 +2045,10 @@ body {
     border-radius: 18px;
   }
 
-  .dashboard-card-header {
-    padding: 0.85rem 0.95rem;
+  :root {
+    /* Header paddings via the vars — the flip button + reserve track them. */
+    --header-pad-y: 0.85rem;
+    --header-pad-x: 0.95rem;
   }
 
   .dashboard-card-header h3 {
@@ -2513,8 +2529,51 @@ body {
 /* Radio — the tile that hums. */
 .radio-body {
   display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.radio-main {
+  display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+/* Radio ↔ Moods — the two worlds as a slim segmented pair. */
+.sound-kind-toggle {
+  display: flex;
+  gap: 0.3rem;
+}
+.sound-kind-toggle button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.5rem;
+  font-size: var(--tiny-size);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1.5px solid var(--border-cream-medium);
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast),
+    border-color var(--transition-fast);
+}
+.sound-kind-toggle button i {
+  font-size: 0.6rem;
+}
+.sound-kind-toggle button:hover {
+  color: var(--accent-ink);
+  border-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+.sound-kind-toggle button.is-on {
+  color: var(--accent-ink);
+  font-weight: 700;
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--surface-cream));
+  border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
 }
 .radio-play {
   width: 2.25rem;
@@ -2952,7 +3011,9 @@ body {
    without this, header action icons (sliders, copy, backup…) sit underneath
    the flip circle and become unclickable. */
 .flip-card-face .dashboard-card-header {
-  padding-right: 3.2rem;
+  /* Reserve the flip button's slot so the actions cluster ends exactly one
+     intra-cluster gap (0.25rem) to its left — same rhythm as the cluster. */
+  padding-right: calc(var(--header-pad-x) + 2rem + 0.25rem);
 }
 
 .flip-card-face {
@@ -2975,13 +3036,17 @@ body {
    title. Soft, on-theme, unobtrusive until hovered. */
 .flip-card-btn {
   position: absolute;
-  /* Sits ON the header row, aligned with the other header action icons
-     (it used to float below the band's baseline). */
-  top: 0.4rem;
-  right: 0.6rem;
+  /* EXACTLY the .card-header-actions button metrics (2rem square at the
+     header's own padding coordinates) — a 1.9rem button at hand-picked
+     offsets sat a few px off its siblings on every card. */
+  /* +2px = the .dashboard-card border: this button positions against the
+     FACE while the header row lives inside the card's border box. Without
+     the offset it sat 2px high and 2px right of its siblings. */
+  top: calc(var(--header-pad-y) + 2px);
+  right: calc(var(--header-pad-x) + 2px);
   z-index: 2;
-  width: 1.9rem;
-  height: 1.9rem;
+  width: 2rem;
+  height: 2rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3058,13 +3123,17 @@ body {
      as the only pop. Compact. Thin divider separates it from the body. */
   background: var(--header-band);
   color: var(--header-band-ink);
-  padding: 0.45rem var(--card-padding);
+  padding: var(--header-pad-y) var(--header-pad-x);
   border-bottom: 1px solid var(--color-border);
   border-left: 3px solid var(--color-accent);
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
+  /* EVERY band is the same height: 2rem control row + the paddings. Headers
+     without action icons (Bishop/Takes/Sound) used to collapse to title
+     height, so the absolutely-placed flip button hung below the band. */
+  min-height: calc(2rem + 2 * var(--header-pad-y));
 }
 
 .dashboard-card-header h3 {
@@ -3107,65 +3176,9 @@ body {
   }
 }
 
-/* App-wide on-brand scrollbar — slim, rounded, theme-accent thumb on a quiet
-   track. Applies to the whole document + the main scroll area + the reader, so
-   nowhere shows the default chunky grey bar. */
-html,
-.app-scroll,
-.reader-panel__body {
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--color-accent) 45%, transparent)
-    transparent;
-}
-
-html::-webkit-scrollbar,
-.app-scroll::-webkit-scrollbar,
-.reader-panel__body::-webkit-scrollbar {
-  width: 10px;
-}
-
-html::-webkit-scrollbar-track,
-.app-scroll::-webkit-scrollbar-track,
-.reader-panel__body::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-html::-webkit-scrollbar-thumb,
-.app-scroll::-webkit-scrollbar-thumb,
-.reader-panel__body::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--color-accent) 40%, transparent);
-  border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
-html::-webkit-scrollbar-thumb:hover,
-.app-scroll::-webkit-scrollbar-thumb:hover,
-.reader-panel__body::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--color-accent) 62%, transparent);
-  background-clip: padding-box;
-}
-
-/* Slimmer variant for the small in-card scroll boxes (transcript/summary). */
-.card-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--color-accent) 45%, transparent)
-    transparent;
-}
-
-.card-scroll::-webkit-scrollbar {
-  width: 7px;
-}
-
-.card-scroll::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--color-accent) 40%, transparent);
-  border-radius: 999px;
-}
-
-.card-scroll::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--color-accent) 60%, transparent);
-}
-
+/* (Scrollbars are ONE global recipe now — see the SCROLLBARS block near the
+   top of this file. The per-scope html/.app-scroll/.reader/.card-scroll
+   variants were folded into it.) */
 /* The expand + copy buttons in a card header. */
 .card-header-actions {
   display: inline-flex;

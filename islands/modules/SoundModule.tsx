@@ -204,6 +204,13 @@ export default function SoundModule() {
   const playing = useSignal(false);
   const sourceIdx = useSignal(loadSourceIndex());
   const nowPlaying = useSignal("");
+  // Last pick per kind, so the Radio/Moods switch returns you to where you
+  // were on that side instead of always the first entry.
+  const lastByKind = useRef<{ channel: number; mood: number }>({
+    channel: SOURCES.findIndex((s) => s.kind === "channel"),
+    mood: SOURCES.findIndex((s) => s.kind === "mood"),
+  });
+  lastByKind.current[SOURCES[sourceIdx.value].kind] = sourceIdx.value;
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
@@ -315,13 +322,27 @@ export default function SoundModule() {
   }
 
   function switchTo(index: number) {
+    lastByKind.current[SOURCES[index].kind] = index;
     sourceIdx.value = index;
     persist(index);
     if (playing.value) start(SOURCES[index]);
   }
 
+  // Next stays WITHIN the current kind — skipping used to march radio
+  // listeners into the drone moods with no warning ("wait, what happened
+  // to the music"). The Radio/Moods switch is how you change worlds.
   function next() {
-    switchTo((sourceIdx.value + 1) % SOURCES.length);
+    const kind = SOURCES[sourceIdx.value].kind;
+    let i = sourceIdx.value;
+    do {
+      i = (i + 1) % SOURCES.length;
+    } while (SOURCES[i].kind !== kind);
+    switchTo(i);
+  }
+
+  function setKind(kind: "channel" | "mood") {
+    if (SOURCES[sourceIdx.value].kind === kind) return;
+    switchTo(lastByKind.current[kind]);
   }
 
   // Kill everything when the module unmounts (toggled off / page change).
@@ -355,32 +376,60 @@ export default function SoundModule() {
             )}
           </div>
           <div class="dashboard-card-body radio-body">
-            <button
-              type="button"
-              class="radio-play"
-              onClick={() => playing.value ? stop() : start(source)}
-              aria-label={playing.value ? "Stop sound" : "Play sound"}
-            >
-              <i
-                class={`fa ${playing.value ? "fa-pause" : "fa-play"}`}
-                aria-hidden="true"
+            {
+              /* The two worlds, visible up front — radio streams vs generated
+                moods. Switching returns to your last pick on that side. */
+            }
+            <div class="sound-kind-toggle" role="group" aria-label="Sound kind">
+              <button
+                type="button"
+                class={source.kind === "channel" ? "is-on" : ""}
+                aria-pressed={source.kind === "channel"}
+                onClick={() => setKind("channel")}
               >
-              </i>
-            </button>
-            <div class="radio-info">
-              <span class="radio-station">{name}</span>
-              <span class="radio-now">{line}</span>
+                <i class="fa fa-music" aria-hidden="true"></i> Radio
+              </button>
+              <button
+                type="button"
+                class={source.kind === "mood" ? "is-on" : ""}
+                aria-pressed={source.kind === "mood"}
+                onClick={() => setKind("mood")}
+              >
+                <i class="fa fa-wave-square" aria-hidden="true"></i> Moods
+              </button>
             </div>
-            <button
-              type="button"
-              class="radio-next"
-              onClick={next}
-              data-tip="Next"
-              data-tip-align="right"
-              aria-label="Next station or mood"
-            >
-              <i class="fa fa-forward-step" aria-hidden="true"></i>
-            </button>
+            <div class="radio-main">
+              <button
+                type="button"
+                class="radio-play"
+                onClick={() => playing.value ? stop() : start(source)}
+                aria-label={playing.value ? "Stop sound" : "Play sound"}
+              >
+                <i
+                  class={`fa ${playing.value ? "fa-pause" : "fa-play"}`}
+                  aria-hidden="true"
+                >
+                </i>
+              </button>
+              <div class="radio-info">
+                <span class="radio-station">{name}</span>
+                <span class="radio-now">{line}</span>
+              </div>
+              <button
+                type="button"
+                class="radio-next"
+                onClick={next}
+                data-tip={source.kind === "channel"
+                  ? "Next station"
+                  : "Next mood"}
+                data-tip-align="right"
+                aria-label={source.kind === "channel"
+                  ? "Next station"
+                  : "Next mood"}
+              >
+                <i class="fa fa-forward-step" aria-hidden="true"></i>
+              </button>
+            </div>
           </div>
         </div>
       }
@@ -395,6 +444,15 @@ export default function SoundModule() {
               const label = s.kind === "channel" ? s.channel.name : s.mood.name;
               return (
                 <>
+                  {
+                    /* Both groups labeled — one lone "moods" divider left the
+                    stations block reading as an unlabeled mystery list. */
+                  }
+                  {i === 0 && (
+                    <span class="radio-dial-divider" aria-hidden="true">
+                      stations
+                    </span>
+                  )}
                   {s.kind === "mood" && SOURCES[i - 1]?.kind === "channel" && (
                     <span class="radio-dial-divider" aria-hidden="true">
                       moods

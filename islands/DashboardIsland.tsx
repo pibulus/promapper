@@ -772,6 +772,9 @@ export default function DashboardIsland() {
                 aria-label={isCanvas
                   ? "Move this card — drag it, or nudge with the arrow keys"
                   : "Move this card — drag it, tap to resize, arrow keys nudge"}
+                data-tip={isCanvas
+                  ? "Drag to move"
+                  : "Drag to move · tap to resize"}
                 onPointerDown={(e) => sortable.onGripPointerDown(e, cellId)}
                 onKeyDown={(e) => onGripKey(e, cellId)}
               >

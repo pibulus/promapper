@@ -60,7 +60,7 @@ export default function NotesModule() {
                 if (value) copyToClipboard(value);
               }}
               class="cursor-pointer"
-              data-tip="Copy"
+              data-tip="Copy notes"
               aria-label="Copy notes"
             >
               <i class="fa fa-copy text-sm"></i>
