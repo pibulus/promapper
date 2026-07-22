@@ -143,6 +143,6 @@ export function formatMarkdownSafe(text: string): string {
 
   // No inline line-height: it out-ranked every stylesheet rule and froze
   // markdown leading at 1.7 app-wide. .markdown-body CSS owns it now, so
-  // contexts (summary card vs Bishop) can size their own prose.
+  // contexts (summary card vs Ask) can size their own prose.
   return `<div class="markdown-body">${html}</div>`;
 }

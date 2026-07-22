@@ -13,7 +13,7 @@ A module is:
 ```ts
 {
   id: string; // kebab-case, stable forever (it's a storage key)
-  name: string; // sentence case, warm, no jargon ("Notes", "Bishop")
+  name: string; // sentence case, warm, no jargon ("Notes", "Ask")
   tagline: string; // one line for the rack, in the app's voice
   icon: string; // FontAwesome name without the fa- prefix
   size: "small" | "medium" | "tall"; // the DEFAULT — users cycle per card
@@ -65,7 +65,7 @@ formats.
 | Module | Size   | What it does                                                                                      |
 | ------ | ------ | ------------------------------------------------------------------------------------------------- |
 | Notes  | small  | Scratch pad stored in the conversation JSON.                                                      |
-| Bishop | small  | Ask your memory — reads this conversation to answer.                                              |
+| Ask    | small  | Ask a question — answered from this conversation only.                                            |
 | Takes  | medium | Every recording kept — listen back + append receipts (reads recordingsDB, same rows as the dock). |
 | Sound  | small  | Radio + Tones as one dial: SomaFM/KPAB streams up top, WebAudio moods below the seam.             |
 
@@ -98,7 +98,7 @@ that must stay in sync: `static/styles.css` (:root defaults and recipes),
 
 ## On deck (from the July 10 riff)
 
-- **Bishop** ♗ — ask your memory (chatText over the conversation context).
+- **Ask** — questions in, answers out (chatText over the conversation context).
 - **Radio** — small tile, KPAB stream, born gap-filler.
 - **Magpie** — collect images/clips/files; OCR feeds the pipeline; exports get
   automatic provenance ("sources") for free.

@@ -1,5 +1,5 @@
 /**
- * Ask API Route — Bishop's brain.
+ * Ask API Route — the Ask module's brain.
  *
  * Answers a question ABOUT the conversation using the same guarded,
  * provider-agnostic seam as every other AI route. The conversation context
@@ -19,11 +19,11 @@ import { getAIService, getAskModel } from "@services/ai.ts";
 import { buildExportContext } from "@core/export/exportContext.ts";
 import { SHARE_ROOM_LIMITS } from "@core/realtime/shareProtocol.ts";
 import {
-  BISHOP_MAX_HISTORY,
-  BISHOP_MAX_HISTORY_CHARS,
-  type BishopExchange,
-  buildBishopMessages,
-} from "@core/ai/bishop.ts";
+  ASK_MAX_HISTORY,
+  ASK_MAX_HISTORY_CHARS,
+  type AskExchange,
+  buildAskMessages,
+} from "@core/ai/ask.ts";
 
 const MAX_QUESTION_LENGTH = 1_000;
 const MAX_TEXT_LENGTH = SHARE_ROOM_LIMITS.MAX_TRANSCRIPT_LENGTH;
@@ -31,18 +31,18 @@ const ASK_TIMEOUT_MS = 45_000;
 
 /** Keep only well-shaped {question, answer} pairs; caps re-applied in the
  *  pure builder, this is transport hygiene. */
-function sanitizeHistory(raw: unknown): BishopExchange[] {
+function sanitizeHistory(raw: unknown): AskExchange[] {
   if (!Array.isArray(raw)) return [];
-  const out: BishopExchange[] = [];
-  for (const entry of raw.slice(-BISHOP_MAX_HISTORY)) {
+  const out: AskExchange[] = [];
+  for (const entry of raw.slice(-ASK_MAX_HISTORY)) {
     if (!entry || typeof entry !== "object") continue;
     const e = entry as Record<string, unknown>;
     if (typeof e.question !== "string" || typeof e.answer !== "string") {
       continue;
     }
     out.push({
-      question: e.question.slice(0, BISHOP_MAX_HISTORY_CHARS),
-      answer: e.answer.slice(0, BISHOP_MAX_HISTORY_CHARS),
+      question: e.question.slice(0, ASK_MAX_HISTORY_CHARS),
+      answer: e.answer.slice(0, ASK_MAX_HISTORY_CHARS),
     });
   }
   return out;
@@ -94,7 +94,7 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
       );
     }
 
-    const messages = buildBishopMessages(
+    const messages = buildAskMessages(
       context,
       sanitizeHistory(history),
       question,

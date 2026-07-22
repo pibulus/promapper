@@ -1,8 +1,8 @@
 /**
- * Bishop — the quiet advisor. Ask your memory a question; it answers from
- * the conversation context through the same guarded AI seam as everything
- * else. Q&A history is session-ephemeral on purpose (the conversation is
- * the record; Bishop is just a lens on it).
+ * Ask — questions in, answers out. Ask the conversation a question; the
+ * answer comes from the record through the same guarded AI seam as
+ * everything else. Q&A history is session-ephemeral on purpose (the
+ * conversation is the record; Ask is just a lens on it).
  */
 
 import { useSignal } from "@preact/signals";
@@ -18,15 +18,15 @@ interface Exchange {
   answer: string;
 }
 
-export default function BishopModule() {
+export default function AskModule() {
   const exchanges = useSignal<Exchange[]>([]);
   const asking = useSignal(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
   // The in-flight answer, rendered live as chunks arrive. null = not asking.
   const draft = useSignal<Exchange | null>(null);
-  // While Bishop thinks, one of these shows with slow dots — picked fresh
-  // per ask so every fire is a little different.
+  // While the answer is on its way, one of these shows with slow dots —
+  // picked fresh per ask so every fire is a little different.
   const THINKING_LINES = [
     "consulting the record",
     "turning the pages back",
@@ -101,13 +101,13 @@ export default function BishopModule() {
         });
         if (!response.ok) {
           const err = await response.json().catch(() => ({}));
-          throw new Error(err.error || "Bishop couldn't answer");
+          throw new Error(err.error || "Couldn't get an answer");
         }
         const json = await response.json();
         return String(json.answer ?? "");
       });
 
-      // The conversation switched while Bishop was thinking — an answer
+      // The conversation switched while the answer was coming — an answer
       // about A must not appear on B's board (Bumblefuzz #4). The remount
       // key usually destroys us first; this is the belt to that braces.
       if (conversationData.value?.conversation.id !== askedId) return;
@@ -116,7 +116,7 @@ export default function BishopModule() {
       if (inputRef.current) inputRef.current.value = "";
     } catch (err) {
       showToast(
-        err instanceof Error ? err.message : "Bishop couldn't answer",
+        err instanceof Error ? err.message : "Couldn't get an answer",
         "error",
       );
     } finally {
@@ -129,23 +129,23 @@ export default function BishopModule() {
     <div class="w-full h-full">
       <div class="dashboard-card">
         <div class="dashboard-card-header">
-          <h3>Bishop</h3>
-          <span class="card-header-tagline">ask your memory</span>
+          <h3>Ask</h3>
+          <span class="card-header-tagline">answers from the record</span>
         </div>
-        <div class="dashboard-card-body bishop-body" ref={logRef}>
-          <div class="bishop-log">
+        <div class="dashboard-card-body ask-body" ref={logRef}>
+          <div class="ask-log">
             {exchanges.value.length === 0 && (
-              <p class="bishop-empty">
-                <i class="fa fa-chess-bishop" aria-hidden="true"></i>
+              <p class="ask-empty">
+                <i class="fa fa-circle-question" aria-hidden="true"></i>
                 Ask anything about this conversation — who said what, what's
                 still open, what it all means.
               </p>
             )}
             {exchanges.value.map((ex, i) => (
-              <div key={i} class="bishop-exchange">
-                <p class="bishop-question">{ex.question}</p>
+              <div key={i} class="ask-exchange">
+                <p class="ask-question">{ex.question}</p>
                 <div
-                  class="bishop-answer"
+                  class="ask-answer"
                   dangerouslySetInnerHTML={{
                     __html: formatMarkdownSafe(ex.answer),
                   }}
@@ -153,30 +153,30 @@ export default function BishopModule() {
               </div>
             ))}
             {draft.value && (
-              <div class="bishop-exchange">
-                <p class="bishop-question">{draft.value.question}</p>
+              <div class="ask-exchange">
+                <p class="ask-question">{draft.value.question}</p>
                 {draft.value.answer
                   ? (
                     <div
-                      class="bishop-answer"
+                      class="ask-answer"
                       dangerouslySetInnerHTML={{
                         __html: formatMarkdownSafe(draft.value.answer),
                       }}
                     />
                   )
                   : (
-                    <p class="bishop-answer bishop-thinking">
+                    <p class="ask-answer ask-thinking">
                       <span>{thinkingLine.value}</span>
-                      <span class="bishop-dot" aria-hidden="true" />
-                      <span class="bishop-dot" aria-hidden="true" />
-                      <span class="bishop-dot" aria-hidden="true" />
+                      <span class="ask-dot" aria-hidden="true" />
+                      <span class="ask-dot" aria-hidden="true" />
+                      <span class="ask-dot" aria-hidden="true" />
                     </p>
                   )}
               </div>
             )}
           </div>
           <form
-            class="bishop-ask-row"
+            class="ask-ask-row"
             onSubmit={(e) => {
               e.preventDefault();
               ask();
@@ -185,15 +185,15 @@ export default function BishopModule() {
             <input
               ref={inputRef}
               type="text"
-              class="bishop-input"
+              class="ask-input"
               placeholder="Ask about this conversation…"
-              aria-label="Ask Bishop a question"
+              aria-label="Ask a question about this conversation"
               maxLength={1000}
               disabled={asking.value}
             />
             <button
               type="submit"
-              class="bishop-send"
+              class="ask-send"
               disabled={asking.value}
               aria-label="Ask"
               data-tip="Ask"
@@ -201,7 +201,7 @@ export default function BishopModule() {
             >
               <i
                 class={`fa ${
-                  asking.value ? "fa-spinner fa-spin" : "fa-chess-bishop"
+                  asking.value ? "fa-spinner fa-spin" : "fa-paper-plane"
                 }`}
                 aria-hidden="true"
               >

@@ -2609,7 +2609,7 @@ body {
 /* 44px tap target on touch — the compact visual stays. */
 @media (pointer: coarse) {
   .radio-play::before,
-  .bishop-send::before {
+  .ask-send::before {
     content: "";
     position: absolute;
     inset: 50%;
@@ -2748,13 +2748,13 @@ body {
   }
 }
 
-/* Bishop — the quiet advisor. */
+/* Ask — questions in, answers out. */
 .card-header-tagline {
   font-size: var(--tiny-size);
   color: var(--header-band-sub);
   font-weight: 600;
 }
-.bishop-body {
+.ask-body {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -2784,7 +2784,7 @@ body {
 /* The CARD BODY is the scroller (same as Summary/Transcript — one styled
    rail at the card edge, no nested scrollbar floating mid-card). The log
    just grows; the ask row below is sticky. */
-.bishop-log {
+.ask-log {
   flex: 1 0 auto;
   min-height: 5.5rem;
   display: flex;
@@ -2794,40 +2794,40 @@ body {
 /* Pinned to the card's bottom edge while the body scrolls behind it —
    bleeds over the body padding and repaints the card surface so scrolled
    content disappears under it cleanly. */
-.bishop-ask-row {
+.ask-ask-row {
   position: sticky;
   bottom: calc(-1 * var(--card-padding));
   margin: 0 calc(-1 * var(--card-padding)) calc(-1 * var(--card-padding));
   padding: 0.5rem var(--card-padding) var(--card-padding);
   background: color-mix(in srgb, var(--color-accent) 5%, #fffdf8);
 }
-/* Bishop thinking — a quiet italic aside with three slow breathing dots.
+/* Ask thinking — a quiet italic aside with three slow breathing dots.
    Line + timing picked per ask so every fire feels a little different. */
-.bishop-thinking {
+.ask-thinking {
   display: inline-flex;
   align-items: baseline;
   gap: 0.16rem;
   font-style: italic;
   color: var(--color-text-secondary);
 }
-.bishop-thinking > span:first-child {
+.ask-thinking > span:first-child {
   margin-right: 0.15rem;
 }
-.bishop-thinking .bishop-dot {
+.ask-thinking .ask-dot {
   width: 4px;
   height: 4px;
   border-radius: 50%;
   background: var(--color-accent);
   align-self: center;
-  animation: bishop-dot-breathe 1.4s ease-in-out infinite;
+  animation: ask-dot-breathe 1.4s ease-in-out infinite;
 }
-.bishop-thinking .bishop-dot:nth-child(3) {
+.ask-thinking .ask-dot:nth-child(3) {
   animation-delay: 0.22s;
 }
-.bishop-thinking .bishop-dot:nth-child(4) {
+.ask-thinking .ask-dot:nth-child(4) {
   animation-delay: 0.44s;
 }
-@keyframes bishop-dot-breathe {
+@keyframes ask-dot-breathe {
   0%,
   60%,
   100% {
@@ -2840,13 +2840,13 @@ body {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .bishop-thinking .bishop-dot {
+  .ask-thinking .ask-dot {
     animation: none;
     opacity: 0.6;
   }
 }
 
-.bishop-empty {
+.ask-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2858,19 +2858,19 @@ body {
   line-height: 1.5;
   padding: 1.25rem 0.75rem;
 }
-.bishop-empty i {
+.ask-empty i {
   font-size: 1.4rem;
   color: var(--accent-ink);
   opacity: 0.7;
 }
-.bishop-question {
+.ask-question {
   font-weight: 700;
   font-size: var(--small-size);
   color: var(--accent-ink);
   line-height: 1.5;
   margin-bottom: 0.35rem;
 }
-.bishop-answer {
+.ask-answer {
   font-size: var(--small-size);
   line-height: 1.5;
   padding: 0.6rem 0.75rem;
@@ -2881,15 +2881,15 @@ body {
   border-radius: var(--border-radius-sm);
   background: color-mix(in srgb, var(--color-accent) 7%, transparent);
 }
-.bishop-answer p + p {
+.ask-answer p + p {
   margin-top: 0.5rem;
 }
-.bishop-ask-row {
+.ask-ask-row {
   display: flex;
   gap: 0.5rem;
   align-items: center;
 }
-.bishop-input {
+.ask-input {
   flex: 1;
   min-width: 0;
   min-height: 2.75rem;
@@ -2904,14 +2904,14 @@ body {
     border-color var(--transition-fast),
     box-shadow var(--transition-fast);
 }
-.bishop-input:focus-visible {
+.ask-input:focus-visible {
   outline: none;
   border-color: var(--color-accent);
   /* Soft accent ring on focus — the same warm halo the other inputs get. */
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 18%,
     transparent);
 }
-.bishop-send {
+.ask-send {
   width: 2.4rem;
   height: 2.4rem;
   flex-shrink: 0;
@@ -2931,16 +2931,16 @@ body {
     box-shadow var(--transition-fast),
     filter var(--transition-fast);
 }
-.bishop-send:hover:not(:disabled) {
+.ask-send:hover:not(:disabled) {
   transform: translateY(-1.5px);
   box-shadow: 3px 3px 0 var(--line-ink);
   background: var(--cta-plate-hover);
 }
-.bishop-send:active:not(:disabled) {
+.ask-send:active:not(:disabled) {
   transform: translateY(0.5px);
   box-shadow: 1px 1px 0 var(--line-ink);
 }
-.bishop-send:disabled {
+.ask-send:disabled {
   opacity: 0.55;
   box-shadow: none;
   cursor: default;
@@ -3131,7 +3131,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   /* EVERY band is the same height: 2rem control row + the paddings. Headers
-     without action icons (Bishop/Takes/Sound) used to collapse to title
+     without action icons (Ask/Takes/Sound) used to collapse to title
      height, so the absolutely-placed flip button hung below the band. */
   min-height: calc(2rem + 2 * var(--header-pad-y));
 }

@@ -16,7 +16,7 @@ import {
 
 const MODULE_SIZES: Record<string, BoardSize> = {
   notes: "small",
-  bishop: "small",
+  ask: "small",
   takes: "medium",
   sound: "small",
 };
@@ -43,7 +43,7 @@ const DEFAULTS = [
   "actions",
   "canvas",
   "notes",
-  "bishop",
+  "ask",
   "takes",
   "sound",
 ];
@@ -60,7 +60,7 @@ Deno.test("effectiveOrder: saved order wins, retired and duplicate ids drop, new
     "summary",
     "actions",
     "notes",
-    "bishop",
+    "ask",
     "takes",
     "sound",
   ]);
@@ -97,19 +97,19 @@ Deno.test("planCells: core cards and modules become flat cards in order", () => 
 });
 
 Deno.test("planCells: notes+takes share one card, anchored at the first of the two", () => {
-  assertEquals(shape(["takes", "bishop", "notes"]), [
+  assertEquals(shape(["takes", "ask", "notes"]), [
     {
       id: "takes+notes",
       members: ["takes", "notes"],
       core: false,
       size: "medium",
     },
-    { id: "bishop", members: ["bishop"], core: false, size: "small" },
+    { id: "ask", members: ["ask"], core: false, size: "small" },
   ]);
 });
 
 Deno.test("planCells: the later pair member joins its anchor across a core card", () => {
-  assertEquals(shape(["notes", "canvas", "takes", "bishop"]), [
+  assertEquals(shape(["notes", "canvas", "takes", "ask"]), [
     {
       id: "notes+takes",
       members: ["notes", "takes"],
@@ -117,7 +117,7 @@ Deno.test("planCells: the later pair member joins its anchor across a core card"
       size: "small",
     },
     { id: "canvas", members: ["canvas"], core: true, size: undefined },
-    { id: "bishop", members: ["bishop"], core: false, size: "small" },
+    { id: "ask", members: ["ask"], core: false, size: "small" },
   ]);
 });
 

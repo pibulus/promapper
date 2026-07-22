@@ -1,21 +1,21 @@
 import { assert, assertEquals } from "./_assert.ts";
 import {
-  BISHOP_MAX_HISTORY,
-  BISHOP_MAX_HISTORY_CHARS,
-  buildBishopMessages,
-} from "../ai/bishop.ts";
+  ASK_MAX_HISTORY,
+  ASK_MAX_HISTORY_CHARS,
+  buildAskMessages,
+} from "../ai/ask.ts";
 import { parseOpenRouterStreamLine } from "../ai/openrouter.ts";
 
 // ===================================================================
-// buildBishopMessages
+// buildAskMessages
 // ===================================================================
 
-Deno.test("system turn carries persona + context, question comes last", () => {
-  const msgs = buildBishopMessages("Mabel bit the pig.", [], "Who bit whom?");
+Deno.test("system turn carries instructions + context, question comes last", () => {
+  const msgs = buildAskMessages("Mabel bit the pig.", [], "Who bit whom?");
   assertEquals(msgs.length, 2);
   assertEquals(msgs[0].role, "system");
   assert(msgs[0].content.includes("Mabel bit the pig."));
-  assert(msgs[0].content.includes("Bishop"));
+  assert(msgs[0].content.includes("CONVERSATION CONTEXT:"));
   assertEquals(msgs[msgs.length - 1], {
     role: "user",
     content: "Who bit whom?",
@@ -23,7 +23,7 @@ Deno.test("system turn carries persona + context, question comes last", () => {
 });
 
 Deno.test("history becomes alternating user/assistant turns in order", () => {
-  const msgs = buildBishopMessages("ctx", [
+  const msgs = buildAskMessages("ctx", [
     { question: "q1", answer: "a1" },
     { question: "q2", answer: "a2" },
   ], "q3");
@@ -37,19 +37,19 @@ Deno.test("history becomes alternating user/assistant turns in order", () => {
 });
 
 Deno.test("history trims to the most recent MAX exchanges", () => {
-  const history = Array.from({ length: BISHOP_MAX_HISTORY + 4 }, (_, i) => ({
+  const history = Array.from({ length: ASK_MAX_HISTORY + 4 }, (_, i) => ({
     question: `q${i}`,
     answer: `a${i}`,
   }));
-  const msgs = buildBishopMessages("ctx", history, "new");
+  const msgs = buildAskMessages("ctx", history, "new");
   // system + 2 per kept exchange + final question
-  assertEquals(msgs.length, 1 + BISHOP_MAX_HISTORY * 2 + 1);
+  assertEquals(msgs.length, 1 + ASK_MAX_HISTORY * 2 + 1);
   // Oldest kept exchange is the (4th) one — the first four dropped.
   assertEquals(msgs[1].content, "q4");
 });
 
 Deno.test("half-exchanges are dropped so alternation never breaks", () => {
-  const msgs = buildBishopMessages("ctx", [
+  const msgs = buildAskMessages("ctx", [
     { question: "orphan", answer: "  " },
     { question: "", answer: "ghost" },
     { question: "kept", answer: "yes" },
@@ -62,10 +62,10 @@ Deno.test("half-exchanges are dropped so alternation never breaks", () => {
 });
 
 Deno.test("runaway history entries are clipped to the char cap", () => {
-  const msgs = buildBishopMessages("ctx", [
-    { question: "q", answer: "x".repeat(BISHOP_MAX_HISTORY_CHARS * 3) },
+  const msgs = buildAskMessages("ctx", [
+    { question: "q", answer: "x".repeat(ASK_MAX_HISTORY_CHARS * 3) },
   ], "new");
-  assertEquals(msgs[2].content.length, BISHOP_MAX_HISTORY_CHARS);
+  assertEquals(msgs[2].content.length, ASK_MAX_HISTORY_CHARS);
 });
 
 // ===================================================================

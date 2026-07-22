@@ -15,7 +15,7 @@
 import type { ComponentType } from "preact";
 import type { BoardSize } from "@utils/boardLayout.ts";
 import NotesModule from "./NotesModule.tsx";
-import BishopModule from "./BishopModule.tsx";
+import AskModule from "./AskModule.tsx";
 import TakesModule from "./TakesModule.tsx";
 import SoundModule from "./SoundModule.tsx";
 
@@ -45,12 +45,12 @@ export const moduleRegistry: ModuleEntry[] = [
     component: NotesModule,
   },
   {
-    id: "bishop",
-    name: "Bishop",
-    tagline: "Ask your memory — answers from this conversation only.",
-    icon: "chess-bishop",
+    id: "ask",
+    name: "Ask",
+    tagline: "Ask a question — answered from this conversation only.",
+    icon: "circle-question",
     size: "small",
-    component: BishopModule,
+    component: AskModule,
   },
   {
     id: "takes",

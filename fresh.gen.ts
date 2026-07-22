@@ -45,7 +45,7 @@ import * as $TopicVisualizationsCard from "./islands/TopicVisualizationsCard.tsx
 import * as $UploadIsland from "./islands/UploadIsland.tsx";
 import * as $VisualizationSelector from "./islands/VisualizationSelector.tsx";
 import * as $VoicePanel from "./islands/VoicePanel.tsx";
-import * as $modules_BishopModule from "./islands/modules/BishopModule.tsx";
+import * as $modules_AskModule from "./islands/modules/AskModule.tsx";
 import * as $modules_NotesModule from "./islands/modules/NotesModule.tsx";
 import * as $modules_SoundModule from "./islands/modules/SoundModule.tsx";
 import * as $modules_TakesModule from "./islands/modules/TakesModule.tsx";
@@ -101,7 +101,7 @@ const manifest = {
     "./islands/UploadIsland.tsx": $UploadIsland,
     "./islands/VisualizationSelector.tsx": $VisualizationSelector,
     "./islands/VoicePanel.tsx": $VoicePanel,
-    "./islands/modules/BishopModule.tsx": $modules_BishopModule,
+    "./islands/modules/AskModule.tsx": $modules_AskModule,
     "./islands/modules/NotesModule.tsx": $modules_NotesModule,
     "./islands/modules/SoundModule.tsx": $modules_SoundModule,
     "./islands/modules/TakesModule.tsx": $modules_TakesModule,

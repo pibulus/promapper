@@ -12,11 +12,13 @@ import { signal } from "@preact/signals";
 const KEY = "promapper-modules";
 
 /** Retired ids → their successors. radio/tones merged into sound
- * (July 19); canvas left the rack to become the node map's flip side. */
+ * (July 19); canvas left the rack to become the node map's flip side;
+ * bishop was renamed ask (July 23 — drawer labels, not characters). */
 const MIGRATIONS: Record<string, string | null> = {
   radio: "sound",
   tones: "sound",
   canvas: null,
+  bishop: "ask",
 };
 
 function load(): string[] {

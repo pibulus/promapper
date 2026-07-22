@@ -81,7 +81,7 @@ export interface AIService {
     modelHint?: string,
     signal?: AbortSignal,
   ): Promise<string>;
-  /** Multi-turn chat — for Bishop follow-ups and anything conversational. */
+  /** Multi-turn chat — for Ask follow-ups and anything conversational. */
   chatMessages(
     messages: ChatTurn[],
     modelHint?: string,
