@@ -200,6 +200,19 @@ Object.keys(vars).forEach(function(k){root.style.setProperty(k,vars[k]);});
 }catch(e){}})();`,
           }}
         />
+
+        {
+          /* Resize guard: stamps .is-resizing on <html> while the window is
+            actively being resized so CSS can switch transitions off (see
+            styles.css) — without it, breakpoint flips animate mid-drag and
+            the layout "chases" the cursor. Self-contained on purpose. */
+        }
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              `(function(){var t;addEventListener("resize",function(){document.documentElement.classList.add("is-resizing");clearTimeout(t);t=setTimeout(function(){document.documentElement.classList.remove("is-resizing")},150)})})();`,
+          }}
+        />
       </head>
       <body>
         <div class="scroll-progress" aria-hidden="true"></div>
