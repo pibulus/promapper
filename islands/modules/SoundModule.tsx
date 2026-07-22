@@ -56,26 +56,54 @@ const CHANNELS: Channel[] = [
   },
 ];
 
+/** Builders return nodes to stop/disconnect plus plain cleanup functions
+ * (droplet timers). teardownTones handles both. */
+type Teardown = AudioNode | (() => void);
+
 interface Mood {
   id: string;
   name: string;
   line: string;
-  build: (ctx: AudioContext, out: GainNode) => AudioNode[];
+  build: (ctx: AudioContext, out: GainNode) => Teardown[];
 }
 
-/** 2s looped noise buffer; brown = integrated white (deeper, softer). */
+/** Per-play roll — every start sounds slightly different. */
+function rand(lo: number, hi: number): number {
+  return lo + Math.random() * (hi - lo);
+}
+
+/** Slow sine wired into an AudioParam — the "alive" ingredient. */
+function slowLfo(
+  ctx: AudioContext,
+  param: AudioParam,
+  rate: number,
+  depth: number,
+): AudioNode[] {
+  const lfo = ctx.createOscillator();
+  lfo.frequency.value = rate;
+  const g = ctx.createGain();
+  g.gain.value = depth;
+  lfo.connect(g).connect(param);
+  lfo.start();
+  return [lfo, g];
+}
+
+/** 2s looped noise buffer with decorrelated channels (true stereo width);
+ * brown = integrated white (deeper, softer). */
 function noiseSource(ctx: AudioContext, brown: boolean): AudioBufferSourceNode {
   const len = ctx.sampleRate * 2;
-  const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  let last = 0;
-  for (let i = 0; i < len; i++) {
-    const white = Math.random() * 2 - 1;
-    if (brown) {
-      last = (last + 0.02 * white) / 1.02;
-      data[i] = last * 3.5;
-    } else {
-      data[i] = white;
+  const buffer = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let c = 0; c < 2; c++) {
+    const data = buffer.getChannelData(c);
+    let last = 0;
+    for (let i = 0; i < len; i++) {
+      const white = Math.random() * 2 - 1;
+      if (brown) {
+        last = (last + 0.02 * white) / 1.02;
+        data[i] = last * 3.5;
+      } else {
+        data[i] = white;
+      }
     }
   }
   const src = ctx.createBufferSource();
@@ -90,19 +118,16 @@ function drone(
   freqs: number[],
   type: OscillatorType,
   cutoff: number,
-): AudioNode[] {
+): Teardown[] {
   const filter = ctx.createBiquadFilter();
   filter.type = "lowpass";
   filter.frequency.value = cutoff;
   filter.connect(out);
   // A slow breath on the filter keeps the drone alive instead of static.
-  const lfo = ctx.createOscillator();
-  lfo.frequency.value = 0.08;
-  const lfoGain = ctx.createGain();
-  lfoGain.gain.value = cutoff * 0.25;
-  lfo.connect(lfoGain).connect(filter.frequency);
-  lfo.start();
-  const nodes: AudioNode[] = [filter, lfo, lfoGain];
+  const nodes: Teardown[] = [filter];
+  nodes.push(
+    ...slowLfo(ctx, filter.frequency, rand(0.05, 0.11), cutoff * 0.25),
+  );
   for (const [i, f] of freqs.entries()) {
     const osc = ctx.createOscillator();
     osc.type = type;
@@ -110,11 +135,39 @@ function drone(
     osc.detune.value = i * 3; // gentle chorus between voices
     const g = ctx.createGain();
     g.gain.value = 0.22 / freqs.length;
-    osc.connect(g).connect(filter);
+    // Voices spread alternately left/right, and each one wanders a few
+    // cents on its own slow clock — the chord never freezes solid.
+    const pan = ctx.createStereoPanner();
+    pan.pan.value = (i % 2 ? 1 : -1) * rand(0.15, 0.45);
+    osc.connect(g).connect(pan).connect(filter);
+    nodes.push(...slowLfo(ctx, osc.detune, rand(0.03, 0.08), rand(2, 5)));
     osc.start();
-    nodes.push(osc, g);
+    nodes.push(osc, g, pan);
   }
   return nodes;
+}
+
+/** An extra voice that swells in and out on a very slow cycle — heard as a
+ * visitor, not a member of the chord. */
+function breathVoice(
+  ctx: AudioContext,
+  out: GainNode,
+  freq: number,
+  type: OscillatorType,
+  level: number,
+  cycleSec: number,
+): Teardown[] {
+  const osc = ctx.createOscillator();
+  osc.type = type;
+  osc.frequency.value = freq;
+  const lp = ctx.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = freq * 2;
+  const g = ctx.createGain();
+  g.gain.value = level / 2; // offset so the LFO swings 0..level, never negative
+  osc.connect(lp).connect(g).connect(out);
+  osc.start();
+  return [osc, lp, g, ...slowLfo(ctx, g.gain, 1 / cycleSec, level / 2)];
 }
 
 function noiseBed(
@@ -124,7 +177,7 @@ function noiseBed(
   low: number,
   high: number,
   level: number,
-): AudioNode[] {
+): Teardown[] {
   const src = noiseSource(ctx, brown);
   const hp = ctx.createBiquadFilter();
   hp.type = "highpass";
@@ -136,7 +189,47 @@ function noiseBed(
   g.gain.value = level;
   src.connect(hp).connect(lp).connect(g).connect(out);
   src.start();
-  return [src, hp, lp, g];
+  // The weather: a slow swell on the level and a drift on the top filter,
+  // rates rolled per play so no two sits sound the same.
+  return [
+    src,
+    hp,
+    lp,
+    g,
+    ...slowLfo(ctx, g.gain, rand(0.03, 0.09), level * 0.3),
+    ...slowLfo(ctx, lp.frequency, rand(0.04, 0.1), high * 0.2),
+  ];
+}
+
+/** Random little blips over the rain bed — the difference between hiss and
+ * weather. A short noise burst through a narrow bandpass, panned wherever. */
+function droplets(ctx: AudioContext, out: GainNode): Teardown[] {
+  const len = Math.floor(ctx.sampleRate * 0.06);
+  const burst = ctx.createBuffer(1, len, ctx.sampleRate);
+  const data = burst.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  let timer: ReturnType<typeof setTimeout>;
+  const drip = () => {
+    const src = ctx.createBufferSource();
+    src.buffer = burst;
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = rand(900, 3800);
+    bp.Q.value = 8;
+    const g = ctx.createGain();
+    const t = ctx.currentTime;
+    g.gain.setValueAtTime(rand(0.015, 0.05), t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+    const pan = ctx.createStereoPanner();
+    pan.pan.value = rand(-0.7, 0.7);
+    src.connect(bp).connect(g).connect(pan).connect(out);
+    src.start();
+    src.stop(t + 0.08);
+    src.onended = () => pan.disconnect();
+    timer = setTimeout(drip, rand(90, 600));
+  };
+  timer = setTimeout(drip, 400);
+  return [() => clearTimeout(timer)];
 }
 
 const MOODS: Mood[] = [
@@ -150,19 +243,28 @@ const MOODS: Mood[] = [
     id: "rain",
     name: "Rain",
     line: "Patter without the wet.",
-    build: (ctx, out) => noiseBed(ctx, out, false, 500, 4200, 0.12),
+    build: (ctx, out) => [
+      ...noiseBed(ctx, out, false, 500, 4200, 0.12),
+      ...droplets(ctx, out),
+    ],
   },
   {
     id: "warm",
     name: "Warm",
     line: "A slow triangle chord, breathing.",
-    build: (ctx, out) => drone(ctx, out, [110, 165, 220], "triangle", 700),
+    build: (ctx, out) => [
+      ...drone(ctx, out, [110, 165, 220], "triangle", 700),
+      // An E4 that visits every so often, then leaves.
+      ...breathVoice(ctx, out, 329.63, "sine", 0.04, rand(18, 30)),
+    ],
   },
   {
     id: "deep",
     name: "Deep",
     line: "Low sines for the bottom of the night.",
-    build: (ctx, out) => drone(ctx, out, [55, 82.5], "sine", 280),
+    // The near-unison pair (55 vs 55.22) beats at ~0.2Hz — a sub throb
+    // you feel more than hear.
+    build: (ctx, out) => drone(ctx, out, [55, 55.22, 82.5], "sine", 280),
   },
 ];
 
@@ -215,7 +317,17 @@ export default function SoundModule() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
   const masterRef = useRef<GainNode | null>(null);
-  const nodesRef = useRef<AudioNode[]>([]);
+  const nodesRef = useRef<Teardown[]>([]);
+  // The meter: everything audible converges on one analyser before the
+  // speakers, so four little bars can ride whatever is playing.
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const meterElRef = useRef<HTMLSpanElement | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const meterLive = useSignal(false);
+  // Radio through the analyser needs a CORS-clean stream. One failed
+  // handshake flips this and radio plays plain (meter sways instead).
+  const corsBlockedRef = useRef(false);
+  const streamWiredRef = useRef(false);
 
   const source = SOURCES[sourceIdx.value];
 
@@ -261,6 +373,10 @@ export default function SoundModule() {
 
   function teardownTones() {
     for (const n of nodesRef.current) {
+      if (typeof n === "function") {
+        n();
+        continue;
+      }
       try {
         if ("stop" in n) (n as OscillatorNode).stop();
       } catch {
@@ -269,6 +385,58 @@ export default function SoundModule() {
       n.disconnect();
     }
     nodesRef.current = [];
+  }
+
+  function ensureCtx(): AudioContext {
+    if (!ctxRef.current) {
+      ctxRef.current = new AudioContext();
+      masterRef.current = ctxRef.current.createGain();
+      masterRef.current.gain.value = 0.7;
+      analyserRef.current = ctxRef.current.createAnalyser();
+      // 1024-point FFT so the low drones (55–220Hz) land in distinct bins
+      // instead of all piling into bin zero.
+      analyserRef.current.fftSize = 1024;
+      analyserRef.current.smoothingTimeConstant = 0.85;
+      masterRef.current.connect(analyserRef.current);
+      analyserRef.current.connect(ctxRef.current.destination);
+    }
+    return ctxRef.current;
+  }
+
+  function stopMeter() {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    rafRef.current = null;
+    meterLive.value = false;
+  }
+
+  // Log-spaced band edges (in FFT bins, ~47Hz each): sub/low, low-mid,
+  // mid, presence. Drones move the left bars, rain and radio light them all.
+  function startMeter() {
+    stopMeter();
+    const analyser = analyserRef.current;
+    const reduced = typeof matchMedia !== "undefined" &&
+      matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!analyser || reduced) return;
+    meterLive.value = true;
+    const bins = new Uint8Array(analyser.frequencyBinCount);
+    const edges = [1, 3, 8, 24, 96];
+    const tick = () => {
+      analyser.getByteFrequencyData(bins);
+      const bars = meterElRef.current?.children;
+      if (bars) {
+        for (let b = 0; b < 4; b++) {
+          let sum = 0;
+          for (let i = edges[b]; i < edges[b + 1]; i++) sum += bins[i];
+          const v = sum / ((edges[b + 1] - edges[b]) * 255);
+          const scale = Math.max(0.15, Math.min(1, v * 1.6));
+          (bars[b] as HTMLElement).style.transform = `scaleY(${
+            scale.toFixed(3)
+          })`;
+        }
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
   }
 
   function stopStream() {
@@ -281,42 +449,68 @@ export default function SoundModule() {
   function start(s: Source) {
     if (s.kind === "channel") {
       teardownTones();
-      ctxRef.current?.suspend();
+      stopMeter();
       if (!audioRef.current) {
         audioRef.current = new Audio();
+        // crossOrigin BEFORE src — it's what lets the stream feed the
+        // analyser. SomaFM allows it; a server that doesn't fails the load
+        // and we fall back to a plain element below.
+        if (!corsBlockedRef.current) audioRef.current.crossOrigin = "anonymous";
         audioRef.current.volume = 0.8;
       }
-      audioRef.current.src = s.channel.stream;
-      audioRef.current.play().then(() => {
+      const el = audioRef.current;
+      el.src = s.channel.stream;
+      el.play().then(() => {
         playing.value = true;
         pollNowPlaying(s.channel);
-      }).catch((err) => {
-        playing.value = false;
-        // Rapid skips abort plays — normal. A dead stream deserves a word
-        // instead of a silently dead button.
-        if (!(err instanceof DOMException && err.name === "AbortError")) {
-          showToast("That station isn't reachable right now", "warning");
+        if (!corsBlockedRef.current) {
+          // Ride the real audio: element → analyser → speakers. Once a
+          // media element joins the graph it only outputs through the
+          // context, so keep it running (no suspend on this path).
+          const ctx = ensureCtx();
+          if (ctx.state === "suspended") ctx.resume();
+          if (!streamWiredRef.current) {
+            ctx.createMediaElementSource(el).connect(analyserRef.current!);
+            streamWiredRef.current = true;
+          }
+          startMeter();
+        } else {
+          ctxRef.current?.suspend();
         }
+      }).catch((err) => {
+        // Rapid skips abort plays — normal.
+        if (err instanceof DOMException && err.name === "AbortError") {
+          playing.value = false;
+          return;
+        }
+        // First CORS-mode failure with no prior success: assume the
+        // handshake (not the station) and retry once with a plain element.
+        if (!corsBlockedRef.current && !streamWiredRef.current) {
+          corsBlockedRef.current = true;
+          el.pause();
+          audioRef.current = null;
+          start(s);
+          return;
+        }
+        playing.value = false;
+        // A dead stream deserves a word instead of a silently dead button.
+        showToast("That station isn't reachable right now", "warning");
       });
     } else {
       stopStream();
-      if (!ctxRef.current) {
-        ctxRef.current = new AudioContext();
-        masterRef.current = ctxRef.current.createGain();
-        masterRef.current.gain.value = 0.7;
-        masterRef.current.connect(ctxRef.current.destination);
-      }
-      const ctx = ctxRef.current;
+      const ctx = ensureCtx();
       if (ctx.state === "suspended") ctx.resume();
       teardownTones();
       nodesRef.current = s.mood.build(ctx, masterRef.current!);
       playing.value = true;
+      startMeter();
     }
   }
 
   function stop() {
     stopStream();
     teardownTones();
+    stopMeter();
     ctxRef.current?.suspend();
     playing.value = false;
   }
@@ -350,6 +544,7 @@ export default function SoundModule() {
     return () => {
       stopStream();
       teardownTones();
+      stopMeter();
       ctxRef.current?.close();
       ctxRef.current = null;
     };
@@ -372,7 +567,16 @@ export default function SoundModule() {
           <div class="dashboard-card-header">
             <h3>Sound</h3>
             {playing.value && (
-              <span class="radio-live-dot" aria-label="Playing"></span>
+              <span
+                ref={meterElRef}
+                class={`sound-meter${meterLive.value ? "" : " is-idle"}`}
+                aria-label="Playing"
+              >
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
             )}
           </div>
           <div class="dashboard-card-body radio-body">
