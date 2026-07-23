@@ -1119,6 +1119,64 @@ body {
   line-height: 1.4;
 }
 
+/* ─── Keys modal — the Keys door ─── */
+.keys-modal-copy {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+.keys-modal-copy a {
+  color: var(--accent-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.keys-modal-input {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 2.5px solid var(--line-ink);
+  border-radius: 12px;
+  background: var(--soft-cream);
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  color: var(--soft-black);
+}
+.keys-modal-input:focus {
+  outline: none;
+  border-color: var(--accent-ink);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 20%,
+    transparent);
+}
+.keys-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.9rem;
+}
+.keys-modal-save {
+  padding: 0.6rem 1.3rem;
+  border-radius: 999px;
+  border: 2.5px solid var(--line-ink);
+  background: var(--soft-black);
+  color: var(--surface-white-warm);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 0 rgba(30, 23, 20, 0.25);
+}
+.keys-modal-save:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 0 rgba(30, 23, 20, 0.25);
+}
+.keys-modal-remove {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
 /* The seeded example's escape hatch — quiet meta text, one warm link. */
 .mapper-sample-note {
   font-size: 0.8rem;

@@ -10,7 +10,11 @@ import {
   processAudio,
   processText,
 } from "@core/orchestration/conversation-flow.ts";
-import { guardAudioBudget, guardRequest } from "@services/requestGuard.ts";
+import {
+  getByoKey,
+  guardAudioBudget,
+  guardRequest,
+} from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
 import {
   MAX_AUDIO_SIZE,
@@ -35,7 +39,7 @@ export const handler: Handlers = {
       }
 
       const contentType = req.headers.get("content-type") || "";
-      const aiService = getAIService();
+      const aiService = getAIService(getByoKey(req));
 
       const conversationId = crypto.randomUUID();
 

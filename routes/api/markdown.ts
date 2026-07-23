@@ -7,7 +7,7 @@
  */
 
 import { FreshContext } from "$fresh/server.ts";
-import { guardRequest } from "@services/requestGuard.ts";
+import { getByoKey, guardRequest } from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
 import { buildExportContext } from "@core/export/exportContext.ts";
 import { SHARE_ROOM_LIMITS } from "@core/realtime/shareProtocol.ts";
@@ -51,7 +51,7 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
       );
     }
 
-    const aiService = getAIService();
+    const aiService = getAIService(getByoKey(req));
 
     const context = conversation && typeof conversation === "object"
       ? buildExportContext(conversation, text)

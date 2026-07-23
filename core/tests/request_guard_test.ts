@@ -74,3 +74,56 @@ Deno.test("unconfigured auth: OPEN locally, BLOCKED when deployed", () => {
   assertEquals(shouldBlockUnconfiguredAuth(true, true), false);
   assertEquals(shouldBlockUnconfiguredAuth(true, false), false);
 });
+
+// ===================================================================
+// BYO key (the Keys door) — header/cookie parsing + sanity rejection
+// ===================================================================
+
+const { getByoKey } = await import("../../services/requestGuard.ts");
+
+function reqWithHeaders(headers: Record<string, string>): Request {
+  return new Request("https://promapper.app/api/process", {
+    method: "POST",
+    headers: new Headers(headers),
+  });
+}
+
+Deno.test("getByoKey reads the x-openrouter-key header", () => {
+  const key = getByoKey(
+    reqWithHeaders({ "x-openrouter-key": "sk-or-v1-abcdef123456" }),
+  );
+  assertEquals(key, "sk-or-v1-abcdef123456");
+});
+
+Deno.test("getByoKey reads the pm_byok cookie", () => {
+  const key = getByoKey(
+    reqWithHeaders({ cookie: "cm_session=zzz; pm_byok=sk-or-v1-cookiekey99" }),
+  );
+  assertEquals(key, "sk-or-v1-cookiekey99");
+});
+
+Deno.test("getByoKey header wins over cookie", () => {
+  const key = getByoKey(
+    reqWithHeaders({
+      "x-openrouter-key": "sk-or-v1-header",
+      cookie: "pm_byok=sk-or-v1-cookie",
+    }),
+  );
+  assertEquals(key, "sk-or-v1-header");
+});
+
+Deno.test("getByoKey rejects garbage: too short, too long, non-printable", () => {
+  assertEquals(
+    getByoKey(reqWithHeaders({ "x-openrouter-key": "short" })),
+    null,
+  );
+  assertEquals(
+    getByoKey(reqWithHeaders({ "x-openrouter-key": "x".repeat(300) })),
+    null,
+  );
+  assertEquals(
+    getByoKey(reqWithHeaders({ "x-openrouter-key": "sk-or bad key\t" })),
+    null,
+  );
+  assertEquals(getByoKey(reqWithHeaders({})), null);
+});

@@ -14,7 +14,7 @@
  */
 
 import { FreshContext } from "$fresh/server.ts";
-import { guardRequest } from "@services/requestGuard.ts";
+import { getByoKey, guardRequest } from "@services/requestGuard.ts";
 import { getAIService, getAskModel } from "@services/ai.ts";
 import { buildExportContext } from "@core/export/exportContext.ts";
 import { SHARE_ROOM_LIMITS } from "@core/realtime/shareProtocol.ts";
@@ -100,7 +100,7 @@ export const handler = async (req: Request, _ctx: FreshContext) => {
       question,
     );
 
-    const aiService = getAIService();
+    const aiService = getAIService(getByoKey(req));
     const askModel = getAskModel();
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), ASK_TIMEOUT_MS);

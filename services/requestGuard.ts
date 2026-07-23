@@ -43,8 +43,16 @@ const API_DAILY_LIMIT = Number(Deno.env.get("API_DAILY_LIMIT") ?? "1000");
 const AUDIO_BYTES_PER_DAY = Number(
   Deno.env.get("AUDIO_BYTES_PER_DAY") ?? "0",
 );
+// Global circuit-breaker: per-IP daily budgets multiply across a botnet's
+// IPs, so ONE absolute ceiling caps the worst possible day on the house
+// key. 20k calls ≈ 60+ live meeting-hours — far above honest indie use.
+// Counts only house-key requests: BYO-key traffic isn't on the bill.
+const API_GLOBAL_DAILY_LIMIT = Number(
+  Deno.env.get("API_GLOBAL_DAILY_LIMIT") ?? "20000",
+);
 const dailyCallMap = new Map<string, BudgetEntry>();
 const audioByteMap = new Map<string, BudgetEntry>();
+const globalCallMap = new Map<string, BudgetEntry>();
 const authToken = Deno.env.get("API_AUTH_TOKEN")?.trim() ?? null;
 const SESSION_COOKIE_NAME = "cm_session";
 
@@ -72,6 +80,62 @@ export function shouldBlockUnconfiguredAuth(
   return !hasToken && deployed;
 }
 
+/**
+ * BYO OpenRouter key ("the Keys door"): read from the x-openrouter-key
+ * header or the pm_byok cookie the client sets. When present, AI costs are
+ * the user's, so the house-bill budgets (daily, audio, global) step aside —
+ * the burst rate limit stays for everyone. Never logged, never stored.
+ */
+export function getByoKey(req: Request): string | null {
+  const raw = req.headers.get("x-openrouter-key") ??
+    getCookies(req.headers)["pm_byok"] ?? null;
+  if (!raw) return null;
+  const key = raw.trim();
+  // Sanity only — a wrong key fails at OpenRouter with the user's name on
+  // it. Falling back to the house key would silently move costs to us.
+  if (key.length < 8 || key.length > 256 || !/^[\x21-\x7e]+$/.test(key)) {
+    return null;
+  }
+  return key;
+}
+
+// First sighting of a BYO key costs one free metadata call to OpenRouter;
+// after that it's a cache hit. Fail OPEN on network trouble — the real AI
+// call will speak for itself; only an explicit 401/403 blocks.
+const BYO_VERIFY_TTL_MS = 3_600_000;
+const byoVerifyCache = new Map<string, { ok: boolean; expires: number }>();
+
+async function verifyByoKey(key: string): Promise<Response | null> {
+  const now = Date.now();
+  const cached = byoVerifyCache.get(key);
+  if (cached && cached.expires > now) {
+    return cached.ok ? null : byoRefusedResponse();
+  }
+  try {
+    const base = Deno.env.get("OPENROUTER_BASE_URL") ??
+      "https://openrouter.ai/api/v1";
+    const res = await fetch(`${base}/key`, {
+      headers: { Authorization: `Bearer ${key}` },
+    });
+    await res.body?.cancel();
+    const ok = res.status !== 401 && res.status !== 403;
+    for (const [k, v] of byoVerifyCache) {
+      if (v.expires <= now) byoVerifyCache.delete(k);
+    }
+    byoVerifyCache.set(key, { ok, expires: now + BYO_VERIFY_TTL_MS });
+    return ok ? null : byoRefusedResponse();
+  } catch {
+    return null;
+  }
+}
+
+function byoRefusedResponse(): Response {
+  return jsonResponse(
+    { error: "OpenRouter refused that key — check it under the key icon." },
+    401,
+  );
+}
+
 export async function guardRequest(req: Request): Promise<Response | null> {
   const authBlock = await enforceAuth(req);
   if (authBlock) return authBlock;
@@ -82,10 +146,36 @@ export async function guardRequest(req: Request): Promise<Response | null> {
   const rateBlock = enforceRateLimit(req);
   if (rateBlock) return rateBlock;
 
+  // Their key, their costs — no bill rails. But verify the key once: without
+  // this, a wrong key 401s inside every AI stage, graceful degradation
+  // swallows it all, and the user gets a hollow map that looks broken.
+  const byoKey = getByoKey(req);
+  if (byoKey) return await verifyByoKey(byoKey);
+
   const dailyBlock = enforceDailyLimit(req);
   if (dailyBlock) return dailyBlock;
 
+  const globalBlock = enforceGlobalLimit();
+  if (globalBlock) return globalBlock;
+
   return null;
+}
+
+function enforceGlobalLimit(): Response | null {
+  if (API_GLOBAL_DAILY_LIMIT <= 0) return null;
+  const ok = consumeWindowBudget(
+    globalCallMap,
+    "global",
+    1,
+    API_GLOBAL_DAILY_LIMIT,
+    DAILY_WINDOW_MS,
+    Date.now(),
+  );
+  if (ok) return null;
+  return jsonResponse(
+    { error: "The workshop is unusually busy today — back tomorrow." },
+    429,
+  );
 }
 
 function enforceDailyLimit(req: Request): Response | null {
@@ -116,6 +206,7 @@ export function guardAudioBudget(
   bytes: number,
 ): Response | null {
   if (AUDIO_BYTES_PER_DAY <= 0) return null;
+  if (getByoKey(req)) return null; // their key, their audio bill
   const ok = consumeWindowBudget(
     audioByteMap,
     getClientToken(req),

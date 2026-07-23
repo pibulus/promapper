@@ -38,8 +38,13 @@ function requireEnv(name: string): string {
   return apiKey;
 }
 
-export function getAIService(): AIService {
-  const apiKey = getOpenRouterApiKey();
+/**
+ * @param byoKey user-supplied OpenRouter key (the Keys door). When present
+ * the service runs on THEIR key — built fresh, never cached (the single-slot
+ * cache is for the house key; per-user services are throwaway objects).
+ */
+export function getAIService(byoKey?: string | null): AIService {
+  const apiKey = byoKey?.trim() || getOpenRouterApiKey();
   const model = getOpenRouterModelName();
   const baseUrl = Deno.env.get("OPENROUTER_BASE_URL") ??
     DEFAULT_OPENROUTER_BASE_URL;
@@ -60,32 +65,24 @@ export function getAIService(): AIService {
   const statusModel = Deno.env.get("OPENROUTER_STATUS_MODEL")?.trim() ||
     undefined;
 
-  const configKey = JSON.stringify({
+  const config = {
     apiKey,
     model,
     baseUrl,
     siteUrl,
     siteName,
-    transcribeModel,
+    transcriptionModel: transcribeModel,
     summaryModel,
     topicModel,
     markdownModel,
     statusModel,
-  });
+  };
 
+  if (byoKey) return createOpenRouterService(config);
+
+  const configKey = JSON.stringify(config);
   if (!cachedOpenRouterService || cachedOpenRouterConfig !== configKey) {
-    cachedOpenRouterService = createOpenRouterService({
-      apiKey,
-      model,
-      baseUrl,
-      siteUrl,
-      siteName,
-      transcriptionModel: transcribeModel,
-      summaryModel,
-      topicModel,
-      markdownModel,
-      statusModel,
-    });
+    cachedOpenRouterService = createOpenRouterService(config);
     cachedOpenRouterConfig = configKey;
   }
 

@@ -60,6 +60,7 @@ import AudioRecorder from "./AudioRecorder.tsx";
 import ThemeSwitcher from "./ThemeSwitcher.tsx";
 import SoundToggle from "./SoundToggle.tsx";
 import ShortcutsModal from "../components/ShortcutsModal.tsx";
+import KeysModal from "../components/KeysModal.tsx";
 import AuthModalIsland from "./AuthModalIsland.tsx";
 import VoicePanel from "./VoicePanel.tsx";
 
@@ -77,6 +78,7 @@ export default function HomeIsland() {
   const drawerOpen = useSignal(false);
   const voiceDrawerOpen = useSignal(false);
   const shortcutsOpen = useSignal(false);
+  const keysOpen = useSignal(false);
   const brewNoteIndex = useSignal(0);
   // A history button with nothing behind it is a mystery door — only show
   // it once there's actually something saved to reopen.
@@ -901,6 +903,16 @@ export default function HomeIsland() {
               <SoundToggle />
               <button
                 type="button"
+                class="header-icon-btn"
+                onClick={() => keysOpen.value = true}
+                aria-label="Bring your own key"
+                data-tip="Your key"
+                data-tip-align="right"
+              >
+                <i class="fa fa-key" aria-hidden="true"></i>
+              </button>
+              <button
+                type="button"
                 class="header-icon-btn footer-shortcuts-btn"
                 onClick={() => shortcutsOpen.value = true}
                 aria-label="Keyboard shortcuts"
@@ -935,6 +947,12 @@ export default function HomeIsland() {
       <ShortcutsModal
         open={shortcutsOpen.value}
         onClose={() => shortcutsOpen.value = false}
+      />
+
+      {/* The Keys door — BYO OpenRouter key */}
+      <KeysModal
+        open={keysOpen.value}
+        onClose={() => keysOpen.value = false}
       />
     </div>
   );

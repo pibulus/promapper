@@ -13,7 +13,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { guardRequest } from "@services/requestGuard.ts";
+import { getByoKey, guardRequest } from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
 import {
   applyWhiteboardOps,
@@ -109,7 +109,7 @@ export const handler: Handlers = {
     );
 
     try {
-      const aiService = getAIService();
+      const aiService = getAIService(getByoKey(req));
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), AGENT_TIMEOUT_MS);
       let response: string;

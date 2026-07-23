@@ -5,7 +5,11 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { guardAudioBudget, guardRequest } from "@services/requestGuard.ts";
+import {
+  getByoKey,
+  guardAudioBudget,
+  guardRequest,
+} from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
 import { MAX_AUDIO_SIZE, uploadAudioFile } from "@services/audio.ts";
 import { deepgramKey, transcribeChunkDeepgram } from "@services/deepgram.ts";
@@ -60,14 +64,14 @@ export const handler: Handlers = {
             if (ctrl.signal.aborted) throw dgError;
             console.warn("Deepgram chunk failed, falling back:", dgError);
             const { part: audioPart } = await uploadAudioFile(audioFile);
-            transcription = await getAIService().transcribeAudio(
+            transcription = await getAIService(getByoKey(req)).transcribeAudio(
               audioPart,
               ctrl.signal,
             );
           }
         } else {
           const { part: audioPart } = await uploadAudioFile(audioFile);
-          transcription = await getAIService().transcribeAudio(
+          transcription = await getAIService(getByoKey(req)).transcribeAudio(
             audioPart,
             ctrl.signal,
           );

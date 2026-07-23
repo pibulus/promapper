@@ -38,7 +38,7 @@ import {
   mergeAppendSummary,
   remapExtractedByAlias,
 } from "@core/orchestration/append-merge.ts";
-import { guardRequest } from "@services/requestGuard.ts";
+import { getByoKey, guardRequest } from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
 import { pushResultToRoom } from "@services/partyUpdates.ts";
 import {
@@ -126,7 +126,7 @@ export const handler: Handlers = {
         conversationId,
       );
 
-      const aiService = getAIService();
+      const aiService = getAIService(getByoKey(req));
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), ANALYZE_TIMEOUT_MS);
       let result: ConversationFlowResult;
