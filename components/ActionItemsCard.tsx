@@ -92,6 +92,19 @@ function formatDue(due: string): string {
   return ISO_DATE.test(due) ? formatFriendlyDate(due) : due;
 }
 
+/** Sometimes the add row's placeholder quietly teaches the sigils — most
+ * mounts it just says "add one…". Hints are seasoning, not signage. */
+const ADD_HINTS = [
+  "fix the fence @mabel #garden",
+  "tune the antenna #radio friday",
+  "ask @doc about the pig",
+];
+function pickAddPlaceholder(): string {
+  return Math.random() < 0.3
+    ? ADD_HINTS[Math.floor(Math.random() * ADD_HINTS.length)]
+    : "add one…";
+}
+
 export default function ActionItemsCard(
   { actionItems, conversationId, speakers = [], onUpdateItems }:
     ActionItemsCardProps,
@@ -188,6 +201,9 @@ export default function ActionItemsCard(
   // Arrow key handler ref — always points to the current closure so the effect
   // only registers once but never goes stale.
   const arrowKeyHandlerRef = useRef<(e: KeyboardEvent) => void>(() => {});
+
+  // Picked once per mount so the placeholder doesn't flicker mid-session.
+  const addPlaceholder = useRef(pickAddPlaceholder()).current;
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -1312,7 +1328,7 @@ export default function ActionItemsCard(
               onInput={(e) => {
                 quickAddText.value = (e.target as HTMLInputElement).value;
               }}
-              placeholder="add one…"
+              placeholder={addPlaceholder}
               aria-label="Add an action item — @word names the person, #tags color themselves"
               data-tip="@who and #tags go right in the sentence"
               maxLength={500}
