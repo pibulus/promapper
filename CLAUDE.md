@@ -436,11 +436,43 @@ sensitive meetings. macOS arm64/x64 binaries available.
 - No audio leaves the machine — privacy-first
 - Fall through to cloud if local models unavailable
 
-### Pricing Integration
+### Pricing Model (LOCKED July 23, 2026 — supersedes the old $9/mo note)
 
-- **Free tier**: solo only, no meeting rooms, no whiteboard, Flash Lite only
-- **$9/mo**: meeting rooms, voice relay, shared whiteboard, smart models, export
-  formats, share links
+Three doors, **no subscriptions, no visible meters anywhere**. The design law
+is the same one as the recording timer: numbers counting down create
+pressure, so limits exist in the code but users only ever meet them as a
+warm sentence ("you've mapped a lot this month, lovely — here are the
+doors"). Words, not numbers. Split principle: **free gets everything that's
+cheap to serve; supporter gets the things that burn money** (voice relay,
+streaming live AI).
+
+| | Free | Supporter — $12/year |
+| --- | --- | --- |
+| Text maps | Unlimited (a marketing line: "yours, on your device") | Unlimited |
+| Audio mapping | ~1 hr/month, invisible rail | Tall rail |
+| Live rooms | 2 people max, edit-sync only | Full rooms (8–10) |
+| Live AI updating | — | ✓ map redraws while you talk |
+| Voice chat | — | ✓ |
+| Exports | All formats (the payoff is never paywalled) | All formats |
+
+- **Keys door — $29 once, forever**: bring your own OpenRouter key, all
+  limits vanish (their compute, their costs). The pressure valve that makes
+  the flat $12/yr mathematically safe — whale supporters get routed here by
+  the gentle note, not by force.
+- **Never** limit map count (maps are localStorage — their disk, zero cost).
+- Rails already exist in `services/requestGuard.ts`: burst 60/min, 1000
+  calls/day, and `AUDIO_BYTES_PER_DAY` audio metering built but disabled —
+  flipping tiers on is config, not code.
+- Payment rig: emulate TalkType/ziplist — Square checkout →
+  paymentStore (claim tokens) → license store (hashed supporter codes,
+  no accounts). Family naming precedent: "Supporter" (talktype),
+  "Contributor" (ziplist).
+- Sync (supporter perk): TalkType's Vault pattern — the supporter code IS
+  the identity; conversations encrypted client-side, vault keyed by
+  SHA-256 of the code, any device with the code pulls + decrypts. No
+  accounts ever. Storage can ride the existing Supabase share store.
+- Referral machinery: none. Shared maps + exports carry a small warm
+  "mapped with ProMapper" line — that's the whole growth engine.
 
 Implementation status: Phases 2a/2b/2c are built (see Architecture Map above —
 `workers/voice-relay/`, `islands/VoicePanel.tsx`,
