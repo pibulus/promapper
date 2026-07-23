@@ -45,4 +45,13 @@ export interface ConversationData {
   whiteboardScene?: string;
   /** Human scratch space (Notes module). Rides saves, shares, and backups. */
   notes?: string;
+  /** The Magpie shelf — collected POINTERS (links, image URLs, text
+   * scraps), never file payloads. Same citizenship as notes: rides saves,
+   * backups, and undo via the stored object. */
+  magpie?: Array<{
+    id: string;
+    kind: "link" | "image" | "text";
+    value: string;
+    addedAt: string;
+  }>;
 }

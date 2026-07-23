@@ -18,6 +18,7 @@ import NotesModule from "./NotesModule.tsx";
 import AskModule from "./AskModule.tsx";
 import TakesModule from "./TakesModule.tsx";
 import SoundModule from "./SoundModule.tsx";
+import MagpieModule from "./MagpieModule.tsx";
 
 /** The 1:2:4 row system (utils/boardLayout.ts): small = 1 unit, medium = 2,
  * tall = 4. This is the module's DEFAULT — users cycle sizes per card. */
@@ -67,5 +68,13 @@ export const moduleRegistry: ModuleEntry[] = [
     icon: "radio",
     size: "small",
     component: SoundModule,
+  },
+  {
+    id: "magpie",
+    name: "Magpie",
+    tagline: "A shelf for shiny things — links, pictures, scraps.",
+    icon: "gem",
+    size: "medium",
+    component: MagpieModule,
   },
 ];

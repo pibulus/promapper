@@ -2939,6 +2939,97 @@ body {
   cursor: default;
 }
 
+/* Magpie — the shelf of shiny things. Rows are quiet; the toss X shows on
+   hover (softly always-there on touch). Images are pointers rendered small —
+   never stored, just fetched from their URL. */
+.magpie-body {
+  padding: 0.5rem var(--card-padding) 0;
+}
+.magpie-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.magpie-row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+.magpie-scrap {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--small-size);
+  line-height: 1.5;
+  color: var(--color-text);
+  padding: 0.35rem 0.55rem;
+  background: var(--surface-cream);
+  border: 1px solid var(--border-cream-medium);
+  border-radius: var(--border-radius-sm);
+  overflow-wrap: anywhere;
+}
+.magpie-link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  text-decoration: none;
+}
+.magpie-link-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--small-size);
+  font-weight: 600;
+  color: var(--accent-ink);
+  overflow-wrap: anywhere;
+}
+.magpie-link-label i {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+.magpie-link:hover .magpie-link-label {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.magpie-image {
+  width: 100%;
+  max-height: 7.5rem;
+  object-fit: cover;
+  border: 2px solid var(--border-cream-medium);
+  border-radius: var(--border-radius-sm);
+}
+.magpie-remove {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--transition-fast),
+    color var(--transition-fast);
+}
+.magpie-row:hover .magpie-remove,
+.magpie-remove:focus-visible {
+  opacity: 1;
+}
+.magpie-remove:hover {
+  color: var(--accent-ink);
+}
+@media (pointer: coarse) {
+  .magpie-remove {
+    opacity: 0.5;
+  }
+}
+
 /* Notes module — a calm page inside the card. Joins the one prose system
    (13px / 1.5, same as transcript + summary) so a note reads as kin to the
    rest of the board, not a stray textarea. */
