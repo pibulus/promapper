@@ -4515,8 +4515,12 @@ body {
 }
 
 .topic-visualizations-shell {
-  /* The map canvas sets its own height (clamped); the shell just hugs it and
-     adds NO padding, so the canvas bleeds to the card's inner edges. */
+  /* Fill the card body exactly (the card is a fixed-height flex column with
+     overflow:hidden). The canvas used to set its own viewport-clamped height,
+     which overflowed the card — clipping the map's bottom edge, the control
+     cluster, and the node detail panel. No padding: the canvas bleeds to the
+     card's inner edges. */
+  flex: 1 1 auto;
   min-height: 0;
   padding: 0;
 }

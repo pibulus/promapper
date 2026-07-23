@@ -271,7 +271,13 @@ export function forceDirectedEmojimap(
         n.fy = null;
       }
       simulation.stop();
-      fitAllIcons(svg, zoom, node, focusSubset());
+      // Re-frame the camera only for sim runs the user didn't hand-start: cold
+      // layouts, appends, re-tidy. After a drag, the user placed a node and the
+      // camera is where they want it — a refit here read as a full-map reload.
+      if (!mergedConfig.dragSettling) {
+        fitAllIcons(svg, zoom, node, focusSubset());
+      }
+      mergedConfig.dragSettling = false;
       // Persist the settled layout — before this, positions only saved on drag
       // end, so a never-dragged map re-scattered on every reload. (The island
       // diffs structure before calling update(), so this write can't loop.)
@@ -490,7 +496,9 @@ export function forceDirectedEmojimap(
 
       // Gentle re-energize for an append (existing nodes are pinned, so 0.5 is
       // enough to slot the newcomers in without flinging the settled layout);
-      // full energy only for a cold first layout.
+      // full energy only for a cold first layout. This run is machine-made, so
+      // its settle SHOULD re-frame the camera (clear any leftover drag mark).
+      mergedConfig.dragSettling = false;
       simulation.alpha(hadExistingLayout ? 0.5 : 1).restart();
     },
 
@@ -540,6 +548,9 @@ export function forceDirectedEmojimap(
         n.fx = null;
         n.fy = null;
       });
+      // Explicit re-tidy: the user asked for a fresh layout, so the settle
+      // should frame it.
+      mergedConfig.dragSettling = false;
       simulation.alpha(1).restart();
     },
 

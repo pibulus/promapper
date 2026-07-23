@@ -85,10 +85,10 @@ export function dragstarted(
   // Remember where the grab started so dragended can tell a real drag from a
   // click (a click moves ~0px and must NOT merge).
   d._dragStart = { x: d.x ?? event.x, y: d.y ?? event.y };
-  // Snappy grab: a high alphaTarget floods the sim with energy the instant you
-  // touch a node, so neighbors react immediately (no mushy lag before the graph
-  // wakes up). The springy links carry that energy outward elastically.
-  if (!event.active) simulation.alphaTarget(0.5).restart();
+  d._dragMoved = false;
+  // No reheat here: d3 fires "start" on plain mousedown, so waking the sim now
+  // made every tap-to-select jolt the whole map (wobble + refit-on-settle).
+  // The snappy-grab alphaTarget bump lives in dragged(), on first real motion.
   d.fx = d.x;
   d.fy = d.y;
   // Let the merge gesture through: soften collision and stop THIS node's
@@ -108,12 +108,45 @@ export function dragged(
   d: NodeData,
   nodes: NodeData[],
   nodeGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
+  simulation: d3.Simulation<NodeData, undefined>,
+  config: Config,
 ) {
   d.fx = event.x;
   d.fy = event.y;
+  // Snappy grab, click-safe: wake the sim only once the pointer has genuinely
+  // moved (a few SVG units filters out click jitter). A high alphaTarget then
+  // floods the sim with energy so neighbors react immediately, and the springy
+  // links carry that energy outward elastically.
+  if (!d._dragMoved && d._dragStart) {
+    if (Math.hypot(event.x - d._dragStart.x, event.y - d._dragStart.y) > 3) {
+      d._dragMoved = true;
+      // Mark this run as hand-made so the settle handler leaves the camera
+      // alone — the user just placed a node; re-framing after every drop made
+      // the whole map appear to reload.
+      config.dragSettling = true;
+      simulation.alphaTarget(0.5).restart();
+    }
+  }
   // Live merge preview — but only once this is a REAL drag, so a tiny jitter
   // during a click/double-click doesn't flash a merge hint.
   const target = isRealDrag(d) ? findMergeTarget(d, nodes) : null;
+  // FREEZE the in-range target. Softened collide stopped the direct shove, but
+  // the hot sim still TOWED a displaced target away through its springs and
+  // neighbors (parked on its spot, the gap grew ~46→163px in 1.5s — merges only
+  // landed by luck). Pinning it while in range means what glows is what you
+  // get; released the moment you pull away or drop.
+  if (target?.id !== d._mergeTargetId) {
+    const prev = nodes.find((n) => n.id === d._mergeTargetId);
+    if (prev) {
+      prev.fx = null;
+      prev.fy = null;
+    }
+    if (target) {
+      target.fx = target.x;
+      target.fy = target.y;
+    }
+    d._mergeTargetId = target?.id;
+  }
   paintMergePreview(nodeGroup, d.id, target ? target.id : null);
 }
 
@@ -126,8 +159,19 @@ export function dragended(
   nodeGroup: d3.Selection<SVGGElement, unknown, null, undefined>,
 ) {
   if (!event.active) simulation.alphaTarget(0);
+  const moved = d._dragMoved === true;
+  d._dragMoved = false;
   d.fx = null;
   d.fy = null;
+  // Release the frozen merge target (see dragged) so it rejoins the physics.
+  if (d._mergeTargetId) {
+    const frozen = nodes.find((n) => n.id === d._mergeTargetId);
+    if (frozen) {
+      frozen.fx = null;
+      frozen.fy = null;
+    }
+    d._mergeTargetId = undefined;
+  }
 
   // Restore the drag-softened physics (see dragstarted). Forces only apply on
   // the next tick, so this can't move anything before the merge check below.
@@ -151,8 +195,10 @@ export function dragended(
   // Clear the preview highlight regardless of outcome.
   paintMergePreview(nodeGroup, d.id, null);
 
-  // Persist all node positions after a drag ends
-  if (config.onPositionsChange) {
+  // Persist all node positions after a drag ends — but only if something
+  // actually moved. A plain click used to fire this too, writing a no-op
+  // position pass into the store on every tap-to-select.
+  if (moved && config.onPositionsChange) {
     const positions: Record<string, { x: number; y: number }> = {};
     for (const n of nodes) {
       if (n.id && Number.isFinite(n.x) && Number.isFinite(n.y)) {

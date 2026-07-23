@@ -21,6 +21,11 @@ export interface NodeData {
   vy?: number;
   /** Transient: where the node was grabbed, to tell a real drag from a click. */
   _dragStart?: { x: number; y: number };
+  /** Transient: this gesture actually moved, so the sim was reheated. */
+  _dragMoved?: boolean;
+  /** Transient (on the dragged node): id of the merge target currently frozen
+   * in place so it can't be towed away mid-gesture. */
+  _mergeTargetId?: string;
 }
 
 export interface EdgeData {
@@ -50,6 +55,13 @@ export interface Config {
   collisionRadius: number;
   selectedNodeId?: string | null;
   selectedEdgeId?: string | null;
+  /**
+   * Transient, internal: the current sim run was started by a hand-drag, so
+   * the settle handler must NOT re-fit the camera (the user placed a node —
+   * yanking the viewport right after reads as the whole map reloading).
+   * Cleared on every settle and by update()/reset, which do want their fit.
+   */
+  dragSettling?: boolean;
   onMouseOverNode?: (event: any, d: NodeData) => void;
   onClickNode?: (event: any, d: NodeData) => void;
   onDoubleClickNode?: (event: any, d: NodeData) => void;

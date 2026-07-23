@@ -771,16 +771,19 @@ export default function ForceDirectedGraph(
   }
 
   return (
-    <div class="relative flex w-full flex-col">
+    <div class="relative flex h-full w-full flex-col">
       {
         /* Full-bleed: the canvas fills the whole area below the card header with
-          no margin/border of its own — the card's chunky border frames it. Only
-          the bottom corners round, to sit flush under the header. */
+          no margin/border of its own — the card's chunky border frames it. It
+          fills the card body's height exactly (the card clips overflow, so a
+          taller canvas would push the controls + detail panel out of view);
+          the 440px floor keeps it usable where no parent height exists (the
+          /dev/nodemap harness). */
       }
       <div
         ref={svgContainerRef}
         class="topic-map-canvas topic-map-canvas--bleed w-full overflow-hidden"
-        style="height: clamp(440px, 68vh, 720px); height: clamp(440px, 68svh, 720px);"
+        style="height: 100%; min-height: 440px;"
       />
 
       {renderNodeDetail()}

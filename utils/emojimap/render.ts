@@ -120,7 +120,10 @@ export function createNodeGroup(
       d3
         .drag<SVGGElement, NodeData>()
         .on("start", (event, d) => dragstarted(event, d, simulation, config))
-        .on("drag", (event, d) => dragged(event, d, nodes, nodeGroup))
+        .on(
+          "drag",
+          (event, d) => dragged(event, d, nodes, nodeGroup, simulation, config),
+        )
         .on(
           "end",
           (event, d) =>
