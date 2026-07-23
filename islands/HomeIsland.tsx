@@ -43,7 +43,10 @@ import {
   noteLiveChunk,
   resetLiveAnalysis,
 } from "@signals/liveAnalysis.ts";
-import { isViewingShared } from "@signals/conversationStore.ts";
+import {
+  isViewingShared,
+  processingConversation,
+} from "@signals/conversationStore.ts";
 import { ensureApiSession } from "@utils/apiAuth.ts";
 import { soundBloom, soundChime, soundPortal } from "@utils/sound.ts";
 import { formatTime, useRecorder } from "./useRecorder.ts";
@@ -58,9 +61,6 @@ import SoundToggle from "./SoundToggle.tsx";
 import ShortcutsModal from "../components/ShortcutsModal.tsx";
 import AuthModalIsland from "./AuthModalIsland.tsx";
 import VoicePanel from "./VoicePanel.tsx";
-import { createDemoConversation } from "../utils/demoData.ts";
-import LoadingModal from "../components/LoadingModal.tsx";
-import Confetti from "../components/Confetti.tsx";
 
 const SILENCE_FLUSH_MS = 2_000;
 const MAX_CHUNK_MS = 30_000;
@@ -72,13 +72,11 @@ const SPEAKING_THRESHOLD = 0.008;
 export default function HomeIsland() {
   // Per-instance UI state. These MUST be useSignal (not module-level signal())
   // — module scope is shared across concurrent SSR requests, so one visitor's
-  // in-flight demo modal would render into another visitor's HTML.
+  // in-flight state would render into another visitor's HTML.
   const drawerOpen = useSignal(false);
   const voiceDrawerOpen = useSignal(false);
   const shortcutsOpen = useSignal(false);
-  const demoLoading = useSignal(false);
-  const demoStage = useSignal("");
-  const showConfetti = useSignal(false);
+  const brewNoteIndex = useSignal(0);
 
   // Plain consts for hook dependency arrays — ternaries/optional chains
   // inside a deps array trip deno lint's react-rules-of-hooks CFG and mark
@@ -511,33 +509,26 @@ export default function HomeIsland() {
 
   const heroLines = ["See what you're", "really saying"];
 
-  const stages = [
-    { msg: "reading the town records…", dur: 700 },
-    { msg: "listening for bite incidents…", dur: 600 },
-    { msg: "mapping the topic web…", dur: 500 },
-    { msg: "extracting action items…", dur: 500 },
-    { msg: "assembling the full picture…", dur: 400 },
+  // While the first process brews, loading lives where the result will land:
+  // the dashboard skeleton plus one quiet line that keeps moving. No modal.
+  const brewNotes = [
+    "reading it through…",
+    "pulling out the to-dos…",
+    "sketching the topic map…",
+    "noticing what connects…",
+    "setting the table…",
   ];
-
-  async function loadDemo() {
-    if (demoLoading.value) return;
-    demoLoading.value = true;
-    showConfetti.value = false;
-
-    // Theatrical staged loading — builds anticipation
-    for (const stage of stages) {
-      demoStage.value = stage.msg;
-      await new Promise((r) => setTimeout(r, stage.dur));
-    }
-
-    conversationData.value = createDemoConversation();
-    soundBloom();
-    demoLoading.value = false;
-    showConfetti.value = true;
-
-    // Clear confetti after animation finishes
-    setTimeout(() => showConfetti.value = false, 4000);
-  }
+  const isBrewing = processingConversation.value && !conversationData.value
+    ? 1
+    : 0;
+  useEffect(() => {
+    if (!isBrewing) return;
+    brewNoteIndex.value = 0;
+    const timer = setInterval(() => {
+      brewNoteIndex.value = (brewNoteIndex.value + 1) % brewNotes.length;
+    }, 2200);
+    return () => clearInterval(timer);
+  }, [isBrewing]);
 
   return (
     <div class="mapper-scene flex min-h-screen flex-col">
@@ -818,8 +809,8 @@ export default function HomeIsland() {
               conversationData.value ? "pb-28" : "pb-8"
             }`}
           >
-            {/* Hero Section - Only show when NO data */}
-            {!conversationData.value && (
+            {/* Hero Section - Only show when NO data and nothing brewing */}
+            {!conversationData.value && !processingConversation.value && (
               <section class="mapper-stage">
                 <div class="mapper-card" data-tilt>
                   <div class="mapper-card__inner">
@@ -844,19 +835,25 @@ export default function HomeIsland() {
                       </p>
                     </div>
                     <div class="mapper-card__panel">
-                      <UploadIsland
-                        onTryDemo={loadDemo}
-                        demoLoading={demoLoading.value}
-                      />
+                      <UploadIsland />
                     </div>
                   </div>
                 </div>
               </section>
             )}
 
-            {/* Dashboard - Always rendered, shows its own empty state */}
-            {conversationData.value && (
+            {
+              /* Dashboard — also rendered while the first process brews:
+              DashboardIsland's no-data branch is the skeleton, so loading
+              happens on the table where the result will land. */
+            }
+            {(conversationData.value || processingConversation.value) && (
               <section class="dashboard-section">
+                {isBrewing === 1 && (
+                  <p class="dashboard-brew-note" aria-live="polite">
+                    {brewNotes[brewNoteIndex.value]}
+                  </p>
+                )}
                 <DashboardIsland />
               </section>
             )}
@@ -926,12 +923,6 @@ export default function HomeIsland() {
         open={shortcutsOpen.value}
         onClose={() => shortcutsOpen.value = false}
       />
-
-      {/* Demo loading modal */}
-      <LoadingModal isOpen={demoLoading.value} message={demoStage.value} />
-
-      {/* Confetti on demo load */}
-      <Confetti trigger={showConfetti.value} />
     </div>
   );
 }

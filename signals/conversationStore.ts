@@ -22,6 +22,11 @@ export type { ConversationData };
 // Global conversation data signal
 export const conversationData = signal<ConversationData | null>(null);
 
+// True while a first process (/api/process) is in flight — the home layout
+// swaps the hero for the dashboard skeleton so loading happens where the
+// result will land, not behind a blocking modal.
+export const processingConversation = signal<boolean>(false);
+
 // Global UI signal for history drawer open state
 export const historyDrawerOpen = signal<boolean>(false);
 

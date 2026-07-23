@@ -1119,6 +1119,23 @@ body {
   line-height: 1.4;
 }
 
+/* The seeded example's escape hatch — quiet meta text, one warm link. */
+.mapper-sample-note {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+.mapper-sample-note button {
+  color: var(--accent-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.mapper-sample-note button:hover {
+  text-decoration-thickness: 2px;
+}
+
 .mapper-capture-actions {
   display: flex;
   gap: 0.75rem;
@@ -2194,10 +2211,10 @@ body {
    span 1 (a true half-card tile), wide spans the row. Rows like
    small/small/standard compose themselves; dense packing fills holes.
    ================================================================ */
-/* Dense packing + the 1:2:4 row rhythm, ONE rule (splitting it across the
+/* Dense packing + the 1:2:3 row rhythm, ONE rule (splitting it across the
    file made the grid depend on cascade order): later small cards slide
    backward into holes, and every card spans fixed row units — small 1,
-   medium 2, tall 4 (see BOARD SIZE SYSTEM near the end of this file). */
+   medium 2, tall 3 (see BOARD SIZE SYSTEM near the end of this file). */
 .dashboard-grid {
   grid-auto-flow: dense;
   --board-row: 10.5rem;
@@ -5042,6 +5059,25 @@ body {
 .dashboard-skeleton-card {
   padding: 1.2rem;
   border-radius: 18px;
+}
+
+/* One quiet line above the skeleton while the first process brews —
+   opacity-only breathing (perf law: no paint-heavy loading chrome). */
+.dashboard-brew-note {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  padding-top: 1rem;
+  animation: brew-breathe 2.2s ease-in-out infinite;
+}
+@keyframes brew-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
 }
 
 /* ===================================================================
@@ -8271,11 +8307,12 @@ label {
 }
 
 /* ===================================================================
-   BOARD SIZE SYSTEM — 1 : 2 : 4, halving all the way.
+   BOARD SIZE SYSTEM — 1 : 2 : 3, newspaper thirds.
    Every card is one pillar wide; heights are fixed row units:
-   small = 1, medium = 2, tall = 4. Two smalls make a medium, two
-   mediums make a tall, a tall levels with medium + two smalls — the
-   grid computes it exactly, gaps included. The canvas is the one
+   small = 1, medium = 2, tall = 3. Two smalls make a medium, a tall
+   levels with medium + small or three smalls — the grid computes it
+   exactly, gaps included. (Was 1:2:4 — powers of two read as a
+   checkerboard; thirds settle like masonry.) The canvas is the one
    exception: full row, fixed height, not resizable.
    ================================================================ */
 /* (grid-auto-rows + --board-row live on .dashboard-grid up in the MODULES
@@ -8287,7 +8324,7 @@ label {
   grid-row: span 2;
 }
 .board-cell--tall {
-  grid-row: span 4;
+  grid-row: span 3;
 }
 .board-cell--canvas {
   grid-column: 1 / -1;

@@ -1,24 +1,29 @@
-import { useComputed, useSignal } from "@preact/signals";
+import { signal, useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
-import { conversationData } from "@signals/conversationStore.ts";
+import {
+  conversationData,
+  processingConversation,
+} from "@signals/conversationStore.ts";
 import { ensureApiSession } from "../utils/apiAuth.ts";
 import { enqueueApiRequest } from "../utils/requestQueue.ts";
 import { coerceFlowResult } from "../utils/coerceFlowResult.ts";
 import { soundBloom } from "@utils/sound.ts";
-import LoadingModal from "../components/LoadingModal.tsx";
 import AudioVisualizer from "./AudioVisualizer.tsx";
 import { showToast } from "../utils/toast.ts";
 
-interface UploadIslandProps {
-  onTryDemo?: () => void;
-  demoLoading?: boolean;
-}
+// The loaded spring: on desktop the textarea arrives holding a real example,
+// one press of "Map it" from the full wow — a cold visitor has nothing to
+// paste yet, so we hand them something. Mobile keeps record-first.
+const SAMPLE_TEXT =
+  "Band practice, Tuesday night. We finally nailed the bridge on Silver Static but the chorus still drags — Mel reckons it wants to sit two bpm faster, I think the drums are just late. Jess is re-recording the chorus stems before Friday so we can A/B both. The Tote gig is locked for the 14th but there's still no poster — Danny knows a screenprinter who owes him a favour, he's chasing it this week. Merch: no shirts, too dear, but yes to stickers — Mel's sketching the octopus design. The van rego is due and nobody wants to pay it, so we're splitting it three ways. Next practice we start the new one, the voice-memo song with the weird 7/8 riff.";
 
-export default function UploadIsland(
-  { onTryDemo, demoLoading = false }: UploadIslandProps,
-) {
-  const textInput = useSignal("");
-  const isProcessing = useSignal(false);
+// Module-level so pasted text survives the hero unmounting during processing
+// (an error remounts the hero — losing the paste would sting).
+const textInput = signal("");
+let seededExample = false;
+
+export default function UploadIsland() {
+  const isProcessing = processingConversation;
   const isRecording = useSignal(false);
   const recordingTime = useSignal(0);
   const showTimeWarning = useSignal(false);
@@ -42,9 +47,10 @@ export default function UploadIsland(
     MAX_RECORDING_TIME - recordingTime.value
   );
   const hasText = useComputed(() => textInput.value.trim().length > 0);
+  const isSample = useComputed(() => textInput.value === SAMPLE_TEXT);
   const primaryLabel = useComputed(() => {
     if (isRecording.value) return "Stop recording";
-    if (hasText.value) return "Analyze text";
+    if (hasText.value) return "Map it";
     if (selectedFile.value) return "Map audio";
     return "Start recording";
   });
@@ -406,6 +412,19 @@ export default function UploadIsland(
     }
   };
 
+  // Seed the example once per page load, desktop only (mobile's natural
+  // first move is recording — don't bury the mic behind a clear-click).
+  useEffect(() => {
+    if (seededExample) return;
+    seededExample = true;
+    if (
+      !textInput.value &&
+      globalThis.matchMedia?.("(min-width: 768px)").matches
+    ) {
+      textInput.value = SAMPLE_TEXT;
+    }
+  }, []);
+
   useEffect(() => () => cleanup(), []);
 
   return (
@@ -526,64 +545,30 @@ export default function UploadIsland(
             )}
         </div>
 
+        {isSample.value && !isRecording.value && (
+          <div class="mapper-sample-note">
+            just an example —{" "}
+            <button
+              type="button"
+              onClick={() => {
+                textInput.value = "";
+                textAreaRef.current?.focus();
+              }}
+            >
+              clear it, use yours
+            </button>
+          </div>
+        )}
+
         <div class="mapper-capture-actions">
           <button
             class="mapper-slab-button mapper-slab-button--record"
             disabled={primaryDisabled.value}
             onClick={handlePrimaryAction}
-            style={{
-              flex: onTryDemo && !isRecording.value && !selectedFile.value &&
-                  !hasText.value
-                ? "1"
-                : "none",
-              width: onTryDemo && !isRecording.value && !selectedFile.value &&
-                  !hasText.value
-                ? "auto"
-                : "100%",
-            }}
+            style={{ width: "100%" }}
           >
             {primaryLabel.value}
           </button>
-
-          {onTryDemo && !isRecording.value && !selectedFile.value &&
-            !hasText.value && (
-            <button
-              type="button"
-              onClick={onTryDemo}
-              disabled={demoLoading}
-              class="btn btn--secondary"
-              style={{
-                padding: "1rem 1.25rem",
-                borderRadius: "13px",
-                fontSize: "0.92rem",
-                border: "2.5px solid var(--soft-black, #1e1714)",
-                whiteSpace: "nowrap",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow:
-                  "4px 4px 0 0 rgba(30, 23, 20, 0.25), 0 3px 8px rgba(30, 23, 20, 0.14)",
-                fontWeight: 800,
-                letterSpacing: "0.01em",
-                background: "var(--surface-cream, #fffaf6)",
-                color: "var(--color-text, #1e1714)",
-                cursor: "pointer",
-                transition: "transform 120ms ease, box-shadow 120ms ease",
-              }}
-            >
-              {demoLoading ? "Loading…" : (
-                <>
-                  <i
-                    class="fa fa-wand-magic-sparkles"
-                    aria-hidden="true"
-                    style={{ marginRight: "0.4rem" }}
-                  >
-                  </i>
-                  Demo
-                </>
-              )}
-            </button>
-          )}
 
           {lastUploadName.value && !selectedFile.value && !isRecording.value &&
             !hasText.value && (
@@ -599,8 +584,6 @@ export default function UploadIsland(
         onChange={handleAudioUpload}
         style={{ display: "none" }}
       />
-
-      {isProcessing.value && <LoadingModal isOpen={isProcessing.value} />}
     </div>
   );
 }

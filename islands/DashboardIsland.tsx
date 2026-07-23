@@ -416,7 +416,7 @@ export default function DashboardIsland() {
   }, []);
 
   // Drag-to-rearrange + tap-to-resize. Cards move in 2-D, the dense grid
-  // does the pillar math (1:2:4 row units), the arrangement persists per
+  // does the pillar math (1:2:3 row units), the arrangement persists per
   // user (not per conversation).
   const sortable = useGridSortable({
     cellIds: () => planBoard().cells.map((c) => c.id),
