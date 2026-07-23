@@ -492,7 +492,7 @@ export default function UploadIsland() {
                   ref={textAreaRef}
                   class="mapper-textarea w-full resize-none"
                   rows={6}
-                  placeholder="Talk it out, paste a rant, or drop a recording here."
+                  placeholder="Talk it out, paste what you've got, or drop a recording."
                   aria-label="Conversation content or transcription input"
                   value={textInput.value}
                   onInput={(e) => {
@@ -533,13 +533,14 @@ export default function UploadIsland() {
                 <button
                   type="button"
                   class="mapper-clip-btn"
-                  aria-label="Browse file"
+                  aria-label="Add an audio file"
                   onClick={(event) => {
                     event.stopPropagation();
                     fileInputRef.current?.click();
                   }}
                 >
-                  <i class="fa fa-paperclip" aria-hidden="true"></i>
+                  <span aria-hidden="true">+</span>
+                  <span>audio</span>
                 </button>
               </>
             )}
@@ -565,8 +566,15 @@ export default function UploadIsland() {
             class="mapper-slab-button mapper-slab-button--record"
             disabled={primaryDisabled.value}
             onClick={handlePrimaryAction}
-            style={{ width: "100%" }}
           >
+            {primaryLabel.value === "Start recording" && (
+              <i
+                class="fa fa-microphone"
+                aria-hidden="true"
+                style={{ marginRight: "0.45rem" }}
+              >
+              </i>
+            )}
             {primaryLabel.value}
           </button>
 

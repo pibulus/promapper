@@ -16,6 +16,7 @@ import {
 } from "@signals/conversationStore.ts";
 import {
   getActiveConversationId,
+  getAllConversations,
   loadConversation,
 } from "../core/storage/localStorage.ts";
 import { showToast } from "@utils/toast.ts";
@@ -77,6 +78,9 @@ export default function HomeIsland() {
   const voiceDrawerOpen = useSignal(false);
   const shortcutsOpen = useSignal(false);
   const brewNoteIndex = useSignal(0);
+  // A history button with nothing behind it is a mystery door — only show
+  // it once there's actually something saved to reopen.
+  const hasHistory = useSignal(false);
 
   // Plain consts for hook dependency arrays — ternaries/optional chains
   // inside a deps array trip deno lint's react-rules-of-hooks CFG and mark
@@ -102,6 +106,7 @@ export default function HomeIsland() {
 
   // Restore last conversation on mount
   useEffect(() => {
+    hasHistory.value = Object.keys(getAllConversations()).length > 0;
     // Auto-restore last active conversation from localStorage
     const activeId = getActiveConversationId();
     // SKIP auto-restore if liveSession is active to prevent clobbering the live room's state
@@ -686,26 +691,26 @@ export default function HomeIsland() {
               </>
             )
             : (
-              // Default header — wordmark + history; the dials live in the
-              // footer. (History was a floating pill crashing into the
-              // footer dials — it belongs in the icon bar like everywhere
-              // else.)
+              // Default header — wordmark, plus history only when something
+              // is saved (an icon with nothing behind it is a mystery door).
               <>
                 <a href="/" class="app-header__brand flex-1">
                   ProMapper<span class="app-header__brand-dot">.</span>
                 </a>
-                <div class="app-header__actions">
-                  <button
-                    onClick={() =>
-                      historyDrawerOpen.value = !historyDrawerOpen.value}
-                    class="header-icon-btn"
-                    data-tip="History"
-                    data-tip-align="right"
-                    aria-label="View history"
-                  >
-                    <i class="fa fa-history" aria-hidden="true"></i>
-                  </button>
-                </div>
+                {hasHistory.value && (
+                  <div class="app-header__actions">
+                    <button
+                      onClick={() =>
+                        historyDrawerOpen.value = !historyDrawerOpen.value}
+                      class="header-icon-btn"
+                      data-tip="History"
+                      data-tip-align="right"
+                      aria-label="View history"
+                    >
+                      <i class="fa fa-history" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                )}
               </>
             )}
         </div>
@@ -884,20 +889,27 @@ export default function HomeIsland() {
               made in Melbourne
             </span>
           </span>
-          <span class="app-footer__controls">
-            <ThemeSwitcher />
-            <SoundToggle />
-            <button
-              type="button"
-              class="header-icon-btn footer-shortcuts-btn"
-              onClick={() => shortcutsOpen.value = true}
-              aria-label="Keyboard shortcuts"
-              data-tip="Shortcuts"
-              data-tip-align="right"
-            >
-              <i class="fa fa-keyboard" aria-hidden="true"></i>
-            </button>
-          </span>
+          {
+            /* The dials are workshop tools — they appear with the dashboard.
+            On the porch (no conversation yet) three mystery icons read as
+            intimidation, not invitation. */
+          }
+          {conversationData.value && (
+            <span class="app-footer__controls">
+              <ThemeSwitcher />
+              <SoundToggle />
+              <button
+                type="button"
+                class="header-icon-btn footer-shortcuts-btn"
+                onClick={() => shortcutsOpen.value = true}
+                aria-label="Keyboard shortcuts"
+                data-tip="Shortcuts"
+                data-tip-align="right"
+              >
+                <i class="fa fa-keyboard" aria-hidden="true"></i>
+              </button>
+            </span>
+          )}
         </div>
       </footer>
 
