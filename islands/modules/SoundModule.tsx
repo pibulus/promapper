@@ -23,6 +23,10 @@ interface Channel {
 
 // KPAB.fm is parked while the Pi stream is down (restore it to the top of
 // this list, with its nowplaying URL, when the pirate signal returns).
+// ponytail: when restoring, the Pi icecast MUST send
+// Access-Control-Allow-Origin: * — one CORS-less load failure flips the
+// session-wide corsBlocked flag and every station's meter drops to the
+// idle sway (upgrade path: per-channel flag if mixed-CORS stations happen).
 const CHANNELS: Channel[] = [
   {
     id: "groovesalad",
