@@ -38,6 +38,9 @@
     "update": "deno run -A -r https://fresh.deno.dev/update ."
   },
   "lint": {
+    "exclude": [
+      "static/styles.build.css"
+    ],
     "rules": {
       "tags": [
         "fresh",
@@ -53,12 +56,16 @@
       ]
     }
   },
+  "fmt": {
+    "exclude": [
+      "static/styles.build.css"
+    ]
+  },
   "exclude": [
     "**/_fresh/*",
     "node_modules/",
     "party/",
-    "workers/",
-    "static/styles.build.css"
+    "workers/"
   ],
   "imports": {
     "$fresh/": "https://deno.land/x/fresh@1.7.3/",
