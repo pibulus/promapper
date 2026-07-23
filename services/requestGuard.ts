@@ -116,6 +116,9 @@ async function verifyByoKey(key: string): Promise<Response | null> {
       "https://openrouter.ai/api/v1";
     const res = await fetch(`${base}/key`, {
       headers: { Authorization: `Bearer ${key}` },
+      // A slow OpenRouter must not stack open connections or stretch the
+      // fail-open window (cryptkeeper audit) — 5s then fail open once.
+      signal: AbortSignal.timeout(5000),
     });
     await res.body?.cancel();
     const ok = res.status !== 401 && res.status !== 403;

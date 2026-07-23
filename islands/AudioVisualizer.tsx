@@ -60,9 +60,15 @@ export default function AudioVisualizer({ analyser }: AudioVisualizerProps) {
         const x = i * (barWidth + gap);
         const y = (HEIGHT - h) / 2; // grow from the center, like a voice
         canvasCtx.fillStyle = COLORS[i % COLORS.length];
-        canvasCtx.beginPath();
-        canvasCtx.roundRect(x, y, barWidth, h, barWidth / 2);
-        canvasCtx.fill();
+        // roundRect is Safari 16+; without the guard an old WebView would
+        // throw inside rAF and silently freeze the bars forever.
+        if (canvasCtx.roundRect) {
+          canvasCtx.beginPath();
+          canvasCtx.roundRect(x, y, barWidth, h, barWidth / 2);
+          canvasCtx.fill();
+        } else {
+          canvasCtx.fillRect(x, y, barWidth, h);
+        }
       }
     }
 

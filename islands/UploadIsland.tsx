@@ -140,6 +140,11 @@ export default function UploadIsland() {
 
     return new Promise<void>((resolve) => {
       const mediaRecorder = mediaRecorderRef.current!;
+      // Detach from the ref BEFORE cleanup(): the stop event arrives on a
+      // LATER task, and cleanup nulls .onstop on whatever the ref points to —
+      // stripping the handler synchronously silently dropped the whole
+      // recording (rex audit, July 23).
+      mediaRecorderRef.current = null;
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, {
@@ -150,19 +155,15 @@ export default function UploadIsland() {
       };
 
       mediaRecorder.stop();
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-
-      if (recordingTimerRef.current) {
-        clearInterval(recordingTimerRef.current);
-        recordingTimerRef.current = null;
-      }
-
       cleanup();
     });
   }
 
   function cleanup() {
+    // Every recording exit path (manual stop, 10-min auto-stop, unmount)
+    // funnels here — the flag must reset HERE or an error remounts the hero
+    // stuck in a dead "listening…" state with no way back (rex audit).
+    isRecording.value = false;
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.onstop = null;
       if (mediaRecorderRef.current.state !== "inactive") {
@@ -307,6 +308,13 @@ export default function UploadIsland() {
         textInput.value = content;
         selectedFile.value = null;
       });
+      return;
+    }
+    if (!file.type.startsWith("audio/")) {
+      showToast(
+        "That file type isn't supported yet — audio or text files for now.",
+        "warning",
+      );
       return;
     }
     selectedFile.value = file;
