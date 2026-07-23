@@ -1,8 +1,9 @@
 /**
- * Audio Visualizer Island - Real-time frequency visualization
+ * Audio Visualizer Island — nine fat pill-bars dancing to one voice
  *
- * Uses Web Audio API AnalyserNode to display actual audio frequency data
- * Ported from Svelte AudioVisualizer.svelte
+ * Not a spectrum analyzer: the whole row breathes from a single smoothed
+ * level (center-weighted, per-bar wobble), growing from the middle like a
+ * voice, not from a lab bench. No chrome, no divisions, no numbers.
  */
 
 import { useEffect, useRef } from "preact/hooks";
@@ -11,87 +12,62 @@ interface AudioVisualizerProps {
   analyser: AnalyserNode | null;
 }
 
+const BAR_COUNT = 9;
+// Center-weighted envelope: the row reads as one voice swelling, not bands.
+const WEIGHTS = [0.45, 0.62, 0.8, 0.93, 1, 0.93, 0.8, 0.62, 0.45];
+// The badge-chip trio, saturated enough to sing on cream.
+const COLORS = ["#ff8fc7", "#4ecdc4", "#ffc46b"];
+
 export default function AudioVisualizer({ analyser }: AudioVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameIdRef = useRef<number | null>(null);
-  const dataArrayRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
-  const accentColorRef = useRef<string>("rgba(232, 131, 156, 0.8)");
 
   useEffect(() => {
-    if (!analyser || !canvasRef.current) {
-      console.warn("AudioVisualizer: No analyser or canvas available");
-      return;
-    }
+    if (!analyser || !canvasRef.current) return;
 
     const canvas = canvasRef.current;
     const canvasCtx = canvas.getContext("2d");
+    if (!canvasCtx) return;
 
-    if (!canvasCtx) {
-      console.error("Failed to get canvas context");
-      return;
-    }
+    const data = new Uint8Array(new ArrayBuffer(analyser.frequencyBinCount));
+    let smoothed = 0;
 
-    // Read accent color from CSS variables
-    const accentColor = getComputedStyle(document.documentElement)
-      .getPropertyValue("--color-accent").trim();
-    if (accentColor) {
-      accentColorRef.current = accentColor;
-    }
-
-    // Initialize data array for frequency data
-    dataArrayRef.current = new Uint8Array(
-      new ArrayBuffer(analyser.frequencyBinCount),
-    );
-
-    // Animation draw function - ELEGANT BARS
     function draw() {
-      if (!analyser || !canvasCtx || !canvas || !dataArrayRef.current) return;
+      if (!analyser || !canvasCtx || !canvas) return;
+      animationFrameIdRef.current = requestAnimationFrame(draw);
+
+      analyser.getByteFrequencyData(data);
+      // One voice level from the speech-ish low bins.
+      const bins = Math.min(64, data.length);
+      let sum = 0;
+      for (let i = 0; i < bins; i++) sum += data[i];
+      const level = sum / bins / 255;
+      // Quick to rise, slow to fall — bars feel eager, not jittery.
+      smoothed += (level - smoothed) * (level > smoothed ? 0.35 : 0.12);
 
       const WIDTH = canvas.width;
       const HEIGHT = canvas.height;
+      const t = performance.now() / 1000;
+      canvasCtx.clearRect(0, 0, WIDTH, HEIGHT);
 
-      animationFrameIdRef.current = requestAnimationFrame(draw);
-
-      // Get frequency data from analyser
-      analyser.getByteFrequencyData(dataArrayRef.current);
-
-      // Clear canvas with subtle bg
-      canvasCtx.fillStyle = "rgba(0, 0, 0, 0.02)";
-      canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
-
-      // Sample fewer bars for cleaner look (every 4th bar)
-      const barCount = 48;
-      const barWidth = Math.floor(WIDTH / barCount) - 4;
-      const sampleStep = Math.floor(dataArrayRef.current.length / barCount);
-
-      for (let i = 0; i < barCount; i++) {
-        const dataIndex = i * sampleStep;
-        const value = dataArrayRef.current[dataIndex];
-        const barHeight = (value / 255) * HEIGHT * 0.8; // 80% max height
-
-        const x = i * (barWidth + 4) + 2;
-        const y = HEIGHT - barHeight;
-
-        // Gradient from accent to lighter
-        const gradient = canvasCtx.createLinearGradient(x, y, x, HEIGHT);
-        gradient.addColorStop(0, accentColorRef.current);
-        gradient.addColorStop(0.6, accentColorRef.current);
-        gradient.addColorStop(1, "rgba(0, 0, 0, 0.1)");
-
-        canvasCtx.fillStyle = gradient;
-
-        // Rounded bars
+      const gap = WIDTH * 0.028;
+      const barWidth = (WIDTH - gap * (BAR_COUNT - 1)) / BAR_COUNT;
+      for (let i = 0; i < BAR_COUNT; i++) {
+        // Per-bar wobble so the row dances instead of marching.
+        const wobble = 0.82 + 0.18 * Math.sin(t * (2.1 + i * 0.13) + i * 1.7);
+        const h = HEIGHT *
+          Math.min(1, 0.14 + 1.5 * smoothed * WEIGHTS[i] * wobble);
+        const x = i * (barWidth + gap);
+        const y = (HEIGHT - h) / 2; // grow from the center, like a voice
+        canvasCtx.fillStyle = COLORS[i % COLORS.length];
         canvasCtx.beginPath();
-        const radius = Math.min(barWidth / 2, 3);
-        canvasCtx.roundRect(x, y, barWidth, barHeight, [radius, radius, 0, 0]);
+        canvasCtx.roundRect(x, y, barWidth, h, barWidth / 2);
         canvasCtx.fill();
       }
     }
 
-    // Start animation
     draw();
 
-    // Cleanup
     return () => {
       if (animationFrameIdRef.current) {
         cancelAnimationFrame(animationFrameIdRef.current);
@@ -101,27 +77,12 @@ export default function AudioVisualizer({ analyser }: AudioVisualizerProps) {
   }, [analyser]);
 
   return (
-    <div
+    <canvas
+      ref={canvasRef}
       class="w-full"
-      style={{
-        background: "rgba(0, 0, 0, 0.03)",
-        border: "1.5px solid rgba(0, 0, 0, 0.1)",
-        borderRadius: "12px",
-        padding: "16px",
-        boxShadow: "inset 0 1px 3px rgba(0, 0, 0, 0.06)",
-      }}
-    >
-      <canvas
-        ref={canvasRef}
-        class="w-full"
-        width="1024"
-        height="120"
-        style={{
-          display: "block",
-          height: "60px",
-          borderRadius: "6px",
-        }}
-      />
-    </div>
+      width="720"
+      height="144"
+      style={{ display: "block", height: "72px" }}
+    />
   );
 }

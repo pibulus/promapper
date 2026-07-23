@@ -832,11 +832,12 @@ export default function HomeIsland() {
                         ))}
                       </h1>
                       <p class="mapper-hero-desc">
-                        Drop in a thought, a meeting, a scene, or a weekly
-                        check-in.
+                        Drop in a thought, a meeting, a scene, or a whole court
+                        case.
                       </p>
                       <p class="mapper-hero-caption">
-                        A friendly project map you can keep adding to.
+                        A friendly project map you can keep adding to, share
+                        around, and turn into documents.
                       </p>
                     </div>
                     <div class="mapper-card__panel">

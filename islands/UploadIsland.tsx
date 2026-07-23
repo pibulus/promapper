@@ -58,12 +58,6 @@ export default function UploadIsland() {
     isProcessing.value && !isRecording.value
   );
 
-  function formatTime(seconds: number): string {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
-  }
-
   async function startRecording() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -294,10 +288,29 @@ export default function UploadIsland() {
     }
   }
 
+  // Not just audio: text-ish files (notes, transcripts, subtitles) pour
+  // straight into the textarea — one press of Map it from there. PDFs get
+  // an honest no rather than a silent shrug.
+  const TEXT_FILE = /\.(txt|md|markdown|srt|vtt)$/i;
+
   const stageFile = (file: File) => {
+    isDragActive.value = false;
+    if (file.type === "application/pdf") {
+      showToast(
+        "PDFs can't come in yet — audio or text files for now.",
+        "warning",
+      );
+      return;
+    }
+    if (file.type.startsWith("text/") || TEXT_FILE.test(file.name)) {
+      file.text().then((content) => {
+        textInput.value = content;
+        selectedFile.value = null;
+      });
+      return;
+    }
     selectedFile.value = file;
     textInput.value = "";
-    isDragActive.value = false;
   };
 
   const handleAudioUpload = (e: Event) => {
@@ -445,34 +458,22 @@ export default function UploadIsland() {
         >
           {isRecording.value
             ? (
+              // No timer, no progress bar — numbers make it a stopwatch. A
+              // breathing dot, a soft word, and the bars dancing to your
+              // voice. Words-only nudge near the ten-minute auto-stop.
               <div class="mapper-record-visual">
                 <div class="mapper-record-visual__top">
-                  <div class="mapper-record-label">Recording</div>
-                  <div class="mapper-record-time">
-                    {formatTime(recordingTime.value)}
-                  </div>
+                  <span class="mapper-record-dot" aria-hidden="true"></span>
+                  <div class="mapper-record-label">listening…</div>
                 </div>
-                <div class="mapper-record-bar">
-                  <div
-                    style={{
-                      width: `${
-                        (recordingTime.value / MAX_RECORDING_TIME) * 100
-                      }%`,
-                      background: showTimeWarning.value
-                        ? "var(--status-amber-ink)"
-                        : "var(--accent-fill)",
-                    }}
-                  >
-                  </div>
-                </div>
-                {showTimeWarning.value && (
-                  <p class="mapper-record-warning">
-                    Auto-stop in {formatTime(timeRemaining.value)} — wrap it up.
-                  </p>
-                )}
                 <div class="mapper-record-visualizer">
                   <AudioVisualizer analyser={analyserRef.current} />
                 </div>
+                {showTimeWarning.value && (
+                  <p class="mapper-record-warning">
+                    coming up on ten minutes — wrap it up soon.
+                  </p>
+                )}
               </div>
             )
             : (
@@ -492,7 +493,7 @@ export default function UploadIsland() {
                   ref={textAreaRef}
                   class="mapper-textarea w-full resize-none"
                   rows={6}
-                  placeholder="Talk it out, paste what you've got, or drop a recording."
+                  placeholder="Talk it out, catch it live, or drop in what you've got."
                   aria-label="Conversation content or transcription input"
                   value={textInput.value}
                   onInput={(e) => {
@@ -533,14 +534,14 @@ export default function UploadIsland() {
                 <button
                   type="button"
                   class="mapper-clip-btn"
-                  aria-label="Add an audio file"
+                  aria-label="Add a file"
                   onClick={(event) => {
                     event.stopPropagation();
                     fileInputRef.current?.click();
                   }}
                 >
                   <span aria-hidden="true">+</span>
-                  <span>audio</span>
+                  <span>file</span>
                 </button>
               </>
             )}
@@ -587,7 +588,7 @@ export default function UploadIsland() {
 
       <input
         type="file"
-        accept="audio/*"
+        accept="audio/*,.txt,.md,.markdown,.srt,.vtt,text/plain,text/markdown"
         ref={fileInputRef}
         onChange={handleAudioUpload}
         style={{ display: "none" }}
