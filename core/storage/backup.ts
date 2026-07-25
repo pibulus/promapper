@@ -10,29 +10,37 @@
 import { ts } from "./dates.ts";
 
 import type { StoredConversation } from "./localStorage.ts";
+import type { ExportSnapshot } from "./exportSnapshots.ts";
 
 export const BACKUP_FORMAT = "promapper-backup";
-export const BACKUP_VERSION = 1;
+// v2 adds `snapshots` (saved markdown exports). Backups were conversation-only,
+// so "back up, wipe the browser, restore" silently lost every saved export —
+// data loss in the one path users are told to trust. Reading stays tolerant:
+// a v1 file just has no snapshots array.
+export const BACKUP_VERSION = 2;
 
 export interface BackupFile {
   format: string;
   version: number;
   exportedAt: string;
   conversations: StoredConversation[];
+  snapshots?: ExportSnapshot[];
 }
 
 /**
- * Build a backup payload from the conversations map.
+ * Build a backup payload from the conversations map (+ their saved exports).
  */
 export function buildBackup(
   conversations: Record<string, StoredConversation>,
   now: string,
+  snapshots: ExportSnapshot[] = [],
 ): BackupFile {
   return {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
     exportedAt: now,
     conversations: Object.values(conversations),
+    snapshots,
   };
 }
 
@@ -42,8 +50,31 @@ export function buildBackup(
 export function serializeBackup(
   conversations: Record<string, StoredConversation>,
   now: string,
+  snapshots: ExportSnapshot[] = [],
 ): string {
-  return JSON.stringify(buildBackup(conversations, now), null, 2);
+  return JSON.stringify(buildBackup(conversations, now, snapshots), null, 2);
+}
+
+/**
+ * Pull saved exports out of a backup file. Tolerant like parseBackup: a v1
+ * file (or any shape without a snapshots array) yields none rather than
+ * throwing — recovery must never be trapped by a format bump.
+ */
+export function parseBackupSnapshots(raw: string): ExportSnapshot[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return [];
+  }
+  const list = (parsed as BackupFile)?.snapshots;
+  if (!Array.isArray(list)) return [];
+  return list.filter((s): s is ExportSnapshot =>
+    !!s && typeof s === "object" &&
+    typeof (s as ExportSnapshot).id === "string" &&
+    typeof (s as ExportSnapshot).conversation_id === "string" &&
+    typeof (s as ExportSnapshot).content === "string"
+  );
 }
 
 /**

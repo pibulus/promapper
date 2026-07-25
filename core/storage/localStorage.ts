@@ -7,6 +7,12 @@
 
 import type { ConversationData } from "../types/conversation-data.ts";
 import { ts } from "./dates.ts";
+import {
+  clearAllSnapshots,
+  deleteSnapshotsFor,
+  type ExportSnapshot,
+  restoreSnapshots,
+} from "./exportSnapshots.ts";
 
 // Storage keys
 export const CONVERSATIONS_KEY = "project_mapper_conversations";
@@ -263,21 +269,30 @@ export function getConversationList(): StoredConversation[] {
 }
 
 /**
- * Delete a conversation
+ * Delete a conversation. Returns the saved exports that went with it, so the
+ * undo path can hand them back (see restoreConversation).
  */
-export function deleteConversation(id: string): void {
-  if (typeof window === "undefined") return;
+export function deleteConversation(id: string): ExportSnapshot[] {
+  if (typeof window === "undefined") return [];
 
   const conversations = getAllConversations();
   delete conversations[id];
 
   safeSetItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
 
+  // Saved exports describe THIS conversation — they can't outlive it. Without
+  // this they orphaned forever: invisible (the drawer filters by a
+  // conversation_id that no longer resolves) but still eating the quota that
+  // conversation autosave depends on.
+  const removedSnapshots = deleteSnapshotsFor(id);
+
   // Clear active ID if it was this conversation
   const activeId = getActiveConversationId();
   if (activeId === id) {
     localStorage.removeItem(ACTIVE_ID_KEY);
   }
+
+  return removedSnapshots;
 }
 
 /**
@@ -285,12 +300,19 @@ export function deleteConversation(id: string): void {
  * delete-conversation undo). Unlike saveConversation, this preserves the
  * original id/createdAt/updatedAt/starred instead of re-deriving them, so an
  * undo restores the record byte-for-byte and keeps its place in the list.
+ *
+ * Pass the snapshots deleteConversation returned to bring its saved exports
+ * back too — otherwise undo silently restores the conversation without them.
  */
-export function restoreConversation(stored: StoredConversation): void {
+export function restoreConversation(
+  stored: StoredConversation,
+  snapshots: ExportSnapshot[] = [],
+): void {
   if (typeof window === "undefined" || !stored?.id) return;
   const conversations = getAllConversations();
   conversations[stored.id] = stored;
   safeSetItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+  restoreSnapshots(snapshots);
 }
 
 /**
@@ -316,6 +338,10 @@ export function clearAllConversations(): void {
   localStorage.removeItem(ACTIVE_ID_KEY);
   localStorage.removeItem(LEGACY_CONVERSATIONS_KEY);
   localStorage.removeItem(LEGACY_ACTIVE_ID_KEY);
+  // Saved exports are conversation data too — leaving them behind made
+  // "clear everything" a lie, and left documents on the device after the
+  // user believed they'd wiped it.
+  clearAllSnapshots();
 }
 
 // ===================================================================

@@ -1,6 +1,7 @@
 import { assertEquals } from "./_assert.ts";
 import {
   BACKUP_FORMAT,
+  BACKUP_VERSION,
   buildBackup,
   mergeBackup,
   parseBackup,
@@ -27,7 +28,9 @@ const now = "2026-06-21T12:00:00.000Z";
 Deno.test("buildBackup wraps conversations with format/version/timestamp", () => {
   const backup = buildBackup({ a: conv("a", now) }, now);
   assertEquals(backup.format, BACKUP_FORMAT);
-  assertEquals(backup.version, 1);
+  // Track the constant, not a literal — the version bumps when the payload
+  // grows (v2 added snapshots) and the shape assertions below are the point.
+  assertEquals(backup.version, BACKUP_VERSION);
   assertEquals(backup.exportedAt, now);
   assertEquals(backup.conversations.length, 1);
 });

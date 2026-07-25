@@ -9,13 +9,19 @@ import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef, useState } from "preact/hooks";
 import {
   buildExportPrompt,
-  FORMAT_MISMATCH_PREFIX,
   markdownPrompts,
+  parseFormatMismatch,
   pickExportFormats,
 } from "../utils/markdownPrompts.ts";
 import { markdownService } from "../utils/markdownService.ts";
 import { showToast, showUndoToast } from "../utils/toast.ts";
 import { conversationData } from "@signals/conversationStore.ts";
+import {
+  type ExportSnapshot,
+  getAllSnapshots,
+  getSnapshotsFor,
+  writeSnapshots,
+} from "../core/storage/exportSnapshots.ts";
 
 interface MarkdownMakerDrawerProps {
   isOpen: boolean;
@@ -24,13 +30,10 @@ interface MarkdownMakerDrawerProps {
   conversationId: string;
 }
 
-interface SavedOutput {
-  id: string;
-  conversation_id: string;
-  content: string;
-  prompt: string;
-  created_at: string;
-}
+// The snapshot shape + its persistence live in core/storage/exportSnapshots.ts
+// (quota-safe writes, cleanup on conversation delete, backup/import). This
+// island used to own the localStorage key directly and had none of that.
+type SavedOutput = ExportSnapshot;
 
 export default function MarkdownMakerDrawer(
   { isOpen, onClose, transcript, conversationId }: MarkdownMakerDrawerProps,
@@ -127,19 +130,9 @@ export default function MarkdownMakerDrawer(
     return () => window.removeEventListener("keydown", handleEscape);
   }, [isOpen, onClose]);
 
-  // Load saved outputs from localStorage
+  // Load saved outputs for this conversation.
   function loadSavedOutputs() {
-    try {
-      const stored = localStorage.getItem("markdown_outputs");
-      if (stored) {
-        const allOutputs: SavedOutput[] = JSON.parse(stored);
-        savedOutputs.value = allOutputs.filter((o) =>
-          o.conversation_id === conversationId
-        );
-      }
-    } catch (err) {
-      console.error("Error loading saved outputs:", err);
-    }
+    savedOutputs.value = getSnapshotsFor(conversationId);
   }
 
   // Save output to localStorage — updates the loaded snapshot in place when one
@@ -147,50 +140,53 @@ export default function MarkdownMakerDrawer(
   function saveOutput() {
     if (!markdown.value || !conversationId) return;
 
-    try {
-      const label = selectedPromptId.value
-        ? markdownPrompts.find((p) => p.id === selectedPromptId.value)?.label ||
-          "Custom"
-        : "Custom";
+    const label = selectedPromptId.value
+      ? markdownPrompts.find((p) => p.id === selectedPromptId.value)?.label ||
+        "Custom"
+      : "Custom";
 
-      const stored = localStorage.getItem("markdown_outputs");
-      const allOutputs: SavedOutput[] = stored ? JSON.parse(stored) : [];
+    const allOutputs = getAllSnapshots();
+    const existingIndex = activeDraftId.value
+      ? allOutputs.findIndex((o) => o.id === activeDraftId.value)
+      : -1;
 
-      const existingIndex = activeDraftId.value
-        ? allOutputs.findIndex((o) => o.id === activeDraftId.value)
-        : -1;
-
-      if (existingIndex >= 0) {
-        // Update in place — keep id + created_at, refresh content + prompt.
-        allOutputs[existingIndex] = {
-          ...allOutputs[existingIndex],
-          content: markdown.value,
-          prompt: label,
-        };
-      } else {
-        const newOutput: SavedOutput = {
-          id: crypto.randomUUID(),
-          conversation_id: conversationId,
-          content: markdown.value,
-          prompt: label,
-          created_at: new Date().toISOString(),
-        };
-        allOutputs.push(newOutput);
-        activeDraftId.value = newOutput.id; // subsequent saves edit this one
-      }
-
-      localStorage.setItem("markdown_outputs", JSON.stringify(allOutputs));
-      savedOutputs.value = allOutputs.filter((o) =>
-        o.conversation_id === conversationId
-      );
-      showToast(
-        existingIndex >= 0 ? "Snapshot updated!" : "Output saved!",
-        "success",
-      );
-    } catch (err) {
-      console.error("Error saving output:", err);
-      showToast("Failed to save output", "error");
+    let newId: string | null = null;
+    if (existingIndex >= 0) {
+      // Update in place — keep id + created_at, refresh content + prompt.
+      allOutputs[existingIndex] = {
+        ...allOutputs[existingIndex],
+        content: markdown.value,
+        prompt: label,
+      };
+    } else {
+      newId = crypto.randomUUID();
+      allOutputs.push({
+        id: newId,
+        conversation_id: conversationId,
+        content: markdown.value,
+        prompt: label,
+        created_at: new Date().toISOString(),
+      });
     }
+
+    // Only claim success — and only adopt the new id as the active draft — if
+    // the write actually landed. Setting activeDraftId before the write meant a
+    // quota failure left it pointing at a snapshot that was never stored, so
+    // the NEXT save found no match and silently forked a duplicate.
+    if (!writeSnapshots(allOutputs)) {
+      showToast(
+        "Couldn't save the snapshot — storage is full. Copy or download it instead.",
+        "error",
+        6000,
+      );
+      return;
+    }
+    if (newId) activeDraftId.value = newId;
+    loadSavedOutputs();
+    showToast(
+      existingIndex >= 0 ? "Snapshot updated!" : "Output saved!",
+      "success",
+    );
   }
 
   // Load a saved snapshot back into the editor for tweaking.
@@ -202,37 +198,32 @@ export default function MarkdownMakerDrawer(
 
   // Delete saved output — undo toast is the safety net, no confirm friction.
   function deleteOutput(id: string) {
-    try {
-      const stored = localStorage.getItem("markdown_outputs");
-      if (!stored) return;
-      const allOutputs: SavedOutput[] = JSON.parse(stored);
-      const removed = allOutputs.find((o) => o.id === id);
-      const filtered = allOutputs.filter((o) => o.id !== id);
-      localStorage.setItem("markdown_outputs", JSON.stringify(filtered));
-      savedOutputs.value = filtered.filter((o) =>
-        o.conversation_id === conversationId
-      );
-      // Deleting the snapshot being edited: future saves become a new one.
-      if (activeDraftId.value === id) activeDraftId.value = null;
-      if (!removed) return;
-      showUndoToast("Snapshot deleted", () => {
-        try {
-          const current: SavedOutput[] = JSON.parse(
-            localStorage.getItem("markdown_outputs") ?? "[]",
-          );
-          current.push(removed);
-          localStorage.setItem("markdown_outputs", JSON.stringify(current));
-          savedOutputs.value = current.filter((o) =>
-            o.conversation_id === conversationId
-          );
-        } catch (err) {
-          console.error("Undo restore failed:", err);
-        }
-      });
-    } catch (err) {
-      console.error("Error deleting output:", err);
-      showToast("Failed to delete output", "error");
+    const allOutputs = getAllSnapshots();
+    const removed = allOutputs.find((o) => o.id === id);
+    if (!removed) return;
+
+    if (!writeSnapshots(allOutputs.filter((o) => o.id !== id))) {
+      showToast("Couldn't delete the snapshot — try again", "error");
+      return;
     }
+    // Deleting the snapshot being edited: future saves become a new one.
+    if (activeDraftId.value === id) activeDraftId.value = null;
+    loadSavedOutputs();
+
+    showUndoToast("Snapshot deleted", () => {
+      // Tell the truth if the restore can't land (storage filled up in the
+      // meantime). This used to console.error only, so a failed undo looked
+      // exactly like a successful one and the snapshot was just gone.
+      if (!writeSnapshots([...getAllSnapshots(), removed])) {
+        showToast(
+          "Couldn't bring that snapshot back — storage is full.",
+          "error",
+          6000,
+        );
+        return;
+      }
+      loadSavedOutputs();
+    });
   }
 
   // Generate markdown from preset prompt
@@ -257,10 +248,17 @@ export default function MarkdownMakerDrawer(
       );
       // The model can decline a bad fit — surface that as a hint, not a
       // "success" that pretends the refusal is your export.
-      if (result.trim().startsWith(FORMAT_MISMATCH_PREFIX)) {
-        formatHint.value = result.trim()
-          .slice(FORMAT_MISMATCH_PREFIX.length).trim();
+      const mismatch = parseFormatMismatch(result);
+      if (mismatch) {
+        formatHint.value = mismatch;
         showToast("That format doesn't quite fit this one", "info");
+        return;
+      }
+      // An empty (or whitespace-only) reply is a failed generation, not a
+      // blank document — showing an empty editor read as "your export is gone".
+      if (!result.trim()) {
+        error.value = "The export came back empty — try again.";
+        showToast("The export came back empty — try again", "error");
         return;
       }
       markdown.value = result;
@@ -297,6 +295,11 @@ export default function MarkdownMakerDrawer(
         transcript,
         conversationData.value ?? undefined,
       );
+      if (!result.trim()) {
+        error.value = "The export came back empty — try again.";
+        showToast("The export came back empty — try again", "error");
+        return;
+      }
       markdown.value = result;
       activeDraftId.value = null; // fresh generation = a new snapshot
       showToast("Markdown generated!", "success");

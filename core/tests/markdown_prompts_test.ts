@@ -10,6 +10,7 @@ import {
   EXPORT_SLOTS,
   FORMAT_MISMATCH_PREFIX,
   markdownPrompts,
+  parseFormatMismatch,
   pickExportFormats,
 } from "../../utils/markdownPrompts.ts";
 
@@ -102,4 +103,51 @@ Deno.test("picker: always exactly six, unique, real formats", () => {
   assertEquals(new Set(picked.map((p) => p.id)).size, EXPORT_SLOTS);
   const ids = new Set(markdownPrompts.map((p) => p.id));
   for (const p of picked) assert(ids.has(p.id));
+});
+
+// ===================================================================
+// FORMAT-MISMATCH PARSING
+// The construction side was tested; the PARSE side wasn't. A model that
+// wraps the sentinel in a code fence or bolds it used to produce a
+// "successful export" whose whole body was the refusal sentence.
+// ===================================================================
+
+Deno.test("mismatch: the plain contract still parses", () => {
+  assertEquals(
+    parseFormatMismatch(`${FORMAT_MISMATCH_PREFIX} Try Summary instead.`),
+    "Try Summary instead.",
+  );
+});
+
+Deno.test("mismatch: survives leading blank lines, fences, and bold", () => {
+  const shapes = [
+    `\n\n${FORMAT_MISMATCH_PREFIX} Try Summary instead.`,
+    "```\n" + FORMAT_MISMATCH_PREFIX + " Try Summary instead.\n```",
+    `**${FORMAT_MISMATCH_PREFIX}** Try Summary instead.`,
+  ];
+  for (const raw of shapes) {
+    const parsed = parseFormatMismatch(raw);
+    assert(parsed !== null, `not detected: ${JSON.stringify(raw)}`);
+    assert(
+      parsed!.includes("Summary"),
+      `message lost: ${JSON.stringify(parsed)}`,
+    );
+  }
+});
+
+Deno.test("mismatch: a real document is never mistaken for a refusal", () => {
+  assertEquals(parseFormatMismatch("# Minutes\n\nWe shipped the thing."), null);
+  // Only the FIRST non-empty line counts — a document that discusses the
+  // sentinel later is still a document.
+  assertEquals(
+    parseFormatMismatch(
+      `# Notes\n\nWe saw ${FORMAT_MISMATCH_PREFIX} in a log.`,
+    ),
+    null,
+  );
+});
+
+Deno.test("mismatch: a bare sentinel still yields a usable sentence", () => {
+  const parsed = parseFormatMismatch(FORMAT_MISMATCH_PREFIX);
+  assert(parsed && parsed.length > 0);
 });

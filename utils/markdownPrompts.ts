@@ -27,6 +27,33 @@ export interface MarkdownPrompt {
 export const FORMAT_MISMATCH_PREFIX = "FORMAT_MISMATCH:";
 
 /**
+ * Detect a format-mismatch refusal and return the friendly sentence, or null
+ * for a normal export.
+ *
+ * Deliberately looser than `startsWith`: the model is told to lead with the
+ * sentinel, but a stray code fence, a `**bold**` wrapper, or a leading blank
+ * line used to turn a refusal into a "successful export" whose entire content
+ * was the refusal sentence. We only look at the FIRST non-empty line, so a
+ * genuine document that happens to mention the token later is unaffected.
+ */
+export function parseFormatMismatch(result: string): string | null {
+  // First line with real content — skipping a leading code fence, which the
+  // model adds despite being told not to, and which would otherwise hide the
+  // sentinel behind a "```" line.
+  const firstLine = result
+    .split("\n")
+    .find((l) => l.trim() && !l.trim().startsWith("```")) ?? "";
+  const idx = firstLine.indexOf(FORMAT_MISMATCH_PREFIX);
+  if (idx === -1) return null;
+  // Everything after the sentinel, minus markdown noise the model may add.
+  const message = firstLine
+    .slice(idx + FORMAT_MISMATCH_PREFIX.length)
+    .replace(/[*`_]/g, "")
+    .trim();
+  return message || "That format doesn't quite fit this conversation.";
+}
+
+/**
  * Shared grounding preamble — the server wraps the transcript in labeled
  * context blocks (see core/export/exportContext.ts); this tells every format
  * to actually use them instead of re-deriving from raw text.

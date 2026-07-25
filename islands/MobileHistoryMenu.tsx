@@ -23,8 +23,14 @@ import {
 import {
   mergeBackup,
   parseBackup,
+  parseBackupSnapshots,
   serializeBackup,
 } from "../core/storage/backup.ts";
+import {
+  getAllSnapshots,
+  mergeSnapshots,
+  writeSnapshots,
+} from "../core/storage/exportSnapshots.ts";
 import {
   conversationData,
   historyDrawerOpen as isOpen,
@@ -199,7 +205,9 @@ export default function MobileHistoryMenu() {
       const removed = loadConversation(id);
       const wasActive = conversationData.value?.conversation.id === id;
 
-      deleteConversation(id);
+      // Deleting also takes the conversation's saved exports; they come back
+      // with it on undo, so the undo isn't quietly lossy.
+      const removedSnapshots = deleteConversation(id);
       if (wasActive) conversationData.value = null;
 
       refreshList();
@@ -209,7 +217,7 @@ export default function MobileHistoryMenu() {
         const title = removed.conversation.title?.slice(0, 40) ||
           "conversation";
         showUndoToast(`Deleted "${title}"`, () => {
-          restoreConversation(removed);
+          restoreConversation(removed, removedSnapshots);
           if (wasActive) conversationData.value = removed;
           refreshList();
         });
@@ -240,6 +248,7 @@ export default function MobileHistoryMenu() {
       const json = serializeBackup(
         getAllConversations(),
         new Date().toISOString(),
+        getAllSnapshots(),
       );
       const blob = new Blob([json], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -306,6 +315,13 @@ export default function MobileHistoryMenu() {
         );
         if (importInputRef.current) importInputRef.current.value = "";
         return;
+      }
+      // Saved exports ride along (v2 backups). Restored AFTER the conversations
+      // write succeeds, so a quota failure above doesn't leave snapshots
+      // pointing at conversations that never landed. A v1 backup yields none.
+      const importedSnapshots = parseBackupSnapshots(text);
+      if (importedSnapshots.length) {
+        writeSnapshots(mergeSnapshots(getAllSnapshots(), importedSnapshots));
       }
       // Reconcile the open conversation: if the import brought a newer copy of
       // it, refresh the in-memory signal so a later autosave can't clobber the
