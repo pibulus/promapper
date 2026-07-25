@@ -277,6 +277,14 @@
     transform var(--transition-fast);
 }
 
+/* D3 owns SVG transforms — the sim rewrites them every tick, and the
+   universal rule above made the browser cancel/restart a CSS transition
+   per node per tick while the map settles. Class-based transitions on
+   SVG elements still win over this reset (higher specificity). */
+svg * {
+  transition: none;
+}
+
 html,
 body {
   /* Warm solid base under everything so no dark browser bg ever peeks through
@@ -1732,21 +1740,28 @@ body {
 .skeleton {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(
-    90deg,
-    var(--soft-cream) 25%,
-    var(--soft-cream-dark) 37%,
-    var(--soft-cream) 63%
-  );
-  background-size: 400% 100%;
-  animation: skeleton-loading 1.4s ease infinite;
+  background: var(--soft-cream);
   border-radius: 12px;
 }
 
+/* The shimmer is a transform-only sweep (perf law: no background-position
+   loops) — a soft band riding across on the compositor. */
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 30%,
+    var(--soft-cream-dark) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  animation: skeleton-loading 1.4s ease infinite;
+}
+
 .skeleton-pulse {
-  animation:
-    skeleton-loading 1.4s ease infinite,
-    subtle-scale 2s ease-in-out infinite;
+  animation: subtle-scale 2s ease-in-out infinite;
 }
 
 .skeleton-line {
@@ -1761,11 +1776,8 @@ body {
 }
 
 @keyframes skeleton-loading {
-  0% {
-    background-position: 100% 0;
-  }
   100% {
-    background-position: -100% 0;
+    transform: translateX(100%);
   }
 }
 
@@ -7001,9 +7013,10 @@ a:focus-visible {
      vertical padding + the safe-area inset. */
   padding: 0.3rem 0 calc(0.3rem + env(safe-area-inset-bottom, 0px));
   border-top: 2px solid var(--color-border);
-  background: rgba(255, 250, 245, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  /* Frost without the filter (same trick as the header): a high-opacity
+     fill reads like the old blur(12px) minus re-blurring everything that
+     scrolls under this fixed bar. */
+  background: rgba(255, 250, 245, 0.97);
   font-family: var(--font-mono);
   font-size: var(--tiny-size);
   color: var(--color-text-secondary);
@@ -7674,9 +7687,10 @@ label {
   align-items: center;
   gap: 0.5rem;
   padding: 0.45rem 0.55rem;
-  background: rgba(255, 252, 248, 0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  /* Frost without the filter (header trick): this pill sits OVER the live
+     visualizer + transcript, both repainting every frame — blur here made
+     the compositor resample all of it per frame for the whole recording. */
+  background: rgba(255, 252, 248, 0.96);
   border: 2px solid rgba(0, 0, 0, 0.15);
   border-radius: 999px;
   box-shadow: 4px 4px 0 0 rgba(30, 23, 20, 0.1);
@@ -7684,7 +7698,7 @@ label {
 }
 
 .recording-dock__pill.is-recording {
-  background: rgba(255, 245, 248, 0.94);
+  background: rgba(255, 245, 248, 0.97);
   border-color: color-mix(
     in srgb,
     var(--color-accent) 45%,

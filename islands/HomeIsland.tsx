@@ -285,6 +285,14 @@ export default function HomeIsland() {
   const lastSpeechRef = useRef<number>(0);
   const chunkStartRef = useRef<number>(0);
 
+  // Belt: recording is live-session-gated today, and the session effect's
+  // cleanup stops it on unmount — but if a record path ever appears outside
+  // a session, don't strand the silence monitor + its AudioContext.
+  useEffect(() => () => {
+    if (silenceMonitorRef.current) clearInterval(silenceMonitorRef.current);
+    audioCtxRef.current?.close().catch(() => {});
+  }, []);
+
   // Start/stop PartyKit live sync when liveSession changes
   useEffect(() => {
     if (!session) {

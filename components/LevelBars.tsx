@@ -41,7 +41,7 @@ export default function LevelBars({ stream }: { stream: MediaStream | null }) {
     return () => {
       cancelAnimationFrame(raf);
       source.disconnect();
-      ctx.close();
+      ctx.close().catch(() => {});
     };
   }, [stream]);
 

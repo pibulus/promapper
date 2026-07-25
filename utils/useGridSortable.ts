@@ -105,6 +105,12 @@ export function useGridSortable(options: GridSortableOptions) {
     } | null
   >(null);
 
+  // The teardown that pairs with the listeners a drag ACTUALLY registered.
+  // Handlers are recreated every render, so the unmount effect's captured
+  // teardown() (render 1's) removes nothing once the component has
+  // re-rendered — this ref always holds the matching closure.
+  const activeTeardown = useRef<(() => void) | null>(null);
+
   const reducedMotion = () =>
     typeof matchMedia !== "undefined" &&
     matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -248,6 +254,7 @@ export function useGridSortable(options: GridSortableOptions) {
     globalThis.addEventListener("pointerup", onUp);
     globalThis.addEventListener("pointercancel", onUp);
     globalThis.addEventListener("keydown", onDragKeyDown);
+    activeTeardown.current = teardown;
   }
 
   // Escape aborts the drag — routed through the pointercancel path so the
@@ -361,6 +368,7 @@ export function useGridSortable(options: GridSortableOptions) {
     globalThis.removeEventListener("pointerup", onUp);
     globalThis.removeEventListener("pointercancel", onUp);
     globalThis.removeEventListener("keydown", onDragKeyDown);
+    activeTeardown.current = null;
   }
 
   function onUp(event: PointerEvent) {
@@ -423,7 +431,7 @@ export function useGridSortable(options: GridSortableOptions) {
       if (session.current?.autoScrollRAF != null) {
         cancelAnimationFrame(session.current.autoScrollRAF);
       }
-      teardown();
+      activeTeardown.current?.();
       session.current = null;
     };
   }, []);

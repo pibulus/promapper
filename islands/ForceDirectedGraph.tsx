@@ -313,7 +313,7 @@ export default function ForceDirectedGraph(
 
       // Generate PNG
       const dataUrl = await htmlToImage.toPng(container, {
-        backgroundColor: "#ffffff",
+        backgroundColor: "#fffef7",
       });
 
       // Download

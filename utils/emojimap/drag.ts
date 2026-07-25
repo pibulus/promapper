@@ -146,8 +146,11 @@ export function dragged(
       target.fy = target.y;
     }
     d._mergeTargetId = target?.id;
+    // Repaint only on target CHANGE — the classes can't differ between
+    // ticks otherwise, and out here this was two full-selection class
+    // sweeps per pointermove for nothing.
+    paintMergePreview(nodeGroup, d.id, target ? target.id : null);
   }
-  paintMergePreview(nodeGroup, d.id, target ? target.id : null);
 }
 
 export function dragended(
