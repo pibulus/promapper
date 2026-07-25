@@ -333,11 +333,15 @@ export function reconcileAppendResult(
   mine: ConversationData | null,
   theirs: ConversationData,
 ): ConversationData {
-  // Passthrough fast path: nothing to reconcile AND no delete memory to
-  // enforce or carry. (The old `mine === base` shortcut is gone on purpose:
-  // even with zero in-flight edits, persisted tombstones must still filter
-  // THEIRS, and the tombstone fields must survive onto the result — the
-  // server never echoes client-only fields.)
+  // Passthrough fast path. Today both callers (AudioRecorder append,
+  // liveAnalysis round) snapshot base from a live conversation, so base and
+  // mine are null only together — when there is no conversation, there is no
+  // delete memory either. If a caller ever passes base=null with a real
+  // MINE, route it through the full path instead: this shortcut skips
+  // tombstone enforcement. (The old `mine === base` shortcut is gone on
+  // purpose: even with zero in-flight edits, persisted tombstones must
+  // filter THEIRS, and the tombstone fields must survive onto the result —
+  // the server never echoes client-only fields.)
   if (!base || !mine) return theirs;
 
   const deletedLabels = new Set(mine.deletedTopicLabels ?? []);

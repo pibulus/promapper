@@ -299,7 +299,14 @@ export default function MobileHistoryMenu() {
       // harmless in practice, but cancelling makes it obviously-correct.
       cancelPendingSave();
       const merged = mergeBackup(getAllConversations(), parsed);
-      replaceAllConversations(merged);
+      if (!replaceAllConversations(merged)) {
+        showToast(
+          "Import couldn't be saved — storage is full. Free some space and try again.",
+          "error",
+        );
+        if (importInputRef.current) importInputRef.current.value = "";
+        return;
+      }
       // Reconcile the open conversation: if the import brought a newer copy of
       // it, refresh the in-memory signal so a later autosave can't clobber the
       // freshly-imported data with the stale version still held in memory.

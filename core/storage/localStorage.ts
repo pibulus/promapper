@@ -137,9 +137,11 @@ export function toggleConversationStarred(id: string): boolean {
  */
 export function replaceAllConversations(
   conversations: Record<string, StoredConversation>,
-): void {
-  if (typeof window === "undefined") return;
-  safeSetItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+): boolean {
+  if (typeof window === "undefined") return false;
+  // Callers must check this — a quota failure here previously vanished and
+  // the import UI showed a green "Imported N" toast over zero written bytes.
+  return safeSetItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
 }
 
 /**

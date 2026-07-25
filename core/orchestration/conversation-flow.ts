@@ -7,6 +7,16 @@
 
 import type { AIService, AudioPart } from "../ai/types.ts";
 import { analyzeText } from "./parallel-analysis.ts";
+import { MAX_LABEL_LENGTH } from "./conversation-ops.ts";
+
+// The data layer promises every caller is label-safe (rename, add-form, AI).
+// These clamps make the AI caller keep that promise — a runaway model reply
+// otherwise lands an unbounded label/description straight in the graph and
+// breaks the fit-to-view math the cap exists for.
+const clampLabel = (v: unknown) => String(v ?? "").slice(0, MAX_LABEL_LENGTH);
+const clampShort = (v: unknown, n: number) => String(v ?? "").slice(0, n);
+const clampOpt = (v: string | null | undefined, n: number) =>
+  v == null ? null : String(v).slice(0, n);
 import type {
   ActionItem,
   Conversation,
@@ -194,9 +204,9 @@ export async function processAudio(
     nodes = analysis.topics.nodes.map((node) => ({
       id: node.id,
       conversation_id: conversationId,
-      label: node.label,
-      emoji: node.emoji,
-      color: node.color,
+      label: clampLabel(node.label),
+      emoji: clampShort(node.emoji, 16),
+      color: clampShort(node.color, 32),
       created_at: new Date().toISOString(),
     }));
     edges = analysis.topics.edges.map((edge) => ({
@@ -210,9 +220,9 @@ export async function processAudio(
     actionItems = analysis.actionItems.map((item) => ({
       id: crypto.randomUUID(),
       conversation_id: conversationId,
-      description: item.description,
-      assignee: item.assignee,
-      due_date: item.due_date,
+      description: clampShort(item.description, 500),
+      assignee: clampOpt(item.assignee, 100),
+      due_date: clampOpt(item.due_date, 40),
       status: "pending" as const,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -264,9 +274,9 @@ function mapAnalysis(analysis: TextAnalysis, conversationId: string): {
     nodes: analysis.topics.nodes.map((node) => ({
       id: node.id,
       conversation_id: conversationId,
-      label: node.label,
-      emoji: node.emoji,
-      color: node.color,
+      label: clampLabel(node.label),
+      emoji: clampShort(node.emoji, 16),
+      color: clampShort(node.color, 32),
       created_at: new Date().toISOString(),
     })),
     edges: analysis.topics.edges.map((edge) => ({
@@ -280,9 +290,9 @@ function mapAnalysis(analysis: TextAnalysis, conversationId: string): {
     actionItems: analysis.actionItems.map((item) => ({
       id: crypto.randomUUID(),
       conversation_id: conversationId,
-      description: item.description,
-      assignee: item.assignee,
-      due_date: item.due_date,
+      description: clampShort(item.description, 500),
+      assignee: clampOpt(item.assignee, 100),
+      due_date: clampOpt(item.due_date, 40),
       status: "pending" as const,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

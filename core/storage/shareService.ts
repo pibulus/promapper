@@ -127,21 +127,43 @@ function normalizeSharedData(data: any): ConversationData | null {
   // SHARE_ROOM_LIMITS (nodes 300, edges 800, items 300).
   const arr = (v: unknown, n: number): unknown[] =>
     Array.isArray(v) ? v.slice(0, n) : [];
+  // Per-field length clamps to match the server sanitizer — array caps alone
+  // still let a crafted URL stuff a 1900-char node label into the viewer's
+  // graph. (Unknown extra fields are already dropped downstream by
+  // SharedConversationLoader's explicit field-by-field build.)
+  const str = (v: unknown, n: number) => String(v ?? "").slice(0, n);
 
   return {
     conversation: {
       id: String(data.conversation?.id ?? `shared_${Date.now()}`),
-      title: data.conversation?.title ?? data.title,
+      title: data.conversation?.title == null
+        ? data.title
+        : str(data.conversation.title, 200),
       source: String(data.conversation?.source ?? "shared"),
       transcript: String(data.conversation?.transcript ?? transcript.text),
       created_at: data.conversation?.created_at ?? data.timestamp,
     },
     transcript,
-    nodes: arr(data.nodes, 300),
+    nodes: arr(data.nodes, 300).map((n) => {
+      const node = n as Record<string, unknown>;
+      return {
+        ...node,
+        label: str(node?.label, 60),
+        emoji: str(node?.emoji, 16),
+        color: str(node?.color, 32),
+      };
+    }),
     edges: arr(data.edges, 800),
-    actionItems: arr(data.actionItems, 300),
+    actionItems: arr(data.actionItems, 300).map((i) => {
+      const item = i as Record<string, unknown>;
+      return {
+        ...item,
+        description: str(item?.description, 500),
+        assignee: item?.assignee == null ? null : str(item.assignee, 100),
+      };
+    }),
     statusUpdates: arr(data.statusUpdates, 300),
-    summary: data.summary,
+    summary: data.summary == null ? data.summary : str(data.summary, 10000),
   } as ConversationData;
 }
 
@@ -264,7 +286,15 @@ function createLocalShareLink(
   };
 
   shares[shareId] = shared;
-  localStorage.setItem(SHARES_KEY, JSON.stringify(shares));
+  try {
+    localStorage.setItem(SHARES_KEY, JSON.stringify(shares));
+  } catch {
+    // Quota. A share that didn't write must not hand back a working-looking
+    // link — fail with words the ShareButton's catch can show as-is.
+    throw new Error(
+      "No room to keep this share on this browser — storage is full.",
+    );
+  }
 
   return {
     shareId,
