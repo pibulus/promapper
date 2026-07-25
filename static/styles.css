@@ -1186,22 +1186,6 @@ body {
 }
 
 /* The seeded example's escape hatch — quiet meta text, one warm link. */
-.mapper-sample-note {
-  font-size: 0.8rem;
-  color: var(--color-text-secondary);
-  line-height: 1.4;
-}
-.mapper-sample-note button {
-  color: var(--accent-ink);
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-}
-.mapper-sample-note button:hover {
-  text-decoration-thickness: 2px;
-}
-
 .mapper-capture-actions {
   display: flex;
   gap: 0.75rem;

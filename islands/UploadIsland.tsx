@@ -11,16 +11,9 @@ import { soundBloom } from "@utils/sound.ts";
 import AudioVisualizer from "./AudioVisualizer.tsx";
 import { showToast } from "../utils/toast.ts";
 
-// The loaded spring: on desktop the textarea arrives holding a real example,
-// one press of "Map it" from the full wow — a cold visitor has nothing to
-// paste yet, so we hand them something. Mobile keeps record-first.
-const SAMPLE_TEXT =
-  "Band practice, Tuesday night. We finally nailed the bridge on Silver Static but the chorus still drags — Mel reckons it wants to sit two bpm faster, I think the drums are just late. Jess is re-recording the chorus stems before Friday so we can A/B both. The Tote gig is locked for the 14th but there's still no poster — Danny knows a screenprinter who owes him a favour, he's chasing it this week. Merch: no shirts, too dear, but yes to stickers — Mel's sketching the octopus design. The van rego is due and nobody wants to pay it, so we're splitting it three ways. Next practice we start the new one, the voice-memo song with the weird 7/8 riff.";
-
 // Module-level so pasted text survives the hero unmounting during processing
 // (an error remounts the hero — losing the paste would sting).
 const textInput = signal("");
-let seededExample = false;
 
 export default function UploadIsland() {
   const isProcessing = processingConversation;
@@ -47,7 +40,6 @@ export default function UploadIsland() {
     MAX_RECORDING_TIME - recordingTime.value
   );
   const hasText = useComputed(() => textInput.value.trim().length > 0);
-  const isSample = useComputed(() => textInput.value === SAMPLE_TEXT);
   const primaryLabel = useComputed(() => {
     if (isRecording.value) return "Stop recording";
     if (hasText.value) return "Map it";
@@ -433,19 +425,6 @@ export default function UploadIsland() {
     }
   };
 
-  // Seed the example once per page load, desktop only (mobile's natural
-  // first move is recording — don't bury the mic behind a clear-click).
-  useEffect(() => {
-    if (seededExample) return;
-    seededExample = true;
-    if (
-      !textInput.value &&
-      globalThis.matchMedia?.("(min-width: 768px)").matches
-    ) {
-      textInput.value = SAMPLE_TEXT;
-    }
-  }, []);
-
   useEffect(() => () => cleanup(), []);
 
   return (
@@ -554,21 +533,6 @@ export default function UploadIsland() {
               </>
             )}
         </div>
-
-        {isSample.value && !isRecording.value && (
-          <div class="mapper-sample-note">
-            just an example —{" "}
-            <button
-              type="button"
-              onClick={() => {
-                textInput.value = "";
-                textAreaRef.current?.focus();
-              }}
-            >
-              clear it, use yours
-            </button>
-          </div>
-        )}
 
         <div class="mapper-capture-actions">
           <button
