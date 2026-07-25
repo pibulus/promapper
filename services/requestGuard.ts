@@ -103,11 +103,27 @@ export function getByoKey(req: Request): string | null {
 // after that it's a cache hit. Fail OPEN on network trouble — the real AI
 // call will speak for itself; only an explicit 401/403 blocks.
 const BYO_VERIFY_TTL_MS = 3_600_000;
+// Keyed by SHA-256 of the key, not the key itself — a heap inspection must
+// never surface a live OpenRouter key verbatim. Capped so a botnet cycling
+// plausible-shaped garbage can't grow it without bound inside the TTL hour.
+const BYO_VERIFY_CACHE_MAX = 1000;
 const byoVerifyCache = new Map<string, { ok: boolean; expires: number }>();
+
+async function sha256Hex(value: string): Promise<string> {
+  const buf = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+  return Array.from(
+    new Uint8Array(buf),
+    (b) => b.toString(16).padStart(2, "0"),
+  ).join("");
+}
 
 async function verifyByoKey(key: string): Promise<Response | null> {
   const now = Date.now();
-  const cached = byoVerifyCache.get(key);
+  const cacheKey = await sha256Hex(key);
+  const cached = byoVerifyCache.get(cacheKey);
   if (cached && cached.expires > now) {
     return cached.ok ? null : byoRefusedResponse();
   }
@@ -125,7 +141,12 @@ async function verifyByoKey(key: string): Promise<Response | null> {
     for (const [k, v] of byoVerifyCache) {
       if (v.expires <= now) byoVerifyCache.delete(k);
     }
-    byoVerifyCache.set(key, { ok, expires: now + BYO_VERIFY_TTL_MS });
+    // Insertion-ordered Map: evicting the first key drops the oldest entry.
+    if (byoVerifyCache.size >= BYO_VERIFY_CACHE_MAX) {
+      const oldest = byoVerifyCache.keys().next().value;
+      if (oldest !== undefined) byoVerifyCache.delete(oldest);
+    }
+    byoVerifyCache.set(cacheKey, { ok, expires: now + BYO_VERIFY_TTL_MS });
     return ok ? null : byoRefusedResponse();
   } catch {
     return null;
@@ -322,7 +343,7 @@ async function enforceAuth(req: Request): Promise<Response | null> {
   return null;
 }
 
-function timingSafeEqual(a: string, b: string): boolean {
+export function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let result = 0;
   for (let i = 0; i < a.length; i++) {

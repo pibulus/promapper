@@ -5,6 +5,7 @@ import {
   deleteSession,
   validateSession,
 } from "@services/authSessions.ts";
+import { guardPublicRequest, timingSafeEqual } from "@services/requestGuard.ts";
 
 const COOKIE_NAME = "cm_session";
 const authToken = Deno.env.get("API_AUTH_TOKEN")?.trim() ?? null;
@@ -45,6 +46,13 @@ async function handleStatus(req: Request) {
 }
 
 async function handleLogin(req: Request) {
+  // The login endpoint was the one auth surface with no rate limit and a
+  // plain !== compare — every OTHER surface goes through guardRequest's
+  // timing-safe check. Rate-limit-only guard (no chicken-and-egg auth
+  // requirement) + the same constant-time compare close both gaps.
+  const limited = guardPublicRequest(req);
+  if (limited) return limited;
+
   let payload: { token?: string } = {};
   try {
     payload = await req.json();
@@ -52,7 +60,10 @@ async function handleLogin(req: Request) {
     // ignore
   }
 
-  if (!payload.token || payload.token.trim() !== authToken) {
+  if (
+    !payload.token || !authToken ||
+    !timingSafeEqual(payload.token.trim(), authToken)
+  ) {
     return new Response(JSON.stringify({ error: "Invalid token" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },

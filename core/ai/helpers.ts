@@ -54,7 +54,11 @@ export async function withRetry<T>(
           .test(msg) || err instanceof TypeError;
       lastErr = err;
       if (!transient || i === tries - 1) throw err;
-      await new Promise((r) => setTimeout(r, baseMs * 2 ** i));
+      // Jitter (0.5x–1.5x) so concurrent isolates retrying the same provider
+      // blip don't re-hit it in lockstep.
+      await new Promise((r) =>
+        setTimeout(r, baseMs * 2 ** i * (0.5 + Math.random()))
+      );
     }
   }
   throw lastErr;

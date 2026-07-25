@@ -25,6 +25,18 @@ export const handler: Handlers = {
       );
     }
 
+    // Same content-length precheck every other JSON POST route does — this
+    // was the one that skipped it. Non-AI route, so the stake is memory, not
+    // billing; the worker's sanitizer bounds the snapshot downstream.
+    const MAX_CREATE_BODY = 5 * 1024 * 1024;
+    const contentLength = Number(req.headers.get("content-length") ?? "0");
+    if (contentLength > MAX_CREATE_BODY) {
+      return new Response(JSON.stringify({ error: "Payload too large" }), {
+        status: 413,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     let body: unknown;
     try {
       body = await req.json();

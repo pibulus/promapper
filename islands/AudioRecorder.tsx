@@ -235,6 +235,12 @@ export default function AudioRecorder(
           formData.append("existingTranscript", base.transcript.text);
         }
 
+        // The title is settled — passing it through stops the server
+        // regenerating (and re-billing) it on every append.
+        if (base.conversation?.title) {
+          formData.append("existingTitle", base.conversation.title);
+        }
+
         if (base.actionItems) {
           formData.append(
             "existingActionItems",

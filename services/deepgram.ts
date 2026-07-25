@@ -57,28 +57,59 @@ export function formatDeepgramResult(
   return { text: plain, speakers: [] };
 }
 
+// Breaker: a systematically-failing Deepgram (dead key, model typo, outage)
+// used to double-bill every live chunk — pay the doomed REST call AND the
+// LLM fallback, silently, for the whole meeting. Three consecutive failures
+// close the door for five minutes; the LLM path carries live transcription
+// alone meanwhile. Aborts don't count — that's the caller hanging up, not
+// Deepgram failing.
+const BREAKER_TRIP = 3;
+const BREAKER_COOLDOWN_MS = 5 * 60 * 1000;
+let consecutiveFailures = 0;
+let breakerOpenUntil = 0;
+
 export async function transcribeChunkDeepgram(
   file: File,
   signal?: AbortSignal,
 ): Promise<{ text: string; speakers: string[] }> {
   const key = deepgramKey();
   if (!key) throw new Error("Deepgram key not configured");
+  if (Date.now() < breakerOpenUntil) {
+    throw new Error("Deepgram breaker open — skipping straight to LLM path");
+  }
 
   const model = Deno.env.get("DEEPGRAM_MODEL") || "nova-3";
   const url = `https://api.deepgram.com/v1/listen?model=${model}` +
     "&smart_format=true&diarize=true&utterances=true";
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Token ${key}`,
-      "Content-Type": file.type || "audio/webm",
-    },
-    body: await file.arrayBuffer(),
-    signal,
-  });
-  if (!res.ok) {
-    throw new Error(`Deepgram transcription failed: ${res.status}`);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Token ${key}`,
+        "Content-Type": file.type || "audio/webm",
+      },
+      body: await file.arrayBuffer(),
+      signal,
+    });
+    if (!res.ok) {
+      await res.body?.cancel();
+      throw new Error(`Deepgram transcription failed: ${res.status}`);
+    }
+    const result = formatDeepgramResult(await res.json());
+    consecutiveFailures = 0;
+    return result;
+  } catch (err) {
+    if (!(err instanceof DOMException && err.name === "AbortError")) {
+      consecutiveFailures++;
+      if (consecutiveFailures >= BREAKER_TRIP) {
+        breakerOpenUntil = Date.now() + BREAKER_COOLDOWN_MS;
+        consecutiveFailures = 0;
+        console.warn(
+          "[deepgram] breaker tripped after repeated failures — LLM path only for 5 minutes",
+        );
+      }
+    }
+    throw err;
   }
-  return formatDeepgramResult(await res.json());
 }

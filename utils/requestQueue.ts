@@ -19,7 +19,10 @@ const queue = new RequestQueue();
 
 export function enqueueApiRequest<T>(
   task: QueuedTask<T>,
-  timeoutMs = 45_000,
+  // Outlives the server-side 60s AI timeouts on purpose: a client that gives
+  // up FIRST shows "timed out" while the server finishes and bills anyway —
+  // then the user retries and pays twice for one action.
+  timeoutMs = 65_000,
 ): Promise<T> {
   return queue.enqueue(() => {
     const controller = new AbortController();

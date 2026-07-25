@@ -43,7 +43,7 @@ export const handler: Handlers = {
     }
 
     const roomId = (body.roomId ?? "").trim();
-    const displayName = (body.displayName ?? "").trim();
+    const displayName = (body.displayName ?? "").trim().slice(0, 100);
     if (!roomId || roomId.length < 3 || roomId.length > 128) {
       return new Response(
         JSON.stringify({ error: "A valid roomId is required" }),

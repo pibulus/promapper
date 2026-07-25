@@ -90,6 +90,10 @@ export interface ProcessAudioOptions {
   existingEdges?: EdgeInput[];
   /** Skip topic extraction + summary when transcript is short. */
   lightweightIfShort?: boolean;
+  /** Appends pass the conversation's current title through so it is neither
+   * regenerated (an LLM call per append, pure waste) nor churned (a user's
+   * manual rename must survive an append). Empty/absent = generate one. */
+  existingTitle?: string;
   /** AbortSignal to cancel AI calls (threaded to all fetches). */
   signal?: AbortSignal;
 }
@@ -113,6 +117,7 @@ export async function processAudio(
     existingNodes = [],
     existingEdges = [],
     lightweightIfShort = false,
+    existingTitle,
     signal,
   } = options;
 
@@ -217,7 +222,11 @@ export async function processAudio(
     warnings = analysis.warnings;
   }
 
-  const title = await safeGenerateTitle(aiService, transcriptText, signal);
+  // A conversation is titled ONCE. Appends pass the existing title through —
+  // regenerating burned an LLM call per append AND churned the header (a
+  // user's manual rename got clobbered mid-meeting by a 3-second aside).
+  const title = existingTitle?.trim() ||
+    await safeGenerateTitle(aiService, transcriptText, signal);
 
   return {
     conversation: {

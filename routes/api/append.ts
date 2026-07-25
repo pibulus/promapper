@@ -153,6 +153,8 @@ export const handler: Handlers = {
             existingNodes,
             existingEdges,
             lightweightIfShort: true,
+            existingTitle: (formData.get("existingTitle") as string | null)
+              ?.slice(0, 200) ?? undefined,
             signal: ctrl.signal,
           },
         );

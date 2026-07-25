@@ -33,6 +33,10 @@ export async function pushSnapshotToRoom(
   snapshot: unknown,
 ): Promise<boolean> {
   if (!roomId) return false;
+  // Same shape rule the collab worker enforces on its side — one guard here
+  // covers every caller (process/append/analyze) instead of each route
+  // remembering to validate before the outbound push.
+  if (!/^[A-Za-z0-9_-]{3,64}$/.test(roomId)) return false;
   const host = partyHost();
   if (!host) return false; // PartyKit not configured.
 
