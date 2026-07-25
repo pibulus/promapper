@@ -19,6 +19,12 @@ export interface MarkdownPrompt {
   icon: string;
   /** One-liner for the picker (tooltip / hint line) */
   description: string;
+  /**
+   * Two or three words for the chip face. `description` is written for a
+   * tooltip and runs 40-56 chars, which wraps to three lines in a half-width
+   * card and turns the grid into a wall. This is the same promise, shorter.
+   */
+  short: string;
   prompt: string;
   /** Format ids to suggest when the content doesn't fit. Omit = always works. */
   suggestInstead?: string[];
@@ -73,6 +79,7 @@ export const markdownPrompts: MarkdownPrompt[] = [
     label: "Done",
     icon: "fa-clipboard-check",
     description: "What got done so far — and what's still open",
+    short: "Progress so far",
     prompt:
       `Write a warm, factual progress report from this conversation's action items and context. Lead with what has been COMPLETED (group by person where assignees exist, note anything the AI checked off from later conversation). Follow with what's still open. Close with a one-line pulse of the project. Plain headings, short lines, no corporate fluff.`,
     suggestInstead: ["summary-report"],
@@ -82,6 +89,7 @@ export const markdownPrompts: MarkdownPrompt[] = [
     label: "Meeting",
     icon: "fa-users",
     description: "Minutes: who was there, what was decided, what's next",
+    short: "Who, what, next",
     prompt:
       `If this appears to be a discussion or meeting conversation, convert it into meeting minutes including:
 • Date and participants (if mentioned)
@@ -95,6 +103,7 @@ export const markdownPrompts: MarkdownPrompt[] = [
     label: "Summary",
     icon: "fa-align-left",
     description: "A tight overview of the key points and outcomes",
+    short: "The short version",
     prompt:
       "Create a concise summary of this conversation. Focus on key points, decisions, and outcomes. If the content is very brief, keep the summary proportionally short rather than padding it.",
   },
@@ -103,6 +112,7 @@ export const markdownPrompts: MarkdownPrompt[] = [
     label: "Plan",
     icon: "fa-list-check",
     description: "Every task with its owner and timeframe",
+    short: "Tasks and owners",
     prompt:
       `Extract and organize any action items or tasks from this conversation into a structured plan. Only include assignees when they are explicitly mentioned in the conversation. Format each item as:
 • Task: [description]
@@ -115,6 +125,7 @@ export const markdownPrompts: MarkdownPrompt[] = [
     label: "Research",
     icon: "fa-flask",
     description: "Findings, methods, and open questions",
+    short: "Findings, questions",
     prompt:
       `If this conversation contains research-related discussion, format it as research notes with:
 • Topics discussed
@@ -128,6 +139,7 @@ export const markdownPrompts: MarkdownPrompt[] = [
     label: "Journal",
     icon: "fa-feather",
     description: "A reflective entry with a little wisdom in it",
+    short: "A reflective entry",
     prompt:
       `If this conversation contains personal insights, experiences, or reflective content, transform it into a thoughtful journal entry with:
 • Key reflections
@@ -141,6 +153,7 @@ export const markdownPrompts: MarkdownPrompt[] = [
     label: "Unasked",
     icon: "fa-circle-question",
     description: "Open threads and the questions nobody asked",
+    short: "Loose ends",
     // Deliberately NOT a "bias detector" (the donor app had one; Pablo's
     // ruling: diagnosing people's reasoning is technocratic — out). This
     // surfaces the conversation's open threads with curiosity, not verdicts.
@@ -157,6 +170,7 @@ Ground each one in a specific moment (quote or closely paraphrase, with the spea
     label: "Haiku",
     icon: "fa-leaf",
     description: "The whole thing, distilled to seventeen syllables",
+    short: "Seventeen syllables",
     prompt:
       "Distill the essence of this conversation into a haiku or a compact haiku sequence. Preserve the core idea and tone rather than forcing every detail into the poem.",
   },

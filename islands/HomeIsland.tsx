@@ -579,11 +579,23 @@ export default function HomeIsland() {
                 </div>
                 <div class="app-header__actions">
                   {
-                    /* Export — the payoff button, so it wears the candy plate
-                      instead of hiding as the sixth identical ghost icon.
-                      One promoted action in the header, everything else
-                      stays quiet. */
+                    /* THE LOOP, IN ORDER: Add (say more) → Share (bring people
+                      in) → Export (take it away). These three ARE the product,
+                      so they read as one family of labelled plates — Export
+                      solid because it's the payoff, the other two outlined.
+                      Two of the three used to be bare ghost icons, which made
+                      "you can keep adding to this" the quietest thing in the
+                      bar. History stays a ghost: it's navigation, not an
+                      action on the thing in front of you. */
                   }
+                  {conversationData.value && (
+                    <AudioRecorder
+                      conversationId={conversationData.value.conversation.id ??
+                        ""}
+                    />
+                  )}
+                  <ShareButton />
+
                   <button
                     onClick={() => {
                       // One drawer at a time — the header stays tappable
@@ -597,10 +609,10 @@ export default function HomeIsland() {
                     aria-label="Export conversation"
                   >
                     <i class="fa fa-file-export" aria-hidden="true"></i>
-                    <span class="hidden sm:inline">Export</span>
+                    <span>Export</span>
                   </button>
 
-                  {/* History — icon only */}
+                  {/* History — a ghost icon; navigation, not an action */}
                   <button
                     onClick={() => {
                       if (!historyDrawerOpen.value) drawerOpen.value = false;
@@ -612,15 +624,6 @@ export default function HomeIsland() {
                   >
                     <i class="fa fa-history" aria-hidden="true"></i>
                   </button>
-
-                  {/* Go Live + Share + sound mute */}
-                  {conversationData.value && (
-                    <AudioRecorder
-                      conversationId={conversationData.value.conversation.id ??
-                        ""}
-                    />
-                  )}
-                  <ShareButton />
 
                   {/* Live session controls — shown when a meeting is active */}
                   {session && (

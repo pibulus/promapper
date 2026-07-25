@@ -220,17 +220,29 @@ export default function ShareButton() {
       <button
         onClick={handleShare}
         disabled={!canShare.value || isGenerating.value}
-        class="header-icon-btn"
-        data-tip={isGenerating.value ? "Generating…" : "Share"}
+        class="header-action-btn"
+        data-tip={isGenerating.value
+          ? "Generating…"
+          : "Send a link, or open a room and talk it through together"}
         data-tip-align="right"
-        aria-label="Share conversation"
+        aria-label="Invite people to this conversation"
         aria-expanded={popoverOpen.value}
       >
+        {
+          /* "Invite", not "Share": share reads as sending a COPY (the iOS
+            meaning), which names only the weaker half of what's behind this
+            button. The live room is the thing nobody guesses from a link
+            glyph, so the label points at people arriving, not a file leaving.
+            The glyph follows the word — fa-link said "copy" too. */
+        }
         <i
-          class={`fa ${isGenerating.value ? "fa-spinner fa-spin" : "fa-link"}`}
+          class={`fa ${
+            isGenerating.value ? "fa-spinner fa-spin" : "fa-user-plus"
+          }`}
           aria-hidden="true"
         >
         </i>
+        <span>Invite</span>
       </button>
 
       {share.value && popoverOpen.value && (
@@ -291,11 +303,46 @@ export default function ShareButton() {
             </div>
           )}
 
+          {
+            /* The live room goes FIRST when you're not already in one. It's
+              the half of this button nobody can guess, and it used to sit
+              under the link plumbing where it read as an afterthought. */
+          }
+          {!liveSession.value && (
+            <div class="share-golive-row">
+              <button
+                type="button"
+                class="share-golive-btn"
+                onClick={startMeeting}
+                disabled={liveStarting.value}
+              >
+                <i
+                  class={`fa ${
+                    liveStarting.value
+                      ? "fa-spinner fa-spin"
+                      : "fa-tower-broadcast"
+                  }`}
+                  aria-hidden="true"
+                >
+                </i>
+                <span>
+                  {liveStarting.value ? "Starting…" : "Start a live room"}
+                </span>
+              </button>
+              <p
+                class="text-xs"
+                style={{ color: "var(--color-text-secondary)" }}
+              >
+                Everyone talks, edits, and watches the map fill in together.
+              </p>
+            </div>
+          )}
+
           <p class="text-xs font-bold" style={{ color: "var(--color-text)" }}>
             {share.value.mode === "public-url"
-              ? "Portable share link"
+              ? "Or send a link"
               : share.value.mode === "server-share"
-              ? "Share link"
+              ? "Or send a link"
               : "Saved on this device"}
             {liveSession.value ? " (snapshot)" : ""}
           </p>
@@ -333,37 +380,6 @@ export default function ShareButton() {
             >
               Expires in {remaining} day{remaining !== 1 ? "s" : ""}
             </p>
-          )}
-
-          {/* Not live yet → the other way to bring people in, right here. */}
-          {!liveSession.value && (
-            <div class="share-golive-row">
-              <button
-                type="button"
-                class="share-golive-btn"
-                onClick={startMeeting}
-                disabled={liveStarting.value}
-              >
-                <i
-                  class={`fa ${
-                    liveStarting.value
-                      ? "fa-spinner fa-spin"
-                      : "fa-tower-broadcast"
-                  }`}
-                  aria-hidden="true"
-                >
-                </i>
-                <span>
-                  {liveStarting.value ? "Starting…" : "Start a live room"}
-                </span>
-              </button>
-              <p
-                class="text-xs"
-                style={{ color: "var(--color-text-secondary)" }}
-              >
-                Talk and edit together in real time — the link appears here.
-              </p>
-            </div>
           )}
         </div>
       )}

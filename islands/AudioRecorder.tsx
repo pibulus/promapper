@@ -391,13 +391,15 @@ export default function AudioRecorder(
         : (
           <button
             type="button"
-            class="header-icon-btn"
+            class="header-action-btn"
             onClick={startRecording}
             aria-label="Record a new take"
-            data-tip="New take"
+            data-tip="Say more — it folds into this map"
             data-tip-align="right"
+            data-hint="record"
           >
             <i class="fa fa-microphone" aria-hidden="true" />
+            <span>Add</span>
           </button>
         )}
 

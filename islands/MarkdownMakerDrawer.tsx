@@ -608,7 +608,14 @@ export default function MarkdownMakerDrawer(
 
         {/* Content */}
         <div class="flex-1 overflow-y-auto p-4">
-          {/* The contextual six — best fit top-left, tooltips explain. */}
+          {
+            /* The contextual six, best fit first. A 2-col grid of icon +
+              label + one line of what it actually gives you: the bare-pill
+              version needed a hover to be legible, which is no version at
+              all on a phone, and "Unasked" means nothing cold. Still ONE
+              tier — the old two-section layout (suggested vs all formats)
+              was the busy-ness we cut. */
+          }
           <div class="mb-1 export-format-grid">
             {visiblePrompts.value.map((promptOption) => (
               <button
@@ -619,11 +626,21 @@ export default function MarkdownMakerDrawer(
                     ? " is-selected"
                     : ""
                 }`}
-                data-tip={promptOption.description}
                 onClick={() => generateFromPreset(promptOption.id)}
                 disabled={loading.value}
               >
-                {promptOption.label}
+                <i
+                  class={`fa ${promptOption.icon} export-chip__icon`}
+                  aria-hidden="true"
+                >
+                </i>
+                <span class="export-chip__label">{promptOption.label}</span>
+                <span
+                  class="export-chip__desc"
+                  title={promptOption.description}
+                >
+                  {promptOption.short}
+                </span>
               </button>
             ))}
           </div>
