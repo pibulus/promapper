@@ -117,6 +117,13 @@ export default function AudioRecorder(
         } catch (error) {
           console.warn("Failed to auto-save recording backup:", error);
         }
+      } else if (!persisted) {
+        // Short take, no file fallback — say so instead of showing a take
+        // that silently vanishes on the next visit (Safari private mode).
+        showToast(
+          "This take couldn't be kept on this device — it'll fade when you leave.",
+          "warning",
+        );
       }
       await processAudioAppend(blob, take.id);
     },

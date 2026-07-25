@@ -69,7 +69,12 @@ function positionsDiffer(
 // NODES
 // ===================================================================
 
-function reconcileNodes(base: Node[], mine: Node[], theirs: Node[]): Node[] {
+function reconcileNodes(
+  base: Node[],
+  mine: Node[],
+  theirs: Node[],
+  deletedLabels: Set<string>,
+): Node[] {
   const baseById = byId(base);
 
   const result: Node[] = [];
@@ -122,10 +127,13 @@ function reconcileNodes(base: Node[], mine: Node[], theirs: Node[]): Node[] {
   // Server-new topics (in THEIRS, never in BASE, not already emitted) appended.
   // A node in BASE but not in MINE was deleted by the user in-flight — it is
   // simply absent from MINE so it never gets re-added here (no resurrection).
+  // PERSISTED delete memory (deletedTopicLabels) blocks the long-game twin:
+  // a topic deleted in an earlier session that a fresh extraction re-mentions.
   const emitted = new Set(result.map((n) => n.id));
   for (const theirsNode of theirs) {
     if (emitted.has(theirsNode.id)) continue;
     if (baseById.has(theirsNode.id)) continue; // existed at request time
+    if (deletedLabels.has(normalizeDescription(theirsNode.label))) continue;
     result.push(theirsNode);
   }
 
@@ -184,14 +192,17 @@ function reconcileActionItems(
   base: ActionItem[],
   mine: ActionItem[],
   theirs: ActionItem[],
+  deletedDescriptions: Set<string>,
 ): ActionItem[] {
   const baseById = byId(base);
   const mineById = byId(mine);
 
   // Items the user DELETED in-flight (in BASE, gone from MINE). Record their
   // normalized descriptions as tombstones so the server's fresh extraction can't
-  // resurrect the same task under a NEW id.
-  const tombstones = new Set<string>();
+  // resurrect the same task under a NEW id. Seeded with the PERSISTED delete
+  // memory (deletedActionDescriptions) so tasks rejected in earlier sessions
+  // stay rejected too.
+  const tombstones = new Set<string>(deletedDescriptions);
   for (const baseItem of base) {
     if (!mineById.has(baseItem.id)) {
       tombstones.add(normalizeDescription(baseItem.description));
@@ -322,11 +333,22 @@ export function reconcileAppendResult(
   mine: ConversationData | null,
   theirs: ConversationData,
 ): ConversationData {
-  // Passthrough fast paths: nothing to reconcile.
+  // Passthrough fast path: nothing to reconcile AND no delete memory to
+  // enforce or carry. (The old `mine === base` shortcut is gone on purpose:
+  // even with zero in-flight edits, persisted tombstones must still filter
+  // THEIRS, and the tombstone fields must survive onto the result — the
+  // server never echoes client-only fields.)
   if (!base || !mine) return theirs;
-  if (mine === base) return theirs;
 
-  const nodes = reconcileNodes(base.nodes, mine.nodes, theirs.nodes);
+  const deletedLabels = new Set(mine.deletedTopicLabels ?? []);
+  const deletedDescriptions = new Set(mine.deletedActionDescriptions ?? []);
+
+  const nodes = reconcileNodes(
+    base.nodes,
+    mine.nodes,
+    theirs.nodes,
+    deletedLabels,
+  );
   const survivingNodeIds = new Set(nodes.map((n) => n.id));
   const edges = reconcileEdges(
     base.edges,
@@ -338,6 +360,7 @@ export function reconcileAppendResult(
     base.actionItems,
     mine.actionItems,
     theirs.actionItems,
+    deletedDescriptions,
   );
 
   // Server owns summary/transcript/title/statusUpdates/warnings — start from
@@ -349,5 +372,13 @@ export function reconcileAppendResult(
     nodes,
     edges,
     actionItems,
+    // Delete memory rides MINE (the server never saw it) — carry it forward
+    // or every append would amnesia the tombstones.
+    ...(mine.deletedTopicLabels?.length
+      ? { deletedTopicLabels: mine.deletedTopicLabels }
+      : {}),
+    ...(mine.deletedActionDescriptions?.length
+      ? { deletedActionDescriptions: mine.deletedActionDescriptions }
+      : {}),
   };
 }

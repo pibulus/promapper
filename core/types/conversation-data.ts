@@ -54,4 +54,10 @@ export interface ConversationData {
     value: string;
     addedAt: string;
   }>;
+  /** Delete memory — the delete twin of merge aliases. Normalized labels /
+   * descriptions of things the user removed, so a later append can't
+   * resurrect them under a fresh id. An entry clears when the user manually
+   * re-adds (or renames a topic to) that name. Capped; oldest fall off. */
+  deletedTopicLabels?: string[];
+  deletedActionDescriptions?: string[];
 }

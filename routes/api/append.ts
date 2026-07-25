@@ -225,10 +225,11 @@ export const handler: Handlers = {
 
       // NOTE: This endpoint is stateless — two concurrent appends for the
       // same conversationId both see the same existing* state, merge
-      // independently, and race on localStorage. The client should treat
-      // appendedAt as a conflict detector: if the local conversation has
-      // been updated (by another tab) since the append was submitted, warn
-      // the user and offer to re-merge. See signals/conversationStore.ts.
+      // independently, and race on localStorage. Within one tab the client
+      // request queue serializes appends; ACROSS tabs the only mitigation is
+      // the storage-event "edited in another tab" warning. appendedAt is
+      // stamped below but no client consumes it yet — if cross-tab appends
+      // ever become a real pattern, it's the ready-made conflict detector.
       const appendedAt = Date.now();
 
       return new Response(

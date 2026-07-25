@@ -204,6 +204,13 @@ export async function sweepOrphans(
   liveConversationIds: string[],
 ): Promise<void> {
   if (!idbAvailable()) return;
+  // An empty live-list is never a real sweep request: it means either a brand
+  // new user (who has no takes to reap anyway) or a corrupt/unreadable
+  // conversations store (getAllConversations returns {} on corruption — and
+  // sweeping against that would delete EVERY take in IndexedDB, on exactly
+  // the day the corruption quarantine was built for). Refuse; a later load
+  // with a healthy store sweeps.
+  if (liveConversationIds.length === 0) return;
   try {
     const live = new Set(liveConversationIds);
     const db = await openDB();

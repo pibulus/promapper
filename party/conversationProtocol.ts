@@ -263,6 +263,27 @@ function sanitizeEdge(input: unknown) {
   };
 }
 
+/** Mirrors shareProtocol.sanitizeStatusUpdate (relative-imports rule). */
+function sanitizeStatusUpdate(input: unknown) {
+  if (!isRecord(input)) return null;
+  const id = normalizeString(input.id, 128);
+  if (!id) return null;
+  return {
+    id,
+    description: normalizeLongText(
+      input.description,
+      LIMITS.MAX_ACTION_DESCRIPTION_LENGTH,
+    ),
+    status: (input.status === "completed" ? "completed" : "pending") as
+      | "completed"
+      | "pending",
+    reason: normalizeLongText(
+      input.reason,
+      LIMITS.MAX_ACTION_DESCRIPTION_LENGTH,
+    ),
+  };
+}
+
 function sanitizeActionItem(input: unknown, conversationId: string) {
   if (!isRecord(input)) return null;
   const id = normalizeString(input.id, LIMITS.MAX_ID_LENGTH);
@@ -349,7 +370,14 @@ export function sanitizeConversationData(input: unknown) {
         .filter(Boolean)
       : [],
     statusUpdates: Array.isArray(input.statusUpdates)
-      ? input.statusUpdates.slice(0, LIMITS.MAX_STATUS_UPDATES)
+      ? input.statusUpdates
+        .slice(0, LIMITS.MAX_STATUS_UPDATES)
+        .map(sanitizeStatusUpdate)
+        .filter((
+          item,
+        ): item is NonNullable<ReturnType<typeof sanitizeStatusUpdate>> =>
+          Boolean(item)
+        )
       : [],
     summary: normalizeOptionalString(input.summary, LIMITS.MAX_SUMMARY_LENGTH),
   };

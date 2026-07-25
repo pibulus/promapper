@@ -8,6 +8,47 @@
  */
 
 import type { ConversationData } from "../types/conversation-data.ts";
+import { normalizeDescription } from "./append-merge.ts";
+
+// ===================================================================
+// DELETE MEMORY (tombstones)
+// Merge got alias memory so appends stop resurrecting merged-away topics;
+// deletes get the same courtesy. Stored pre-normalized (via the SAME
+// normalizeDescription the append remap uses) so storage and matching can
+// never drift apart.
+// ===================================================================
+
+const TOMBSTONE_CAP = 200;
+
+function addTombstones(
+  list: string[] | undefined,
+  labels: string[],
+): string[] {
+  const seen = new Set(list ?? []);
+  const next = [...(list ?? [])];
+  for (const raw of labels) {
+    const key = normalizeDescription(raw);
+    if (key && !seen.has(key)) {
+      seen.add(key);
+      next.push(key);
+    }
+  }
+  return next.slice(-TOMBSTONE_CAP);
+}
+
+/** Returns the SAME reference when nothing matched, so callers can cheaply
+ * skip the spread. A manual re-add of a deleted name is the user changing
+ * their mind — the tombstone must go, or the new topic/action would be
+ * silently dropped on the next append. */
+function clearTombstone(
+  list: string[] | undefined,
+  label: string,
+): string[] | undefined {
+  if (!list?.length) return list;
+  const key = normalizeDescription(label);
+  const next = list.filter((t) => t !== key);
+  return next.length === list.length ? list : next;
+}
 
 type ActionItem = ConversationData["actionItems"][number];
 type TopicNode = ConversationData["nodes"][number];
@@ -20,7 +61,30 @@ export function updateActionItems(
   data: ConversationData,
   actionItems: ActionItem[],
 ): ConversationData {
-  return { ...data, actionItems };
+  // Every UI mutation is a whole-list replace, so deletes have no op of their
+  // own — diff here instead. Removing a PENDING item is the user rejecting the
+  // task — tombstone it so a later append can't resurrect it. Removing a
+  // COMPLETED item (clear-done) is just decluttering: no tombstone, so a
+  // genuinely recurring task can be extracted fresh next time it comes up.
+  // Newly-added items clear any matching tombstone (the user changed their mind).
+  const nextIds = new Set(actionItems.map((i) => i.id));
+  const prevIds = new Set(data.actionItems.map((i) => i.id));
+  const removed = data.actionItems.filter(
+    (i) => !nextIds.has(i.id) && i.status !== "completed",
+  );
+  const added = actionItems.filter((i) => !prevIds.has(i.id));
+  let tombs = data.deletedActionDescriptions;
+  if (removed.length) {
+    tombs = addTombstones(tombs, removed.map((i) => i.description));
+  }
+  for (const item of added) tombs = clearTombstone(tombs, item.description);
+  return {
+    ...data,
+    actionItems,
+    ...(tombs !== data.deletedActionDescriptions
+      ? { deletedActionDescriptions: tombs }
+      : {}),
+  };
 }
 
 /**
@@ -239,7 +303,16 @@ export function renameTopic(
     }
     return node;
   });
-  return changed ? { ...data, nodes } : data;
+  if (!changed) return data;
+  // Renaming TO a tombstoned name is the user bringing it back on purpose.
+  const cleared = clearTombstone(data.deletedTopicLabels, trimmed);
+  return {
+    ...data,
+    nodes,
+    ...(cleared !== data.deletedTopicLabels
+      ? { deletedTopicLabels: cleared }
+      : {}),
+  };
 }
 
 /**
@@ -261,7 +334,17 @@ export function addTopic(
     emoji: (input.emoji?.trim() || "✨").slice(0, 16),
     color: input.color?.trim() || "#E8839C",
   };
-  return { data: { ...data, nodes: [...data.nodes, node] }, id };
+  const cleared = clearTombstone(data.deletedTopicLabels, label);
+  return {
+    data: {
+      ...data,
+      nodes: [...data.nodes, node],
+      ...(cleared !== data.deletedTopicLabels
+        ? { deletedTopicLabels: cleared }
+        : {}),
+    },
+    id,
+  };
 }
 
 /**
@@ -271,12 +354,19 @@ export function deleteTopic(
   data: ConversationData,
   id: string,
 ): ConversationData {
-  if (!id || !data.nodes.some((n) => n.id === id)) return data;
+  const gone = data.nodes.find((n) => n.id === id);
+  if (!id || !gone) return data;
   const nodes = data.nodes.filter((n) => n.id !== id);
   const edges = data.edges.filter(
     (e) => e.source_topic_id !== id && e.target_topic_id !== id,
   );
-  return { ...data, nodes, edges };
+  // Tombstone the label AND everything it had absorbed — deleting a survivor
+  // means every name it answered to should stay gone.
+  const deletedTopicLabels = addTombstones(data.deletedTopicLabels, [
+    gone.label,
+    ...(gone.aliases ?? []),
+  ]);
+  return { ...data, nodes, edges, deletedTopicLabels };
 }
 
 /**

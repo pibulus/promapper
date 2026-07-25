@@ -202,6 +202,28 @@ function sanitizeEdge(input: unknown) {
   };
 }
 
+/** statusUpdates was the one array riding into shares with a bare slice —
+ * every sibling gets field-level sanitization, so this one does too. */
+function sanitizeStatusUpdate(input: unknown) {
+  if (!isRecord(input)) return null;
+  const id = normalizeString(input.id, 128);
+  if (!id) return null;
+  return {
+    id,
+    description: normalizeLongText(
+      input.description,
+      SHARE_ROOM_LIMITS.MAX_ACTION_DESCRIPTION_LENGTH,
+    ),
+    status: (input.status === "completed" ? "completed" : "pending") as
+      | "completed"
+      | "pending",
+    reason: normalizeLongText(
+      input.reason,
+      SHARE_ROOM_LIMITS.MAX_ACTION_DESCRIPTION_LENGTH,
+    ),
+  };
+}
+
 function sanitizeActionItem(input: unknown, conversationId: string) {
   if (!isRecord(input)) return null;
   const id = normalizeString(input.id, 128);
@@ -353,7 +375,14 @@ export function sanitizeShareConversation(
         )
       : [],
     statusUpdates: Array.isArray(input.statusUpdates)
-      ? input.statusUpdates.slice(0, SHARE_ROOM_LIMITS.MAX_STATUS_UPDATES)
+      ? input.statusUpdates
+        .slice(0, SHARE_ROOM_LIMITS.MAX_STATUS_UPDATES)
+        .map(sanitizeStatusUpdate)
+        .filter((
+          item,
+        ): item is NonNullable<ReturnType<typeof sanitizeStatusUpdate>> =>
+          Boolean(item)
+        )
       : [],
     summary: normalizeOptionalString(
       input.summary,

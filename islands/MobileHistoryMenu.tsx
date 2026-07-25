@@ -9,6 +9,7 @@
 import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import {
+  cancelPendingSave,
   deleteConversation,
   getAllConversations,
   getConversationList,
@@ -251,7 +252,10 @@ export default function MobileHistoryMenu() {
       anchor.click();
       document.body.removeChild(anchor);
       URL.revokeObjectURL(url);
-      showToast("Backup downloaded", "success");
+      showToast(
+        "Backup downloaded — maps, actions, and notes. Audio takes stay on this device.",
+        "success",
+      );
     } catch (err) {
       console.error("Backup export failed:", err);
       showToast("Export failed — check the console", "error");
@@ -290,6 +294,10 @@ export default function MobileHistoryMenu() {
         if (importInputRef.current) importInputRef.current.value = "";
         return;
       }
+      // Belt: a debounced autosave scheduled before the import would fire
+      // ~500ms after it with pre-import data. The reconcile below makes that
+      // harmless in practice, but cancelling makes it obviously-correct.
+      cancelPendingSave();
       const merged = mergeBackup(getAllConversations(), parsed);
       replaceAllConversations(merged);
       // Reconcile the open conversation: if the import brought a newer copy of

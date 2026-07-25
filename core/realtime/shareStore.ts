@@ -101,6 +101,22 @@ export class SupabaseShareStore implements ShareStore {
       );
     }
 
+    // Opportunistic purge: expired rows are unreadable (RLS) but otherwise
+    // sit in the table forever. Each successful create sweeps them — growth
+    // stays bounded with no cron infra. Fire-and-forget; a failed sweep just
+    // waits for the next share. Needs the delete-expired RLS policy
+    // (migration 20260725000000_share_purge_policy.sql).
+    fetch(
+      `${this.restUrl("conversation_shares")}?expires_at=lt.${
+        encodeURIComponent(new Date().toISOString())
+      }`,
+      {
+        method: "DELETE",
+        headers: this.headers(),
+        signal: AbortSignal.timeout(SUPABASE_FETCH_TIMEOUT_MS),
+      },
+    ).catch(() => {});
+
     return this.rowToRecord(Array.isArray(payload) ? payload[0] : payload);
   }
 

@@ -211,11 +211,18 @@ Deno.test("passthrough: null base returns theirs unchanged (ref-equal)", () => {
   assertEquals(out === theirs, true);
 });
 
-Deno.test("passthrough: mine === base (no in-flight edits) returns theirs (ref-equal)", () => {
+Deno.test("mine === base (no in-flight edits) yields theirs' content — deep-equal, not ref-equal", () => {
+  // The old ref-equal fast path is gone on purpose: even with zero in-flight
+  // edits, persisted delete memory (deletedTopicLabels/-ActionDescriptions)
+  // must filter THEIRS and survive onto the result, so the full path always
+  // runs. With no tombstones the outcome is still content-identical.
   const base = conv({ actionItems: [item("a1", "feed the cat")] });
   const theirs = conv({ actionItems: [item("a1", "feed the cat")] });
   const out = reconcileAppendResult(base, base, theirs);
-  assertEquals(out === theirs, true);
+  assertEquals(out.actionItems, theirs.actionItems);
+  assertEquals(out.nodes, theirs.nodes);
+  assertEquals(out.edges, theirs.edges);
+  assertEquals(out.summary, theirs.summary);
 });
 
 // ── speaker rename reapplied over the server's fresh transcript ──────────────
