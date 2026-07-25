@@ -23,9 +23,12 @@ export interface NodeData {
   _dragStart?: { x: number; y: number };
   /** Transient: this gesture actually moved, so the sim was reheated. */
   _dragMoved?: boolean;
-  /** Transient (on the dragged node): id of the merge target currently frozen
-   * in place so it can't be towed away mid-gesture. */
-  _mergeTargetId?: string;
+  /** Transient (on the dragged node): the merge target currently frozen in
+   * place so it can't be towed away mid-gesture. Held as the OBJECT, not an
+   * id: update() hands the sim fresh node clones, so an id lookup after a
+   * mid-drag re-render finds the new clone while the stale fx/fy sit on the
+   * old object the sim is still stepping — pinning it forever. */
+  _mergeTarget?: NodeData;
 }
 
 export interface EdgeData {

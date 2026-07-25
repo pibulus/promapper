@@ -135,8 +135,9 @@ export function dragged(
   // neighbors (parked on its spot, the gap grew ~46→163px in 1.5s — merges only
   // landed by luck). Pinning it while in range means what glows is what you
   // get; released the moment you pull away or drop.
-  if (target?.id !== d._mergeTargetId) {
-    const prev = nodes.find((n) => n.id === d._mergeTargetId);
+  if (target?.id !== d._mergeTarget?.id) {
+    // Unfreeze via the held OBJECT, never an id lookup — see _mergeTarget.
+    const prev = d._mergeTarget;
     if (prev) {
       prev.fx = null;
       prev.fy = null;
@@ -145,7 +146,7 @@ export function dragged(
       target.fx = target.x;
       target.fy = target.y;
     }
-    d._mergeTargetId = target?.id;
+    d._mergeTarget = target ?? undefined;
     // Repaint only on target CHANGE — the classes can't differ between
     // ticks otherwise, and out here this was two full-selection class
     // sweeps per pointermove for nothing.
@@ -167,13 +168,11 @@ export function dragended(
   d.fx = null;
   d.fy = null;
   // Release the frozen merge target (see dragged) so it rejoins the physics.
-  if (d._mergeTargetId) {
-    const frozen = nodes.find((n) => n.id === d._mergeTargetId);
-    if (frozen) {
-      frozen.fx = null;
-      frozen.fy = null;
-    }
-    d._mergeTargetId = undefined;
+  // Held by object, so this works even if the node list was swapped mid-drag.
+  if (d._mergeTarget) {
+    d._mergeTarget.fx = null;
+    d._mergeTarget.fy = null;
+    d._mergeTarget = undefined;
   }
 
   // Restore the drag-softened physics (see dragstarted). Forces only apply on

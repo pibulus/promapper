@@ -158,8 +158,13 @@ export default function ForceDirectedGraph(
       : svgContainerRef.current;
     if (!container || topics.value.length === 0) return;
 
-    // Destroy existing visualization
+    // Destroy existing visualization — but take its layout with us first.
+    // Fullscreen toggling rebuilds the handle, and a fresh closure has no
+    // position memory, so the map used to cold-restart (full-energy alpha(1))
+    // and re-scatter the arrangement on the way in AND the way out.
+    let seedPositions: Record<string, { x: number; y: number }> | undefined;
     if (emojimapHandleRef.current) {
+      seedPositions = emojimapHandleRef.current.getPositions();
       emojimapHandleRef.current.destroy();
     }
 
@@ -189,6 +194,7 @@ export default function ForceDirectedGraph(
     emojimapHandleRef.current = forceDirectedEmojimap(container, {
       nodes: topics.value,
       edges,
+      seedPositions,
       config: {
         width,
         height,

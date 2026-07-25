@@ -62,6 +62,13 @@ export interface EmojimapHandle {
   setFocus: (focusedNodeId: string | null) => void;
   resetVisualization: () => void;
   updateLayout: () => void;
+  /**
+   * The live on-screen position of every node the sim has laid out. Read this
+   * off a handle you're about to destroy and pass it as `seedPositions` to the
+   * replacement, so rebuilding the instance (entering/leaving fullscreen)
+   * inherits the layout instead of cold-starting a full-energy re-scatter.
+   */
+  getPositions: () => Record<string, { x: number; y: number }>;
   destroy: () => void;
 }
 
@@ -74,7 +81,13 @@ export interface EmojimapHandle {
  */
 export function forceDirectedEmojimap(
   node: HTMLElement,
-  params: { nodes?: NodeData[]; edges?: EdgeData[]; config?: Partial<Config> },
+  params: {
+    nodes?: NodeData[];
+    edges?: EdgeData[];
+    config?: Partial<Config>;
+    /** Positions inherited from a previous instance (see getPositions). */
+    seedPositions?: Record<string, { x: number; y: number }>;
+  },
 ): EmojimapHandle {
   // Validate node
   if (!node) {
@@ -85,6 +98,7 @@ export function forceDirectedEmojimap(
       setFocus: () => {},
       resetVisualization: () => {},
       updateLayout: () => {},
+      getPositions: () => ({}),
       destroy: () => {},
     };
   }
@@ -124,6 +138,19 @@ export function forceDirectedEmojimap(
   // clones every time), because it's keyed by stable id, not object identity.
   const livePositions = new Map<string, { x: number; y: number }>();
 
+  // Inherit the outgoing instance's layout when we're a REBUILD (fullscreen
+  // toggle destroys the handle and constructs a fresh one). Without this the
+  // new closure starts blank, so the first update() sees hadExistingLayout ===
+  // false and runs a cold alpha(1) — the user's arranged map re-scattered every
+  // time they opened or closed fullscreen.
+  if (params?.seedPositions) {
+    for (const [id, p] of Object.entries(params.seedPositions)) {
+      if (Number.isFinite(p?.x) && Number.isFinite(p?.y)) {
+        livePositions.set(id, { x: p.x, y: p.y });
+      }
+    }
+  }
+
   // Focus mode (set via setFocus). While active, settle re-frames the focused
   // neighborhood instead of the whole map — a drag mid-focus used to zoom back
   // out to everything while the dim classes stayed on (a confusing half-state).
@@ -154,8 +181,11 @@ export function forceDirectedEmojimap(
       console.warn("Node missing ID, skipping:", n);
       return;
     }
-    // Restore persisted layout positions so a reloaded graph keeps its shape
-    const savedPos = (n as any).position as
+    // Restore layout positions so the graph keeps its shape. Inherited live
+    // positions win over the persisted `position` — on a fullscreen rebuild
+    // they're fresher than the last settle/drag-end autosave.
+    const inherited = livePositions.get(n.id);
+    const savedPos = inherited ?? (n as any).position as
       | { x: number; y: number }
       | undefined;
     if (
@@ -248,9 +278,13 @@ export function forceDirectedEmojimap(
     const rect = node.getBoundingClientRect();
     const widthChanged = Math.abs(rect.width - lastObservedW) > 1;
     const heightDelta = Math.abs(rect.height - lastObservedH);
-    if (!widthChanged && heightDelta < 120) return;
+    // Track the latest size ALWAYS, even when we skip the fit — otherwise the
+    // baseline stays frozen at the last fitted size and a slow drift (a growing
+    // card, a keyboard easing open) never accumulates past the threshold: every
+    // individual delta reads as small forever.
     lastObservedW = rect.width;
     lastObservedH = rect.height;
+    if (!widthChanged && heightDelta < 120) return;
     debouncedFit();
   });
   resizeObserver.observe(node);
@@ -556,6 +590,11 @@ export function forceDirectedEmojimap(
 
     updateLayout() {
       fitAllIcons(svg, zoom, node, nodes);
+    },
+
+    getPositions() {
+      rememberPositions();
+      return Object.fromEntries(livePositions);
     },
 
     destroy() {

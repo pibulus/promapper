@@ -413,10 +413,18 @@ export function fitAllIcons(
   const padding = 50;
   const fillFactor = 0.8;
 
-  const minX = d3.min(nodes, (d) => d.x || 0) || 0;
-  const maxX = d3.max(nodes, (d) => d.x || 0) || 0;
-  const minY = d3.min(nodes, (d) => d.y || 0) || 0;
-  const maxY = d3.max(nodes, (d) => d.y || 0) || 0;
+  // A node is not a point: the disc is r=20 (glow pad r=23) and the label sits
+  // at y=28 below center. Measuring bare x/y centers made the bbox symmetric
+  // around the glyphs while the real ink hangs BELOW them, so bottom-row labels
+  // clipped while the top had spare room. Grow the box by the actual extents.
+  const NODE_EXTENT_X = 23;
+  const NODE_EXTENT_UP = 23;
+  const NODE_EXTENT_DOWN = 38; // label baseline (28) + its descenders
+
+  const minX = (d3.min(nodes, (d) => d.x || 0) || 0) - NODE_EXTENT_X;
+  const maxX = (d3.max(nodes, (d) => d.x || 0) || 0) + NODE_EXTENT_X;
+  const minY = (d3.min(nodes, (d) => d.y || 0) || 0) - NODE_EXTENT_UP;
+  const maxY = (d3.max(nodes, (d) => d.y || 0) || 0) + NODE_EXTENT_DOWN;
 
   const boxWidth = maxX - minX;
   const boxHeight = maxY - minY;
@@ -425,13 +433,8 @@ export function fitAllIcons(
   const containerHeight = node.offsetHeight;
   if (containerWidth < 1 || containerHeight < 1) return;
 
-  if (boxWidth < 1 && boxHeight < 1) {
-    svg
-      .attr("width", containerWidth)
-      .attr("height", containerHeight)
-      .attr("viewBox", `0 0 ${containerWidth} ${containerHeight}`);
-    return;
-  }
+  // No degenerate-box branch needed: the node extents above give even a single
+  // node a real box (46×61), and MAX_FIT_SCALE caps how far a tiny box zooms.
 
   const baseScale = Math.min(
     containerWidth / (boxWidth + 2 * padding),
