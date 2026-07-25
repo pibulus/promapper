@@ -149,7 +149,9 @@ export function parseActionItemsResponse(
       .filter((item): item is ActionItemInput => item !== null);
   } catch (error) {
     console.error("Error parsing action items JSON:", error);
-    console.error("Raw text was:", text);
+    // Truncated on purpose: enough to diagnose malformed JSON without
+    // writing whole conversations into the deploy log dashboard.
+    console.error("Raw text was (first 200 chars):", text.slice(0, 200));
     onParseError?.("action items");
     return [];
   }
@@ -198,7 +200,9 @@ export function parseStatusUpdatesResponse(
       .filter((update): update is ActionItemStatusUpdate => update !== null);
   } catch (error) {
     console.error("Error parsing action item status JSON:", error);
-    console.error("Raw text was:", text);
+    // Truncated on purpose: enough to diagnose malformed JSON without
+    // writing whole conversations into the deploy log dashboard.
+    console.error("Raw text was (first 200 chars):", text.slice(0, 200));
     onParseError?.("self-checkoff updates");
     return [];
   }

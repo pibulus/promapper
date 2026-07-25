@@ -184,7 +184,9 @@ function extractMessageText(content: unknown): string {
 
 async function parseOpenRouterResponse(response: Response): Promise<string> {
   if (!response.ok) {
-    const errorText = await response.text().catch(() => "");
+    // Truncated: provider error bodies can echo request details; the thrown
+    // message lands in server logs via every route's catch.
+    const errorText = (await response.text().catch(() => "")).slice(0, 300);
     throw new Error(
       `OpenRouter request failed (${response.status}): ${
         errorText || response.statusText
