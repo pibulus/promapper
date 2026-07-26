@@ -308,7 +308,10 @@ export default function HomeIsland() {
       isViewingShared.value = false;
       return;
     }
-    isViewingShared.value = true;
+    // GUEST only. The flag means "someone else's data" — a host in a live room
+    // still owns their conversation, and marking them a visitor for the whole
+    // session turned off their autosave and froze their board arrangement.
+    isViewingShared.value = !session.isHost;
     startLiveSync({
       host: session.partyHost,
       roomId: session.roomId,
@@ -384,6 +387,12 @@ export default function HomeIsland() {
 
   // Wrapped startRecording — hooks silence detection onto the shared stream.
   async function startRecording() {
+    // Undelivered audio belongs to the room it was spoken in. The ref outlives
+    // a session (Go Live → leave → Go Live again never remounts this island),
+    // so a failing endpoint could hand the NEXT room the previous meeting's
+    // words. Cost of clearing here: a stop/start inside one meeting drops
+    // chunks that were already failing to send.
+    pendingChunksRef.current = [];
     await _startRecording();
     // If recording didn't actually start (cancelled, permission denied), bail.
     if (!isRecording.value || !streamRef.current) return;
@@ -549,7 +558,12 @@ export default function HomeIsland() {
       if (text) {
         const chunk = { id: Date.now(), text, speakers };
         liveTranscript.value = [...liveTranscript.value, chunk].slice(-20);
-        if (session) {
+        // liveSession.value, not the render-time `session`: this lands seconds
+        // after the POST, and the session teardown calls stopRecording without
+        // awaiting it. On the stale closure the tail chunk kept feeding the
+        // analysis loop after resetLiveAnalysis — restarting its ticker and
+        // folding the old meeting's words into whatever map was open by then.
+        if (liveSession.value) {
           sendTranscriptChunk(text, speakers);
           // Host-only by construction (the record button is host-gated):
           // feed the live-analysis loop so nodes/actions/summary keep up

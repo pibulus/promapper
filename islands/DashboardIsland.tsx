@@ -203,17 +203,10 @@ export default function DashboardIsland() {
     const flush = () => {
       flushSceneWrite();
       const data = conversationData.value;
-      // A live session sets isViewingShared for its whole duration, which also
-      // gated THIS flush — so a host could run a 50-minute room held only in
-      // memory and the PartyKit room (24h TTL), and closing the tab (iOS
-      // discarding a backgrounded tab, a lid, a crash) wrote nothing. Leaving
-      // by the button saved; closing the tab did not. Same exit, two outcomes.
-      //
-      // Host only, deliberately: a GUEST is viewing someone else's room, which
-      // is exactly the case isViewingShared was written for — they shouldn't
-      // end up with a copy they never asked for.
-      const liveHost = liveSession.value?.isHost === true;
-      if (data && (!isViewingShared.value || liveHost)) saveConversation(data);
+      // A live HOST owns their conversation and autosaves normally (the flag is
+      // guest-only now — HomeIsland's live effect). A GUEST is viewing someone
+      // else's room and shouldn't end up with a copy they never asked for.
+      if (data && !isViewingShared.value) saveConversation(data);
     };
     const onVisibility = () => {
       if (document.visibilityState === "hidden") flush();

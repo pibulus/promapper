@@ -98,7 +98,7 @@ export function startLiveSync(
           }
           unsentLocal = false;
           applyRemoteConversation(data as ConversationData);
-          lastSentJSON = JSON.stringify(data);
+          lastSentJSON = sentKey();
           if (rev !== null) lastSeenRev = Math.max(lastSeenRev, rev);
         }
       } else if (rev !== null) {
@@ -112,7 +112,7 @@ export function startLiveSync(
     onConversationUpdate: (data, rev) => {
       if (!data) return;
       applyRemoteConversation(data as ConversationData);
-      lastSentJSON = JSON.stringify(data);
+      lastSentJSON = sentKey();
       if (typeof rev === "number") lastSeenRev = rev;
       extra.onConversationUpdate?.(data, rev);
     },
@@ -169,6 +169,18 @@ function stripWhiteboard(data: ConversationData): ConversationData {
 /** The outbound JSON shape (whiteboardScene excluded) for echo-dedup. */
 function localJSON(data: ConversationData): string {
   return JSON.stringify(stripWhiteboard(data));
+}
+
+/**
+ * The dedup key for what we've just taken on board. Must be the LOCAL shape:
+ * stamping the raw server payload here compared a sanitized snapshot (no
+ * notes/magpie/deleted*) against the local one, so anyone holding a
+ * client-only field never matched — every reconnect re-broadcast the whole
+ * conversation and bumped the room's revision for nothing.
+ */
+function sentKey(): string {
+  const current = conversationData.value;
+  return current ? localJSON(current) : "";
 }
 
 /** Read the revision counter out of the INIT meta blob (null if absent). */
