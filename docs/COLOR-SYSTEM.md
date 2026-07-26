@@ -97,10 +97,15 @@ Ground hexes live in `themes.ts` cssVars (`--gradient-bg`, `--color-base*`)
 mirrored in the FOUC map. All grounds share the WARM_BG structure: two radial
 corner washes + 168deg linear fading to `#fff4e8` at 78%.
 
-## The shuffle (OKLCH curated pairs)
+## The shuffle (OKLCH curated pairs) — ⚠️ SUPERSEDED July 26, 2026
 
-The dice picks between DESIGNED couples with per-pair accent registers derived
-from the beloved anchors (Miami coral oklch(0.71 0.18 23), rebel purple
+**The dice no longer deals from this table.** It rolls the NEON OFFICE generator
+(see below); `CURATED_PAIRS` survives as /dev/colors lab presets only. This
+section is kept as the record of what was hand-approved and why it had to change
+— the census that killed it is in the NEON OFFICE section.
+
+Historically, the dice picked between DESIGNED couples with per-pair registers
+derived from the beloved anchors (Miami coral oklch(0.71 0.18 23), rebel purple
 oklch(0.58 0.15 315), raspberry oklch(0.67 0.18 ~0), DAYBREAK cobalt):
 
 | Pair             | ground hue arc | accent hue arc  | accent L  | accent C  |
@@ -142,13 +147,13 @@ discarded on load, falling back to DAYBREAK.
 
 ## NEON OFFICE — the generator (July 26, 2026, supersedes the curated deck)
 
-Pablo's brief: *"broader, fresher, more colours, more risk… opinionated neutral
-office neon fresh."* The curated deck couldn't deliver it, and the census said
-why: **8 of the 11 pairs landed in the purple→pink arc, and cobalt — the
-default theme's own accent — held a single slot.** Two accents were outright
-duplicates (`#f2694c` twice, `#e45590` twice), so the real variety was ~6
-colours. An unprimed second opinion, given only the hue arcs, independently
-named the hole: *"accent hue ranges missing entirely: 40–246."* A 206° gap.
+Pablo's brief: _"broader, fresher, more colours, more risk… opinionated neutral
+office neon fresh."_ The curated deck couldn't deliver it, and the census said
+why: **8 of the 11 pairs landed in the purple→pink arc, and cobalt — the default
+theme's own accent — held a single slot.** Two accents were outright duplicates
+(`#f2694c` twice, `#e45590` twice), so the real variety was ~6 colours. An
+unprimed second opinion, given only the hue arcs, independently named the hole:
+_"accent hue ranges missing entirely: 40–246."_ A 206° gap.
 
 The cause was structural, not a taste slip. **A fixed accent register plus a
 banned-hue list can only ever deal from the corner of the wheel that's left.**
@@ -172,7 +177,7 @@ Three sources, one recipe:
 **Two rulings deliberately reopened** (Pablo, July 26, knowingly):
 
 1. **Green-family accents are legal again.** The old "hospital pink and green"
-   veto was green *on pink/sunrise grounds*; on paper it is a different
+   veto was green _on pink/sunrise grounds_; on paper it is a different
    proposition — and `LIME #00af82` was always a named theme accent anyway.
 2. **Two companion hues ride along** as `--accent-2` / `--accent-3`, for nodes,
    speakers and module chrome. This is where the old app's good module colours

@@ -66,6 +66,9 @@ import VoicePanel from "./VoicePanel.tsx";
 
 const SILENCE_FLUSH_MS = 2_000;
 const MAX_CHUNK_MS = 30_000;
+/** Ceiling on retained audio when the transcription endpoint is failing.
+ * At the recorder's 1s timeslice this is ~90 seconds of catch-up. */
+const MAX_BUFFERED_CHUNKS = 90;
 /** RMS amplitude threshold — values below this are treated as silence.
  *  Typical speech lands between 0.02–0.20 at comfortable mic distance.
  *  0.008 is generous to catch quiet/soft speakers. */
@@ -284,6 +287,8 @@ export default function HomeIsland() {
   const silenceMonitorRef = useRef<number | null>(null);
   const lastSpeechRef = useRef<number>(0);
   const chunkStartRef = useRef<number>(0);
+  // The in-flight chunk request, or null. Serialises sends — see sendChunk.
+  const chunkInFlightRef = useRef<Promise<void> | null>(null);
 
   // Belt: recording is live-session-gated today, and the session effect's
   // cleanup stops it on unmount — but if a record path ever appears outside
@@ -449,9 +454,47 @@ export default function HomeIsland() {
     showToast("Recording — live transcript starting…", "info");
   }
 
-  async function sendChunk() {
+  /**
+   * Flush the buffered audio to the transcription endpoint.
+   *
+   * ONE request at a time. The silence monitor ticks every 200ms, so without
+   * a latch a single slow transcription turn had a dozen more requests piling
+   * up behind it — and since each response was applied on arrival, a slow
+   * chunk could land its text AFTER a later, faster one and scramble the
+   * transcript. Serialising the sends fixes the request storm and the
+   * ordering race together, which is why there's one guard here and not two.
+   *
+   * Returns the in-flight promise when one exists, so stopRecording can wait
+   * it out instead of silently no-oping on the meeting's last words.
+   */
+  function sendChunk(): Promise<void> {
+    if (chunkInFlightRef.current) return chunkInFlightRef.current;
     const chunks = chunksRef.current.splice(0);
-    if (chunks.length === 0) return;
+    if (chunks.length === 0) return Promise.resolve();
+    const p = deliverChunk(chunks).finally(() => {
+      chunkInFlightRef.current = null;
+    });
+    chunkInFlightRef.current = p;
+    return p;
+  }
+
+  /**
+   * Put audio BACK at the front of the buffer so the next flush retries it.
+   *
+   * The buffer used to be spliced before the fetch and never restored, so a
+   * dropped connection, a 500, or a rate-limit silently ate whatever was said
+   * during it — the speech was simply gone, with nothing but a console line.
+   * Capped so a persistently failing endpoint can't grow the buffer without
+   * bound; past the cap the OLDEST audio goes, because in a live transcript
+   * the most recent words are the ones still worth catching up on.
+   */
+  function requeueChunks(chunks: Blob[]) {
+    chunksRef.current = [...chunks, ...chunksRef.current].slice(
+      -MAX_BUFFERED_CHUNKS,
+    );
+  }
+
+  async function deliverChunk(chunks: Blob[]) {
     isProcessing.value = true;
     try {
       const blob = new Blob(chunks, {
@@ -490,9 +533,15 @@ export default function HomeIsland() {
             noteLiveChunk(text, speakers);
           }
         }
+      } else {
+        // A non-OK response is a lost chunk too — this branch didn't exist,
+        // so a 429 or a 500 dropped the audio as quietly as a thrown error.
+        console.error("Chunk send rejected:", res.status);
+        requeueChunks(chunks);
       }
     } catch (err) {
       console.error("Chunk send failed:", err);
+      requeueChunks(chunks);
     } finally {
       isProcessing.value = false;
     }
@@ -509,7 +558,12 @@ export default function HomeIsland() {
       audioCtxRef.current = null;
       analyserRef.current = null;
     }
-    // Flush remaining chunks before stopping
+    // Wait out any in-flight chunk FIRST, then flush the tail. Without this
+    // the new one-at-a-time latch would hand this call the in-flight promise
+    // and return, leaving the meeting's last words sitting in the buffer.
+    if (chunkInFlightRef.current) {
+      await chunkInFlightRef.current.catch(() => {});
+    }
     if (chunksRef.current.length > 0) {
       await sendChunk();
     }
@@ -665,7 +719,12 @@ export default function HomeIsland() {
                           onClick={isRecording.value
                             ? stopRecording
                             : startRecording}
-                          disabled={isProcessing.value && isRecording.value}
+                          // Guard STARTING while busy, never STOPPING. This
+                          // was `isProcessing && isRecording` — the exact case
+                          // where the button says "Stop", so the one control
+                          // that ends a meeting went dead during every chunk
+                          // upload. Stop must always be reachable.
+                          disabled={isProcessing.value && !isRecording.value}
                           class={`header-icon-btn${
                             isRecording.value ? " is-recording" : ""
                           }`}
