@@ -18,9 +18,10 @@
 import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import LevelBars from "../components/LevelBars.tsx";
-import { conversationData } from "@signals/conversationStore.ts";
+
 import { liveSession } from "@signals/liveSessionStore.ts";
 import { reconcileAppendResult } from "@core/orchestration/append-reconcile.ts";
+import { clearUndo, conversationData } from "@signals/conversationStore.ts";
 import {
   computeAppendReceipt,
   formatAppendReceipt,
@@ -138,6 +139,18 @@ export default function AudioRecorder(
   // Hydrate takes from IndexedDB whenever the conversation changes; sweep
   // orphaned takes once per load.
   useEffect(() => {
+    // A pending retry belongs to the conversation it was recorded in. This
+    // component has no key (HomeIsland renders it with a changing prop), so
+    // without this reset the chip stayed on screen across a History switch
+    // holding the OLD map's audio — and tapping it merged that recording into
+    // the new map, then stamped the receipt onto the old map's take so the
+    // "not mapped yet" nudge would never offer it again either. The mid-flight
+    // id guard can't catch this one: at retry time both ids are the new
+    // conversation. The stale blob is the thing that has to go.
+    retryRecordingReady.value = false;
+    lastRecordingBlobRef.current = null;
+    lastTakeIdRef.current = null;
+
     let cancelled = false;
     (async () => {
       if (!sweptThisLoad) {
@@ -333,6 +346,14 @@ export default function AudioRecorder(
         flowResult,
       );
       conversationData.value = reconciled;
+      // The append is a NEW BASELINE, so any undo armed before it is now a
+      // trap: an in-flight edit (the exact case reconcile exists for) leaves
+      // an undo snapshot from BEFORE this take, and Cmd+Z has no expiry. One
+      // press would roll back past the whole mapping — and since the take was
+      // just receipt-stamped, the "not mapped yet" nudge would never offer it
+      // again. applyRemoteConversation already drops the snapshot for exactly
+      // this reason; the server's own result deserves the same.
+      clearUndo();
       retryRecordingReady.value = false;
       soundBloom();
 

@@ -60,3 +60,37 @@ Deno.test("undo still works normally when no remote update intervenes", () => {
   assertEquals(undoLastMutation(), true);
   assertEquals(conversationData.value?.conversation.title, "base");
 });
+
+// ── Client-only fields must survive a remote frame ─────────────────────────
+Deno.test("a remote update keeps notes, magpie, whiteboard and delete memory", () => {
+  // The room's sanitizer emits {conversation, transcript, nodes, edges,
+  // actionItems, statusUpdates, summary} and has never heard of the rest, so
+  // assigning its payload whole ERASED five client-only fields on every
+  // inbound frame. The first frame is the host's own INIT — so writing notes,
+  // drawing on the canvas, then hitting "Start a live room" wiped all of it
+  // before a single guest joined, and autosave persisted the loss.
+  conversationData.value = {
+    ...conv("mine"),
+    notes: "ring the fiddle player back",
+    magpie: [{
+      id: "m1",
+      kind: "link",
+      value: "https://example.org/kelp",
+      addedAt: "2026-01-01T00:00:00.000Z",
+    }],
+    whiteboardScene: '{"elements":[]}',
+    deletedTopicLabels: ["the sinkhole"],
+    deletedActionDescriptions: ["fence it"],
+  };
+
+  // What actually arrives from the room: sanitized, stripped.
+  applyRemoteConversation(conv("theirs"));
+
+  const after = conversationData.value!;
+  assertEquals(after.conversation.title, "theirs", "remote content must win");
+  assertEquals(after.notes, "ring the fiddle player back");
+  assertEquals(after.magpie?.length, 1);
+  assertEquals(after.whiteboardScene, '{"elements":[]}');
+  assertEquals(after.deletedTopicLabels, ["the sinkhole"]);
+  assertEquals(after.deletedActionDescriptions, ["fence it"]);
+});

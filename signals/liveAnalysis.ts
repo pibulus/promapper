@@ -19,7 +19,7 @@
  * console and the text goes back in the buffer for the next round.
  */
 
-import { conversationData } from "@signals/conversationStore.ts";
+import { clearUndo, conversationData } from "@signals/conversationStore.ts";
 import { reconcileAppendResult } from "@core/orchestration/append-reconcile.ts";
 import {
   type LiveAnalysisState,
@@ -152,12 +152,30 @@ async function runAnalysis(): Promise<void> {
       throw new Error("live analysis returned an unexpected shape");
     }
 
+    // The round trip runs up to 65s, and the conversation can be closed or
+    // swapped in that time — clicking the wordmark nulls it, History swaps it.
+    // Without this the result landed wherever it happened to be: a null signal
+    // makes reconcile return THEIRS wholesale, so the home page would suddenly
+    // become the dashboard of a meeting already left. Worse, on a swap the
+    // result carries the OLD conversation's id, transcript and summary with
+    // the NEW one's items merged in — and autosave then writes that hybrid
+    // under the old id. Same guard the append path got; this path never had it.
+    const current = conversationData.value;
+    if (!current || current.conversation.id !== base.conversation.id) {
+      console.warn(
+        "Live analysis discarded — its conversation is no longer open",
+      );
+      return;
+    }
+
     // Layer any edits made during the round-trip back on top, same as append.
     conversationData.value = reconcileAppendResult(
       base,
-      conversationData.value,
+      current,
       flowResult,
     );
+    // New baseline — see the note in AudioRecorder.processAudioAppend.
+    clearUndo();
   } catch (error) {
     console.error("Live analysis round failed:", error);
     // Put the un-analyzed text back at the FRONT of the buffer so the next

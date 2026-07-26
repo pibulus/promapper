@@ -49,7 +49,34 @@ export function applyRemoteConversation(data: ConversationData): void {
   // update is a new baseline — drop the stale undo target.
   undoSnapshot = null;
   try {
-    conversationData.value = data;
+    // Client-only fields never make the round trip: the room's sanitizer emits
+    // {conversation, transcript, nodes, edges, actionItems, statusUpdates,
+    // summary} and has never heard of the rest. Assigning the payload whole
+    // therefore ERASED them on every inbound frame — and the very first frame
+    // is the host's own INIT, so writing notes, drawing on the canvas and then
+    // clicking "Start a live room" wiped all of it before anyone else joined.
+    // The autosave effect then persisted the loss when the session ended.
+    // Same fix, same field list, as append-reconcile.ts — the live path just
+    // never got it. Done here rather than at liveSync's two call sites so any
+    // future inbound path inherits it.
+    const mine = conversationData.value;
+    const merged: ConversationData = mine
+      ? {
+        ...data,
+        ...(mine.notes !== undefined ? { notes: mine.notes } : {}),
+        ...(mine.magpie !== undefined ? { magpie: mine.magpie } : {}),
+        ...(mine.whiteboardScene !== undefined
+          ? { whiteboardScene: mine.whiteboardScene }
+          : {}),
+        ...(mine.deletedTopicLabels?.length
+          ? { deletedTopicLabels: mine.deletedTopicLabels }
+          : {}),
+        ...(mine.deletedActionDescriptions?.length
+          ? { deletedActionDescriptions: mine.deletedActionDescriptions }
+          : {}),
+      }
+      : data;
+    conversationData.value = merged;
   } finally {
     // Release after the synchronous signal-effect microtask flush.
     queueMicrotask(() => {
