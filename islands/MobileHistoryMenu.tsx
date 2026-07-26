@@ -212,7 +212,13 @@ export default function MobileHistoryMenu() {
 
       // Deleting also takes the conversation's saved exports; they come back
       // with it on undo, so the undo isn't quietly lossy.
-      const removedSnapshots = deleteConversation(id);
+      const { snapshots: removedSnapshots, ok } = deleteConversation(id);
+      if (!ok) {
+        showToast(
+          "That didn't quite delete — it'll still be here when you reload.",
+          "error",
+        );
+      }
       if (wasActive) conversationData.value = null;
 
       refreshList();
@@ -222,7 +228,12 @@ export default function MobileHistoryMenu() {
         const title = removed.conversation.title?.slice(0, 40) ||
           "conversation";
         showUndoToast(`Deleted "${title}"`, () => {
-          restoreConversation(removed, removedSnapshots);
+          if (!restoreConversation(removed, removedSnapshots)) {
+            showToast(
+              "Couldn't bring that back — storage is full. Free some space and try again.",
+              "error",
+            );
+          }
           if (wasActive) conversationData.value = removed;
           refreshList();
         });
@@ -245,7 +256,11 @@ export default function MobileHistoryMenu() {
 
   function handleToggleStar(e: MouseEvent, id: string) {
     e.stopPropagation();
-    toggleConversationStarred(id);
+    // A star writes the whole conversations map, so it's the small write most
+    // likely to meet a full store — and it lit up in the UI either way.
+    if (!toggleConversationStarred(id).ok) {
+      showToast("That star didn't stick — storage is full.", "error");
+    }
     refreshList();
   }
 
@@ -329,8 +344,17 @@ export default function MobileHistoryMenu() {
       // write succeeds, so a quota failure above doesn't leave snapshots
       // pointing at conversations that never landed. A v1 backup yields none.
       const importedSnapshots = parseBackupSnapshots(text);
-      if (importedSnapshots.length) {
-        writeSnapshots(mergeSnapshots(getAllSnapshots(), importedSnapshots));
+      if (
+        importedSnapshots.length &&
+        !writeSnapshots(mergeSnapshots(getAllSnapshots(), importedSnapshots))
+      ) {
+        // Conversations landed, exports didn't — say so rather than let the
+        // green "Imported N" below imply the whole file came back.
+        showToast(
+          "Your conversations came back, but their saved exports didn't fit. Free some space and import again.",
+          "warning",
+          6000,
+        );
       }
       // Reconcile the open conversation: if the import brought a newer copy of
       // it, refresh the in-memory signal so a later autosave can't clobber the

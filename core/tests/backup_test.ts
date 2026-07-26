@@ -63,6 +63,21 @@ Deno.test("parseBackup ignores entries without an id", () => {
   assertEquals(Object.keys(parsed), ["ok"]);
 });
 
+Deno.test("parseBackup normalizes salvaged records so the drawer can't crash", () => {
+  // The shape tolerance is the point of this path — but the history drawer
+  // reads conv.conversation.title / conv.nodes.length straight off whatever
+  // gets stored, so an array-less record used to persist and throw on every
+  // render, permanently, in the UI you'd recover through.
+  const json = JSON.stringify([{ id: "bare", updatedAt: now }]);
+  const parsed = parseBackup(json);
+  assertEquals(parsed.bare.nodes, []);
+  assertEquals(parsed.bare.edges, []);
+  assertEquals(parsed.bare.actionItems, []);
+  assertEquals(parsed.bare.statusUpdates, []);
+  assertEquals(parsed.bare.conversation.id, "bare");
+  assertEquals(parsed.bare.transcript.speakers, []);
+});
+
 Deno.test("mergeBackup keeps the newer record on id collision", () => {
   const existing = { a: conv("a", "2026-06-21T10:00:00.000Z") };
   const importedNewer = { a: conv("a", "2026-06-21T11:00:00.000Z") };

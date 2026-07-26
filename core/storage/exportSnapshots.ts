@@ -86,15 +86,26 @@ export function deleteSnapshotsFor(conversationId: string): ExportSnapshot[] {
   const all = getAllSnapshots();
   const removed = all.filter((o) => o.conversation_id === conversationId);
   if (removed.length) {
+    // Return value deliberately unchecked here and in sweepOrphanSnapshots:
+    // both write a SHORTER list to a key that already holds the longer one, so
+    // quota can't bite, and the only failure mode (storage unavailable) leaves
+    // the snapshots in place rather than losing them. Only the GROWING writes
+    // (restoreSnapshots, the import path, the drawer's save) need a check.
     writeSnapshots(all.filter((o) => o.conversation_id !== conversationId));
   }
   return removed;
 }
 
-/** Put back snapshots taken by deleteSnapshotsFor (the undo half). */
-export function restoreSnapshots(list: ExportSnapshot[]): void {
-  if (!list.length) return;
-  writeSnapshots(mergeSnapshots(getAllSnapshots(), list));
+/**
+ * Put back snapshots taken by deleteSnapshotsFor (the undo half). Returns
+ * whether they landed — this write GROWS the store, so unlike the shrinking
+ * writes above it can genuinely hit quota, and an undo that silently returns
+ * the conversation without its exports is exactly the lossy undo this pair
+ * exists to prevent.
+ */
+export function restoreSnapshots(list: ExportSnapshot[]): boolean {
+  if (!list.length) return true;
+  return writeSnapshots(mergeSnapshots(getAllSnapshots(), list));
 }
 
 /** Wipe the store. Part of "clear all conversations" — clear must mean clear. */

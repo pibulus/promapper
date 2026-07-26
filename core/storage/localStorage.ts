@@ -112,30 +112,22 @@ export function saveConversation(data: ConversationData): boolean {
 }
 
 /**
- * Star / unstar a conversation. Returns the new starred state.
+ * Toggle a conversation's starred flag. Returns the resulting state AND whether
+ * the write landed — a star that silently reverts on reload is the small,
+ * trust-eroding end of the same failure the autosave toast exists for.
+ * (`setConversationStarred`, the set-absolute twin, had no callers and is gone.)
  */
-export function setConversationStarred(id: string, starred: boolean): void {
-  if (typeof window === "undefined") return;
+export function toggleConversationStarred(
+  id: string,
+): { starred: boolean; ok: boolean } {
+  if (typeof window === "undefined") return { starred: false, ok: false };
   const conversations = getAllConversations();
   const conv = conversations[id];
-  if (!conv) return;
-  conv.starred = starred;
-  conversations[id] = conv;
-  safeSetItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
-}
-
-/**
- * Toggle a conversation's starred flag. Returns the resulting state.
- */
-export function toggleConversationStarred(id: string): boolean {
-  if (typeof window === "undefined") return false;
-  const conversations = getAllConversations();
-  const conv = conversations[id];
-  if (!conv) return false;
+  if (!conv) return { starred: false, ok: false };
   conv.starred = !conv.starred;
   conversations[id] = conv;
-  safeSetItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
-  return conv.starred;
+  const ok = safeSetItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+  return { starred: conv.starred, ok };
 }
 
 /**
@@ -259,26 +251,37 @@ export function getAllConversations(): Record<string, StoredConversation> {
 }
 
 /**
- * Get conversation list (sorted by updatedAt desc)
+ * Get conversation list (sorted by updatedAt desc).
+ *
+ * Normalized on the way out, like loadConversation. The history drawer reads
+ * `conv.conversation.title` and `conv.nodes.length` straight off these records,
+ * so ONE array-less record — imported from a hand-edited or foreign-shaped
+ * backup — threw on every render and made the drawer unopenable, permanently
+ * (the bad bytes are on disk). Normalizing here also repairs a store that
+ * already took one in.
  */
 export function getConversationList(): StoredConversation[] {
   const conversations = getAllConversations();
-  return Object.values(conversations).sort(
+  return Object.values(conversations).map(normalizeStored).sort(
     (a, b) => ts(b.updatedAt) - ts(a.updatedAt),
   );
 }
 
 /**
- * Delete a conversation. Returns the saved exports that went with it, so the
- * undo path can hand them back (see restoreConversation).
+ * Delete a conversation. Returns the saved exports that went with it (so the
+ * undo path can hand them back — see restoreConversation) and whether the write
+ * landed: a deletion that quietly reverts on reload is worse than one that says
+ * it failed while the user can still act.
  */
-export function deleteConversation(id: string): ExportSnapshot[] {
-  if (typeof window === "undefined") return [];
+export function deleteConversation(
+  id: string,
+): { snapshots: ExportSnapshot[]; ok: boolean } {
+  if (typeof window === "undefined") return { snapshots: [], ok: false };
 
   const conversations = getAllConversations();
   delete conversations[id];
 
-  safeSetItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+  const ok = safeSetItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
 
   // Saved exports describe THIS conversation — they can't outlive it. Without
   // this they orphaned forever: invisible (the drawer filters by a
@@ -292,7 +295,7 @@ export function deleteConversation(id: string): ExportSnapshot[] {
     localStorage.removeItem(ACTIVE_ID_KEY);
   }
 
-  return removedSnapshots;
+  return { snapshots: removedSnapshots, ok };
 }
 
 /**
@@ -302,17 +305,22 @@ export function deleteConversation(id: string): ExportSnapshot[] {
  * undo restores the record byte-for-byte and keeps its place in the list.
  *
  * Pass the snapshots deleteConversation returned to bring its saved exports
- * back too — otherwise undo silently restores the conversation without them.
+ * back too. NOT optional: a default `[]` is how a future caller quietly
+ * restores a conversation without its exports — the same shape as the
+ * version-2 backup bug serializeBackup lost its default over. Callers with
+ * none pass [].
+ *
+ * Returns false if either write failed, so undo can say it didn't take.
  */
 export function restoreConversation(
   stored: StoredConversation,
-  snapshots: ExportSnapshot[] = [],
-): void {
-  if (typeof window === "undefined" || !stored?.id) return;
+  snapshots: ExportSnapshot[],
+): boolean {
+  if (typeof window === "undefined" || !stored?.id) return false;
   const conversations = getAllConversations();
   conversations[stored.id] = stored;
-  safeSetItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
-  restoreSnapshots(snapshots);
+  const ok = safeSetItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+  return restoreSnapshots(snapshots) && ok;
 }
 
 /**
@@ -429,7 +437,14 @@ export function cancelPendingSave(): void {
 }
 
 /**
- * Get storage usage stats
+ * Get storage usage stats.
+ *
+ * Measures the WHOLE origin, not just the conversations key. The quota is
+ * shared: saved exports, local shares, the corrupt-store backup, tag tints,
+ * board order, theme and sound prefs all spend from the same 5MB — so a meter
+ * reading one key told users "12% full" right up to the autosave failing.
+ * Summing every key (rather than a hand-kept list of the ones we remember)
+ * means the gauge can't drift the next time a key is added.
  */
 export function getStorageStats(): {
   used: number;
@@ -441,8 +456,14 @@ export function getStorageStats(): {
   }
 
   try {
-    const data = localStorage.getItem(CONVERSATIONS_KEY) || "";
-    const used = new Blob([data]).size;
+    // Browsers bill localStorage in UTF-16 code units, key included — string
+    // length is closer to what the quota actually counts than UTF-8 bytes.
+    let used = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key === null) continue;
+      used += key.length + (localStorage.getItem(key) ?? "").length;
+    }
     const total = 5 * 1024 * 1024; // 5MB typical localStorage limit
     const percentage = (used / total) * 100;
 

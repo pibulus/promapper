@@ -101,6 +101,32 @@ function tagHash(tag: string): number {
 
 const TINTS_KEY = (conversationId: string) =>
   `promapper-tag-tints:${conversationId}`;
+const TINTS_PREFIX = "promapper-tag-tints:";
+
+/**
+ * Drop tint prefs whose conversation is gone. One key per conversation lives
+ * outside the conversations map, so a deleted conversation left its colours
+ * behind forever — invisible, unswept, and spending the same 5MB quota
+ * autosave needs. Runs at load like its siblings (sweepOrphans for takes,
+ * sweepOrphanSnapshots for exports) rather than on delete, so undo stays whole.
+ *
+ * Refuses an EMPTY live set for the same reason they do: a corrupt
+ * conversations store reads as {} and would otherwise take every tint with it.
+ */
+export function sweepOrphanTints(liveConversationIds: Set<string>): number {
+  if (typeof localStorage === "undefined") return 0;
+  if (liveConversationIds.size === 0) return 0;
+  const doomed: string[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key?.startsWith(TINTS_PREFIX)) continue;
+    if (!liveConversationIds.has(key.slice(TINTS_PREFIX.length))) {
+      doomed.push(key);
+    }
+  }
+  for (const key of doomed) localStorage.removeItem(key);
+  return doomed.length;
+}
 
 function loadBumps(conversationId: string): Record<string, number> {
   if (typeof localStorage === "undefined") return {};

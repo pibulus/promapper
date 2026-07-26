@@ -31,10 +31,8 @@ import {
   listRecordings,
   saveRecording,
   type StoredRecording,
-  sweepOrphans,
   updateRecording,
 } from "@core/storage/recordingsDB.ts";
-import { getAllConversations } from "@core/storage/localStorage.ts";
 import { showToast } from "../utils/toast.ts";
 import { ensureApiSession } from "../utils/apiAuth.ts";
 import { saveAudioBackup } from "../utils/downloadBackup.ts";
@@ -47,9 +45,6 @@ interface AudioRecorderProps {
   conversationId: string;
   onRecordingComplete?: () => void;
 }
-
-// Run the orphan sweep once per page load, not per mount.
-let sweptThisLoad = false;
 
 export default function AudioRecorder(
   { conversationId, onRecordingComplete }: AudioRecorderProps,
@@ -136,8 +131,9 @@ export default function AudioRecorder(
     MAX_RECORDING_TIME - recordingTime.value
   );
 
-  // Hydrate takes from IndexedDB whenever the conversation changes; sweep
-  // orphaned takes once per load.
+  // Hydrate takes from IndexedDB whenever the conversation changes. (The orphan
+  // sweep moved to HomeIsland's mount — here it only ran once a conversation
+  // was already open, which is the one case where nothing needs sweeping.)
   useEffect(() => {
     // A pending retry belongs to the conversation it was recorded in. This
     // component has no key (HomeIsland renders it with a changing prop), so
@@ -153,12 +149,6 @@ export default function AudioRecorder(
 
     let cancelled = false;
     (async () => {
-      if (!sweptThisLoad) {
-        sweptThisLoad = true;
-        try {
-          await sweepOrphans(Object.keys(getAllConversations()));
-        } catch { /* best-effort */ }
-      }
       const stored = await listRecordings(conversationId);
       if (!cancelled) takes.value = stored;
     })();

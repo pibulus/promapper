@@ -20,6 +20,9 @@ import {
   getAllConversations,
   loadConversation,
 } from "../core/storage/localStorage.ts";
+import { sweepOrphanSnapshots } from "@core/storage/exportSnapshots.ts";
+import { sweepOrphans } from "@core/storage/recordingsDB.ts";
+import { sweepOrphanTints } from "@utils/actionTags.ts";
 import { showToast } from "@utils/toast.ts";
 import {
   liveSession,
@@ -112,7 +115,20 @@ export default function HomeIsland() {
 
   // Restore last conversation on mount
   useEffect(() => {
-    hasHistory.value = Object.keys(getAllConversations()).length > 0;
+    const conversationIds = Object.keys(getAllConversations());
+    hasHistory.value = conversationIds.length > 0;
+
+    // Orphan sweeps, once per page load. Both were strays: the takes sweep
+    // lived in AudioRecorder, which only mounts once a conversation is OPEN —
+    // so deleting from the drawer and closing the tab never swept anything —
+    // and the snapshot sweep had no production caller at all, a garbage
+    // collector that was written, tested and never wired up. Tints joined
+    // them. Each refuses an empty live set, so a corrupt store sweeps nothing.
+    const liveIds = new Set(conversationIds);
+    sweepOrphans(conversationIds).catch(() => {/* best-effort */});
+    sweepOrphanSnapshots(liveIds);
+    sweepOrphanTints(liveIds);
+
     // Auto-restore last active conversation from localStorage
     const activeId = getActiveConversationId();
     // SKIP auto-restore if liveSession is active to prevent clobbering the live room's state

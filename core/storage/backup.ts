@@ -9,7 +9,7 @@
 
 import { ts } from "./dates.ts";
 
-import type { StoredConversation } from "./localStorage.ts";
+import { normalizeStored, type StoredConversation } from "./localStorage.ts";
 import type { ExportSnapshot } from "./exportSnapshots.ts";
 
 export const BACKUP_FORMAT = "promapper-backup";
@@ -88,6 +88,14 @@ export function parseBackupSnapshots(raw: string): ExportSnapshot[] {
  * version-agnostic emergency-recovery path — it never rejects on a version
  * mismatch, it just salvages whatever conversations it can find. Returns a
  * keyed map ready to merge into storage. Throws only on non-JSON input.
+ *
+ * Every salvaged record goes through `normalizeStored` — whose own docstring
+ * calls itself "belt-and-suspenders against the deliberately-permissive import
+ * path", while this was the one path that never wore it. A record missing
+ * `nodes`/`actionItems` (foreign shape, hand-edited file, pre-array schema)
+ * was written to storage raw, and the history drawer reads those arrays
+ * directly: the recovery path produced a permanent crash in the UI you'd
+ * recover through. Tolerant on the way in, sound on the way out.
  */
 export function parseBackup(
   raw: string,
@@ -111,7 +119,7 @@ export function parseBackup(
     const conv = item as Partial<StoredConversation>;
     const id = conv.id ?? conv.conversation?.id;
     if (!id) continue;
-    out[id] = { ...(conv as StoredConversation), id };
+    out[id] = normalizeStored({ ...(conv as StoredConversation), id });
   }
   return out;
 }
