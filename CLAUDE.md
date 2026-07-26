@@ -259,34 +259,50 @@ Adding a tool should be drop-a-file + register-a-line:
 3. **Filtered action-item sharing (queued)**: share one assignee's subset with
    filter metadata (from the `action-items-filtered-sharing` branch).
 
-## Live Collaboration (PartyKit)
+## Live Collaboration (Cloudflare Durable Objects)
 
-Built and working locally (`./node_modules/.bin/partykit dev`). Open a
-conversation, hit "Go Live" → `/live/<roomId>`; anyone with the link views +
-edits in real time, AI results push to the room, plus presence, chat, named
-avatars, and join/leave toasts. Room id is the secret (no passwords); rooms
-expire 24h after last activity.
+⚠️ **NOT PartyKit.** It was, until July 20 2026. PartyKit's SHARED
+`partykit.dev` zone permanently hit Cloudflare's 10,000-custom-domains-per-zone
+limit — their ceiling across all customers, not ours — so PartyKit deploys can
+never succeed again. Live collab now runs on plain Cloudflare Durable Objects
+(the primitive PartyKit wraps) under our own account. `services/collabHost.ts`
+is the one source of truth for where the collab server is.
 
-- Worker: `party/conversationRoom.ts` + `party/conversationProtocol.ts`.
-  RELATIVE IMPORTS ONLY — the PartyKit bundler ignores Deno `@core/` aliases, so
-  the protocol's sanitizers mirror `core/realtime/shareProtocol.ts` on purpose.
-  `partykit.json` registers it under the `conversation` party name. `deno check`
-  excludes `party/` (it imports `partykit/server`, an npm-only type).
-- Client: `signals/partyService.ts` (PartySocket), `signals/liveSync.ts`
-  (loopback-guarded two-way sync — `applyRemoteConversation` sets a guard so the
-  outbound effect doesn't echo), `signals/presenceStore.ts` +
-  `signals/partyConnectionStore.ts`. Route `routes/live/[roomId].tsx` renders
-  the standard `HomeIsland` — live mode (voice drawer, recording, transcript
-  stream) activates on the existing dashboard. (`LiveCollabIsland` and
-  `ChatSidebar` were absorbed into `HomeIsland` — references to them in the
-  session-history sections below are historical.)
+Open a conversation, hit "Go Live" → `/live/<roomId>`; anyone with the link
+views + edits in real time, AI results push to the room, plus presence, chat,
+named avatars, and join/leave toasts. Room id is the secret (no passwords);
+rooms expire 24h after last activity.
+
+- **Worker (LIVE):** `workers/collab/src/index.ts` +
+  `workers/collab/src/
+  conversationProtocol.ts`, config in
+  `workers/collab/wrangler.toml` (`promapper-collab`, SQLite-backed Durable
+  Object).
+- **`party/` is DEAD** — kept only as the historical PartyKit port. It cannot
+  deploy. Do NOT fix bugs there: for six days every fix and the entire test
+  suite pointed at `party/` while the live worker silently drifted, which is how
+  merge memory died in real rooms. `core/tests/party_sanitizer_test.ts` now
+  imports the LIVE worker and fails the build if the copies disagree.
+- RELATIVE IMPORTS ONLY in both `party/` and `workers/collab/` — neither bundler
+  reads Deno's `@core/` aliases, so their sanitizers mirror
+  `core/realtime/shareProtocol.ts` on purpose. Three copies is deliberate; drift
+  is the bug.
+- Client: `signals/partyService.ts` (PartySocket — the client lib still works
+  against a plain WebSocket server), `signals/liveSync.ts` (loopback-guarded
+  two-way sync), `signals/presenceStore.ts` + `signals/partyConnectionStore.ts`.
+  Route `routes/live/[roomId].tsx` renders the standard `HomeIsland`.
 - Server-push: `services/partyUpdates.ts`; `/api/process` + `/api/append` POST
   results to the room when a `roomId` is passed. `/api/live/create` seeds a
   room.
-- **To deploy (manual):** `npm run party:deploy` (needs a PartyKit/Cloudflare
-  account), then set `PUBLIC_PARTYKIT_HOST` (and `PARTYKIT_HOST` +
-  `PARTYKIT_UPDATE_TOKEN`) in the app env. Unset = collab silently disabled
-  (single-player unaffected).
+- **To deploy (manual):** `cd workers/collab && npm run deploy` (wrangler, needs
+  a Cloudflare account). Then set **`PUBLIC_COLLAB_HOST`** in the app env (plus
+  `COLLAB_UPDATE_TOKEN` for server push). The legacy `PARTYKIT_HOST` /
+  `PUBLIC_PARTYKIT_HOST` names are still honored so a half-migrated env keeps
+  working.
+- **Unset host = live collab is OFF, silently.** `/api/live/create` returns 503
+  "Live collaboration is not configured" and "Go Live" fails. Single-player is
+  unaffected. **Check this before launch** — it is the difference between the
+  feature existing and the feature working.
 
 ## When Adding Features
 
@@ -336,7 +352,7 @@ memory form in real-time.
 **Whiteboard: Excalidraw (not drawio).**
 
 - `@excalidraw/excalidraw` — npm package, embed as Preact component
-- Scene is a JSON array of elements — trivial to sync via PartyKit
+- Scene is a JSON array of elements — trivial to sync via the collab worker
 - Built-in `isCollaborating` mode, `onChange` fires on every edit
 - `excalidrawAPI.updateScene()` for programmatic AI edits
 - `customData` field on each element for ProMapper metadata
@@ -409,7 +425,7 @@ sensitive meetings. macOS arm64/x64 binaries available.
 **Phase 2b: Shared Whiteboard (manual)**
 
 - Embed Excalidraw as `islands/SharedWhiteboard.tsx`
-- Sync scene via PartyKit (already built)
+- Sync scene via the collab worker (already built)
 - Humans draw manually — click, drag, type
 - Toolbar: pen, rectangle, arrow, text, eraser, colors
 - Share whiteboard state in room snapshot
