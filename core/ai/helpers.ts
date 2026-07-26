@@ -394,7 +394,11 @@ export function parseGraphResponse(
     const data = JSON.parse(jsonString);
     return normalizeTopicGraph(data);
   } catch (error) {
-    console.error("Error parsing JSON response", error, jsonString);
+    // Truncated, like the other two parse-failure logs in this file. This one
+    // was missed by the July 25 log-hygiene pass and still echoed the entire
+    // model response — which is the conversation — into the server log.
+    console.error("Error parsing JSON response", error);
+    console.error("Raw text was (first 200 chars):", jsonString.slice(0, 200));
     onParseError?.("topic map");
     return { nodes: [], edges: [] };
   }

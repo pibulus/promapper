@@ -182,6 +182,8 @@ export default function ActionItemsCard(
 
   // Refs
   const lingerTimersRef = useRef<Map<string, number>>(new Map());
+  // The confetti burst's off-switch — one at a time, cleared on unmount.
+  const confettiTimerRef = useRef<number | undefined>(undefined);
   // What the open editor started from — if a live-collab update rewrites the
   // item underneath the editor, we bail honestly instead of clobbering it.
   const editSnapshotRef = useRef<
@@ -212,6 +214,10 @@ export default function ActionItemsCard(
         clearTimeout(timer);
       }
       lingerTimersRef.current.clear();
+      if (confettiTimerRef.current !== undefined) {
+        clearTimeout(confettiTimerRef.current);
+        confettiTimerRef.current = undefined;
+      }
     };
   }, []);
 
@@ -413,9 +419,17 @@ export default function ActionItemsCard(
           ? { x: box.left + box.width / 2, y: box.top + box.height / 2 }
           : undefined;
         triggerConfetti.value = true;
-        setTimeout(() => {
+        // Tracked and restarted, like the linger timers below. Untracked, two
+        // checkoffs inside a second meant the FIRST item's timer switched the
+        // confetti off mid-burst for the second — and nothing cleared it on
+        // unmount either.
+        if (confettiTimerRef.current !== undefined) {
+          clearTimeout(confettiTimerRef.current);
+        }
+        confettiTimerRef.current = setTimeout(() => {
+          confettiTimerRef.current = undefined;
           triggerConfetti.value = false;
-        }, 1000);
+        }, 1000) as unknown as number;
       } else {
         soundCheckoff();
       }
