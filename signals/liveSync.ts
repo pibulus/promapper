@@ -37,6 +37,10 @@ import {
   remoteUserName,
 } from "@signals/presenceStore.ts";
 import type { ConversationData } from "../core/types/conversation-data.ts";
+import {
+  loadConversation,
+  restoreConversation,
+} from "../core/storage/localStorage.ts";
 
 import { showToast } from "@utils/toast.ts";
 
@@ -97,6 +101,17 @@ export function startLiveSync(
             showToast("Reconnected — synced the room's latest", "info");
           }
           unsentLocal = false;
+          // Only here: this is the branch that takes the room's version whole.
+          const stashed = stashDivergedLocalCopy(data as ConversationData);
+          if (stashed) {
+            showToast(
+              stashed.ok
+                ? `Kept your version as "${stashed.title}" in History — the room's map is what's on screen.`
+                : "Couldn't set your own version aside — storage is full. Leave the room before editing.",
+              stashed.ok ? "info" : "error",
+              7000,
+            );
+          }
           applyRemoteConversation(data as ConversationData);
           lastSentJSON = sentKey();
           if (rev !== null) lastSeenRev = Math.max(lastSeenRev, rev);
@@ -169,6 +184,62 @@ function stripWhiteboard(data: ConversationData): ConversationData {
 /** The outbound JSON shape (whiteboardScene excluded) for echo-dedup. */
 function localJSON(data: ConversationData): string {
   return JSON.stringify(stripWhiteboard(data));
+}
+
+/**
+ * What a map SAYS, ignoring how it's stored. Sorted, and blind to positions,
+ * colors, timestamps and transcript text — so a copy that came back through
+ * the room (which re-normalizes `created_at` and re-orders nothing reliably)
+ * still matches itself. What it does catch is a topic or task added, removed,
+ * renamed, reworded or ticked: divergence a person would notice losing.
+ */
+function substance(data: ConversationData): string {
+  return JSON.stringify({
+    nodes: (data.nodes ?? []).map((n) => [n.id, n.label, n.emoji]).sort(),
+    items: (data.actionItems ?? []).map((
+      i,
+    ) => [i.id, i.description, i.status]).sort(),
+    summary: data.summary ?? "",
+  });
+}
+
+/**
+ * A room snapshot is about to land on a conversation id this device already
+ * holds. Usually that's fine — it's your own copy of this very room, coming
+ * back after a reload.
+ *
+ * But `Go Live` mints a BRAND NEW room id every time and nothing remembers the
+ * old one, so the second time a map is shared it's a different room carrying
+ * the same conversation id. A guest who left the first meeting with a copy,
+ * edited it for a week, then opened the new link had all of it replaced under
+ * that id — silently, no merge, no warning, and their notes and whiteboard
+ * went too (the join path nulls the signal first, so `applyRemoteConversation`
+ * has no `mine` to preserve client-only fields from).
+ *
+ * Keep their version beside it instead. Not a merge — the reconcile engine
+ * could do that properly with a stored BASE per room — just: never delete a
+ * week of someone's work to make room for a link they clicked.
+ *
+ * Returns what it filed (so the caller owns the toast and this stays testable
+ * without a DOM), or null when nothing needed keeping. Exported for its test.
+ */
+export function stashDivergedLocalCopy(
+  incoming: ConversationData,
+): { title: string; ok: boolean } | null {
+  const id = incoming.conversation?.id;
+  if (!id) return null;
+  const stored = loadConversation(id);
+  if (!stored) return null; // nothing of ours here — the room lands free
+  if (substance(stored) === substance(incoming)) return null; // same map
+
+  const copyId = crypto.randomUUID();
+  const title = `${stored.conversation?.title || "Untitled"} (your copy)`;
+  const ok = restoreConversation({
+    ...stored,
+    id: copyId,
+    conversation: { ...stored.conversation, id: copyId, title },
+  }, []);
+  return { title, ok };
 }
 
 /**
