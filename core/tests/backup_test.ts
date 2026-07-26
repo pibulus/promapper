@@ -36,7 +36,11 @@ Deno.test("buildBackup wraps conversations with format/version/timestamp", () =>
 });
 
 Deno.test("serializeBackup round-trips through parseBackup (wrapped form)", () => {
-  const json = serializeBackup({ a: conv("a", now), b: conv("b", now) }, now);
+  const json = serializeBackup(
+    { a: conv("a", now), b: conv("b", now) },
+    now,
+    [],
+  );
   const parsed = parseBackup(json);
   assertEquals(Object.keys(parsed).sort(), ["a", "b"]);
 });

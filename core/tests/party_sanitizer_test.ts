@@ -164,6 +164,16 @@ Deno.test("the collab sanitizer copies agree — live worker vs party/", async (
   );
 
   const hostile = validInput({
+    // Pin created_at: the sanitizers default it to new Date().toISOString(),
+    // so two calls milliseconds apart legitimately differ and the comparison
+    // would flake under load (it did — passed alone, failed in the suite).
+    conversation: {
+      id: "c1",
+      title: "the moth situation",
+      source: "audio",
+      transcript: "x",
+      created_at: "2026-01-01T00:00:00.000Z",
+    },
     nodes: [
       {
         id: "n1",

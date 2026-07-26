@@ -37,6 +37,7 @@ import {
   saveConversation,
 } from "../core/storage/localStorage.ts";
 import { serializeBackup } from "../core/storage/backup.ts";
+import { getAllSnapshots } from "../core/storage/exportSnapshots.ts";
 import TopicVisualizationsCard from "./TopicVisualizationsCard.tsx";
 import SharedWhiteboard from "./SharedWhiteboard.tsx";
 import BodyPortal from "../components/BodyPortal.tsx";
@@ -202,7 +203,17 @@ export default function DashboardIsland() {
     const flush = () => {
       flushSceneWrite();
       const data = conversationData.value;
-      if (data && !isViewingShared.value) saveConversation(data);
+      // A live session sets isViewingShared for its whole duration, which also
+      // gated THIS flush — so a host could run a 50-minute room held only in
+      // memory and the PartyKit room (24h TTL), and closing the tab (iOS
+      // discarding a backgrounded tab, a lid, a crash) wrote nothing. Leaving
+      // by the button saved; closing the tab did not. Same exit, two outcomes.
+      //
+      // Host only, deliberately: a GUEST is viewing someone else's room, which
+      // is exactly the case isViewingShared was written for — they shouldn't
+      // end up with a copy they never asked for.
+      const liveHost = liveSession.value?.isHost === true;
+      if (data && (!isViewingShared.value || liveHost)) saveConversation(data);
     };
     const onVisibility = () => {
       if (document.visibilityState === "hidden") flush();
@@ -271,6 +282,11 @@ export default function DashboardIsland() {
       const json = serializeBackup(
         getAllConversations(),
         new Date().toISOString(),
+        // The saved exports. Omitting them still produced a file stamped
+        // version 2, so it LOOKED complete while carrying "snapshots": [] —
+        // the exact loss BACKUP_VERSION 2 was created to stop. The comment
+        // above says "same backup as the history drawer"; now it is one.
+        getAllSnapshots(),
       );
       const blob = new Blob([json], { type: "application/json" });
       const url = URL.createObjectURL(blob);

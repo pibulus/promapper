@@ -50,7 +50,10 @@ export function buildBackup(
 export function serializeBackup(
   conversations: Record<string, StoredConversation>,
   now: string,
-  snapshots: ExportSnapshot[] = [],
+  // NOT optional. It defaulted to [], which let a caller quietly emit a
+  // version-2 backup with zero saved exports — a file that looks complete
+  // and silently loses every export on restore. Callers with none pass [].
+  snapshots: ExportSnapshot[],
 ): string {
   return JSON.stringify(buildBackup(conversations, now, snapshots), null, 2);
 }
