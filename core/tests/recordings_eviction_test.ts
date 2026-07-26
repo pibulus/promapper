@@ -50,3 +50,22 @@ Deno.test("both caps interact — keeps newest survivors", () => {
 Deno.test("empty input is a no-op", () => {
   assertEquals(planEviction([], { maxBytes: 1, maxCount: 0 }), []);
 });
+
+Deno.test("mapped takes are evicted before unmapped ones, even when newer", () => {
+  // "stray" is the OLDEST but has no receipt: it's audio the map never
+  // absorbed, and the unmapped-takes nudge is the only way back to it.
+  const metas = [
+    { ...meta("stray", 1 * MB, 1) },
+    { ...meta("mapped-old", 1 * MB, 2), mapped: true },
+    { ...meta("mapped-new", 1 * MB, 3), mapped: true },
+  ];
+  assertEquals(
+    planEviction(metas, { maxBytes: 100 * MB, maxCount: 1 }),
+    ["mapped-old", "mapped-new"],
+  );
+});
+
+Deno.test("all-unmapped still evicts oldest-first (space must be freed)", () => {
+  const metas = [meta("a", 1 * MB, 1), meta("b", 1 * MB, 2)];
+  assertEquals(planEviction(metas, { maxBytes: 100 * MB, maxCount: 1 }), ["a"]);
+});

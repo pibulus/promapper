@@ -15,6 +15,7 @@ import {
   undoLastMutation,
 } from "@signals/conversationStore.ts";
 import {
+  flushPendingSave,
   getActiveConversationId,
   getAllConversations,
   loadConversation,
@@ -639,6 +640,9 @@ export default function HomeIsland() {
                     aria-label="ProMapper — back to home"
                     onClick={(e) => {
                       e.preventDefault();
+                      // Leaving for home nulls the signal, which makes the
+                      // autosave effect cancel the pending write — land it first.
+                      flushPendingSave();
                       conversationData.value = null;
                       stopLiveMode();
                       window.history.pushState({}, "", "/");

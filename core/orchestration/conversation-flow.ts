@@ -6,7 +6,7 @@
  */
 
 import type { AIService, AudioPart } from "../ai/types.ts";
-import { analyzeText } from "./parallel-analysis.ts";
+import { analyzeText, buildWarnings } from "./parallel-analysis.ts";
 import { MAX_LABEL_LENGTH } from "./conversation-ops.ts";
 
 // The data layer promises every caller is label-safe (rename, add-form, AI).
@@ -177,16 +177,27 @@ export async function processAudio(
     // Lightweight: skip topic extraction, action extraction, summary.
     // Only check if existing items were completed/reopened.
     if (existingActionItems.length > 0) {
+      // The status check is the ONLY AI call on this path, so a silent failure
+      // here means the append lands as a 200 that changed nothing — and the
+      // receipt toast says "no new items this time", which reads as "the AI
+      // didn't hear you" when in fact it never got an answer. Warn instead.
+      // onParseError was `undefined` here while the full path (analyzeText)
+      // has always passed it, so a garbled reply degraded silently too.
+      const garbled = new Set<string>();
       try {
         statusUpdates = await aiService.checkActionItemStatus(
           transcriptText,
           existingActionItems,
-          undefined,
+          (what) => garbled.add(what),
           signal,
         );
       } catch (error) {
         console.error("Lightweight status check failed:", error);
+        warnings.push(
+          "Couldn't check your items against this take — nothing was ticked off this round.",
+        );
       }
+      warnings.push(...buildWarnings("", garbled));
     }
     summary = ""; // short append — summary not updated this round
   } else {

@@ -101,9 +101,11 @@ export async function analyzeText(
 /**
  * Fold the summary-fallback flag and any garbled-parse parts into user-facing
  * warning strings. Pure + shared by analyzeText/analyzeAudio so the messaging
- * stays consistent.
+ * stays consistent — and by conversation-flow's short-append path, which runs
+ * a status check outside this coordinator and must word its failure the same.
+ * Pass an empty summary when there was none to judge.
  */
-function buildWarnings(summary: string, garbled: Set<string>): string[] {
+export function buildWarnings(summary: string, garbled: Set<string>): string[] {
   const warnings: string[] = [];
   if (summary === summary_fallback) {
     warnings.push("Summary generation failed — your transcript is preserved.");

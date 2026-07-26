@@ -177,6 +177,10 @@ export default function AudioRecorder(
   }
   async function mapAllUnmapped() {
     for (const take of takes.value.filter((t) => !t.receipt)) {
+      // Each take is a full 5–15s round trip, and the id guard inside
+      // processAudioAppend discards a result that lands after a History switch.
+      // Without this the loop kept paying for appends it would then throw away.
+      if (conversationData.value?.conversation.id !== conversationId) break;
       await mapStoredTake(take);
     }
   }
@@ -240,7 +244,17 @@ export default function AudioRecorder(
     // after stopRecording's finally has lowered the flag. Regression from
     // d8938af, where the hook extraction moved isProcessing out from under
     // this function. `isProcessing` stays as the recorder's UI state.
-    if (appendingRef.current) return;
+    if (appendingRef.current) {
+      // Reachable for real: record a new take while "Map now" is working
+      // through the unmapped ones. The blob is safe in IndexedDB and the retry
+      // chip is showing, but bailing mutely looked exactly like a successful
+      // append that found nothing — say what happened.
+      showToast(
+        "Still mapping the last take — this one's saved, give it a moment.",
+        "info",
+      );
+      return;
+    }
     appendingRef.current = true;
     isProcessing.value = true;
 
@@ -358,7 +372,9 @@ export default function AudioRecorder(
       soundBloom();
 
       // Stamp the take with its receipt — what this recording actually changed.
-      const receipt = computeAppendReceipt(base, reconciled);
+      // flowResult (THEIRS) goes in so a topic/task the user added while this
+      // was in flight isn't credited to the take.
+      const receipt = computeAppendReceipt(base, reconciled, flowResult);
       if (takeId) {
         updateRecording(takeId, { receipt });
         takes.value = takes.value.map((t) =>
@@ -384,6 +400,15 @@ export default function AudioRecorder(
     } finally {
       appendingRef.current = false;
       isProcessing.value = false;
+      // The nudge timer runs 1500ms after a conversation opens and bails while
+      // an append is in flight — and this component has no `key`, so an append
+      // started in the PREVIOUS conversation is still flying when the new one's
+      // timer fires. That swallowed the "N takes not mapped yet" offer for the
+      // rest of the session (only an `online` event re-armed it). Re-offer here
+      // instead of resetting the recorder's own isProcessing, which would lie
+      // to the mic button mid-append. No-op once nudged for this conversation,
+      // so "Map now" doesn't nudge itself on every take it maps.
+      nudgeUnmapped();
     }
   }
 

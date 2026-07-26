@@ -349,12 +349,32 @@ export function clearAllConversations(): void {
 // ===================================================================
 
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+// The data the pending timer would write. Held OUT of the timer closure so
+// flushPendingSave can commit it early — a switch-away has to be able to land
+// the edit, not just cancel it.
+let pendingSave: {
+  data: ConversationData;
+  onSaveFailed?: () => void;
+} | null = null;
 
 /**
  * Debounced save - prevents too frequent writes
  */
 // So the "storage full" warning fires once, not on every keystroke while full.
 let warnedStorageFull = false;
+
+function runPendingSave(): void {
+  const pending = pendingSave;
+  pendingSave = null;
+  if (!pending) return;
+  const ok = saveConversation(pending.data);
+  if (!ok && !warnedStorageFull) {
+    warnedStorageFull = true;
+    pending.onSaveFailed?.();
+  } else if (ok) {
+    warnedStorageFull = false; // recovered → allow the warning again later
+  }
+}
 
 /**
  * Debounced save. `onSaveFailed` (if given) is called the first time a save
@@ -370,17 +390,26 @@ export function debouncedSave(
   if (saveTimeout) {
     clearTimeout(saveTimeout);
   }
+  pendingSave = { data, onSaveFailed };
 
   saveTimeout = setTimeout(() => {
-    const ok = saveConversation(data);
-    if (!ok && !warnedStorageFull) {
-      warnedStorageFull = true;
-      onSaveFailed?.();
-    } else if (ok) {
-      warnedStorageFull = false; // recovered → allow the warning again later
-    }
     saveTimeout = null;
+    runPendingSave();
   }, delay);
+}
+
+/**
+ * Write a pending debounced save NOW. Call before replacing `conversationData`
+ * with a different conversation: the next debouncedSave clears this timer and
+ * the edit it was holding goes with it, so the last ≤500ms of work on the
+ * outgoing conversation was simply lost (audit pass 01, RED-1). No-op when
+ * nothing is pending.
+ */
+export function flushPendingSave(): void {
+  if (!saveTimeout) return;
+  clearTimeout(saveTimeout);
+  saveTimeout = null;
+  runPendingSave();
 }
 
 /**
@@ -388,12 +417,15 @@ export function debouncedSave(
  * null (delete) or to a shared/foreign conversation: without this, a save
  * already scheduled with the OLD data fires ~500ms later and re-inserts the
  * just-deleted conversation (or writes shared data into the owner's store).
+ * Drops the held data too — otherwise a later flush would resurrect exactly
+ * what this cancel exists to prevent.
  */
 export function cancelPendingSave(): void {
   if (saveTimeout) {
     clearTimeout(saveTimeout);
     saveTimeout = null;
   }
+  pendingSave = null;
 }
 
 /**

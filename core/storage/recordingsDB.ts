@@ -39,17 +39,25 @@ export interface RecordingMeta {
   id: string;
   bytes: number;
   createdAt: string;
+  /** True once the take carries a receipt — its work is already in the map. */
+  mapped?: boolean;
 }
 
 /**
  * Pure eviction planner: which take ids must go (oldest first) so the set
  * fits under both caps. Exported for tests — the IDB wrapper stays thin.
+ *
+ * Mapped takes go first. An UNMAPPED take is audio the map never absorbed, and
+ * the "N takes not mapped yet" nudge is the only route back to it — evicting
+ * one throws away work, while evicting a mapped take only costs listen-back.
+ * Age decides within each group.
  */
 export function planEviction(
   metas: RecordingMeta[],
   caps: { maxBytes: number; maxCount: number } = RECORDING_CAPS,
 ): string[] {
   const sorted = [...metas].sort((a, b) =>
+    (a.mapped ? 0 : 1) - (b.mapped ? 0 : 1) ||
     a.createdAt.localeCompare(b.createdAt)
   );
   let totalBytes = sorted.reduce((sum, m) => sum + m.bytes, 0);
@@ -109,9 +117,27 @@ async function getAll(db: IDBDatabase): Promise<StoredRecording[]> {
   );
 }
 
+/**
+ * Resolve when the TRANSACTION commits, not when the request succeeds. Only
+ * `oncomplete` means the bytes are durable; `request.onsuccess` fires while the
+ * transaction is still open, so a tab killed in between loses the write. For a
+ * take that is deliberately persisted BEFORE the AI pipeline runs, that gap is
+ * the difference between the promise and the appearance of it.
+ */
+function txComplete(tx: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () =>
+      reject(tx.error ?? new Error("IndexedDB transaction failed"));
+    tx.onabort = () =>
+      reject(tx.error ?? new Error("IndexedDB transaction aborted"));
+  });
+}
+
 async function putRecord(db: IDBDatabase, rec: StoredRecording): Promise<void> {
   const tx = db.transaction(STORE, "readwrite");
-  await requestToPromise(tx.objectStore(STORE).put(rec));
+  tx.objectStore(STORE).put(rec);
+  await txComplete(tx);
 }
 
 async function deleteRecord(db: IDBDatabase, id: string): Promise<void> {
@@ -131,6 +157,7 @@ export async function saveRecording(rec: StoredRecording): Promise<boolean> {
         id: r.id,
         bytes: r.data?.size ?? 0,
         createdAt: r.createdAt,
+        mapped: Boolean(r.receipt),
       })),
     ).filter((id) => id !== rec.id);
     for (const id of drop) {

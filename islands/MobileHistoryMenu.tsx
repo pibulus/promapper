@@ -11,6 +11,7 @@ import { useEffect, useRef } from "preact/hooks";
 import {
   cancelPendingSave,
   deleteConversation,
+  flushPendingSave,
   getAllConversations,
   getConversationList,
   getStorageStats,
@@ -188,6 +189,10 @@ export default function MobileHistoryMenu() {
   function handleLoad(id: string) {
     const conv = loadConversation(id);
     if (conv) {
+      // Land the outgoing conversation's pending edit BEFORE the signal moves:
+      // the assignment below re-arms the autosave debounce with the NEW data,
+      // clearing the timer that was holding the old one's last change.
+      flushPendingSave();
       conversationData.value = conv;
       isOpen.value = false; // Close drawer after loading
     }
@@ -230,6 +235,10 @@ export default function MobileHistoryMenu() {
   }
 
   function handleNew() {
+    // Going to null makes the autosave effect CANCEL the pending save (it can't
+    // tell "new" from "deleted"), so flush first or the last edit is dropped
+    // deliberately rather than raced away.
+    flushPendingSave();
     conversationData.value = null;
     isOpen.value = false;
   }

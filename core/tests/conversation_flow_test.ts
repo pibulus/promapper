@@ -272,6 +272,50 @@ Deno.test("processAudio short path skips topics + summary, keeps status check", 
   assertEquals(result.statusUpdates[0].status, "completed");
 });
 
+Deno.test("short path warns when its only AI call fails or comes back garbled", async () => {
+  // The status check is the ONLY call on this path. If it dies silently the
+  // append returns a 200 that changed nothing and the receipt toast reads
+  // "no new items this time" — indistinguishable from "the AI didn't hear you".
+  const existing = [{
+    id: "task-fix-the-tape-machine",
+    conversation_id: "conv-light",
+    description: "fix the tape machine before Thursday",
+    assignee: null,
+    due_date: null,
+    status: "pending" as const,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }];
+
+  const thrower: AIService = {
+    ...createMockAIService(),
+    checkActionItemStatus() {
+      return Promise.reject(new Error("status model down"));
+    },
+  };
+  const failed = await processAudio(thrower, mockAudioPart, "conv-light", {
+    existingActionItems: existing,
+    lightweightIfShort: true,
+  });
+  assertEquals(failed.statusUpdates.length, 0);
+  assertEquals(failed.warnings.length, 1);
+
+  // A garbled reply degrades through onParseError, which this path used to
+  // pass as `undefined` while the full path always wired it up.
+  const garbler: AIService = {
+    ...createMockAIService(),
+    async checkActionItemStatus(_input, _existing, onErr, _signal) {
+      onErr?.("action item status");
+      return [];
+    },
+  };
+  const garbled = await processAudio(garbler, mockAudioPart, "conv-light", {
+    existingActionItems: existing,
+    lightweightIfShort: true,
+  });
+  assertEquals(garbled.warnings.length, 1);
+});
+
 Deno.test("processAudio runs full analysis when lightweightIfShort is off", async () => {
   let topicsExtracted = false;
   const service: AIService = {

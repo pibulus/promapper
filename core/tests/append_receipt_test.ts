@@ -49,13 +49,49 @@ Deno.test("receipt counts new topics and new tasks", () => {
     nodes: [node("a"), node("b"), node("c")],
     actionItems: [item("t1", "pending"), item("t2", "pending")],
   });
-  const r = computeAppendReceipt(base, next);
+  // The AI produced everything in `next` this round.
+  const r = computeAppendReceipt(base, next, next);
   assertEquals(r, {
     topicsAdded: 2,
     itemsAdded: 1,
     itemsCompleted: 0,
     itemsReopened: 0,
   });
+});
+
+Deno.test("in-flight user additions are not credited to the take", () => {
+  const base = conv({
+    nodes: [node("a")],
+    actionItems: [item("t1", "pending")],
+  });
+  // The server heard one new topic ("b") and one new task ("t2").
+  const theirs = conv({
+    nodes: [node("a"), node("b")],
+    actionItems: [item("t1", "pending"), item("t2", "pending")],
+  });
+  // Reconcile kept those AND the topic/task the user added mid-round-trip.
+  const next = conv({
+    nodes: [node("a"), node("b"), node("user-added")],
+    actionItems: [
+      item("t1", "pending"),
+      item("t2", "pending"),
+      item("user-typed", "pending"),
+    ],
+  });
+  const r = computeAppendReceipt(base, next, theirs);
+  assertEquals(r.topicsAdded, 1);
+  assertEquals(r.itemsAdded, 1);
+});
+
+Deno.test("a suggestion reconcile dropped is not counted as added", () => {
+  const base = conv({ actionItems: [item("t1", "pending")] });
+  // Server re-extracted a task the user had already deleted (tombstoned), so
+  // reconcile filtered it out — the map never gained it.
+  const theirs = conv({
+    actionItems: [item("t1", "pending"), item("zombie", "pending")],
+  });
+  const next = conv({ actionItems: [item("t1", "pending")] });
+  assertEquals(computeAppendReceipt(base, next, theirs).itemsAdded, 0);
 });
 
 Deno.test("receipt attributes only ai_checked flips to the take", () => {
@@ -73,7 +109,7 @@ Deno.test("receipt attributes only ai_checked flips to the take", () => {
       item("ai-reopen", "pending", true), // AI reopened it
     ],
   });
-  const r = computeAppendReceipt(base, next);
+  const r = computeAppendReceipt(base, next, next);
   assertEquals(r.itemsCompleted, 1);
   assertEquals(r.itemsReopened, 1);
 });
@@ -83,7 +119,8 @@ Deno.test("null base counts everything as added, nothing as flipped", () => {
     nodes: [node("a")],
     actionItems: [item("t1", "completed", true)],
   });
-  const r = computeAppendReceipt(null, next);
+  // base null → reconcile passes THEIRS straight through, so next IS theirs.
+  const r = computeAppendReceipt(null, next, next);
   assertEquals(r, {
     topicsAdded: 1,
     itemsAdded: 1,
