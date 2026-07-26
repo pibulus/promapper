@@ -1,12 +1,15 @@
 /**
  * ProMapper - Theme Engine
  *
- * Provider-agnostic theme system: get/set/cycle/load/save/applyTheme/subscribe/init.
- * Zero Preact/Fresh imports — safe to use in core/ (server or client).
+ * Provider-agnostic: load/save/applyTheme/applyCustomTheme/init. Zero
+ * Preact/Fresh imports — safe to use in core/ (server or client).
  * document/localStorage access is guarded with typeof checks.
  *
- * Ported from the canonical CMF ThemeSystem (theme-system/mod.ts).
- * RandomThemeGenerator omitted intentionally — ProMapper uses curated palettes.
+ * Ported from the canonical CMF ThemeSystem (theme-system/mod.ts). The port
+ * carried a getThemes/getCurrentTheme/setTheme/subscribe surface that nothing
+ * here ever called — the observer's listener array was permanently empty —
+ * so it's gone. The app rolls a theme (applyCustomTheme) or restores the
+ * saved one (init); that's the whole story. Add back what a caller needs.
  */
 
 import type { Theme, ThemeSystemConfig } from "./types.ts";
@@ -26,7 +29,6 @@ export const SHUFFLE_SCHEMA_VERSION = 9;
 export class ThemeSystem {
   private config: ThemeSystemConfig;
   private currentTheme: Theme;
-  private listeners: Array<(theme: Theme) => void> = [];
   // Keys set by the PREVIOUS theme's `cssVars` block. A theme-specific var (e.g.
   // GOLD's --accent-strong) would otherwise persist as an inline :root style
   // after switching to a theme that doesn't define it, overriding the static-CSS
@@ -51,28 +53,6 @@ export class ThemeSystem {
   // ===================================================================
   // PUBLIC API
   // ===================================================================
-
-  /** Return all available themes. */
-  getThemes(): Theme[] {
-    return this.config.themes;
-  }
-
-  /** Return the currently active theme. */
-  getCurrentTheme(): Theme {
-    return this.currentTheme;
-  }
-
-  /** Switch to a named theme; throws if name not found. */
-  setTheme(themeName: string): Theme {
-    const theme = this.config.themes.find((t) => t.name === themeName);
-    if (!theme) {
-      throw new Error(`Theme '${themeName}' not found`);
-    }
-    this.currentTheme = theme;
-    this.applyTheme(theme);
-    this.notifyListeners(theme);
-    return theme;
-  }
 
   /**
    * Apply a theme object to the document root via CSS custom properties.
@@ -166,17 +146,6 @@ export class ThemeSystem {
   }
 
   /**
-   * Subscribe to theme change events.
-   * Returns an unsubscribe function.
-   */
-  subscribe(listener: (theme: Theme) => void): () => void {
-    this.listeners.push(listener);
-    return () => {
-      this.listeners = this.listeners.filter((l) => l !== listener);
-    };
-  }
-
-  /**
    * Initialise on client mount: load saved theme from localStorage, apply it
    * to the document, and return the resolved theme.
    */
@@ -208,7 +177,6 @@ export class ThemeSystem {
     // that used to sit below meant every dice roll serialised the whole
     // theme plus its flat var map and wrote localStorage TWICE.
     this.applyTheme(theme);
-    this.notifyListeners(theme);
     return theme;
   }
 
@@ -254,10 +222,6 @@ export class ThemeSystem {
         console.error("Failed to save theme to localStorage:", err);
       }
     }
-  }
-
-  private notifyListeners(theme: Theme): void {
-    this.listeners.forEach((listener) => listener(theme));
   }
 }
 
