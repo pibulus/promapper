@@ -13,9 +13,10 @@ Deno.env.set("API_RATE_LIMIT", "3");
 Deno.env.set("API_RATE_WINDOW_MS", "60000");
 Deno.env.delete("API_AUTH_TOKEN"); // auth disabled for these origin/rate tests
 
-const { guardRequest, shouldBlockUnconfiguredAuth } = await import(
-  "../../services/requestGuard.ts"
-);
+const { getClientToken, guardRequest, shouldBlockUnconfiguredAuth } =
+  await import(
+    "../../services/requestGuard.ts"
+  );
 
 function reqFrom(origin: string | null, ip = "1.1.1.1"): Request {
   const headers = new Headers({ "x-forwarded-for": ip });
@@ -126,4 +127,30 @@ Deno.test("getByoKey rejects garbage: too short, too long, non-printable", () =>
     null,
   );
   assertEquals(getByoKey(reqWithHeaders({})), null);
+});
+
+Deno.test("a spoofed x-forwarded-for can't mint a fresh rate-limit bucket", () => {
+  // Proxies APPEND to x-forwarded-for, so its FIRST entry is whatever the
+  // caller sent. Trusting it let anyone rotate the header per request and walk
+  // straight past the burst cap, the daily cap and the login brute-force
+  // guard. Edge-set headers win; the XFF fallback reads the LAST hop.
+  const spoofed = (claim: string) =>
+    new Request("https://example.test/api/process", {
+      headers: {
+        "x-forwarded-for": `${claim}, 203.0.113.7`,
+        "cf-connecting-ip": "203.0.113.7",
+      },
+    });
+
+  const a = getClientToken(spoofed("1.1.1.1"));
+  const b = getClientToken(spoofed("2.2.2.2"));
+  assertEquals(a, b, "varying the client-supplied hop changed the bucket");
+  assertEquals(a, "203.0.113.7");
+
+  // With no edge header, fall back to the nearest proxy's entry, not the
+  // caller's.
+  const noEdge = new Request("https://example.test/api/process", {
+    headers: { "x-forwarded-for": "9.9.9.9, 203.0.113.7" },
+  });
+  assertEquals(getClientToken(noEdge), "203.0.113.7");
 });

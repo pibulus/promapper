@@ -352,17 +352,30 @@ export function timingSafeEqual(a: string, b: string): boolean {
   return result === 0;
 }
 
-function getClientToken(req: Request) {
+/** The rate-limit bucket key for a request. Exported for its guard test. */
+export function getClientToken(req: Request) {
+  // Edge-set headers FIRST. `cf-connecting-ip` and `x-real-ip` are written by
+  // the proxy itself and a client cannot forge them through it; the FIRST
+  // entry of `x-forwarded-for` is whatever the caller sent, because proxies
+  // APPEND. Trusting that first entry meant anyone could mint a brand-new
+  // rate-limit bucket per request just by varying the header — bypassing the
+  // 60/min burst, the daily cap, and the login brute-force guard with it.
+  const edge = req.headers.get("cf-connecting-ip") ??
+    req.headers.get("x-real-ip");
+  if (edge) return edge.trim() || "unknown";
+
+  // ponytail: falling back to the LAST x-forwarded-for entry — the one the
+  // nearest proxy appended, so the only one not caller-controlled when there
+  // is exactly ONE trusted hop in front of us. That assumption is the part
+  // worth confirming against the actual deploy topology: with two hops the
+  // right index is -2, and with none this header shouldn't be trusted at all.
   const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) {
-    return forwarded.split(",")[0]?.trim() || "unknown";
+    const hops = forwarded.split(",").map((h) => h.trim()).filter(Boolean);
+    return hops[hops.length - 1] || "unknown";
   }
 
-  return (
-    req.headers.get("cf-connecting-ip") ??
-      req.headers.get("x-real-ip") ??
-      "unknown"
-  );
+  return "unknown";
 }
 
 function jsonResponse(body: Record<string, unknown>, status: number) {
