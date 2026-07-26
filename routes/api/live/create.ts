@@ -50,8 +50,11 @@ export const handler: Handlers = {
     // Push the WHOLE body, not body.conversation. The room sanitizes a full
     // snapshot envelope ({conversation, transcript, nodes, edges, ...}) and
     // rejects a bare conversation object with 400 — which this route then
-    // surfaced as a mystery 502. This path had never run in production (the
-    // collab worker was never deployed), so the mismatch went unnoticed.
+    // surfaced as a mystery 502. The mismatch went unnoticed because this path
+    // has never run in production: the collab WORKER is deployed and healthy
+    // (promapper-collab.pibulus.workers.dev, since 2026-07-20), but the app
+    // has no PUBLIC_COLLAB_HOST set, so collabHost() is empty and every
+    // request 503s before reaching here. Verified against prod 2026-07-26.
     // Accept either shape: if the caller sent only {conversation}, wrap it.
     const raw = (body ?? {}) as Record<string, unknown>;
     const snapshot = raw.transcript === undefined && raw.conversation
