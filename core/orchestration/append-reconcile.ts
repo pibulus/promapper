@@ -384,5 +384,15 @@ export function reconcileAppendResult(
     ...(mine.deletedActionDescriptions?.length
       ? { deletedActionDescriptions: mine.deletedActionDescriptions }
       : {}),
+    // Same story for every other CLIENT-ONLY field. THEIRS is built by the
+    // server flow, which has never heard of notes, the magpie shelf or the
+    // whiteboard scene — so spreading it dropped all three on every append
+    // and every live-analysis round, and the autosave effect then wrote the
+    // loss to storage. Write a note, record one more take, note gone.
+    ...(mine.notes !== undefined ? { notes: mine.notes } : {}),
+    ...(mine.magpie !== undefined ? { magpie: mine.magpie } : {}),
+    ...(mine.whiteboardScene !== undefined
+      ? { whiteboardScene: mine.whiteboardScene }
+      : {}),
   };
 }

@@ -265,3 +265,38 @@ Deno.test("user-added item that the AI also extracted collapses to one (semantic
   const out = reconcileAppendResult(base, mine, theirs);
   assertEquals(out.actionItems.length, 1);
 });
+
+// ── S9: client-only fields survive the round trip ──────────────────────────
+Deno.test("S9 client-only: notes, magpie and whiteboard survive an append", () => {
+  // THEIRS is built by the server flow, which has never heard of these three
+  // fields. Before this guard, spreading THEIRS dropped all of them on every
+  // append and every live-analysis round — write a note, record one more
+  // take, note gone (and the autosave effect wrote the loss to storage).
+  const base = conv();
+  const theirs = conv({ summary: "the AI's fresh summary" });
+  const mine = conv({
+    notes: "ring the fiddle player back about saturday",
+    magpie: [{
+      id: "m1",
+      kind: "link",
+      value: "https://example.org/kelp-forests",
+      addedAt: "2026-01-01T00:00:00.000Z",
+    }],
+    whiteboardScene: '{"elements":[]}',
+  });
+
+  const out = reconcileAppendResult(base, mine, theirs);
+
+  assertEquals(out.notes, "ring the fiddle player back about saturday");
+  assertEquals(out.magpie?.length, 1);
+  assertEquals(out.whiteboardScene, '{"elements":[]}');
+  // The server still owns the summary.
+  assertEquals(out.summary, "the AI's fresh summary");
+});
+
+Deno.test("S9 empty: absent client-only fields stay absent, not undefined keys", () => {
+  const out = reconcileAppendResult(conv(), conv(), conv());
+  assertEquals("notes" in out, false);
+  assertEquals("magpie" in out, false);
+  assertEquals("whiteboardScene" in out, false);
+});

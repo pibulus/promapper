@@ -61,7 +61,15 @@ export default function ShareButton() {
       const res = await fetch("/api/live/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversation: conversationData.value }),
+        // ConversationData IS the snapshot envelope the room sanitizes
+        // ({conversation:{id,title}, transcript, nodes, edges, actionItems,
+        // summary}). Wrapping it in another {conversation:…} double-nested
+        // it: the sanitizer read input.nodes/edges/actionItems/summary off
+        // the top level and found nothing, and input.conversation.id came
+        // back undefined — so the room was seeded with transcript only under
+        // a synthetic id, and the host's INIT then applied that stripped
+        // snapshot back over their own map. Starting a room wiped the board.
+        body: JSON.stringify(conversationData.value),
       });
       if (!res.ok) {
         const msg = res.status === 503

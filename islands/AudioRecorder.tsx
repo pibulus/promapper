@@ -60,6 +60,8 @@ export default function AudioRecorder(
 
   const lastRecordingBlobRef = useRef<Blob | null>(null);
   const lastTakeIdRef = useRef<string | null>(null);
+  // Re-entry guard for processAudioAppend — see the note at its definition.
+  const appendingRef = useRef(false);
 
   const MAX_RECORDING_TIME = 10 * 60;
   const WARNING_TIME = 30;
@@ -214,7 +216,19 @@ export default function AudioRecorder(
   // was captured as — the receipt is stamped onto exactly that take.
   async function processAudioAppend(audioBlob: Blob, takeId: string | null) {
     // Prevent concurrent appends within the same tab.
-    if (isProcessing.value) return;
+    //
+    // This guard is deliberately NOT `isProcessing`. That signal belongs to
+    // useRecorder, which raises it in stopRecording() BEFORE awaiting onStop —
+    // and onStop is what calls us. Guarding on it meant every recorded take
+    // returned here before ever reaching /api/append: the take landed in
+    // IndexedDB, no request was sent, no receipt stamped, no error shown. The
+    // append loop was dead on its primary path and only the rescue routes
+    // (retry chip, "N takes not mapped yet") still worked, because those fire
+    // after stopRecording's finally has lowered the flag. Regression from
+    // d8938af, where the hook extraction moved isProcessing out from under
+    // this function. `isProcessing` stays as the recorder's UI state.
+    if (appendingRef.current) return;
+    appendingRef.current = true;
     isProcessing.value = true;
 
     try {
@@ -334,6 +348,7 @@ export default function AudioRecorder(
         "error",
       );
     } finally {
+      appendingRef.current = false;
       isProcessing.value = false;
     }
   }

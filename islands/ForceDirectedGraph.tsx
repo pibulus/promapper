@@ -309,8 +309,18 @@ export default function ForceDirectedGraph(
         minute: "2-digit",
       });
 
-      header.innerHTML =
-        `<div>${title}</div><div style="font-size: 12px; font-weight: normal; color: #666;">${timestamp}</div>`;
+      // textContent, not innerHTML: the title is untrusted twice over — it's
+      // AI-generated from whatever the user pasted, AND in a live room it
+      // arrives from a peer through the collab worker, whose normalizeString
+      // only strips control characters (< and > pass straight through). This
+      // was the one render path in the app that wasn't escaped; every other
+      // one goes through formatTranscriptSafe / formatMarkdownSafe.
+      const titleEl = document.createElement("div");
+      titleEl.textContent = title;
+      const stampEl = document.createElement("div");
+      stampEl.style.cssText = "font-size:12px;font-weight:normal;color:#666;";
+      stampEl.textContent = timestamp;
+      header.append(titleEl, stampEl);
       container.appendChild(header);
 
       // Hide control buttons during export
