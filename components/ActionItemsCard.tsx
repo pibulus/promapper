@@ -242,9 +242,14 @@ export default function ActionItemsCard(
 
     if (searchQuery.value) {
       const query = searchQuery.value.toLowerCase();
+      // The chip renders "@mabel" but parseQuickAdd strips the sigil into the
+      // assignee field, so the stored value is "mabel" — searching for the
+      // thing you can actually SEE on screen matched nothing. #tags never had
+      // this problem because they stay inline in the description.
+      const bare = query.replace(/^@/, "");
       processedItems = processedItems.filter((item) =>
         item.description.toLowerCase().includes(query) ||
-        item.assignee?.toLowerCase().includes(query) ||
+        item.assignee?.toLowerCase().includes(bare) ||
         item.due_date?.toLowerCase().includes(query)
       );
     }
