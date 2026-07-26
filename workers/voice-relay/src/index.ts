@@ -27,7 +27,20 @@ interface Env {
 
 const ROOM_TTL_SECONDS = 7200; // 2 hours
 const KV_TTL_SECONDS = 2592000; // 30 days
-const SESSION_TTL_SECONDS = ROOM_TTL_SECONDS;
+/**
+ * A session token exists to complete ONE SDP handshake, not to live as long as
+ * the room. /sdp is the browser-facing endpoint with no rate limit, and each
+ * call mints a fresh SFU session on the house's Realtime app — so a token that
+ * lasted the full two hours handed anyone who joined once a two-hour window to
+ * create sessions in a loop. The client posts an offer exactly once per join
+ * (VoicePanel), and a reconnect re-mints through /api/live/voice-token, which
+ * is auth- and rate-guarded.
+ */
+const SESSION_TTL_SECONDS = 600; // 10 minutes
+/** TURN credentials must outlive the handshake — they carry the whole CALL.
+ * (Shortening these along with the session token would have dropped anyone
+ * behind a symmetric NAT ten minutes into a meeting.) */
+const TURN_TTL_SECONDS = ROOM_TTL_SECONDS;
 
 function corsHeaders(origin: string): HeadersInit {
   return {
@@ -49,6 +62,16 @@ function json(
   });
 }
 
+/** Constant-time compare — the collab worker's, copied rather than imported
+ * (separate bundles, relative imports only). Length still leaks, same as every
+ * other comparison in this codebase; the byte-by-byte path is the point. */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return result === 0;
+}
+
 function authorize(req: Request, env: Env): boolean {
   if (!env.VOICE_SHARED_SECRET) {
     console.error(
@@ -59,8 +82,8 @@ function authorize(req: Request, env: Env): boolean {
   const auth = req.headers.get("Authorization") || "";
   const provided = auth.replace(/^Bearer\s+/i, "").trim();
   const alt = req.headers.get("X-Shared-Secret") || "";
-  return provided === env.VOICE_SHARED_SECRET ||
-    alt === env.VOICE_SHARED_SECRET;
+  return timingSafeEqual(provided, env.VOICE_SHARED_SECRET) ||
+    timingSafeEqual(alt, env.VOICE_SHARED_SECRET);
 }
 
 function bearer(req: Request): string {
@@ -85,7 +108,7 @@ async function buildIceServers(env: Env): Promise<unknown[]> {
             "Authorization": `Bearer ${env.TURN_KEY_API_TOKEN}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ ttl: SESSION_TTL_SECONDS }),
+          body: JSON.stringify({ ttl: TURN_TTL_SECONDS }),
         },
       );
       if (res.ok) {

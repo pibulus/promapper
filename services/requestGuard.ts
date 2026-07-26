@@ -224,13 +224,23 @@ function enforceDailyLimit(req: Request): Response | null {
  * /api/live/chunk). Call AFTER size validation with the actual blob bytes.
  * Disabled until AUDIO_BYTES_PER_DAY is set — flipping tiers on is config,
  * not code.
+ *
+ * `housePaysAudio` is the BYO escape hatch's own escape hatch. A BYO key buys
+ * out the OpenRouter bill and nothing else, so it may only waive a budget that
+ * covers OpenRouter work. /api/live/chunk transcribes through DEEPGRAM when a
+ * house key is configured — the user's key never touches it — so a blanket
+ * waiver there would have let BYO users spend the house's Deepgram without
+ * limit the day tiers switch on. Pass true wherever the house's own provider
+ * does the work.
  */
 export function guardAudioBudget(
   req: Request,
   bytes: number,
+  housePaysAudio = false,
 ): Response | null {
   if (AUDIO_BYTES_PER_DAY <= 0) return null;
-  if (getByoKey(req)) return null; // their key, their audio bill
+  // Their key, their audio bill — but only when their key is what pays.
+  if (!housePaysAudio && getByoKey(req)) return null;
   const ok = consumeWindowBudget(
     audioByteMap,
     getClientToken(req),

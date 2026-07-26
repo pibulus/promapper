@@ -82,6 +82,28 @@ export function cleanJsonResponse(text: string): string {
     .replace(/\s*```$/, "");
 }
 
+/**
+ * A model reply's SHAPE, for parse-failure logs. The reply is the user's
+ * conversation — topic names, action items, what someone said they'd do — so
+ * none of it may reach a server log, not even the first 200 characters the
+ * earlier truncation allowed. Everything but structural punctuation is
+ * stripped, leaving nesting and format: `{"": [{"": ""}]}`.
+ *
+ * That is every diagnosis these logs have ever served — fenced reply, prose
+ * preamble, truncated mid-object, an array where an object was expected — and
+ * the parse error itself still carries the position.
+ */
+export function describeReplyShape(text: string): string {
+  const trimmed = text.trim();
+  const shape = trimmed
+    .replace(/[^\s{}[\],:"]/g, "")
+    .replace(/\s+/g, "")
+    .slice(0, 80);
+  return `${text.length} chars, fenced=${
+    trimmed.startsWith("```")
+  }, shape: ${shape}`;
+}
+
 // ===================================================================
 // PRIMITIVE NORMALIZERS
 // ===================================================================
@@ -149,9 +171,8 @@ export function parseActionItemsResponse(
       .filter((item): item is ActionItemInput => item !== null);
   } catch (error) {
     console.error("Error parsing action items JSON:", error);
-    // Truncated on purpose: enough to diagnose malformed JSON without
-    // writing whole conversations into the deploy log dashboard.
-    console.error("Raw text was (first 200 chars):", text.slice(0, 200));
+    // Shape only — the reply IS the conversation (see describeReplyShape).
+    console.error("Reply shape:", describeReplyShape(text));
     onParseError?.("action items");
     return [];
   }
@@ -200,9 +221,8 @@ export function parseStatusUpdatesResponse(
       .filter((update): update is ActionItemStatusUpdate => update !== null);
   } catch (error) {
     console.error("Error parsing action item status JSON:", error);
-    // Truncated on purpose: enough to diagnose malformed JSON without
-    // writing whole conversations into the deploy log dashboard.
-    console.error("Raw text was (first 200 chars):", text.slice(0, 200));
+    // Shape only — the reply IS the conversation (see describeReplyShape).
+    console.error("Reply shape:", describeReplyShape(text));
     onParseError?.("self-checkoff updates");
     return [];
   }
@@ -394,11 +414,10 @@ export function parseGraphResponse(
     const data = JSON.parse(jsonString);
     return normalizeTopicGraph(data);
   } catch (error) {
-    // Truncated, like the other two parse-failure logs in this file. This one
-    // was missed by the July 25 log-hygiene pass and still echoed the entire
-    // model response — which is the conversation — into the server log.
+    // Shape only, like the other two parse-failure logs in this file — the
+    // model response is the conversation (see describeReplyShape).
     console.error("Error parsing JSON response", error);
-    console.error("Raw text was (first 200 chars):", jsonString.slice(0, 200));
+    console.error("Reply shape:", describeReplyShape(jsonString));
     onParseError?.("topic map");
     return { nodes: [], edges: [] };
   }

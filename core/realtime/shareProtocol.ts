@@ -147,7 +147,7 @@ function sanitizePosition(
   return { x: clamp(x), y: clamp(y) };
 }
 
-function sanitizeNode(input: unknown) {
+export function sanitizeNode(input: unknown) {
   if (!isRecord(input)) return null;
   const id = normalizeString(input.id, 128);
   const label = normalizeString(
@@ -187,7 +187,7 @@ function sanitizeNode(input: unknown) {
   return node;
 }
 
-function sanitizeEdge(input: unknown) {
+export function sanitizeEdge(input: unknown) {
   if (!isRecord(input)) return null;
   const source = normalizeString(input.source_topic_id, 128);
   const target = normalizeString(input.target_topic_id, 128);
@@ -204,7 +204,7 @@ function sanitizeEdge(input: unknown) {
 
 /** statusUpdates was the one array riding into shares with a bare slice —
  * every sibling gets field-level sanitization, so this one does too. */
-function sanitizeStatusUpdate(input: unknown) {
+export function sanitizeStatusUpdate(input: unknown) {
   if (!isRecord(input)) return null;
   const id = normalizeString(input.id, 128);
   if (!id) return null;
@@ -224,7 +224,7 @@ function sanitizeStatusUpdate(input: unknown) {
   };
 }
 
-function sanitizeActionItem(input: unknown, conversationId: string) {
+export function sanitizeActionItem(input: unknown, conversationId: string) {
   if (!isRecord(input)) return null;
   const id = normalizeString(input.id, 128);
   const description = normalizeLongText(

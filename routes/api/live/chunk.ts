@@ -45,7 +45,14 @@ export const handler: Handlers = {
       }
 
       // Free-tier audio metering (no-op until AUDIO_BYTES_PER_DAY is set).
-      const budgetBlock = guardAudioBudget(req, audioFile.size);
+      // When a house Deepgram key is configured it transcribes this chunk on
+      // the HOUSE's bill — a BYO OpenRouter key buys out the LLM path only, so
+      // it doesn't waive the meter here.
+      const budgetBlock = guardAudioBudget(
+        req,
+        audioFile.size,
+        Boolean(deepgramKey()),
+      );
       if (budgetBlock) return budgetBlock;
 
       const ctrl = new AbortController();

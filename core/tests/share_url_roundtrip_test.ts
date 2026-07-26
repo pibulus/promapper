@@ -55,6 +55,42 @@ function realisticConversation(): ConversationData {
   };
 }
 
+Deno.test("a crafted share URL can't smuggle extra fields onto entities", () => {
+  // The decode path used to spread {...node} / {...item} and pass edges and
+  // statusUpdates through as bare slices, so anything a hand-built link put on
+  // an entity landed in the viewer's conversationData.
+  const hostile = realisticConversation() as unknown as Record<string, unknown>;
+  // A position far off-canvas would drag the whole force layout into space.
+  // (NaN can't be tested through this path — JSON turns it into null.)
+  (hostile.nodes as Record<string, unknown>[])[0].position = {
+    x: 1e9,
+    y: -1e9,
+  };
+  (hostile.nodes as Record<string, unknown>[])[0].__proto_ish = "boo";
+  (hostile.actionItems as Record<string, unknown>[])[0].ai_checked_typo = true;
+  (hostile.edges as Record<string, unknown>[])[0].payload = "x".repeat(5000);
+
+  const loaded = loadUrlSharedConversation(
+    encodeShareDataForUrl(hostile as unknown as ConversationData),
+  );
+  assertExists(loaded);
+  const node = loaded.nodes[0] as unknown as Record<string, unknown>;
+  assertEquals("__proto_ish" in node, false);
+  assertEquals(node.position, { x: 10000, y: -10000 }); // clamped, not obeyed
+  assertEquals(
+    "ai_checked_typo" in
+      (loaded.actionItems[0] as unknown as Record<string, unknown>),
+    false,
+  );
+  assertEquals(
+    "payload" in (loaded.edges[0] as unknown as Record<string, unknown>),
+    false,
+  );
+  // ...while the real content still round-trips.
+  assertEquals(loaded.nodes[0].label, "spider goats");
+  assertEquals(loaded.edges[0].source_topic_id, "goats");
+});
+
 Deno.test("share URL round-trip preserves the user-visible payload", () => {
   const original = realisticConversation();
   const encoded = encodeShareDataForUrl(original);

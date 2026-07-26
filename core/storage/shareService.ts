@@ -10,6 +10,12 @@
 
 import type { ConversationData } from "../types/conversation-data.ts";
 import { ensureApiSession } from "../../utils/apiAuth.ts";
+import {
+  sanitizeActionItem,
+  sanitizeEdge,
+  sanitizeNode,
+  sanitizeStatusUpdate,
+} from "../realtime/shareProtocol.ts";
 
 // Storage key for shared conversations
 const SHARES_KEY = "project_mapper_shares";
@@ -128,15 +134,24 @@ function normalizeSharedData(data: any): ConversationData | null {
   // SHARE_ROOM_LIMITS (nodes 300, edges 800, items 300).
   const arr = (v: unknown, n: number): unknown[] =>
     Array.isArray(v) ? v.slice(0, n) : [];
-  // Per-field length clamps to match the server sanitizer — array caps alone
-  // still let a crafted URL stuff a 1900-char node label into the viewer's
-  // graph. (Unknown extra fields are already dropped downstream by
-  // SharedConversationLoader's explicit field-by-field build.)
   const str = (v: unknown, n: number) => String(v ?? "").slice(0, n);
+  // Per-ITEM sanitization now runs through the server's own builders rather
+  // than a second set of clamps written here. The old version spread `{...node}`
+  // and `{...item}` and passed edges/statusUpdates through as bare slices, so
+  // every extra key a crafted URL put on an entity rode into the viewer's
+  // conversationData — a NaN `position` alone is enough to poison the force
+  // simulation. A comment claimed SharedConversationLoader dropped unknown
+  // fields downstream; it rebuilds the TOP-LEVEL keys only and hands the arrays
+  // through whole, so nothing was dropping them. One definition per entity is
+  // also the only way these two paths stop drifting apart.
+
+  const conversationId = String(
+    data.conversation?.id ?? `shared_${Date.now()}`,
+  );
 
   return {
     conversation: {
-      id: String(data.conversation?.id ?? `shared_${Date.now()}`),
+      id: conversationId,
       title: data.conversation?.title == null
         ? data.title
         : str(data.conversation.title, 200),
@@ -145,25 +160,12 @@ function normalizeSharedData(data: any): ConversationData | null {
       created_at: data.conversation?.created_at ?? data.timestamp,
     },
     transcript,
-    nodes: arr(data.nodes, 300).map((n) => {
-      const node = n as Record<string, unknown>;
-      return {
-        ...node,
-        label: str(node?.label, 60),
-        emoji: str(node?.emoji, 16),
-        color: str(node?.color, 32),
-      };
-    }),
-    edges: arr(data.edges, 800),
-    actionItems: arr(data.actionItems, 300).map((i) => {
-      const item = i as Record<string, unknown>;
-      return {
-        ...item,
-        description: str(item?.description, 500),
-        assignee: item?.assignee == null ? null : str(item.assignee, 100),
-      };
-    }),
-    statusUpdates: arr(data.statusUpdates, 300),
+    nodes: arr(data.nodes, 300).map(sanitizeNode).filter(Boolean),
+    edges: arr(data.edges, 800).map(sanitizeEdge).filter(Boolean),
+    actionItems: arr(data.actionItems, 300)
+      .map((i) => sanitizeActionItem(i, conversationId)).filter(Boolean),
+    statusUpdates: arr(data.statusUpdates, 300)
+      .map(sanitizeStatusUpdate).filter(Boolean),
     summary: data.summary == null ? data.summary : str(data.summary, 10000),
   } as ConversationData;
 }
