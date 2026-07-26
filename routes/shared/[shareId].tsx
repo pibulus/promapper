@@ -79,7 +79,16 @@ export default function SharedConversation({ params }: PageProps) {
               </div>
               <a
                 href="/"
-                class="ml-3 inline-flex min-h-11 items-center rounded-lg border-2 border-gray-900 bg-gray-900 px-3 sm:px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-gray-800"
+                class="ml-3 inline-flex min-h-11 items-center rounded-lg border-2 px-3 sm:px-4 py-2 text-sm font-bold transition-colors"
+                style={{
+                  // Warm near-black on warm near-white, never absolute, and
+                  // never Tailwind's cool gray-900 — the house law is
+                  // cross-app. These two shared-view pages were the last
+                  // place text-white/bg-gray-900 survived.
+                  background: "var(--soft-black)",
+                  borderColor: "var(--soft-black)",
+                  color: "var(--surface-white-warm)",
+                }}
               >
                 Create Your Own
               </a>

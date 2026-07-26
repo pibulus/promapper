@@ -417,7 +417,11 @@ function applyVibe(el: ExcalidrawElement): ExcalidrawElement {
         : el.roundness,
       fillStyle: el.fillStyle || "solid",
       opacity: el.opacity ?? 95,
-      backgroundColor: el.backgroundColor || "#ffffff",
+      // Warm near-white, never absolute — this is a SHAPE fill sitting on the
+      // whiteboard's warm paper, so stock white read cold against it. (The
+      // scene background is warmed separately in SharedWhiteboard; element
+      // fills never passed through that.)
+      backgroundColor: el.backgroundColor || "#fffef7",
     };
   }
   const color = nextColor();

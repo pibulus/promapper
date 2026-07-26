@@ -90,8 +90,13 @@ export interface Config {
 export const defaultConfig: Config = {
   width: 600,
   height: 400,
-  backgroundColor: "#fff",
-  linkColor: "#000",
+  // Warm near-white / warm near-black, never absolute (house law, cross-app).
+  // linkColor is the real hazard: render.ts falls back to it per edge
+  // (`d.color || config.linkColor`), so any caller that omits edge colours
+  // would draw pure-black strokes. Masked today only because
+  // ForceDirectedGraph stamps EDGE_INK on every edge.
+  backgroundColor: "#fffef7",
+  linkColor: "#1e1714",
   linkStrokeWidth: 3,
   linkOpacity: 1,
   nodeColor: "steelblue",

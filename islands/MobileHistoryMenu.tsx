@@ -767,7 +767,7 @@ export default function MobileHistoryMenu() {
                   border: `3px solid var(--color-danger-dark)`,
                   borderRadius: "12px",
                   background: "var(--color-danger)",
-                  color: "white",
+                  color: "var(--surface-white-warm)",
                   cursor: "pointer",
                   transition: "all var(--transition-medium)",
                   boxShadow: "0 4px 0 0 rgba(220, 38, 38, 0.3)",

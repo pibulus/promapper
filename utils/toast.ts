@@ -121,7 +121,7 @@ function buildActionableToast(
   btn.textContent = buttonLabel;
   btn.style.cssText =
     `margin-left:auto;flex-shrink:0;cursor:pointer;border:none;` +
-    `background:rgba(255,255,255,0.22);color:#fff;font-weight:700;` +
+    `background:rgba(255,254,247,0.22);color:#fffef7;font-weight:700;` +
     `font-size:0.8rem;padding:0.25rem 0.7rem;border-radius:8px;`;
   btn.addEventListener("click", () => {
     try {
@@ -157,7 +157,7 @@ function buildToastShell(
   toast.style.cssText =
     `position:fixed;right:1rem;bottom:1rem;z-index:9999;max-width:min(360px,calc(100vw - 2rem));` +
     `display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.9rem;border-radius:12px;` +
-    `background:${bg};color:#fff;font-weight:600;font-size:0.875rem;` +
+    `background:${bg};color:#fffef7;font-weight:600;font-size:0.875rem;` +
     `box-shadow:0 8px 24px rgba(30,23,20,0.18);`;
 
   // Icon (decorative) — safe static markup.
