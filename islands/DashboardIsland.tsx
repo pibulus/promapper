@@ -203,9 +203,8 @@ export default function DashboardIsland() {
     const flush = () => {
       flushSceneWrite();
       const data = conversationData.value;
-      // A live HOST owns their conversation and autosaves normally (the flag is
-      // guest-only now — HomeIsland's live effect). A GUEST is viewing someone
-      // else's room and shouldn't end up with a copy they never asked for.
+      // Everyone in a live room keeps their copy — the flag is only ever set
+      // for a read-only /shared/<id> snapshot now, which genuinely isn't yours.
       if (data && !isViewingShared.value) saveConversation(data);
     };
     const onVisibility = () => {

@@ -48,10 +48,7 @@ import {
   noteLiveChunk,
   resetLiveAnalysis,
 } from "@signals/liveAnalysis.ts";
-import {
-  isViewingShared,
-  processingConversation,
-} from "@signals/conversationStore.ts";
+import { processingConversation } from "@signals/conversationStore.ts";
 import { ensureApiSession } from "@utils/apiAuth.ts";
 import { soundBloom, soundChime, soundPortal } from "@utils/sound.ts";
 import { formatTime, useRecorder } from "./useRecorder.ts";
@@ -321,13 +318,15 @@ export default function HomeIsland() {
   useEffect(() => {
     if (!session) {
       stopLiveSync();
-      isViewingShared.value = false;
       return;
     }
-    // GUEST only. The flag means "someone else's data" — a host in a live room
-    // still owns their conversation, and marking them a visitor for the whole
-    // session turned off their autosave and froze their board arrangement.
-    isViewingShared.value = !session.isHost;
+    // A live room never sets isViewingShared. That flag means one thing now —
+    // a read-only /shared/<id> snapshot — and SharedConversationLoader owns it.
+    // Everyone in a room keeps their own copy of the map, host and guest alike:
+    // you were IN the meeting, so it's yours, and it saves as you go rather
+    // than only if you leave by the right door. (It cost the host their
+    // autosave and board layout for the whole session, and handed guests a
+    // copy or not depending on how they closed the tab.)
     startLiveSync({
       host: session.partyHost,
       roomId: session.roomId,
@@ -368,7 +367,11 @@ export default function HomeIsland() {
     soundPortal();
     return () => {
       stopLiveSync();
-      isViewingShared.value = false;
+      // Say it out loud for a guest — a map that quietly appears in your
+      // history is a surprise; a map you were told you're keeping is a gift.
+      if (!session.isHost && conversationData.value) {
+        showToast("That map is yours too — it's in your history", "info");
+      }
       if (isRecording.value) stopRecording();
       // Drop the analysis buffer with the session (an already in-flight
       // round still lands — it's the host's own conversation).
