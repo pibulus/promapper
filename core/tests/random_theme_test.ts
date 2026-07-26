@@ -23,6 +23,7 @@ import {
   generateThemeParts,
   hexToOklch,
   maxChroma,
+  NEON_CHROMA_CEILING,
   oklchToHex,
   SURFACE_CREAM,
 } from "../theme/randomTheme.ts";
@@ -75,12 +76,23 @@ Deno.test("accents are NEON — every roll rides near its hue's chroma ceiling",
     // Neon means riding the ceiling. maxChroma varies ~3x between hues, so
     // this is a RATIO test, not the old flat C >= 0.12 (which is what made
     // cobalt sulk while coral screamed).
-    const ceiling = maxChroma(lightness, wrap(hue));
+    // Rides its hue's ceiling — UNLESS the global neon cap bites first. The
+    // wheel is lopsided (magenta 0.315, cobalt ~0.19), so riding every hue's
+    // own ceiling let fuchsia scream at 0.296 while the rest sat at 0.15-0.20.
+    // The cap is what keeps every hue in one register.
+    const ceiling = Math.min(
+      maxChroma(lightness, wrap(hue)),
+      NEON_CHROMA_CEILING,
+    );
     assert(
       chroma >= ceiling * 0.85,
       `accent left its ceiling: C${chroma.toFixed(3)} vs ${
         ceiling.toFixed(3)
       } at h${wrap(hue).toFixed(0)}`,
+    );
+    assert(
+      chroma <= NEON_CHROMA_CEILING + 0.005,
+      `accent broke the neon cap: C${chroma.toFixed(3)}`,
     );
   }
 });
@@ -133,7 +145,7 @@ Deno.test("the band stays VIVID — it never dilutes the accent into a pastel", 
     const [bL, bC, bH] = hexToOklch(band);
     // Riding its own ceiling at its own lightness — the only honest measure of
     // "vivid", since maxChroma varies ~3x across the wheel.
-    const ceiling = maxChroma(bL, wrap(hue));
+    const ceiling = Math.min(maxChroma(bL, wrap(hue)), NEON_CHROMA_CEILING);
     assert(
       bC >= ceiling * 0.85,
       `band went pastel: C${bC.toFixed(3)} vs ceiling ${

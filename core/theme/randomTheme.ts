@@ -348,19 +348,37 @@ export function harmonyHues(
 export function peakLightness(hue: number): number {
   let bestL = 0.62;
   let bestC = 0;
-  for (let L = 0.45; L <= 0.9; L += 0.01) {
+  for (let L = 0.45; L <= 0.95; L += 0.01) {
     const c = maxChroma(L, wrap(hue));
     if (c > bestC) {
       bestC = c;
       bestL = L;
     }
   }
-  return Math.min(0.82, Math.max(0.56, bestL));
+  // Ceiling raised 0.82 → 0.90 for one reason: YELLOW. Yellow's chroma peaks
+  // at L 0.84–0.88, so clamping to 0.82 handed back #f3bb2b — mustard, not
+  // yellow ("the yellow is a bit brown"). A bright band is fine now that the
+  // band IS the accent and the ink solves itself; the old ceiling existed to
+  // protect a tint recipe that no longer exists.
+  return Math.min(0.90, Math.max(0.56, bestL));
 }
 
-/** An accent riding its hue's own sRGB chroma ceiling. */
+/**
+ * The chroma a NEON accent is allowed, before its hue's own gamut ceiling.
+ *
+ * The wheel is wildly lopsided: magenta tops out at C 0.315 while cobalt and
+ * amber sit near 0.19. Riding 94% of each hue's own ceiling therefore made
+ * fuchsia scream at C 0.296 while everything else lived at 0.15–0.20 — "the
+ * fuchsia is a bit much". This caps the loud end so every hue lands in the
+ * same register, which is the whole point of working in OKLCH.
+ */
+export const NEON_CHROMA_CEILING = 0.225;
+
+/** An accent riding its hue's own sRGB chroma ceiling, capped so the hues
+ * with enormous gamuts (magenta, violet) don't shout past the rest. */
 export function neonAt(L: number, hue: number, ride = 0.94): string {
-  return oklchToHex(L, maxChroma(L, wrap(hue)) * ride, wrap(hue));
+  const c = Math.min(maxChroma(L, wrap(hue)) * ride, NEON_CHROMA_CEILING);
+  return oklchToHex(L, c, wrap(hue));
 }
 
 /** Warm near-white — the only light ink allowed (never #ffffff). */
@@ -508,11 +526,25 @@ export function generateThemeParts(
   const accentHex = neonAt(lightness, accentHue);
   const [, chroma] = hexToOklch(accentHex);
 
+  // THE SKY IS A RELATIVE OF THE ACCENT, not a stranger.
+  //
+  // It used to take the harmony's BASE hue while the accent took a companion —
+  // so on a triadic or split-complementary roll they landed 120–210° apart and
+  // simply didn't talk to each other ("the backgrounds aren't really meeting
+  // them"). The trio law was always that relationships live between LAYERS —
+  // ground ↔ band ↔ plate — and an arbitrary harmony member isn't a
+  // relationship, it's a coincidence.
+  //
+  // An analogous step (18–42°, either side) keeps the room recognisably the
+  // accent's family while staying far enough off to read as its own surface.
+  // The harmony still earns its keep: its other members become the companion
+  // hues that nodes and confetti wear.
+  const skyOffset = (18 + rand() * 24) * (rand() < 0.5 ? -1 : 1);
   return composeTheme({
     hue: accentHue,
     lightness,
     chroma,
-    bgHue: wrap(H[0]),
+    bgHue: wrap(accentHue + skyOffset),
     // The sky. It started at the Flexoki paper register (L 0.925–0.95,
     // C 0.016–0.036) and read as near-white — "still too pastel and soft"
     // even once the band went full-saturation. Nothing was forcing it pale:
