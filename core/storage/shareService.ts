@@ -9,6 +9,7 @@
  */
 
 import type { ConversationData } from "../types/conversation-data.ts";
+import { ensureApiSession } from "../../utils/apiAuth.ts";
 
 // Storage key for shared conversations
 const SHARES_KEY = "project_mapper_shares";
@@ -326,6 +327,14 @@ export async function createBestShareLink(
   }
 
   try {
+    // /api/share/create is guarded, and this was the one client call that
+    // never established a session — so an unauthenticated browser got a 401,
+    // fell through to the catch, and quietly handed back a LOCAL-only link
+    // that looked identical and didn't work for anyone else. Inside the try
+    // on purpose: cancelling the auth modal still degrades to the local link
+    // with its warning, same as today, minus the lie. After the <2000-char
+    // early return too, so small conversations never see a modal at all.
+    await ensureApiSession();
     const response = await fetch("/api/share/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

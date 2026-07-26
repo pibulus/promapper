@@ -288,3 +288,29 @@ Deno.test("analyzeAudio preserves transcription when generateSummary throws", as
     true,
   );
 });
+
+Deno.test("a FAILED AI call warns, exactly like a failed parse does", async () => {
+  // Both paths end in an empty result, but only the parse path was telling
+  // anyone: the catch blocks in openrouter.ts returned [] without touching
+  // onParseError. So a 429, a 500, or a dropped connection handed back a map
+  // with a whole section missing and presented it as a complete success.
+  const service = createMockAIService({
+    async extractActionItems(_input, _speakers, _existing, onParseError) {
+      // What the provider layer does on a request failure.
+      onParseError?.("action items");
+      return [];
+    },
+  });
+
+  const result = await analyzeText(
+    service,
+    "Nan: someone should feed the cat.",
+  );
+
+  assertEquals(result.actionItems, []);
+  assertEquals(
+    result.warnings.some((w) => w.includes("action items")),
+    true,
+    "a failed action-item call produced no warning — the silent-degrade bug",
+  );
+});

@@ -337,6 +337,12 @@ export function createOpenRouterService(
         return parseActionItemsResponse(text, onParseError);
       } catch (error) {
         console.error("Error extracting action items:", error);
+        // Signal the caller so a failed CALL degrades as loudly as a failed
+        // PARSE. Both end in an empty result, but only the parse path was
+        // telling anyone — so a 429, a 500 or a dropped connection here
+        // handed back a map with a whole section quietly missing, presented
+        // as a complete success.
+        onParseError?.("action items");
         return [];
       }
     },
@@ -367,6 +373,7 @@ export function createOpenRouterService(
         return parseStatusUpdatesResponse(text, existingIds, onParseError);
       } catch (error) {
         console.error("Error checking action item status:", error);
+        onParseError?.("self-checkoff updates");
         return [];
       }
     },
@@ -391,6 +398,7 @@ export function createOpenRouterService(
         );
       } catch (error) {
         console.error("Error extracting topics:", error);
+        onParseError?.("topic map");
         return { nodes: [], edges: [] };
       }
     },

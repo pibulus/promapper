@@ -254,6 +254,12 @@ export function useRecorder(opts: RecorderOptions = {}): RecorderHandle {
       }, 1000) as unknown as number;
     } catch (err) {
       isStartingRecording.current = false;
+      // Release whatever we'd already taken. streamRef is assigned before the
+      // MediaRecorder is constructed, so a throw after that point left the mic
+      // open (recording light on, tracks live) with a dead recorder still in
+      // the ref — and nothing here undid it. cleanupMedia is the teardown both
+      // normal paths already use.
+      cleanupMedia();
       console.error("useRecorder start failed:", err);
       if (!silentMicError) {
         showToast(describeMicError(err), "error");
