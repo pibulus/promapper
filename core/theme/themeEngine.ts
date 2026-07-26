@@ -90,15 +90,15 @@ export class ThemeSystem {
     this.setCSSVar(root, `${prefix}-text`, theme.text);
     this.setCSSVar(root, `${prefix}-border`, theme.border);
 
-    // Handle base — detect gradient vs solid
+    // Handle base — detect gradient vs solid.
+    // (--color-base-gradient used to be set here too, in both branches, and
+    // in themeToVars, and six times in the _app.tsx FOUC map. Nothing in any
+    // stylesheet ever read it. Dropped: it was pure write.)
+    this.setCSSVar(root, `${prefix}-base`, theme.base);
     if (theme.base.includes("gradient")) {
-      this.setCSSVar(root, `${prefix}-base`, theme.base);
-      this.setCSSVar(root, `${prefix}-base-gradient`, theme.base);
       const fallback = this.extractColorFromGradient(theme.base) || "#FFEBD4";
       this.setCSSVar(root, `${prefix}-base-solid`, fallback);
     } else {
-      this.setCSSVar(root, `${prefix}-base`, theme.base);
-      this.setCSSVar(root, `${prefix}-base-gradient`, theme.base);
       this.setCSSVar(root, `${prefix}-base-solid`, theme.base);
     }
 
@@ -204,9 +204,11 @@ export class ThemeSystem {
    * list. Applies, notifies, persists. */
   applyCustomTheme(theme: Theme): Theme {
     this.currentTheme = theme;
+    // applyTheme() already persists on its way out — the extra saveTheme()
+    // that used to sit below meant every dice roll serialised the whole
+    // theme plus its flat var map and wrote localStorage TWICE.
     this.applyTheme(theme);
     this.notifyListeners(theme);
-    this.saveTheme(theme);
     return theme;
   }
 
@@ -220,7 +222,6 @@ export class ThemeSystem {
       [`${prefix}-text`]: theme.text,
       [`${prefix}-border`]: theme.border,
       [`${prefix}-base`]: theme.base,
-      [`${prefix}-base-gradient`]: theme.base,
       [`${prefix}-base-solid`]:
         (theme.cssVars?.["--color-base-solid"] as string) ?? theme.base,
     };

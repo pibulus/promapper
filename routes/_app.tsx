@@ -133,7 +133,6 @@ var themes={
   "DAYBREAK":{
     "--color-base":"linear-gradient(135deg,#ffe2cf 0%,#ffd0bd 100%)",
     "--color-base-solid":"#ffe2cf",
-    "--color-base-gradient":"linear-gradient(135deg,#ffe2cf 0%,#ffd0bd 100%)",
     "--color-secondary":"rgba(255,250,243,0.62)",
     "--color-accent":"#4a7bc9",
     "--color-text":"#232a3a",
@@ -146,7 +145,6 @@ var themes={
   "BUBBLEGUM":{
     "--color-base":"linear-gradient(135deg,#ffd9e5 0%,#ffcbd7 100%)",
     "--color-base-solid":"#ffd9e5",
-    "--color-base-gradient":"linear-gradient(135deg,#ffd9e5 0%,#ffcbd7 100%)",
     "--color-secondary":"rgba(255,250,243,0.62)",
     "--color-accent":"#ff2e88",
     "--color-text":"#2b2430",
@@ -159,7 +157,6 @@ var themes={
   "SKY":{
     "--color-base":"linear-gradient(135deg,#c2f2f9 0%,#adeaf9 100%)",
     "--color-base-solid":"#c2f2f9",
-    "--color-base-gradient":"linear-gradient(135deg,#c2f2f9 0%,#adeaf9 100%)",
     "--color-secondary":"rgba(255,250,243,0.65)",
     "--color-accent":"#0095ff",
     "--color-text":"#1f3344",
@@ -172,7 +169,6 @@ var themes={
   "GRAPE":{
     "--color-base":"linear-gradient(135deg,#fdd7f3 0%,#f1ccf7 100%)",
     "--color-base-solid":"#fdd7f3",
-    "--color-base-gradient":"linear-gradient(135deg,#fdd7f3 0%,#f1ccf7 100%)",
     "--color-secondary":"rgba(255,250,243,0.65)",
     "--color-accent":"#8335ff",
     "--color-text":"#312a45",
@@ -185,7 +181,6 @@ var themes={
   "LIME":{
     "--color-base":"linear-gradient(135deg,#c3f3ec 0%,#acece9 100%)",
     "--color-base-solid":"#c3f3ec",
-    "--color-base-gradient":"linear-gradient(135deg,#c3f3ec 0%,#acece9 100%)",
     "--color-secondary":"rgba(255,250,243,0.65)",
     "--color-accent":"#0fb255",
     "--color-text":"#1f3a2b",
@@ -198,7 +193,6 @@ var themes={
   "GOLD":{
     "--color-base":"linear-gradient(135deg,#ffdec2 0%,#fdd2a6 100%)",
     "--color-base-solid":"#ffdec2",
-    "--color-base-gradient":"linear-gradient(135deg,#ffdec2 0%,#fdd2a6 100%)",
     "--color-secondary":"rgba(255,250,243,0.65)",
     "--color-accent":"#f5a300","--accent-strong":"#a06a00",
     "--color-text":"#3a3016",
