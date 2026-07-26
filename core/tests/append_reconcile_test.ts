@@ -117,6 +117,43 @@ Deno.test("S1 both-changed: user manually completed AND AI also checked off — 
   assertEquals("checked_reason" in out.actionItems[0], false);
 });
 
+Deno.test("S1 checkoff + edit: AI ticks it off while the user reworded it — BOTH survive", () => {
+  // Status and content are separate axes. The AI owns the status here (the user
+  // never touched it), but the user's in-flight rewording must not ride out on
+  // the checkoff: THEIRS carries the REQUEST-TIME description (the server only
+  // rewrites status/updated_at/ai_checked/checked_reason on an existing item),
+  // so a wholesale THEIRS-over-MINE spread silently restored the old wording.
+  const base = conv({
+    actionItems: [item("a1", "send report", "pending", { assignee: null })],
+  });
+  const theirs = conv({
+    actionItems: [
+      item("a1", "send report", "completed", {
+        ai_checked: true,
+        checked_reason: "they said the report went out",
+      }),
+    ],
+  });
+  // User rewrote the description + assigned it during the round-trip.
+  const mine = conv({
+    actionItems: [
+      item("a1", "send weekly report to the team", "pending", {
+        assignee: "dennis",
+        due_date: "friday",
+      }),
+    ],
+  });
+  const out = reconcileAppendResult(base, mine, theirs);
+  assertEquals(out.actionItems[0].status, "completed");
+  assertEquals(out.actionItems[0].ai_checked, true);
+  assertEquals(
+    out.actionItems[0].description,
+    "send weekly report to the team",
+  );
+  assertEquals(out.actionItems[0].assignee, "dennis");
+  assertEquals(out.actionItems[0].due_date, "friday");
+});
+
 // ── S2: in-flight delete (no resurrection) ──────────────────────────────────
 Deno.test("S2 node delete: deleted topic + its edges are not resurrected", () => {
   const base = conv({

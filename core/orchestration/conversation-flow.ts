@@ -19,6 +19,7 @@ const clampOpt = (v: string | null | undefined, n: number) =>
   v == null ? null : String(v).slice(0, n);
 import type {
   ActionItem,
+  ActionItemStatusUpdate,
   Conversation,
   Edge,
   EdgeInput,
@@ -34,11 +35,12 @@ export interface ConversationFlowResult {
   edges: Edge[];
   actionItems: ActionItem[];
   summary: string;
-  statusUpdates: Array<{
-    id: string;
-    status: "completed" | "pending";
-    reason: string;
-  }>;
+  // The full ActionItemStatusUpdate, not a narrower inline shape: every
+  // producer (normalizeStatusUpdate) already populates `description`, and the
+  // client type (ConversationData["statusUpdates"]) demands it. Under-declaring
+  // it here made coerceFlowResult's cast look like it was widening a real
+  // runtime gap when it wasn't.
+  statusUpdates: ActionItemStatusUpdate[];
   /** Non-empty when an AI step degraded — always safe to show the user. */
   warnings: string[];
 }
@@ -167,9 +169,7 @@ export async function processAudio(
   let nodes: Node[] = [];
   let edges: Edge[] = [];
   let actionItems: ActionItem[] = [];
-  let statusUpdates: Array<
-    { id: string; status: "completed" | "pending"; reason: string }
-  > = [];
+  let statusUpdates: ActionItemStatusUpdate[] = [];
   let summary = "";
   let warnings: string[] = [];
 

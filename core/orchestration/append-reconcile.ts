@@ -224,11 +224,11 @@ function reconcileActionItems(
       continue;
     }
 
-    // Present both sides. Status three-way:
+    // Present both sides. Status three-way — only "did the USER move it?"
+    // matters: if they did, they win outright; if they didn't, THEIRS owns the
+    // status whether it changed or not (an unchanged THEIRS status equals BASE's
+    // anyway, so the two cases collapse into one branch).
     const userToggled = baseItem ? statusChanged(mineItem, baseItem) : false;
-    const serverChecked = baseItem
-      ? statusChanged(theirsItem, baseItem)
-      : false;
 
     let merged: ActionItem;
     if (userToggled) {
@@ -241,14 +241,20 @@ function reconcileActionItems(
       // ai_checked/checked_reason the strip removed. [DEFAULT: user-wins on the
       // both-changed conflict — flip to take `theirsItem` for AI-wins.]
       merged = mineItem;
-    } else if (serverChecked) {
-      // Only the server changed status — take the AI checkoff incl. its reason.
-      // This is the headline self-checkoff feature; it must survive.
-      merged = { ...mineItem, ...theirsItem };
     } else {
-      // Neither changed status. Other fields (description/assignee/due_date):
-      // user's in-flight edit wins per touched field, else THEIRS.
-      merged = { ...theirsItem };
+      // The user did NOT touch the status, so THEIRS owns it — that covers
+      // `serverChecked` (the headline self-checkoff, which must survive with
+      // its ai_checked/checked_reason) and the neither-changed case (where
+      // THEIRS's status equals BASE's anyway).
+      //
+      // Content (description/assignee/due_date) is a SEPARATE axis: THEIRS
+      // carries the request-time snapshot of those fields (mergeAppendActionItems
+      // only rewrites status/updated_at/ai_checked/checked_reason on an existing
+      // item), so an in-flight inline edit must be layered back on regardless of
+      // what the status did. This was branch-split before, and the checkoff
+      // branch's wholesale THEIRS-over-MINE spread silently ate the edit: rename
+      // a task, record a take, the AI ticks it off, your new wording is gone.
+      merged = { ...mineItem, ...theirsItem };
       if (baseItem) {
         if (mineItem.description !== baseItem.description) {
           merged.description = mineItem.description;
