@@ -14,6 +14,14 @@ import { showToast } from "../utils/toast.ts";
 // Module-level so pasted text survives the hero unmounting during processing
 // (an error remounts the hero — losing the paste would sting).
 const textInput = signal("");
+// Same reason, for the FIRST recording. The append path persists every take to
+// IndexedDB before the AI runs ("the audio must survive a failed AI pipeline")
+// — but the first one had no such net: it was POSTed straight from memory, so
+// a failed process meant the recording was simply gone and the only option was
+// to say the whole thing again. IndexedDB isn't usable here (StoredRecording
+// needs a conversationId that doesn't exist yet), so the blob is latched until
+// a process actually succeeds.
+const pendingAudio = signal<Blob | null>(null);
 
 export default function UploadIsland() {
   const isProcessing = processingConversation;
@@ -44,6 +52,7 @@ export default function UploadIsland() {
     if (isRecording.value) return "Stop recording";
     if (hasText.value) return "Map it";
     if (selectedFile.value) return "Map audio";
+    if (pendingAudio.value) return "Try that again";
     return "Start recording";
   });
   const primaryDisabled = useComputed(() =>
@@ -181,6 +190,7 @@ export default function UploadIsland() {
   async function processRecordedAudio(audioBlob: Blob) {
     if (isProcessing.value) return; // guard double-submit
     isProcessing.value = true;
+    pendingAudio.value = audioBlob;
 
     try {
       const formData = new FormData();
@@ -208,6 +218,7 @@ export default function UploadIsland() {
         throw new Error("Server returned an unexpected response — try again.");
       }
       conversationData.value = flowResult;
+      pendingAudio.value = null; // it landed — the net can let go
       if (flowResult.warnings.length) {
         for (const warning of flowResult.warnings) {
           showToast(warning, "warning");
@@ -385,6 +396,13 @@ export default function UploadIsland() {
 
     if (selectedFile.value) {
       await processAudioFile(selectedFile.value);
+      return;
+    }
+
+    // A recording that never made it through — send the same blob rather than
+    // asking them to say it all again.
+    if (pendingAudio.value) {
+      await processRecordedAudio(pendingAudio.value);
       return;
     }
 
