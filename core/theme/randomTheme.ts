@@ -1,7 +1,7 @@
 /**
- * Theme shuffle — no fixed themes, just a generator that rolls airy, pastel,
- * whimsical, CONSISTENT looks on demand. A roll is a SPACE, not an office
- * product: lush light washes, one candy accent, deep ink where words live.
+ * Theme shuffle — no fixed themes, just a generator that rolls fresh,
+ * CONSISTENT looks on demand. A roll is a SPACE, not an office product: a
+ * tinted sky landing on a cream floor, one neon accent carrying the cards.
  *
  * July 20 rebuild — OKLCH curated pairs (docs/COLOR-SYSTEM.md is the law):
  *   - every color is authored in OKLCH and stored as hex. Equal L = equal
@@ -513,9 +513,14 @@ export function generateThemeParts(
     lightness,
     chroma,
     bgHue: wrap(H[0]),
-    // PAPER. Flexoki's base ramp register.
-    groundL: 0.925 + rand() * 0.025,
-    groundC: 0.016 + rand() * 0.02,
+    // The sky. It started at the Flexoki paper register (L 0.925–0.95,
+    // C 0.016–0.036) and read as near-white — "still too pastel and soft"
+    // even once the band went full-saturation. Nothing was forcing it pale:
+    // body ink measures 11.3–11.6 against the ground where the guard floor is
+    // 5.5, so there was ~6 stops of unused headroom. Now a genuinely tinted
+    // sky that still lands on the cream floor where the cards sit.
+    groundL: 0.855 + rand() * 0.03,
+    groundC: 0.095 + rand() * 0.025,
     secondaryHue: wrap(H[2 % H.length]),
     tertiaryHue: wrap(H[3 % H.length]),
     harmony,

@@ -85,15 +85,37 @@ Deno.test("accents are NEON — every roll rides near its hue's chroma ceiling",
   }
 });
 
-Deno.test("the ground is always PAPER — the room never competes with the accent", () => {
+Deno.test("the ground is a TINTED SKY — present, but still lands on cream", () => {
+  // It shipped for a few hours at the Flexoki paper register (C 0.016–0.036)
+  // and read as near-white — "still too pastel and soft" even after the band
+  // went full-saturation. Nothing was forcing it pale: body ink measured
+  // 11.3–11.6 against the ground where the floor is 5.5. So the sky carries
+  // real colour now. What it must NOT do is get dark enough to fight the
+  // cards or dim the ink, which is what these two bounds hold.
   const rand = seededRand(6161);
   for (let i = 0; i < 300; i++) {
-    const { bgBase } = generateThemeParts(rand);
-    // The top stop carries the ground's full chroma; on paper it stays under
-    // the Flexoki register's ceiling.
+    const { bgBase, bgHue, theme } = generateThemeParts(rand);
     const [L, C] = hexToOklch(bgBase[0]);
-    assert(C <= 0.05, `ground too saturated for paper: C${C.toFixed(3)}`);
-    assert(L >= 0.9, `ground too dark for paper: L${L.toFixed(3)}`);
+    // Ratio, not a flat floor — the same gamut fact that governs the accents.
+    // At sky lightness a blue simply cannot hold the chroma a coral can (0.049
+    // vs 0.120 across the wheel here), so "did it stay colourful" has to mean
+    // "did it take what its own hue had available".
+    const ceiling = maxChroma(L, wrap(bgHue));
+    assert(
+      C >= Math.min(0.06, ceiling * 0.9),
+      `ground went pale again: C${C.toFixed(3)} (ceiling ${
+        ceiling.toFixed(3)
+      })`,
+    );
+    assert(C <= 0.14, `ground too saturated — it competes: C${C.toFixed(3)}`);
+    assert(L >= 0.83, `ground too dark: L${L.toFixed(3)}`);
+    // The cream floor is the whole reason a tinted sky stays airy: cards sit
+    // on cream, not on the colour.
+    assert(
+      bgBase[2] === "#fff4e8",
+      `the sky stopped landing on the cream floor: ${bgBase[2]}`,
+    );
+    assert(!!theme.cssVars?.["--gradient-bg"], "roll missing its sky");
   }
 });
 
