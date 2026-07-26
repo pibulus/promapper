@@ -17,7 +17,10 @@
  */
 
 import { useEffect, useRef } from "preact/hooks";
-import { conversationData } from "@signals/conversationStore.ts";
+import {
+  conversationData,
+  isViewingShared,
+} from "@signals/conversationStore.ts";
 import { flushPendingSave } from "@core/storage/localStorage.ts";
 import { copyToClipboard } from "@utils/toast.ts";
 
@@ -40,6 +43,10 @@ export default function NotesModule() {
     // The conversation switched while we were debouncing — this note
     // belongs to the old one; dropping beats corrupting the new one.
     if (!current || current.conversation.id !== p.forId) return;
+    // A shared snapshot has nowhere to keep a note (and the sender's own notes
+    // never ride along — the share sanitizer strips them). The textarea is
+    // read-only there; this is the net.
+    if (isViewingShared.value) return;
     // No-op writes would wake the autosave + the live broadcast for nothing.
     if (current.notes === p.value) return;
     conversationData.value = { ...current, notes: p.value };
@@ -115,6 +122,10 @@ export default function NotesModule() {
             defaultValue={notes}
             onInput={(e) => save((e.target as HTMLTextAreaElement).value)}
             onBlur={commit}
+            readOnly={isViewingShared.value}
+            placeholder={isViewingShared.value
+              ? "Notes live with the original — this is a snapshot."
+              : undefined}
             aria-label="Conversation notes"
           />
         </div>

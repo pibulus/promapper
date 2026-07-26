@@ -31,6 +31,7 @@ import {
   persistTopicPositions,
   renameTopic,
 } from "@signals/actionItemsStore.ts";
+import { isViewingShared } from "@signals/conversationStore.ts";
 import { MAX_LABEL_LENGTH } from "@core/orchestration/conversation-ops.ts";
 import { showToast, showUndoToast } from "@utils/toast.ts";
 import * as htmlToImage from "html-to-image";
@@ -240,6 +241,10 @@ export default function ForceDirectedGraph(
           contextMenuVisible.value = true;
         },
         onMergeNodes: (sourceId: string, targetId: string) => {
+          // A shared snapshot can be pushed around to read it — positions
+          // don't persist and that's fine, it's exploring. Folding two topics
+          // into one is a change, and a photo can't take one.
+          if (isViewingShared.value) return;
           // Grab labels before the merge removes the source node.
           const nodes = conversationData.value?.nodes ?? [];
           const sourceLabel = nodes.find((n) => n.id === sourceId)?.label ??
@@ -595,7 +600,11 @@ export default function ForceDirectedGraph(
             </p>
           )}
         </div>
-        <div class="topic-node-detail__actions">
+        {/* Rename/delete are absent on a snapshot — see ActionItemsCard. */}
+        <div
+          class="topic-node-detail__actions"
+          style={{ display: isViewingShared.value ? "none" : undefined }}
+        >
           <button
             type="button"
             class="topic-node-action"
@@ -661,7 +670,10 @@ export default function ForceDirectedGraph(
           </p>
         </div>
         {edgeSource && edgeTarget && (
-          <div class="topic-node-detail__actions">
+          <div
+            class="topic-node-detail__actions"
+            style={{ display: isViewingShared.value ? "none" : undefined }}
+          >
             <button
               type="button"
               class="topic-node-action topic-node-action--recede"
@@ -711,6 +723,7 @@ export default function ForceDirectedGraph(
         <button
           type="button"
           class="topic-map-ctrl topic-map-ctrl--add"
+          style={{ display: isViewingShared.value ? "none" : undefined }}
           onClick={() => showAddNode.value = true}
           title="Add a topic to the map"
           aria-label="Add a topic"

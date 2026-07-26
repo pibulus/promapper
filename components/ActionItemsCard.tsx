@@ -20,7 +20,11 @@ import {
   soundToggle,
 } from "@utils/sound.ts";
 import { showToast, showUndoToast } from "@utils/toast.ts";
-import { canUndo, undoLastMutation } from "@signals/conversationStore.ts";
+import {
+  canUndo,
+  isViewingShared,
+  undoLastMutation,
+} from "@signals/conversationStore.ts";
 import { speakerColor } from "@core/theme/speakerColors.ts";
 import {
   bumpTagColor,
@@ -109,6 +113,13 @@ export default function ActionItemsCard(
   { actionItems, conversationId, speakers = [], onUpdateItems }:
     ActionItemsCardProps,
 ) {
+  // A `/shared/<id>` snapshot is a photo: the share API is GET-only and a URL
+  // share is bytes in a link, so there is nowhere for a tick, an edit or a new
+  // task to go. This card used to offer all three anyway and throw the work
+  // away on refresh. Ticking has a better answer than a checkbox here — say it
+  // happened on the next take and the item checks itself off on the original.
+  const readOnly = isViewingShared.value;
+
   // State
   const visibleItems = useSignal<ActionItem[]>(actionItems);
   // Done items live behind a collapsed drawer at the list's tail — a visible
@@ -496,6 +507,8 @@ export default function ActionItemsCard(
     currentAssignee: string | null,
     currentDueDate: string | null,
   ) {
+    // A shared snapshot is a photo — there's nowhere for an edit to land.
+    if (isViewingShared.value) return;
     // Switching rows mid-edit SAVES the previous draft — the old silent
     // cancelEdit() here was a no-warning text eater when you clicked
     // another row's pencil (blur skips saving for in-card targets).
@@ -739,7 +752,7 @@ export default function ActionItemsCard(
                       const isSettling = settlingId.value === item.id;
                       const isEditing = editingItemId.value === item.id;
                       const canDrag = item.status === "pending" &&
-                        !searchQuery.value && !isEditing;
+                        !searchQuery.value && !isEditing && !readOnly;
                       const isSelected = selectedItemIndex.value === index;
 
                       return (
@@ -1227,6 +1240,10 @@ export default function ActionItemsCard(
                                 {
                                   <button
                                     type="button"
+                                    // `disabled` (not a hidden handler) so the
+                                    // snapshot reads as a photo to a mouse, a
+                                    // thumb AND a screen reader at once.
+                                    disabled={readOnly}
                                     // Mouse toggles on pointerdown (snappy);
                                     // touch/pen wait for the click so a scroll
                                     // flick that lands here can't check it.
@@ -1347,26 +1364,29 @@ export default function ActionItemsCard(
               one item out: @word names the person, #tags color themselves.
               Enter keeps focus for the next thought. */
           }
-          <form
-            class="action-quickadd"
-            onSubmit={(e) => {
-              e.preventDefault();
-              submitQuickAdd();
-            }}
-          >
-            <input
-              type="text"
-              class="action-quickadd-input"
-              value={quickAddText.value}
-              onInput={(e) => {
-                quickAddText.value = (e.target as HTMLInputElement).value;
+          {/* No quick-add on a snapshot — a new task would have no home. */}
+          {!readOnly && (
+            <form
+              class="action-quickadd"
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitQuickAdd();
               }}
-              placeholder={addPlaceholder}
-              aria-label="Add an action item — @word names the person, #tags color themselves"
-              data-tip="@who and #tags go right in the sentence"
-              maxLength={500}
-            />
-          </form>
+            >
+              <input
+                type="text"
+                class="action-quickadd-input"
+                value={quickAddText.value}
+                onInput={(e) => {
+                  quickAddText.value = (e.target as HTMLInputElement).value;
+                }}
+                placeholder={addPlaceholder}
+                aria-label="Add an action item — @word names the person, #tags color themselves"
+                data-tip="@who and #tags go right in the sentence"
+                maxLength={500}
+              />
+            </form>
+          )}
         </div>
       </div>
 

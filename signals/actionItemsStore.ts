@@ -8,7 +8,11 @@
  * a single seam to hook).
  */
 
-import { conversationData, withUndo } from "@signals/conversationStore.ts";
+import {
+  conversationData,
+  isViewingShared,
+  withUndo,
+} from "@signals/conversationStore.ts";
 import type { ConversationData } from "../core/types/conversation-data.ts";
 import {
   addTopic as addTopicOp,
@@ -24,8 +28,27 @@ import {
 
 type ActionItem = ConversationData["actionItems"][number];
 
+/**
+ * The conversation, but only when it's ours to change.
+ *
+ * A `/shared/<id>` snapshot has nowhere to write: the share API is GET-only and
+ * a URL share is bytes in a link. Mutations still ran on it, though — the whole
+ * editing surface worked, armed undo toasts, and threw the work away on the
+ * next refresh, with one banner line as the only warning. A snapshot is a
+ * photo; nothing done to it can become true.
+ *
+ * The UI hides these affordances too (that's the honest half). This is the net
+ * under it, in the one place every map mutation already routes through, so a
+ * surface added later can't quietly reintroduce the lie. Live rooms are NOT
+ * shared views — everyone in a room owns their copy and edits for real.
+ */
+function editableConversation(): ConversationData | null {
+  if (isViewingShared.value) return null;
+  return conversationData.value;
+}
+
 export function setActionItems(actionItems: ActionItem[]): void {
-  const current = conversationData.value;
+  const current = editableConversation();
   if (!current) return;
   // Arm undo: replacing the list covers delete-item and clear-done, both lossy.
   withUndo(() => {
@@ -34,7 +57,7 @@ export function setActionItems(actionItems: ActionItem[]): void {
 }
 
 export function toggleActionItem(id: string): void {
-  const current = conversationData.value;
+  const current = editableConversation();
   if (!current) return;
   withUndo(() => {
     conversationData.value = toggleActionItemStatusOp(
@@ -46,7 +69,7 @@ export function toggleActionItem(id: string): void {
 }
 
 export function renameSpeaker(oldName: string, newName: string): void {
-  const current = conversationData.value;
+  const current = editableConversation();
   if (!current) return;
   // Undoable: a speaker rename rewrites the transcript + conversation.transcript,
   // the most destructive of the rename ops.
@@ -60,7 +83,7 @@ export function renameSpeaker(oldName: string, newName: string): void {
 // ===================================================================
 
 export function renameTopic(id: string, label: string): void {
-  const current = conversationData.value;
+  const current = editableConversation();
   if (!current) return;
   withUndo(() => {
     conversationData.value = renameTopicOp(current, id, label);
@@ -75,7 +98,7 @@ export function renameTopic(id: string, label: string): void {
 export function addTopic(
   input: { label: string; emoji?: string; color?: string },
 ): string | null {
-  const current = conversationData.value;
+  const current = editableConversation();
   if (!current) return null;
   let newId: string | null = null;
   withUndo(() => {
@@ -89,7 +112,7 @@ export function addTopic(
 }
 
 export function deleteTopic(id: string): void {
-  const current = conversationData.value;
+  const current = editableConversation();
   if (!current) return;
   withUndo(() => {
     conversationData.value = deleteTopicOp(current, id);
@@ -97,7 +120,7 @@ export function deleteTopic(id: string): void {
 }
 
 export function mergeTopics(sourceId: string, targetId: string): void {
-  const current = conversationData.value;
+  const current = editableConversation();
   if (!current) return;
   // Drag-to-merge silently destroys a node — the most likely accidental loss.
   withUndo(() => {
@@ -106,7 +129,7 @@ export function mergeTopics(sourceId: string, targetId: string): void {
 }
 
 export function deleteEdge(sourceId: string, targetId: string): void {
-  const current = conversationData.value;
+  const current = editableConversation();
   if (!current) return;
   withUndo(() => {
     conversationData.value = deleteEdgeOp(current, sourceId, targetId);
@@ -116,7 +139,7 @@ export function deleteEdge(sourceId: string, targetId: string): void {
 export function persistTopicPositions(
   positions: Record<string, { x: number; y: number }>,
 ): void {
-  const current = conversationData.value;
+  const current = editableConversation();
   if (!current) return;
   conversationData.value = persistTopicPositionsOp(current, positions);
 }

@@ -7,7 +7,10 @@
 
 import { useSignal } from "@preact/signals";
 import { useRef } from "preact/hooks";
-import { conversationData } from "@signals/conversationStore.ts";
+import {
+  conversationData,
+  isViewingShared,
+} from "@signals/conversationStore.ts";
 import {
   classifyMagpie,
   MAGPIE_MAX_ITEMS,
@@ -26,7 +29,10 @@ export default function MagpieModule() {
   function add() {
     const value = draft.value.trim().slice(0, MAGPIE_MAX_LENGTH);
     const current = conversationData.value;
-    if (!value || !current) return;
+    // A snapshot has no shelf to put anything on — the sender's magpie doesn't
+    // even ride along (the share sanitizer strips it). The input is hidden
+    // there; this is the net.
+    if (!value || !current || isViewingShared.value) return;
     if ((current.magpie?.length ?? 0) >= MAGPIE_MAX_ITEMS) {
       showToast("The shelf is full — toss something first", "warning");
       return;
@@ -47,7 +53,7 @@ export default function MagpieModule() {
 
   function remove(id: string) {
     const current = conversationData.value;
-    if (!current) return;
+    if (!current || isViewingShared.value) return;
     conversationData.value = {
       ...current,
       magpie: (current.magpie ?? []).filter((i) => i.id !== id),

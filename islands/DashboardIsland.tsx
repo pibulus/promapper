@@ -153,6 +153,9 @@ export default function DashboardIsland() {
     if (!pending) return;
     const current = conversationData.value;
     if (!current || current.conversation.id !== pending.forId) return;
+    // Nothing to draw on in a snapshot — the sender's scene isn't shared
+    // either. Same rule as Notes and Magpie.
+    if (isViewingShared.value) return;
     conversationData.value = { ...current, whiteboardScene: pending.scene };
   }
 
