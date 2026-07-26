@@ -66,9 +66,9 @@ import VoicePanel from "./VoicePanel.tsx";
 
 const SILENCE_FLUSH_MS = 2_000;
 const MAX_CHUNK_MS = 30_000;
-/** Ceiling on retained audio when the transcription endpoint is failing.
- * At the recorder's 1s timeslice this is ~90 seconds of catch-up. */
-const MAX_BUFFERED_CHUNKS = 90;
+/** Ceiling on complete recordings held back for retry when the transcription
+ * endpoint is failing. Each is one flush interval of audio. */
+const MAX_PENDING_CHUNKS = 20;
 /** RMS amplitude threshold — values below this are treated as silence.
  *  Typical speech lands between 0.02–0.20 at comfortable mic distance.
  *  0.008 is generous to catch quiet/soft speakers. */
@@ -258,10 +258,10 @@ export default function HomeIsland() {
     recordingTime,
     isProcessing,
     streamRef,
-    mediaRecorderRef,
     chunksRef,
     startRecording: _startRecording,
     stopRecording: _stopRecording,
+    rotateRecording,
     cleanup: _cleanupRecorder,
   } = useRecorder({
     // No sampleRate/channelCount — iOS rejects those constraints with
@@ -289,6 +289,8 @@ export default function HomeIsland() {
   const chunkStartRef = useRef<number>(0);
   // The in-flight chunk request, or null. Serialises sends — see sendChunk.
   const chunkInFlightRef = useRef<Promise<void> | null>(null);
+  // Complete recordings awaiting upload (oldest first) — the retry queue.
+  const pendingChunksRef = useRef<Blob[]>([]);
 
   // Belt: recording is live-session-gated today, and the session effect's
   // cleanup stops it on unmount — but if a record path ever appears outside
@@ -433,6 +435,12 @@ export default function HomeIsland() {
         ) {
           sendChunk();
           chunkStartRef.current = now;
+          // Latch the silence too. Without this, silenceDuration keeps
+          // growing through a quiet room: each new 500ms blob re-satisfies
+          // the condition on the very next 200ms tick, so a pause billed a
+          // transcription request roughly twice a second. Thirty seconds of
+          // quiet was enough to hit the 60/min rate limit on its own.
+          lastSpeechRef.current = now;
         }
       }, 200) as unknown as number;
     } catch (err) {
@@ -455,23 +463,20 @@ export default function HomeIsland() {
   }
 
   /**
-   * Flush the buffered audio to the transcription endpoint.
+   * Flush the live audio to the transcription endpoint.
    *
    * ONE request at a time. The silence monitor ticks every 200ms, so without
    * a latch a single slow transcription turn had a dozen more requests piling
    * up behind it — and since each response was applied on arrival, a slow
    * chunk could land its text AFTER a later, faster one and scramble the
-   * transcript. Serialising the sends fixes the request storm and the
-   * ordering race together, which is why there's one guard here and not two.
+   * transcript. Serialising fixes the storm and the ordering together.
    *
    * Returns the in-flight promise when one exists, so stopRecording can wait
    * it out instead of silently no-oping on the meeting's last words.
    */
   function sendChunk(): Promise<void> {
     if (chunkInFlightRef.current) return chunkInFlightRef.current;
-    const chunks = chunksRef.current.splice(0);
-    if (chunks.length === 0) return Promise.resolve();
-    const p = deliverChunk(chunks).finally(() => {
+    const p = flushPending().finally(() => {
       chunkInFlightRef.current = null;
     });
     chunkInFlightRef.current = p;
@@ -479,27 +484,40 @@ export default function HomeIsland() {
   }
 
   /**
-   * Put audio BACK at the front of the buffer so the next flush retries it.
+   * Rotate the recorder into a complete file, then drain the queue oldest
+   * first — stopping at the first failure so nothing jumps the line and
+   * nothing is dropped.
    *
-   * The buffer used to be spliced before the fetch and never restored, so a
-   * dropped connection, a 500, or a rate-limit silently ate whatever was said
-   * during it — the speech was simply gone, with nothing but a console line.
-   * Capped so a persistently failing endpoint can't grow the buffer without
-   * bound; past the cap the OLDEST audio goes, because in a live transcript
-   * the most recent words are the ones still worth catching up on.
+   * Retry used to mean splicing raw chunks back into the recorder's shared
+   * buffer, which was both fragile (useRecorder swaps that array on
+   * start/stop, so a late failure could bleed one session's audio into the
+   * next) and pointless (the fragments were undecodable anyway). A rotation
+   * hands back a self-contained file, so a retry is just: POST it again.
    */
-  function requeueChunks(chunks: Blob[]) {
-    chunksRef.current = [...chunks, ...chunksRef.current].slice(
-      -MAX_BUFFERED_CHUNKS,
-    );
+  async function flushPending() {
+    const blob = await rotateRecording();
+    if (blob && blob.size > 0) pendingChunksRef.current.push(blob);
+
+    while (pendingChunksRef.current.length > 0) {
+      const ok = await deliverChunk(pendingChunksRef.current[0]);
+      if (!ok) break;
+      pendingChunksRef.current.shift();
+    }
+
+    // A persistently failing endpoint must not grow this without bound. Past
+    // the cap the OLDEST audio goes — in a live transcript the most recent
+    // words are the ones still worth catching up on.
+    if (pendingChunksRef.current.length > MAX_PENDING_CHUNKS) {
+      pendingChunksRef.current = pendingChunksRef.current.slice(
+        -MAX_PENDING_CHUNKS,
+      );
+    }
   }
 
-  async function deliverChunk(chunks: Blob[]) {
+  /** POST one complete recording. Returns false if it should be retried. */
+  async function deliverChunk(blob: Blob): Promise<boolean> {
     isProcessing.value = true;
     try {
-      const blob = new Blob(chunks, {
-        type: mediaRecorderRef.current?.mimeType || "audio/webm",
-      });
       // Name the file to match the actual codec. iOS records audio/mp4, not
       // webm — a mismatched extension makes the server's format inference
       // fragile if the Content-Type is ever lost in transit.
@@ -514,34 +532,34 @@ export default function HomeIsland() {
         method: "POST",
         body: form,
       });
-      if (res.ok) {
-        const payload = await res.json().catch(() => null);
-        const text = typeof payload?.text === "string" ? payload.text : "";
-        const speakers = Array.isArray(payload?.speakers)
-          ? payload.speakers.filter((s: unknown): s is string =>
-            typeof s === "string"
-          )
-          : [];
-        if (text) {
-          const chunk = { id: Date.now(), text, speakers };
-          liveTranscript.value = [...liveTranscript.value, chunk].slice(-20);
-          if (session) {
-            sendTranscriptChunk(text, speakers);
-            // Host-only by construction (the record button is host-gated):
-            // feed the live-analysis loop so nodes/actions/summary keep up
-            // with the meeting instead of waiting for an explicit append.
-            noteLiveChunk(text, speakers);
-          }
-        }
-      } else {
+      if (!res.ok) {
         // A non-OK response is a lost chunk too — this branch didn't exist,
         // so a 429 or a 500 dropped the audio as quietly as a thrown error.
         console.error("Chunk send rejected:", res.status);
-        requeueChunks(chunks);
+        return false;
       }
+      const payload = await res.json().catch(() => null);
+      const text = typeof payload?.text === "string" ? payload.text : "";
+      const speakers = Array.isArray(payload?.speakers)
+        ? payload.speakers.filter((s: unknown): s is string =>
+          typeof s === "string"
+        )
+        : [];
+      if (text) {
+        const chunk = { id: Date.now(), text, speakers };
+        liveTranscript.value = [...liveTranscript.value, chunk].slice(-20);
+        if (session) {
+          sendTranscriptChunk(text, speakers);
+          // Host-only by construction (the record button is host-gated):
+          // feed the live-analysis loop so nodes/actions/summary keep up
+          // with the meeting instead of waiting for an explicit append.
+          noteLiveChunk(text, speakers);
+        }
+      }
+      return true;
     } catch (err) {
       console.error("Chunk send failed:", err);
-      requeueChunks(chunks);
+      return false;
     } finally {
       isProcessing.value = false;
     }
@@ -564,9 +582,11 @@ export default function HomeIsland() {
     if (chunkInFlightRef.current) {
       await chunkInFlightRef.current.catch(() => {});
     }
-    if (chunksRef.current.length > 0) {
-      await sendChunk();
-    }
+    // Always flush, even with an empty chunk buffer: the rotation is what
+    // captures everything spoken since the last flush. That tail used to be
+    // dropped outright — HomeIsland never gives the hook an onStop, so the
+    // final blob _stopRecording assembles went nowhere.
+    await sendChunk();
     await _stopRecording();
     // Analyze the meaningful tail without delaying the stop UX — the result
     // lands in the dashboard (and the room) when it's ready.

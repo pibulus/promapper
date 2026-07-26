@@ -55,6 +55,13 @@ export interface RecorderHandle {
   chunksRef: ReturnType<typeof useRef<Blob[]>>;
   startRecording: () => Promise<void>;
   stopRecording: () => Promise<void>;
+  /**
+   * Close off the current recording and reopen on the same stream, returning
+   * what was captured as one self-contained file. The only correct way to get
+   * a mid-session flush that a decoder can actually read — see the
+   * implementation for why slicing chunks cannot work.
+   */
+  rotateRecording: () => Promise<Blob | null>;
   /** Full teardown — stops stream tracks, closes recorder. */
   cleanup: () => void;
 }
@@ -299,6 +306,60 @@ export function useRecorder(opts: RecorderOptions = {}): RecorderHandle {
     }
   }
 
+  /**
+   * Close off the current recording and immediately open a new one on the SAME
+   * stream, returning what was captured as ONE self-contained file.
+   *
+   * MediaRecorder writes the container header (WebM's EBML/Segment, MP4's
+   * ftyp/moov) into its FIRST dataavailable blob and nowhere else. So slicing
+   * chunks out of a running recording yields fragments no decoder can read —
+   * measured in-browser: the first flush decodes, every flush after it fails
+   * with "EncodingError: Unable to decode audio data". Live transcription had
+   * been dying after its first chunk for exactly this reason.
+   *
+   * Prepending the header blob to later flushes does produce a decodable file,
+   * but it re-sends the recording's opening audio inside every chunk (measured:
+   * 1.92s of audio where only 1.5s was spoken), so the transcript stutters.
+   * Rotating is the honest fix: each flush is a real recording.
+   *
+   * The mic is never released — the new recorder rides the same tracks — so
+   * there's no permission re-prompt and no gap beyond the swap itself.
+   */
+  async function rotateRecording(): Promise<Blob | null> {
+    const recorder = mediaRecorderRef.current;
+    const stream = streamRef.current;
+    if (!recorder || !stream || recorder.state === "inactive") return null;
+
+    await new Promise<void>((resolve) => {
+      recorder.onstop = () => resolve();
+      recorder.stop();
+    });
+
+    const captured = chunksRef.current;
+    const mimeType = recorder.mimeType;
+    const blob = captured.length
+      ? new Blob(captured, { type: mimeType || "audio/webm" })
+      : null;
+
+    // If the user hit Stop while we were rotating, don't resurrect the mic.
+    if (!isRecording.value || streamRef.current !== stream) {
+      mediaRecorderRef.current = null;
+      return blob;
+    }
+
+    const next = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+    mediaRecorderRef.current = next;
+    chunksRef.current = [];
+    next.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        chunksRef.current.push(e.data);
+        onChunk?.(e.data);
+      }
+    };
+    next.start(timesliceMs);
+    return blob;
+  }
+
   function cleanup(): void {
     isStartingRecording.current = false;
     clearTimer();
@@ -340,6 +401,7 @@ export function useRecorder(opts: RecorderOptions = {}): RecorderHandle {
     chunksRef,
     startRecording,
     stopRecording,
+    rotateRecording,
     cleanup,
   };
 }
