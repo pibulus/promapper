@@ -371,8 +371,24 @@ export function reconcileAppendResult(
   // THEIRS and only reapply in-flight speaker renames over the fresh transcript.
   const withSpeakers = applySpeakerRenames(base, mine, theirs);
 
+  // THEIRS heard ONE take (an append) or one round of chunks (live), so its
+  // roster is only that slice's speakers — extractSpeakers scans the clip it
+  // was handed and nothing else. Taking it whole drops everyone who happened
+  // to be quiet this round, and with them their stable colour (speakerColor
+  // hashes on index), their rename-in-place, and an honest talk share.
+  //
+  // MINE first is load-bearing: it preserves each existing person's index, so
+  // nobody's colour shifts when a new voice joins the roster.
+  const speakers = [
+    ...new Set([
+      ...(mine.transcript?.speakers ?? []),
+      ...(withSpeakers.transcript?.speakers ?? []),
+    ]),
+  ];
+
   return {
     ...withSpeakers,
+    transcript: { ...withSpeakers.transcript, speakers },
     nodes,
     edges,
     actionItems,

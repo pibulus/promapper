@@ -309,6 +309,19 @@ export default function AudioRecorder(
         }
       }
 
+      // The append takes 5–15s, and nothing stops the user opening a different
+      // conversation from History while it runs (MobileHistoryMenu.handleLoad
+      // swaps the signal unconditionally). If that happened, `base` is no
+      // longer an ancestor of what's on screen — reconciling would splice the
+      // NEW map into the OLD one and autosave the mash-up under the old id.
+      // Drop the result instead: the take is still in IndexedDB without a
+      // receipt, so the "N takes not mapped yet" nudge offers it again once
+      // the right conversation is open. Same guard AskModule already uses.
+      if (conversationData.value?.conversation.id !== conversationId) {
+        console.warn("Append discarded — conversation switched mid-flight");
+        return;
+      }
+
       // Reconcile: layer any edits the user made DURING the round-trip (toggle,
       // delete, drag, rename) back on top of the server's AI-growth result so
       // they aren't clobbered (audit Findings 2/3/5). `base` is the request-time

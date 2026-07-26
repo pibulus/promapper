@@ -300,3 +300,41 @@ Deno.test("S9 empty: absent client-only fields stay absent, not undefined keys",
   assertEquals("magpie" in out, false);
   assertEquals("whiteboardScene" in out, false);
 });
+
+// ── S10: the speaker roster grows, it doesn't get replaced ─────────────────
+Deno.test("S10 speakers: a take with only one voice doesn't evict the others", () => {
+  // THEIRS is built from ONE take, and extractSpeakers only ever scans the
+  // clip it was handed. Taking its roster whole dropped everyone who happened
+  // to be quiet that round — along with their stable colour (speakerColor
+  // hashes on index), their rename, and an honest talk share.
+  const base = conv({
+    transcript: { text: "", speakers: ["Sheriff Dun", "Deputy Ruiz", "Marge"] },
+  });
+  const mine = conv({
+    transcript: { text: "", speakers: ["Sheriff Dun", "Deputy Ruiz", "Marge"] },
+  });
+  // The new take only caught Marge talking.
+  const theirs = conv({ transcript: { text: "new", speakers: ["Marge"] } });
+
+  const out = reconcileAppendResult(base, mine, theirs);
+
+  assertEquals(out.transcript.speakers, [
+    "Sheriff Dun",
+    "Deputy Ruiz",
+    "Marge",
+  ]);
+});
+
+Deno.test("S10 new voice: someone who speaks for the first time is appended, not prepended", () => {
+  // Order matters — existing people must keep their index so their colour
+  // doesn't shift when a newcomer joins.
+  const base = conv({ transcript: { text: "", speakers: ["Sheriff Dun"] } });
+  const mine = conv({ transcript: { text: "", speakers: ["Sheriff Dun"] } });
+  const theirs = conv({
+    transcript: { text: "new", speakers: ["Doc Feeney", "Sheriff Dun"] },
+  });
+
+  const out = reconcileAppendResult(base, mine, theirs);
+
+  assertEquals(out.transcript.speakers, ["Sheriff Dun", "Doc Feeney"]);
+});
