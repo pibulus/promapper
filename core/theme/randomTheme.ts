@@ -363,45 +363,63 @@ export function neonAt(L: number, hue: number, ride = 0.94): string {
   return oklchToHex(L, maxChroma(L, wrap(hue)) * ride, wrap(hue));
 }
 
-/** Band lightness the hand-approved named themes actually land on: measured
- * across DAYBREAK/BUBBLEGUM/SKY/GRAPE/LIME/GOLD at the static 62% mix, they
- * sit at L 0.692–0.840, mean 0.756. The CTA plate's mean is 0.733. */
-export const BAND_TARGET_L = 0.755;
-export const PLATE_TARGET_L = 0.733;
+/** Warm near-white — the only light ink allowed (never #ffffff). */
+export const WARM_WHITE = "#fffef7";
+/** Warm near-black — the only dark ink allowed (never #000000). */
+export const SOFT_BLACK = "#1e1714";
 
 /**
- * Solve a band/plate so it lands at a target perceived weight.
+ * THE BAND IS THE ACCENT.
  *
- * A FIXED 62% is what made bright accents go pastel: the same recipe turns a
- * deep cobalt into a rich band (L 0.73) and a peak-vividness mint into a
- * washed one (L 0.86, above every approved theme). Solving instead of fixing
- * keeps every hue at the same presence — the same "by construction" move
- * deriveStrong already makes for contrast.
+ * It used to be a 62% tint over cream, then briefly a mix solved to one fixed
+ * lightness. Both were the same mistake wearing different hats: pinning every
+ * band to a single weight means DILUTING deep hues to reach it, and the header
+ * band is the largest block of colour on a card. Measured on the fixed-weight
+ * version, a vivid indigo accent lost 59% of its chroma on the way to its own
+ * header (#505ef7 C0.226 → #a9a8e9 C0.093). Neon accent, pastel card.
  *
- * The partner has to be chosen, not assumed. Cream can only lighten, so an
- * accent that is ALREADY lighter than the target (every peak-vividness green,
- * mint and yellow — the whole reason the wheel was reopened) can never reach
- * it by adding cream. Those darken toward their own deep companion instead,
- * which keeps the hue while bringing the weight down.
+ * So the band keeps the accent's hue at its chroma ceiling and the INK adapts:
+ * bright hues (lime, cyan, coral, amber) carry warm-black; deep ones (indigo,
+ * violet, blue) go a step deeper and carry warm-white. Both outcomes are
+ * saturated — the choice is only ever which ink survives on them, and that is
+ * solved rather than assumed, so AA holds by construction on every hue.
  */
-export function solveBand(
-  accent: string,
-  strong: string,
-  targetL: number,
-): string {
-  const [accentL] = hexToOklch(accent);
-  const partner = accentL > targetL ? strong : BAND_CREAM;
-  let best = accent;
-  let bestErr = Infinity;
-  for (let p = 0; p <= 1.0001; p += 0.01) {
-    const hex = mixHex(accent, partner, Math.min(p, 1));
-    const err = Math.abs(hexToOklch(hex)[0] - targetL);
-    if (err < bestErr) {
-      bestErr = err;
-      best = hex;
-    }
+export function solveBandAndInk(
+  hue: number,
+  lightness: number,
+): { band: string; ink: string } {
+  const at = (L: number) =>
+    oklchToHex(L, maxChroma(L, wrap(hue)) * 0.94, wrap(hue));
+
+  // Prefer the accent exactly as it is, with whichever ink clears AA.
+  const own = at(lightness);
+  if (contrast(own, SOFT_BLACK) >= 4.5) return { band: own, ink: SOFT_BLACK };
+  if (contrast(own, WARM_WHITE) >= 4.5) return { band: own, ink: WARM_WHITE };
+
+  // Mid-lightness hues clear neither. Walk DEEPER (never paler — paler is how
+  // we got here) until warm-white lands. Deeper also reads bolder, which is
+  // the direction this whole system is trying to go.
+  for (let L = lightness; L >= 0.3; L -= 0.01) {
+    const band = at(L);
+    if (contrast(band, WARM_WHITE) >= 4.5) return { band, ink: WARM_WHITE };
   }
-  return best;
+  return { band: at(0.3), ink: WARM_WHITE };
+}
+
+/**
+ * The CTA plate stays a CANDY plate: bright fill, warm-black ink — the taste
+ * ruling that survived three rounds (dark fill + white ink was vetoed twice).
+ * So unlike the band it can only move one way: light enough that dark ink
+ * lands, and no lighter.
+ */
+export function solvePlate(hue: number, lightness: number): string {
+  const at = (L: number) =>
+    oklchToHex(L, maxChroma(L, wrap(hue)) * 0.94, wrap(hue));
+  for (let L = Math.max(lightness, 0.6); L <= 0.92; L += 0.01) {
+    const plate = at(L);
+    if (contrast(plate, SOFT_BLACK) >= 4.5) return plate;
+  }
+  return mixHex(at(0.92), BAND_CREAM, 0.8);
 }
 
 /** Ground families, derived from the curated pairs (kept as an export for
@@ -526,11 +544,9 @@ export function composeTheme(input: ComposeInput): ShuffleParts {
   const secondary = neonAt(peakLightness(secondaryHue), secondaryHue);
   const tertiary = neonAt(peakLightness(tertiaryHue), tertiaryHue);
 
-  // Band and plate are SOLVED to a target weight rather than fixed at 62/70%,
-  // so a peak-vividness mint reads as present as a deep cobalt instead of
-  // washing out. See solveBand.
-  const band = solveBand(accent, strong, BAND_TARGET_L);
-  const plate = solveBand(accent, strong, PLATE_TARGET_L);
+  // The band IS the accent; the ink adapts to it. The plate stays candy.
+  const { band, ink: bandInk } = solveBandAndInk(hue, lightness);
+  const plate = solvePlate(hue, lightness);
 
   // PAPER SKY: the ground is a barely-tinted paper that still travels — two
   // whisper washes hug the top corners in the ground family, and the accent
@@ -596,6 +612,13 @@ export function composeTheme(input: ComposeInput): ShuffleParts {
       // SOLVED per roll, not left to the static 62/70% recipes: those are
       // tuned for mid-lightness accents and wash out a peak-vividness one.
       "--header-band": band,
+      // Solved WITH the band, not derived from the theme ink — on a fully
+      // saturated band the old "text 65% into soft-black" recipe was a coin
+      // flip. Deep bands get warm-white, bright ones warm-black.
+      "--header-band-ink": bandInk,
+      "--header-band-sub": bandInk === WARM_WHITE
+        ? "rgba(255,254,247,0.72)"
+        : "rgba(30,23,20,0.66)",
       "--cta-plate": plate,
       // The harmony's companions. Nodes, speakers and module chrome only —
       // never a second header band (headers stay MONO).

@@ -97,27 +97,46 @@ Deno.test("the ground is always PAPER — the room never competes with the accen
   }
 });
 
-Deno.test("band and plate are SOLVED to a consistent weight, never left pastel", () => {
-  // The bug this guards: a fixed 62% mix turns a deep cobalt into a rich band
-  // (L 0.73) and a peak-vividness mint into a washed one (L 0.86 — above every
-  // hand-approved theme, which measured 0.692–0.840).
+Deno.test("the band stays VIVID — it never dilutes the accent into a pastel", () => {
+  // THE bug this guards, and the reason the whole approach changed: pinning
+  // every band to one lightness meant diluting deep hues with cream to reach
+  // it. Measured on that version, a vivid indigo lost 59% of its chroma on the
+  // way to its own header (#505ef7 C0.226 -> #a9a8e9 C0.093) — neon accent,
+  // pastel card. The band now keeps the accent's hue at its chroma ceiling.
   const rand = seededRand(8888);
+  for (let i = 0; i < 300; i++) {
+    const { theme, hue } = generateThemeParts(rand);
+    const band = theme.cssVars?.["--header-band"] as string;
+    assert(!!band?.startsWith("#"), "roll missing --header-band");
+    const [bL, bC, bH] = hexToOklch(band);
+    // Riding its own ceiling at its own lightness — the only honest measure of
+    // "vivid", since maxChroma varies ~3x across the wheel.
+    const ceiling = maxChroma(bL, wrap(hue));
+    assert(
+      bC >= ceiling * 0.85,
+      `band went pastel: C${bC.toFixed(3)} vs ceiling ${
+        ceiling.toFixed(3)
+      } (accent ${theme.accent})`,
+    );
+    // And it stayed the accent's own colour rather than drifting toward cream.
+    assert(
+      _hueDist(bH, hue) < 12,
+      `band drifted off-hue: ${bH.toFixed(0)} vs accent ${
+        wrap(hue).toFixed(0)
+      }`,
+    );
+  }
+});
+
+Deno.test("the solved band ink clears AA on every roll", () => {
+  const rand = seededRand(31337);
   for (let i = 0; i < 300; i++) {
     const { theme } = generateThemeParts(rand);
     const band = theme.cssVars?.["--header-band"] as string;
-    const plate = theme.cssVars?.["--cta-plate"] as string;
-    assert(!!band?.startsWith("#"), "roll missing a solved --header-band");
-    assert(!!plate?.startsWith("#"), "roll missing a solved --cta-plate");
-    const [bL] = hexToOklch(band);
-    const [pL] = hexToOklch(plate);
-    assert(
-      Math.abs(bL - 0.755) <= 0.06,
-      `band drifted off target weight: L${bL.toFixed(3)} for ${theme.accent}`,
-    );
-    assert(
-      Math.abs(pL - 0.733) <= 0.06,
-      `plate drifted off target weight: L${pL.toFixed(3)}`,
-    );
+    const ink = theme.cssVars?.["--header-band-ink"] as string;
+    assert(!!ink?.startsWith("#"), "roll missing a solved --header-band-ink");
+    const ratio = contrast(ink, band);
+    assert(ratio >= 4.5, `band ink ${ratio.toFixed(2)} — ${ink} on ${band}`);
   }
 });
 
@@ -158,18 +177,6 @@ Deno.test("warm-black ink passes AA on the candy CTA plate for every roll", () =
     const plate = theme.cssVars?.["--cta-plate"] as string;
     const ratio = contrast(SOFT_BLACK, plate);
     assert(ratio >= 4.5, `ink/candy ${ratio.toFixed(2)} for ${plate}`);
-  }
-});
-
-Deno.test("ink on the roll's header band passes AA for every roll", () => {
-  const rand = seededRand(1982);
-  for (let i = 0; i < 300; i++) {
-    const { theme } = generateThemeParts(rand);
-    // The band is solved per roll now, so read it back rather than
-    // re-deriving it from a fixed percentage the generator no longer uses.
-    const band = theme.cssVars?.["--header-band"] as string;
-    const ratio = contrast(theme.text, band);
-    assert(ratio >= 4.5, `ink/band ${ratio.toFixed(2)} for ${theme.accent}`);
   }
 });
 
