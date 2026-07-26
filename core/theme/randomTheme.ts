@@ -31,7 +31,12 @@ import { hexToOklch, maxChroma, oklchToHex } from "@core/theme/oklch.ts";
 /** CURATED PAIRS v2 — OKLCH hue arcs (arcs may pass 360: mod applied at
  * generation). Per-pair accent registers keep every family in its own
  * proven register instead of one global range that made coral scream and
- * cobalt sulk. */
+ * cobalt sulk.
+ *
+ * ⚠️ JULY 26, 2026 — these are now LAB PRESETS ONLY. The dice no longer deals
+ * from this list; `generateThemeParts` rolls the NEON OFFICE generator below.
+ * The pairs survive because /dev/colors uses them as starting points to tune
+ * from, and because they document the couples that were hand-approved. */
 export const CURATED_PAIRS: ReadonlyArray<{
   readonly name: string;
   /** Ground-family OKLCH hue arc (sky washes live here). */
@@ -224,26 +229,207 @@ export function deriveStrong(hue: number, chroma: number): string {
 
 const wrap = (h: number) => ((h % 360) + 360) % 360;
 
+// ===================================================================
+// NEON OFFICE — the generator (July 26, 2026)
+// ===================================================================
+/**
+ * Replaces the curated-pair dice. Three sources, one recipe:
+ *
+ *  · GROUND is always PAPER. Chroma 0.016–0.036, from the Flexoki base ramp
+ *    (~/Documents/reference/BRAND-flexoki-palette.md — measured at C 0.015,
+ *    h95). The room is paper; it never competes with the accent. This is the
+ *    "neutral office".
+ *  · ACCENTS come from HARMONY MATH off a base hue anywhere on the wheel —
+ *    the old conversation_mapper ThemeRandomizerService's scheme, which is
+ *    where its genuinely surprising module colours came from. Eleven
+ *    hand-picked couples could only ever deal eleven moods.
+ *  · NEON comes from riding each hue's OWN sRGB chroma ceiling at its OWN
+ *    peak-vividness lightness, instead of one fixed L/C register for every
+ *    hue. That register is precisely why the old deck read flat: it made lime
+ *    into khaki and left cobalt sulking.
+ *
+ * Opinionated, not chaotic: the harmony rules and the paper floor are the
+ * opinion. Reopened deliberately by Pablo on July 26 — green-family accents
+ * (the "hospital pink and green" veto was green on PINK grounds; on paper it
+ * is a different proposition, and LIME #00af82 was always a named theme), and
+ * a second/third hue for nodes and modules. Header bands stay MONO.
+ */
+
+/** Weighted toward harmonies yielding DISTINCT-but-related hues. Monochrome
+ * and analogous are kept but rare — they are what the old deck already did. */
+export const HARMONIES: ReadonlyArray<readonly [string, number]> = [
+  ["split-complementary", 4],
+  ["golden", 4],
+  ["triadic", 3],
+  ["double-split", 3],
+  ["complementary", 2],
+  ["tetradic", 2],
+  ["wildcard", 2],
+  ["analogous", 1],
+];
+
+const GOLDEN_ANGLE = 360 * 0.618033988749895;
+
+export function pickHarmony(rand: () => number): string {
+  const total = HARMONIES.reduce((s, [, w]) => s + w, 0);
+  let r = rand() * total;
+  for (const [name, w] of HARMONIES) {
+    if (r < w) return name;
+    r -= w;
+  }
+  return "golden";
+}
+
+/** Base hue plus its companions, per harmony. Always returns >= 3 hues. */
+export function harmonyHues(
+  base: number,
+  harmony: string,
+  rand: () => number,
+): number[] {
+  const j = (a: number, b: number) => a + rand() * (b - a);
+  switch (harmony) {
+    case "analogous":
+      return [base, base + 30, base + 60];
+    case "complementary":
+      return [base, base + 180, base + j(150, 210)];
+    case "triadic":
+      return [base, base + 120, base + 240];
+    case "tetradic": {
+      const o = j(80, 100);
+      return [base, base + o, base + 180, base + 180 + o];
+    }
+    case "split-complementary":
+      return [base, base + 150, base + 210];
+    case "double-split": {
+      const s = j(20, 40);
+      return [base, base + 180 - s, base + 180 + s];
+    }
+    case "golden":
+      return [0, 1, 2, 3].map((i) => base + GOLDEN_ANGLE * i);
+    case "wildcard": {
+      // Every hue >= 90 degrees from the others — the old service's
+      // getDistantHue, the source of its genuinely surprising rolls.
+      const out = [base];
+      for (let n = 0; n < 2; n++) {
+        let placed = false;
+        for (let t = 0; t < 16 && !placed; t++) {
+          const h = rand() * 360;
+          if (
+            out.every((o) => {
+              const d = Math.abs(wrap(h) - wrap(o));
+              return Math.min(d, 360 - d) >= 90;
+            })
+          ) {
+            out.push(h);
+            placed = true;
+          }
+        }
+        // Deterministic fallback so the harmony always yields 3 hues even
+        // when the rejection sampler runs out of tries.
+        if (!placed) out.push(base + 120 * (n + 1));
+      }
+      return out;
+    }
+    default:
+      return [base, base + 30, base + 60];
+  }
+}
+
+/**
+ * The lightness at which THIS hue is most vivid. In OKLCH the sRGB chroma
+ * ceiling peaks at a different L for every hue: yellow-green tops out bright
+ * (~0.85), blue tops out deep (~0.47). One shared L register keeps hues at
+ * equal perceived WEIGHT but costs them their vividness — which is the exact
+ * trade that turned lime into khaki. Neon wants the peak.
+ *
+ * Clamped to [0.56, 0.82]: below 0.56 an accent reads "too dark" as a candy
+ * plate and above 0.82 it cannot hold a band (both vetoed live, July 2026).
+ */
+export function peakLightness(hue: number): number {
+  let bestL = 0.62;
+  let bestC = 0;
+  for (let L = 0.45; L <= 0.9; L += 0.01) {
+    const c = maxChroma(L, wrap(hue));
+    if (c > bestC) {
+      bestC = c;
+      bestL = L;
+    }
+  }
+  return Math.min(0.82, Math.max(0.56, bestL));
+}
+
+/** An accent riding its hue's own sRGB chroma ceiling. */
+export function neonAt(L: number, hue: number, ride = 0.94): string {
+  return oklchToHex(L, maxChroma(L, wrap(hue)) * ride, wrap(hue));
+}
+
+/** Band lightness the hand-approved named themes actually land on: measured
+ * across DAYBREAK/BUBBLEGUM/SKY/GRAPE/LIME/GOLD at the static 62% mix, they
+ * sit at L 0.692–0.840, mean 0.756. The CTA plate's mean is 0.733. */
+export const BAND_TARGET_L = 0.755;
+export const PLATE_TARGET_L = 0.733;
+
+/**
+ * Solve a band/plate so it lands at a target perceived weight.
+ *
+ * A FIXED 62% is what made bright accents go pastel: the same recipe turns a
+ * deep cobalt into a rich band (L 0.73) and a peak-vividness mint into a
+ * washed one (L 0.86, above every approved theme). Solving instead of fixing
+ * keeps every hue at the same presence — the same "by construction" move
+ * deriveStrong already makes for contrast.
+ *
+ * The partner has to be chosen, not assumed. Cream can only lighten, so an
+ * accent that is ALREADY lighter than the target (every peak-vividness green,
+ * mint and yellow — the whole reason the wheel was reopened) can never reach
+ * it by adding cream. Those darken toward their own deep companion instead,
+ * which keeps the hue while bringing the weight down.
+ */
+export function solveBand(
+  accent: string,
+  strong: string,
+  targetL: number,
+): string {
+  const [accentL] = hexToOklch(accent);
+  const partner = accentL > targetL ? strong : BAND_CREAM;
+  let best = accent;
+  let bestErr = Infinity;
+  for (let p = 0; p <= 1.0001; p += 0.01) {
+    const hex = mixHex(accent, partner, Math.min(p, 1));
+    const err = Math.abs(hexToOklch(hex)[0] - targetL);
+    if (err < bestErr) {
+      bestErr = err;
+      best = hex;
+    }
+  }
+  return best;
+}
+
 /** Ground families, derived from the curated pairs (kept as an export for
  * the test sweeps and the ThemeSwitcher anti-repeat). */
 export const WARM_FAMILIES: ReadonlyArray<readonly [number, number]> =
   CURATED_PAIRS.map((p) => p.ground);
 
 export interface ShuffleParts {
-  /** Accent OKLCH hue (may exceed 360 when the pair arc wraps; wrapped for
-   * output, raw here so tests can check arc membership directly). */
+  /** Accent OKLCH hue (may exceed 360 when a harmony wraps; wrapped for
+   * output, raw here so tests can check membership directly). */
   hue: number;
-  /** Accent OKLCH chroma (pre-clamp target). */
+  /** Accent OKLCH chroma (post-gamut-clamp actual). */
   chroma: number;
   /** Accent OKLCH lightness. */
   lightness: number;
-  /** Hue the background family landed on (always inside WARM_FAMILIES). */
+  /** Hue the paper ground landed on. */
   bgHue: number;
-  /** The three pastel wash hexes composited into --gradient-bg (light → the
-   * eye; exported so tests can guard bg lightness). */
+  /** The three wash hexes composited into --gradient-bg (light → the eye;
+   * exported so tests can guard bg lightness). */
   bgWashes: string[];
   /** Linear base stops under the washes. */
   bgBase: string[];
+  /** Which harmony dealt this roll (for debugging and the lab). */
+  harmony: string;
+  /** The companion hues — worn by nodes, speakers and module chrome, never
+   * by a second header band (headers stay MONO). */
+  secondary: string;
+  tertiary: string;
   theme: Theme;
 }
 
@@ -263,31 +449,58 @@ export interface ComposeInput {
   hue: number;
   lightness: number;
   chroma: number;
-  /** Ground-family OKLCH hue + wash registers. */
+  /** Ground OKLCH hue + wash registers. */
   bgHue: number;
   groundL: number;
   groundC: number;
+  /** Companion hues for nodes/modules. Default to the accent's own hue, so
+   * the /dev/colors lab (which tunes one accent) still composes cleanly. */
+  secondaryHue?: number;
+  tertiaryHue?: number;
+  /** Which harmony produced this, for the lab readout. */
+  harmony?: string;
   /** Jitter source for wash positions/vibe. Defaults to centered. */
   rand?: () => number;
 }
 
 /**
- * Roll a complete theme. `rand` is injectable for deterministic tests.
+ * Roll a complete theme — NEON OFFICE. `rand` is injectable for tests.
+ *
+ * Base hue lands anywhere on the wheel, a weighted harmony deals its
+ * companions, the ground goes to paper, and every accent sits at its own
+ * peak-vividness lightness riding its own chroma ceiling.
  */
 export function generateThemeParts(
   rand: () => number = Math.random,
 ): ShuffleParts {
-  const pair = CURATED_PAIRS[
-    Math.floor(rand() * CURATED_PAIRS.length) % CURATED_PAIRS.length
-  ];
-  const span = (a: readonly [number, number]) => a[0] + rand() * (a[1] - a[0]);
+  const base = rand() * 360;
+  const harmony = pickHarmony(rand);
+  const H = harmonyHues(base, harmony, rand);
+
+  // The accent is the FIRST companion, not the base — the base hue belongs to
+  // the paper, and paper wants the quiet end of the roll.
+  const accentHue = wrap(H[1 % H.length]);
+  // One shared nudge keeps the three companions at a consistent relative
+  // weight instead of drifting apart roll to roll.
+  const nudge = (rand() - 0.5) * 0.04;
+  const lightness = Math.min(
+    0.82,
+    Math.max(0.56, peakLightness(accentHue) + nudge),
+  );
+  const accentHex = neonAt(lightness, accentHue);
+  const [, chroma] = hexToOklch(accentHex);
+
   return composeTheme({
-    hue: span(pair.accent),
-    lightness: span(pair.accentL),
-    chroma: span(pair.accentC),
-    bgHue: span(pair.ground),
-    groundL: pair.groundL,
-    groundC: pair.groundC,
+    hue: accentHue,
+    lightness,
+    chroma,
+    bgHue: wrap(H[0]),
+    // PAPER. Flexoki's base ramp register.
+    groundL: 0.925 + rand() * 0.025,
+    groundC: 0.016 + rand() * 0.02,
+    secondaryHue: wrap(H[2 % H.length]),
+    tertiaryHue: wrap(H[3 % H.length]),
+    harmony,
     rand,
   });
 }
@@ -301,27 +514,41 @@ export function composeTheme(input: ComposeInput): ShuffleParts {
   const accent = oklchToHex(lightness, chroma, hue);
   const strong = deriveStrong(hue, chroma);
   // Ink is a COLOR: hue-tinted near-black, never grey (same recipe family
-  // as the hand-made themes).
-  const text = oklchToHex(0.3, 0.035, hue);
-  const textSecondary = oklchToHex(0.52, 0.03, hue);
+  // as the hand-made themes). It tints toward the GROUND now, not the accent
+  // — on a paper room the body copy belongs to the paper.
+  const text = oklchToHex(0.3, 0.03, bgHue);
+  const textSecondary = oklchToHex(0.52, 0.025, bgHue);
 
-  // AIRY SKY: the ground is a colored sky at the TOP that FADES INTO CREAM
-  // where the components live — a full-saturation full-bleed field read as
-  // "a toy". Two family washes hug the top corners; the accent leaves one
-  // low-chroma whisper near the bottom. Chroma rides each hue's own gamut
-  // ceiling (oklchToHex clamps), so aqua and dusk skies carry the same
-  // perceived weight as sunrise ones.
+  // The companions — nodes, speakers and module chrome wear these. Headers
+  // stay MONO (the July 20 ruling survives): these never become a band.
+  const secondaryHue = wrap(input.secondaryHue ?? hue);
+  const tertiaryHue = wrap(input.tertiaryHue ?? hue);
+  const secondary = neonAt(peakLightness(secondaryHue), secondaryHue);
+  const tertiary = neonAt(peakLightness(tertiaryHue), tertiaryHue);
+
+  // Band and plate are SOLVED to a target weight rather than fixed at 62/70%,
+  // so a peak-vividness mint reads as present as a deep cobalt instead of
+  // washing out. See solveBand.
+  const band = solveBand(accent, strong, BAND_TARGET_L);
+  const plate = solveBand(accent, strong, PLATE_TARGET_L);
+
+  // PAPER SKY: the ground is a barely-tinted paper that still travels — two
+  // whisper washes hug the top corners in the ground family, and the accent
+  // leaves ONE low-chroma breath near the floor. That breath is the only
+  // place the neon touches the room; everything else is paper, which is what
+  // lets the accent be as loud as it is.
   const j = () => rand() * 10 - 5;
   const gL = groundL;
   const gC = groundC;
   // Two-hue family JOURNEY (July 20, from the conversation_mapper study):
   // the second wash sits a real analogous step away (+22°), so the sky
-  // travels inside its family instead of one hue fading out — present,
-  // never a carnival (washes live below the C 0.05–0.10 clash floor).
+  // travels inside its family instead of one hue fading out.
   const washes = [
-    oklchToHex(gL - 0.01, gC + 0.015, wrap(bgHue - 8)),
-    oklchToHex(gL + 0.01, gC, wrap(bgHue + 22)),
-    oklchToHex(gL + 0.05, Math.min(gC, 0.06), wrap(hue)),
+    oklchToHex(gL - 0.012, gC + 0.012, wrap(bgHue - 8)),
+    oklchToHex(gL + 0.008, gC, wrap(bgHue + 22)),
+    // Fixed chroma, NOT min(gC, …): on a paper ground gC is so low that
+    // deriving the accent breath from it erased the breath entirely.
+    oklchToHex(Math.min(gL + 0.03, 0.97), 0.045, wrap(hue)),
   ];
   const washAlphas = [0.85, 0.7, 0.35];
   const positions: Array<[number, number]> = [
@@ -338,13 +565,13 @@ export function composeTheme(input: ComposeInput): ShuffleParts {
   // Linear journey: colored family sky → soft tint → warm cream. The
   // cream floor is what makes it AIRY instead of toy-solid.
   const bgBase = [
-    oklchToHex(gL + 0.02, gC, wrap(bgHue - 4)),
-    oklchToHex(0.93, gC * 0.55, wrap(bgHue + 4)),
+    oklchToHex(gL + 0.015, gC, wrap(bgHue - 4)),
+    oklchToHex(0.955, gC * 0.5, wrap(bgHue + 4)),
     "#fff4e8",
   ];
   const gradientBg = `${radials.join(", ")}, linear-gradient(168deg, ` +
-    `${bgBase[0]} 0%, ${bgBase[1]} 38%, ${bgBase[2]} 78%)`;
-  const baseSolid = oklchToHex(0.91, gC * 0.6, wrap(bgHue));
+    `${bgBase[0]} 0%, ${bgBase[1]} 40%, ${bgBase[2]} 80%)`;
+  const baseSolid = oklchToHex(0.94, gC * 0.6, wrap(bgHue));
 
   const theme: Theme = {
     name: "SHUFFLE",
@@ -366,10 +593,29 @@ export function composeTheme(input: ComposeInput): ShuffleParts {
       "--accent-strong": strong,
       "--accent-ink": strong,
       "--accent-fill": strong,
+      // SOLVED per roll, not left to the static 62/70% recipes: those are
+      // tuned for mid-lightness accents and wash out a peak-vividness one.
+      "--header-band": band,
+      "--cta-plate": plate,
+      // The harmony's companions. Nodes, speakers and module chrome only —
+      // never a second header band (headers stay MONO).
+      "--accent-2": secondary,
+      "--accent-3": tertiary,
     },
   };
 
-  return { hue, chroma, lightness, bgHue, bgWashes: washes, bgBase, theme };
+  return {
+    hue,
+    chroma,
+    lightness,
+    bgHue,
+    bgWashes: washes,
+    bgBase,
+    harmony: input.harmony ?? "lab",
+    secondary,
+    tertiary,
+    theme,
+  };
 }
 
 export function generateTheme(rand: () => number = Math.random): Theme {

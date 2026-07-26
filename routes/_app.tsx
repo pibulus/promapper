@@ -125,7 +125,7 @@ var parsed=JSON.parse(saved);
 var name=parsed&&parsed.name;
 if(!name)return;
 if(name==="SHUFFLE"){
-if(parsed.v!==8||!parsed.custom||!parsed.custom.vars)return;
+if(parsed.v!==9||!parsed.custom||!parsed.custom.vars)return;
 var cv=parsed.custom.vars;
 for(var ck in cv){document.documentElement.style.setProperty(ck,cv[ck]);}
 return;}
@@ -137,7 +137,7 @@ var themes={
     "--color-secondary":"rgba(255,250,243,0.62)",
     "--color-accent":"#4a7bc9",
     "--color-text":"#232a3a",
-    "--color-text-secondary":"#6b7386",
+    "--color-text-secondary":"#656d80",
     "--color-border":"rgba(35,42,58,0.1)",
     "--shadow-soft":"0 4px 12px rgba(74,123,201,0.14)",
     
@@ -150,7 +150,7 @@ var themes={
     "--color-secondary":"rgba(255,250,243,0.62)",
     "--color-accent":"#ff2e88",
     "--color-text":"#2b2430",
-    "--color-text-secondary":"#8a7e88",
+    "--color-text-secondary":"#756a73",
     "--color-border":"rgba(43,36,48,0.1)",
     "--shadow-soft":"0 4px 12px rgba(255,77,151,0.12)",
     
@@ -163,7 +163,7 @@ var themes={
     "--color-secondary":"rgba(255,250,243,0.65)",
     "--color-accent":"#0095ff",
     "--color-text":"#1f3344",
-    "--color-text-secondary":"#6f8597",
+    "--color-text-secondary":"#5b7082",
     "--color-border":"rgba(31,51,68,0.1)",
     "--shadow-soft":"0 4px 12px rgba(10,166,255,0.12)",
     
@@ -176,7 +176,7 @@ var themes={
     "--color-secondary":"rgba(255,250,243,0.65)",
     "--color-accent":"#8335ff",
     "--color-text":"#312a45",
-    "--color-text-secondary":"#807a96",
+    "--color-text-secondary":"#6f6984",
     "--color-border":"rgba(49,42,69,0.1)",
     "--shadow-soft":"0 4px 12px rgba(131,53,255,0.12)",
     
@@ -189,7 +189,7 @@ var themes={
     "--color-secondary":"rgba(255,250,243,0.65)",
     "--color-accent":"#0fb255",
     "--color-text":"#1f3a2b",
-    "--color-text-secondary":"#6f8c7c",
+    "--color-text-secondary":"#577363",
     "--color-border":"rgba(31,58,43,0.1)",
     "--shadow-soft":"0 4px 12px rgba(16,181,80,0.12)",
     
@@ -202,7 +202,7 @@ var themes={
     "--color-secondary":"rgba(255,250,243,0.65)",
     "--color-accent":"#f5a300","--accent-strong":"#a06a00",
     "--color-text":"#3a3016",
-    "--color-text-secondary":"#8a7b54",
+    "--color-text-secondary":"#7b6c46",
     "--color-border":"rgba(58,48,22,0.1)",
     "--shadow-soft":"0 4px 12px rgba(245,179,0,0.14)",
     

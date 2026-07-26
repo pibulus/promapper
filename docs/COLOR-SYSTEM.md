@@ -132,14 +132,65 @@ never a loosening of the cohesion rules.
   the airy pool feel is a lightness fact).
 - `--accent-strong/ink/fill` = same hue, C ≤ 0.15, L walked down until ≥ 4.6:1
   on card cream (doubles as AA ink and white-carrier).
-- `text` = oklch(0.30 0.035 hue); `textSecondary` = oklch(0.52 0.03 hue).
-- Banned accents: green/teal/yellow (OKLCH 60–244), alarm-red (8–27); coral
-  rides L ≥ 0.65. Aqua/lagoon lives as GROUND only.
+- `text` = oklch(0.30 0.03 groundHue); `textSecondary` = oklch(0.52 0.025
+  groundHue) — the ink belongs to the PAPER, not the accent.
 - Contrast swept over 300 seeded rolls: ink/band, white/strong, strong/cream,
   ink/every-bg-layer, white/CTA-plate.
 
-`SHUFFLE_SCHEMA_VERSION = 8` (themeEngine + FOUC script) — older rolls are
+`SHUFFLE_SCHEMA_VERSION = 9` (themeEngine + FOUC script) — older rolls are
 discarded on load, falling back to DAYBREAK.
+
+## NEON OFFICE — the generator (July 26, 2026, supersedes the curated deck)
+
+Pablo's brief: *"broader, fresher, more colours, more risk… opinionated neutral
+office neon fresh."* The curated deck couldn't deliver it, and the census said
+why: **8 of the 11 pairs landed in the purple→pink arc, and cobalt — the
+default theme's own accent — held a single slot.** Two accents were outright
+duplicates (`#f2694c` twice, `#e45590` twice), so the real variety was ~6
+colours. An unprimed second opinion, given only the hue arcs, independently
+named the hole: *"accent hue ranges missing entirely: 40–246."* A 206° gap.
+
+The cause was structural, not a taste slip. **A fixed accent register plus a
+banned-hue list can only ever deal from the corner of the wheel that's left.**
+
+Three sources, one recipe:
+
+- **GROUND is always PAPER** — chroma 0.016–0.036, lifted from the Flexoki base
+  ramp (`~/Documents/reference/BRAND-flexoki-palette.md`, measured at C 0.015
+  h95). The room never competes with the accent. This is the "neutral office".
+- **ACCENTS come from HARMONY MATH** off a base hue anywhere on the wheel —
+  conversation_mapper's `ThemeRandomizerService` scheme, restored. Weighted:
+  split-complementary 4, golden 4, triadic 3, double-split 3, complementary 2,
+  tetradic 2, wildcard 2, analogous 1.
+- **NEON comes from the gamut ceiling** — each accent rides `maxChroma()` for
+  its own hue at its own **peak-vividness lightness** (`peakLightness`). This is
+  the key correction: in OKLCH the chroma ceiling peaks at a different L per hue
+  (yellow-green ~0.85, blue ~0.47), so one shared L register keeps hues at equal
+  perceived weight but **costs them their vividness** — which is exactly what
+  turned lime into khaki and left cobalt sulking.
+
+**Two rulings deliberately reopened** (Pablo, July 26, knowingly):
+
+1. **Green-family accents are legal again.** The old "hospital pink and green"
+   veto was green *on pink/sunrise grounds*; on paper it is a different
+   proposition — and `LIME #00af82` was always a named theme accent anyway.
+2. **Two companion hues ride along** as `--accent-2` / `--accent-3`, for nodes,
+   speakers and module chrome. This is where the old app's good module colours
+   came from. **Header bands stay MONO** — the duo/trio ruling survives intact;
+   these never become a second band.
+
+**Band and plate are SOLVED, not fixed.** `solveBand()` walks the mix until the
+result hits a target OKLCH lightness (band 0.755, plate 0.733 — measured as the
+mean of the six hand-approved named themes, which range 0.692–0.840). The fixed
+62%/70% recipes were tuned for mid-lightness accents and washed a peak-vividness
+mint out to L 0.86, above every approved theme. The partner is chosen, not
+assumed: cream can only lighten, so an accent already lighter than the target
+darkens toward its own `--accent-strong` instead — hue kept, weight corrected.
+
+Guards: `core/tests/random_theme_test.ts` now asserts the wheel is **covered**
+(≥11 of 12 30° buckets over 300 rolls) rather than confined to arcs, that every
+accent rides ≥85% of its hue's ceiling, that the ground stays paper, and that
+band/plate hold their target weight.
 
 ## The lab (/dev/colors)
 
@@ -147,8 +198,11 @@ Dev-only tuning bench (`routes/dev/colors.tsx` + `islands/ColorLabIsland.tsx`,
 needs `DENO_ENV=development`): OKLCH sliders for accent × ground drive the same
 `composeTheme()` derivation the dice uses, persistence goes through the real
 theme engine, and the live preview reloads through the actual FOUC path. "Copy
-as pair" emits a CURATED_PAIRS entry — tune, copy, paste, done. New couples
-enter the deck THROUGH the lab, not by hand-guessing.
+as pair" emits a CURATED_PAIRS entry — tune, copy, paste, done.
+
+Since July 26 `CURATED_PAIRS` are **lab presets only** — the dice deals from the
+NEON OFFICE generator, not from that list. The pairs survive as hand-approved
+starting points to tune from.
 
 ## Standing law (inherited, still binding)
 

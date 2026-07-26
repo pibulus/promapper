@@ -120,3 +120,24 @@ Deno.test("every theme body text passes AA on the card surface", () => {
     );
   }
 });
+
+Deno.test("every theme's SECONDARY ink passes AA on the card surface", () => {
+  // The one ink pair no sweep covered, and the app's most common non-primary
+  // text: --color-text-secondary is a text colour at ~81 sites in styles.css
+  // and is the source of --footer-text. All six named themes shipped it below
+  // AA on cream (3.29–4.25) while every other pair in the system was pinned to
+  // 4.5 — helper lines, footers, timestamps and placeholders on the DEFAULT
+  // theme included. The shuffle path was always clear (oklch(0.52 0.03 h)
+  // happens to land above the floor); this was the hand-written side drifting.
+  for (const theme of proMapperThemes) {
+    if (!theme.textSecondary) continue;
+    const ratio = contrast(theme.textSecondary, CARD_SURFACE);
+    assertEquals(
+      ratio >= 4.5,
+      true,
+      `Theme "${theme.name}" textSecondary ${theme.textSecondary} is ${
+        ratio.toFixed(2)
+      }:1 on the card surface — below AA`,
+    );
+  }
+});

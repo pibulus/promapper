@@ -52,7 +52,7 @@ export const daybreak: Theme = {
   secondary: "rgba(255, 250, 243, 0.62)",
   accent: "#4a7bc9",
   text: "#232a3a",
-  textSecondary: "#6b7386",
+  textSecondary: "#656d80",
   border: "rgba(35, 42, 58, 0.1)",
   cssVars: {
     "--color-base-solid": "#ffe2cf",
@@ -68,7 +68,7 @@ export const bubblegum: Theme = {
   secondary: "rgba(255, 250, 243, 0.62)",
   accent: "#ff2e88",
   text: "#2b2430",
-  textSecondary: "#8a7e88",
+  textSecondary: "#756a73",
   border: "rgba(43, 36, 48, 0.1)",
   cssVars: {
     "--color-base-solid": "#ffd9e5",
@@ -88,7 +88,7 @@ export const sky: Theme = {
   secondary: "rgba(255, 250, 243, 0.65)",
   accent: "#0095ff",
   text: "#1f3344",
-  textSecondary: "#6f8597",
+  textSecondary: "#5b7082",
   border: "rgba(31, 51, 68, 0.1)",
   cssVars: {
     "--color-base-solid": "#c2f2f9",
@@ -108,7 +108,7 @@ export const grape: Theme = {
   secondary: "rgba(255, 250, 243, 0.65)",
   accent: "#8335ff",
   text: "#312a45",
-  textSecondary: "#807a96",
+  textSecondary: "#6f6984",
   border: "rgba(49, 42, 69, 0.1)",
   cssVars: {
     "--color-base-solid": "#fdd7f3",
@@ -128,7 +128,7 @@ export const lime: Theme = {
   secondary: "rgba(255, 250, 243, 0.65)",
   accent: "#0fb255",
   text: "#1f3a2b",
-  textSecondary: "#6f8c7c",
+  textSecondary: "#577363",
   border: "rgba(31, 58, 43, 0.1)",
   cssVars: {
     "--color-base-solid": "#c3f3ec",
@@ -148,7 +148,7 @@ export const gold: Theme = {
   secondary: "rgba(255, 250, 243, 0.65)",
   accent: "#f5a300",
   text: "#3a3016",
-  textSecondary: "#8a7b54",
+  textSecondary: "#7b6c46",
   border: "rgba(58, 48, 22, 0.1)",
   cssVars: {
     "--color-base-solid": "#ffdec2",

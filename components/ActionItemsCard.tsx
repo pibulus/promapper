@@ -563,6 +563,16 @@ export default function ActionItemsCard(
   }
 
   function updateDueDate(itemId: string, due_date: string | null) {
+    // Same no-change guard saveEdit has, and for the same reason: a look
+    // around that touches nothing must not stamp updated_at or push a sync.
+    // The blur handler fires unconditionally, so without this, opening a
+    // row's clock and tapping away published a new array every time — and
+    // because publishItems routes through withUndo (which arms on reference
+    // change), that silently overwrote a live undo snapshot. Delete an item,
+    // tap a clock, tap away, and the still-visible Undo toast had nothing
+    // left to restore.
+    const current = visibleItems.value.find((i) => i.id === itemId);
+    if (!current || (current.due_date || null) === (due_date || null)) return;
     const updatedItems = visibleItems.value.map((item) =>
       item.id === itemId
         ? { ...item, due_date, updated_at: new Date().toISOString() }
@@ -1063,14 +1073,18 @@ export default function ActionItemsCard(
                                       : item.due_date && (
                                         <button
                                           type="button"
-                                          class="action-item-chip action-item-chip--btn flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors has-value"
+                                          class="action-when-chip"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             editingWhenId.value = item.id;
                                           }}
                                           data-tip="Change when"
                                         >
-                                          <i class="fa fa-clock text-xs"></i>
+                                          <i
+                                            class="fa fa-clock"
+                                            aria-hidden="true"
+                                          >
+                                          </i>
                                           <span>
                                             {formatDue(item.due_date)}
                                           </span>

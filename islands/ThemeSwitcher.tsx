@@ -10,7 +10,7 @@
 import { useEffect } from "preact/hooks";
 import { createThemeSystem } from "@core/theme/themeEngine.ts";
 import { proMapperThemeConfig } from "@core/theme/themes.ts";
-import { CURATED_PAIRS, generateThemeParts } from "@core/theme/randomTheme.ts";
+import { generateThemeParts } from "@core/theme/randomTheme.ts";
 import { soundToggle } from "@utils/sound.ts";
 
 // Instantiated once per hydration root so it isn't re-created on render.
@@ -19,17 +19,17 @@ const themeSystem = createThemeSystem({
   randomEnabled: false,
 });
 
-/** Which curated ground family a hue belongs to (index into CURATED_PAIRS
- * grounds), for the anti-repeat below. */
-function groundFamilyOf(bgHue: number): number {
-  return CURATED_PAIRS.findIndex(({ ground: [lo, hi] }) =>
-    bgHue >= lo && bgHue <= hi
-  );
+/** Circular hue distance in degrees. */
+function hueDist(a: number, b: number): number {
+  const d = Math.abs(((a % 360) + 360) % 360 - ((b % 360) + 360) % 360);
+  return Math.min(d, 360 - d);
 }
 
-// The SKY must visibly change on every roll — several pairs share a ground
-// family, so pure random could deal the same-looking sky twice in a row.
-let lastGroundFamily = -1;
+// The roll must visibly change. Under the NEON OFFICE generator the ground is
+// always paper, so the ACCENT is what carries a roll's identity — anti-repeat
+// on that, not on the ground family (which no longer varies enough to matter).
+let lastAccentHue = -999;
+const MIN_ACCENT_TRAVEL = 40;
 
 export default function ThemeSwitcher() {
   // Init on mount: apply the saved theme (named default or last shuffle).
@@ -41,12 +41,12 @@ export default function ThemeSwitcher() {
     let parts = generateThemeParts();
     for (
       let tries = 0;
-      tries < 6 && groundFamilyOf(parts.bgHue) === lastGroundFamily;
+      tries < 6 && hueDist(parts.hue, lastAccentHue) < MIN_ACCENT_TRAVEL;
       tries++
     ) {
       parts = generateThemeParts();
     }
-    lastGroundFamily = groundFamilyOf(parts.bgHue);
+    lastAccentHue = parts.hue;
     themeSystem.applyCustomTheme(parts.theme);
     soundToggle(true);
   }

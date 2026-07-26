@@ -63,6 +63,13 @@
   --border-width: 1px;
   --border-radius: 16px;
   --border-radius-sm: 8px;
+  /* The header trio's radius. It was USED twice (.header-action-btn /
+     .export-chip) and defined nowhere, so per spec both declarations were
+     invalid-at-computed-value-time and fell back to 0 — Add and Invite
+     rendered as hard rectangles beside a rounded Export, and every export
+     chip was square. 10px is not a new value: it's what .header-export-btn
+     already hardcodes, i.e. what the set was designed against. */
+  --border-radius-md: 10px;
   --border-radius-lg: 24px;
   --border-radius-xl: 32px;
 
@@ -632,8 +639,6 @@ body {
   transform: translate(-50%, -50%);
 }
 
-/* Header export CTA — kept as an alias onto the primary variant for any
-   markup still referencing it; new markup should use .btn .btn--primary. */
 /* THE THREE HEADER ACTIONS — Record · Share · Export.
    These are the product's whole loop (add more, open it up, get it out), so
    they share ONE shape and read as a set. Export keeps the solid ink plate as
@@ -658,17 +663,11 @@ body {
     transform var(--transition-fast);
 }
 
-.header-export-btn {
-  background: var(--soft-black);
-  color: var(--soft-cream);
-  border: 2px solid var(--soft-black);
-}
-
-.header-export-btn:hover {
-  background: var(--soft-brown);
-  border-color: var(--soft-brown);
-  transform: scale(1.02);
-}
+/* (The dark ink-slab .header-export-btn that used to live here was fully
+   overridden by the candy-plate definition further down, EXCEPT for its
+   hover border-color — which had no counterpart in the winner and so kept
+   swapping the primary CTA's outline to near-black brown on hover. Deleted
+   rather than fixed: it was dead weight either way.) */
 
 /* Same plate, outlined — a sibling of Export, not a ghost icon. */
 .header-action-btn {
@@ -3756,6 +3755,42 @@ body {
   font-weight: 700;
 }
 
+/* The when — the third quiet word on the meta line, and the QUIETEST of the
+   three. @person wears an identity colour, #tag wears its own; the when has no
+   identity to wear, so it rides on ink alone. Never a bordered plate: it used
+   to borrow .action-item-chip (2px ink border + hard offset shadow), which made
+   a due date shout exactly as loud as the card holding it — a nag. A date is a
+   note to self, not an alarm. */
+.action-when-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.5rem;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-text) 7%, transparent);
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: var(--tiny-size);
+  font-weight: 600;
+  line-height: 1.5;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+.action-when-chip:hover,
+.action-when-chip:focus-visible {
+  background: color-mix(in srgb, var(--color-text) 13%, transparent);
+  color: var(--color-text);
+}
+/* The clock is the disambiguator (without it "friday" reads as a #tag), so it
+   stays — but at a whisper. */
+.action-when-chip .fa {
+  font-size: 0.85em;
+  opacity: 0.55;
+}
+
 /* The when mini-input — the clock's tiny "any words" field. */
 .action-when-input {
   width: 10rem;
@@ -6832,7 +6867,10 @@ a:focus-visible {
 .live-transcript-stream {
   padding: 0.5rem var(--card-padding);
   border-bottom: 2px solid var(--color-border);
-  background: var(--surface-cream-dark);
+  /* --surface-cream-dark never existed: the token is --soft-cream-dark. The
+     typo made this background invalid, so the live transcript band rendered
+     fully transparent over the dashboard. */
+  background: var(--soft-cream-dark);
   max-height: 150px;
   overflow-y: auto;
   /* Don't chain scroll into the page behind on iOS. */
