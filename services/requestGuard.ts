@@ -364,11 +364,13 @@ export function getClientToken(req: Request) {
     req.headers.get("x-real-ip");
   if (edge) return edge.trim() || "unknown";
 
-  // ponytail: falling back to the LAST x-forwarded-for entry — the one the
-  // nearest proxy appended, so the only one not caller-controlled when there
-  // is exactly ONE trusted hop in front of us. That assumption is the part
-  // worth confirming against the actual deploy topology: with two hops the
-  // right index is -2, and with none this header shouldn't be trusted at all.
+  // Then the LAST x-forwarded-for entry — the one the nearest proxy appended,
+  // and therefore the only one the caller couldn't write. Correct for every
+  // topology this app actually runs in: with ONE hop (Deno Deploy) the last
+  // entry is what the platform added, and with TWO (Cloudflare in front) the
+  // check above already won on cf-connecting-ip. Deno's own remoteAddr is no
+  // help here — behind a hosted edge it's the proxy's address, which would
+  // collapse every user into a single bucket.
   const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) {
     const hops = forwarded.split(",").map((h) => h.trim()).filter(Boolean);

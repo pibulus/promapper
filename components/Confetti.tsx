@@ -12,6 +12,19 @@
 import { useEffect, useRef } from "preact/hooks";
 import { IS_BROWSER } from "$fresh/runtime.ts";
 
+/** The pre-theme palette. Used on named themes (no companion hues) and SSR. */
+const FALLBACK_COLORS = [
+  "#e8839c",
+  "#6A9FB5",
+  "#C9A0DC",
+  "#7CA82B",
+  "#E59866",
+  "#D4A76A",
+  "#5b8def",
+  "#f0c060",
+  "#52A37F",
+];
+
 interface ConfettiProps {
   trigger: boolean;
   particleCount?: number;
@@ -41,17 +54,27 @@ export default function Confetti(
   const particlesRef = useRef<Particle[]>([]);
   const animFrameRef = useRef<number | null>(null);
 
-  const defaultColors = [
-    "#e8839c",
-    "#6A9FB5",
-    "#C9A0DC",
-    "#7CA82B",
-    "#E59866",
-    "#D4A76A",
-    "#5b8def",
-    "#f0c060",
-    "#52A37F",
-  ];
+  /**
+   * Confetti wears the ROLL. Every theme roll computes three related hues via
+   * harmony math — the accent plus two companions — and until now they were
+   * emitted and used by nothing, while this palette sat hardcoded in the old
+   * pre-OKLCH dusty colours. So checking off your last item under a neon lime
+   * theme threw mauve confetti.
+   *
+   * Celebration is the right home for the companions: unlike speakers, node
+   * colours and tags, it carries no identity, so nothing has to stay stable
+   * across rolls. Read at burst time, not mount — the theme can change while
+   * the card is open. Falls back to the old palette on a named theme (which
+   * has no companions) or on the server.
+   */
+  function themeColors(): string[] {
+    if (!IS_BROWSER) return FALLBACK_COLORS;
+    const root = getComputedStyle(document.documentElement);
+    const rolled = ["--color-accent", "--accent-2", "--accent-3"]
+      .map((v) => root.getPropertyValue(v).trim())
+      .filter((c) => c.startsWith("#"));
+    return rolled.length >= 2 ? rolled : FALLBACK_COLORS;
+  }
 
   useEffect(() => {
     if (!IS_BROWSER || !trigger || !canvasRef.current) return;
@@ -64,7 +87,7 @@ export default function Confetti(
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const palette = colors ?? defaultColors;
+    const palette = colors ?? themeColors();
 
     // Spawn from the given origin (the thing being celebrated); fall back
     // to upper-center for callers that have no anchor.
