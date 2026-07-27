@@ -48,5 +48,11 @@ key.json
 # Playwright MCP screenshot artifacts
 .playwright-mcp/
 
+# Design-pass screenshots dropped in the repo root. Root only — a keeper gets
+# moved to docs/screenshots/ or static/promo/, which stay tracked.
+/*.png
+/*.jpg
+/*.jpeg
+
 # PartyKit local dev state
 .partykit/
