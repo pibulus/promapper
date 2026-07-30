@@ -15,6 +15,7 @@ import {
   undoLastMutation,
 } from "@signals/conversationStore.ts";
 import {
+  deleteConversation,
   flushPendingSave,
   getActiveConversationId,
   getAllConversations,
@@ -23,7 +24,7 @@ import {
 import { sweepOrphanSnapshots } from "@core/storage/exportSnapshots.ts";
 import { sweepOrphans } from "@core/storage/recordingsDB.ts";
 import { sweepOrphanTints } from "@utils/actionTags.ts";
-import { showToast } from "@utils/toast.ts";
+import { showActionToast, showToast } from "@utils/toast.ts";
 import {
   liveSession,
   startLiveMode,
@@ -367,10 +368,38 @@ export default function HomeIsland() {
     soundPortal();
     return () => {
       stopLiveSync();
-      // Say it out loud for a guest — a map that quietly appears in your
-      // history is a surprise; a map you were told you're keeping is a gift.
+      // A guest's copy saves as they go (see the note above — saving only on a
+      // clean exit handed people a copy or not depending on how they closed the
+      // tab). But "saved reliably" and "wanted" are different things: this is
+      // somebody else's meeting landing in your drawer next to your own
+      // projects, unasked for, on your storage.
+      //
+      // So keep the reliable default and make the exit ACTIONABLE. Doing
+      // nothing keeps the map — the safe direction for something you sat
+      // through and may have contributed to — and one tap removes it for the
+      // guest who never wanted it. The earlier design had this backwards:
+      // its default was "evaporate", so closing the tab silently binned a
+      // meeting you attended.
       if (!session.isHost && conversationData.value) {
-        showToast("That map is yours too — it's in your history", "info");
+        const guestCopyId = getActiveConversationId();
+        showActionToast(
+          "That map is yours too — it's in your history",
+          "Remove",
+          () => {
+            if (!guestCopyId) return;
+            const { ok } = deleteConversation(guestCopyId);
+            if (!ok) {
+              showToast(
+                "Couldn't remove that one — try the history drawer",
+                "warning",
+              );
+              return;
+            }
+            // Leaving a deleted record on screen is worse than an empty desk.
+            conversationData.value = null;
+            showToast("Removed from your history", "info");
+          },
+        );
       }
       if (isRecording.value) stopRecording();
       // Drop the analysis buffer with the session (an already in-flight
