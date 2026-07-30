@@ -93,7 +93,7 @@ export const handler: Handlers = {
         }
 
         // Free-tier audio metering (no-op until AUDIO_BYTES_PER_DAY is set).
-        const budgetBlock = guardAudioBudget(req, audioFile.size);
+        const budgetBlock = await guardAudioBudget(req, audioFile.size);
         if (budgetBlock) return budgetBlock;
 
         const { part: audioPart } = await uploadAudioFile(audioFile);

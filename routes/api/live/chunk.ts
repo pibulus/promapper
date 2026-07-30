@@ -48,7 +48,7 @@ export const handler: Handlers = {
       // When a house Deepgram key is configured it transcribes this chunk on
       // the HOUSE's bill — a BYO OpenRouter key buys out the LLM path only, so
       // it doesn't waive the meter here.
-      const budgetBlock = guardAudioBudget(
+      const budgetBlock = await guardAudioBudget(
         req,
         audioFile.size,
         Boolean(deepgramKey()),

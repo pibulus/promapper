@@ -1,20 +1,26 @@
 import { getCookies } from "$std/http/cookie.ts";
 import { validateSession } from "@services/authSessions.ts";
 import {
-  type BudgetEntry,
-  consumeWindowBudget,
-} from "@services/windowBudget.ts";
+  consumeByteBudget,
+  consumeCallBudgets,
+} from "@services/durableBudget.ts";
 
 /**
- * Lightweight request guard: origin allow-list + in-memory rate limiting.
- * Not perfect security, but shuts down most casual abuse / open-proxy use.
+ * Request guard: auth + origin allow-list + rate limiting + spend budgets.
  *
- * IMPORTANT: The rateMap is a module-scoped Map — on Deno Deploy, each
- * request runs in an ephemeral isolate with its own empty Map, so per-IP
- * rate limits are NOT enforced. This works correctly only in long-lived
- * single-isolate environments (local dev, Docker). For production rate
- * limiting on Deno Deploy, move to Cloudflare Workers KV or a Durable
- * Object with shared state.
+ * TWO KINDS OF LIMIT LIVE HERE, and the difference is deliberate.
+ *
+ * The DAILY and GLOBAL budgets are the money brake, and they are DURABLE —
+ * backed by Deno KV in durableBudget.ts, so they hold across isolates. These
+ * are the ones that decide whether a bad day can cost real money.
+ *
+ * The 60/min BURST limiter below is still a module-scoped Map, and on Deno
+ * Deploy that means per-isolate. Kept in memory on purpose: it sits on the
+ * latency-critical path of every request, its job is blunting a hot loop
+ * rather than capping spend, and even per-isolate it does that. The spend
+ * ceiling underneath it is durable, so the weak link is no longer the one
+ * holding the wallet. Move it to KV only if burst abuse turns out to matter
+ * on its own — it costs a KV write per request to do so.
  */
 
 const allowedOrigins =
@@ -23,10 +29,19 @@ const allowedOrigins =
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-const RATE_LIMIT_WINDOW_MS = Number(
-  Deno.env.get("API_RATE_WINDOW_MS") ?? "60000",
-);
-const RATE_LIMIT_MAX = Number(Deno.env.get("API_RATE_LIMIT") ?? "60");
+// Limits are read PER CALL, not captured at module load. Env never changes
+// under a running deploy, so this costs nothing in production — but it means a
+// test can configure a limit without the whole module's config being decided by
+// whichever test file happened to import it first.
+const numEnv = (name: string, fallback: number): number => {
+  const raw = Deno.env.get(name);
+  if (raw === undefined || raw.trim() === "") return fallback;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const rateLimitWindowMs = () => numEnv("API_RATE_WINDOW_MS", 60_000);
+const rateLimitMax = () => numEnv("API_RATE_LIMIT", 60);
 
 const rateMap = new Map<string, { count: number; windowStart: number }>();
 
@@ -36,24 +51,21 @@ const rateMap = new Map<string, { count: number; windowStart: number }>();
 // 300 calls (chunks + analysis rounds), so 1000/day never touches honest
 // use. Audio is metered in BYTES — exact, no codec guessing (~12KB/s opus
 // means 10 minutes ≈ 7MB). AUDIO_BYTES_PER_DAY stays 0 (disabled) until
-// tiers launch. Same in-memory caveat as the burst limit: works on a
-// long-lived process (the Pi), not on per-request isolates.
-const DAILY_WINDOW_MS = 86_400_000;
-const API_DAILY_LIMIT = Number(Deno.env.get("API_DAILY_LIMIT") ?? "1000");
-const AUDIO_BYTES_PER_DAY = Number(
-  Deno.env.get("AUDIO_BYTES_PER_DAY") ?? "0",
-);
+// tiers launch.
+//
+// These are now KV-backed (durableBudget.ts), so unlike the burst limiter
+// above they hold across Deno Deploy's per-request isolates. The window is a
+// UTC calendar day rather than a rolling 24h — see durableBudget.ts.
+const apiDailyLimit = () => numEnv("API_DAILY_LIMIT", 1000);
+const audioBytesPerDay = () => numEnv("AUDIO_BYTES_PER_DAY", 0);
 // Global circuit-breaker: per-IP daily budgets multiply across a botnet's
 // IPs, so ONE absolute ceiling caps the worst possible day on the house
 // key. 20k calls ≈ 60+ live meeting-hours — far above honest indie use.
 // Counts only house-key requests: BYO-key traffic isn't on the bill.
-const API_GLOBAL_DAILY_LIMIT = Number(
-  Deno.env.get("API_GLOBAL_DAILY_LIMIT") ?? "20000",
-);
-const dailyCallMap = new Map<string, BudgetEntry>();
-const audioByteMap = new Map<string, BudgetEntry>();
-const globalCallMap = new Map<string, BudgetEntry>();
-const authToken = Deno.env.get("API_AUTH_TOKEN")?.trim() ?? null;
+const apiGlobalDailyLimit = () => numEnv("API_GLOBAL_DAILY_LIMIT", 20000);
+// Lazy for the same reason the limits are — see numEnv above.
+const getAuthToken = (): string | null =>
+  Deno.env.get("API_AUTH_TOKEN")?.trim() || null;
 const SESSION_COOKIE_NAME = "cm_session";
 
 // Deno Deploy always sets DENO_DEPLOYMENT_ID in production; it's absent locally.
@@ -176,47 +188,32 @@ export async function guardRequest(req: Request): Promise<Response | null> {
   const byoKey = getByoKey(req);
   if (byoKey) return await verifyByoKey(byoKey);
 
-  const dailyBlock = enforceDailyLimit(req);
-  if (dailyBlock) return dailyBlock;
-
-  const globalBlock = enforceGlobalLimit();
-  if (globalBlock) return globalBlock;
-
-  return null;
+  return await enforceDailyBudgets(req);
 }
 
-function enforceGlobalLimit(): Response | null {
-  if (API_GLOBAL_DAILY_LIMIT <= 0) return null;
-  const ok = consumeWindowBudget(
-    globalCallMap,
-    "global",
-    1,
-    API_GLOBAL_DAILY_LIMIT,
-    DAILY_WINDOW_MS,
-    Date.now(),
-  );
-  if (ok) return null;
-  return jsonResponse(
-    { error: "The workshop is unusually busy today — back tomorrow." },
-    429,
-  );
-}
-
-function enforceDailyLimit(req: Request): Response | null {
-  if (API_DAILY_LIMIT <= 0) return null;
-  const ok = consumeWindowBudget(
-    dailyCallMap,
+/**
+ * The per-client daily budget and the global daily ceiling, charged together in
+ * one KV commit. Previously two separate in-memory checks and two Maps.
+ */
+async function enforceDailyBudgets(req: Request): Promise<Response | null> {
+  const verdict = await consumeCallBudgets(
     getClientToken(req),
-    1,
-    API_DAILY_LIMIT,
-    DAILY_WINDOW_MS,
+    apiDailyLimit(),
+    apiGlobalDailyLimit(),
     Date.now(),
   );
-  if (ok) return null;
-  return jsonResponse(
-    { error: "That's a lot for one day — things reset tomorrow." },
-    429,
-  );
+
+  if (verdict.ok) return null;
+
+  return verdict.blew === "global"
+    ? jsonResponse(
+      { error: "The workshop is unusually busy today — back tomorrow." },
+      429,
+    )
+    : jsonResponse(
+      { error: "That's a lot for one day — things reset tomorrow." },
+      429,
+    );
 }
 
 /**
@@ -233,23 +230,24 @@ function enforceDailyLimit(req: Request): Response | null {
  * limit the day tiers switch on. Pass true wherever the house's own provider
  * does the work.
  */
-export function guardAudioBudget(
+export async function guardAudioBudget(
   req: Request,
   bytes: number,
   housePaysAudio = false,
-): Response | null {
-  if (AUDIO_BYTES_PER_DAY <= 0) return null;
+): Promise<Response | null> {
+  const byteLimit = audioBytesPerDay();
+  if (byteLimit <= 0) return null;
   // Their key, their audio bill — but only when their key is what pays.
   if (!housePaysAudio && getByoKey(req)) return null;
-  const ok = consumeWindowBudget(
-    audioByteMap,
+
+  const verdict = await consumeByteBudget(
     getClientToken(req),
     bytes,
-    AUDIO_BYTES_PER_DAY,
-    DAILY_WINDOW_MS,
+    byteLimit,
     Date.now(),
   );
-  if (ok) return null;
+  if (verdict.ok) return null;
+
   return jsonResponse(
     { error: "Today's recording allowance is used up — it refills tomorrow." },
     429,
@@ -287,7 +285,9 @@ function enforceOrigin(req: Request): Response | null {
 }
 
 function enforceRateLimit(req: Request): Response | null {
-  if (RATE_LIMIT_MAX <= 0 || RATE_LIMIT_WINDOW_MS <= 0) {
+  const max = rateLimitMax();
+  const windowMs = rateLimitWindowMs();
+  if (max <= 0 || windowMs <= 0) {
     return null;
   }
 
@@ -298,7 +298,7 @@ function enforceRateLimit(req: Request): Response | null {
   // already semantically count-0, so dropping it changes no live client's rate
   // decision — it only stops the map growing without bound as IPs rotate.
   for (const [k, e] of rateMap) {
-    if (now - e.windowStart > RATE_LIMIT_WINDOW_MS) rateMap.delete(k);
+    if (now - e.windowStart > windowMs) rateMap.delete(k);
   }
 
   const entry = rateMap.get(key) ?? { count: 0, windowStart: now };
@@ -306,11 +306,11 @@ function enforceRateLimit(req: Request): Response | null {
   entry.count += 1;
   rateMap.set(key, entry);
 
-  if (entry.count > RATE_LIMIT_MAX) {
+  if (entry.count > max) {
     return jsonResponse(
       {
         error: "Too many requests. Slow down a little.",
-        retry_after_ms: RATE_LIMIT_WINDOW_MS - (now - entry.windowStart),
+        retry_after_ms: windowMs - (now - entry.windowStart),
       },
       429,
     );
@@ -320,6 +320,7 @@ function enforceRateLimit(req: Request): Response | null {
 }
 
 async function enforceAuth(req: Request): Promise<Response | null> {
+  const authToken = getAuthToken();
   if (!authToken) {
     if (shouldBlockUnconfiguredAuth(Boolean(authToken), isDeployed)) {
       return jsonResponse(

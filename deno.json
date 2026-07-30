@@ -99,6 +99,15 @@
     "strict": false,
     "noImplicitAny": false,
     "noImplicitThis": false,
-    "lib": ["deno.window", "dom", "dom.iterable", "dom.asynciterable"]
-  }
+    "lib": [
+      "deno.window",
+      "dom",
+      "dom.iterable",
+      "dom.asynciterable",
+      "deno.unstable"
+    ]
+  },
+  "unstable": [
+    "kv"
+  ]
 }

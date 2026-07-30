@@ -92,7 +92,13 @@ Three layers, simplest-first — "can't scale IS the feature" helps here:
       can't stamp phantom ai_checked sparkles.
 - [x] Daily per-IP ledger — DONE 2026-07-18. `API_DAILY_LIMIT` (default 1000
       calls/day — one meeting-hour is ~300, so honest use never touches it; 0
-      disables). Pure core in `services/windowBudget.ts`.
+      disables). **DURABLE since 2026-07-31**: `services/durableBudget.ts`,
+      backed by Deno KV (`promapper-budgets`). It previously lived in a
+      module-scoped Map, which on Deno Deploy means per-request isolates — so
+      this ceiling and the global one were not actually enforced in production.
+      Verified by three "Fresh ready" isolate boots inside one minute of live
+      traffic. Window is now a UTC calendar day, not a rolling 24h. Verify:
+      `deno test core/tests/guard_budget_integration_test.ts`.
 - [ ] OpenRouter spend-capped key (Pablo, console, 5 minutes)
 - [x] Audio budget meter — DONE 2026-07-18, wired into /api/process,
       /api/append, /api/live/chunk. Metered in BYTES (exact, no codec guessing —

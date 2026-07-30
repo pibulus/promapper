@@ -29,7 +29,7 @@ maintain.
 ```
 services/requestGuard.ts      origin allow-list, rate limits, budgets, BYO keys
 services/authSessions.ts      the HttpOnly session
-services/windowBudget.ts      the daily/global budget primitive
+services/durableBudget.ts     the daily/global budget primitive, KV-backed
 routes/api/*.ts               EVERY route — check each one is guarded
 routes/api/live/*.ts
 routes/api/share/*.ts
