@@ -11,8 +11,8 @@
     "org": "pibulus",
     "app": "promapper",
     "entrypoint": "main.ts",
-    "//": "No build step on purpose. The Fresh/esbuild bundle of 31 islands (excalidraw + d3) OOMs the Deploy build container (exit 137), so the app runs main.ts directly and Fresh does its JIT island bundling at runtime. Tailwind is the one thing that cannot work that way, so it is compiled ahead of time into static/styles.build.css (deno task build:css) and committed. App-level config on Deno Deploy: runtime {type:dynamic, entrypoint:main.ts}, framework preset cleared.",
-    "build": "",
+    "//": "No build step on purpose. The Fresh/esbuild bundle of 31 islands (excalidraw + d3) OOMs the Deploy build container (exit 137), so the app runs main.ts directly and Fresh does its JIT island bundling at runtime. Tailwind is the one thing that cannot work that way, so it is compiled ahead of time into static/styles.build.css (deno task build:css) and committed. BUILD MUST BE A REAL NO-OP COMMAND, NOT AN EMPTY STRING: a CLI `deno deploy` skips an empty build, but a GIT-TRIGGERED build executes it and dies with \"Error parsing script '': Empty command\" (exit 1). That is why promapper.app sat on a stale revision while every CLI deploy reported success \u2014 the Production timeline tracks the git branch, so only git builds move it. Verified 2026-07-31. App-level config lives in this block; the console UI is read-only while it exists.",
+    "build": "echo 'no build step by design \u2014 see the note above'",
     "exclude": [
       "node_modules",
       "**/node_modules",
