@@ -1,6 +1,12 @@
 import { type Config } from "tailwindcss";
 
 export default {
+  // Touch devices fire :hover on tap and hold it until you tap elsewhere,
+  // leaving buttons stuck in their hover state. Gates every hover: utility
+  // behind (hover: hover).
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
   content: [
     "{routes,islands,components}/**/*.{ts,tsx}",
   ],
