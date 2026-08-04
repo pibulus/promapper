@@ -104,7 +104,13 @@ plus a custom prompt when you want something stranger.
    Edit `.env` and add your provider API key:
    ```bash
    OPENROUTER_API_KEY=your_openrouter_api_key_here
-   API_AUTH_TOKEN=choose_a_secret_value
+
+   # Who gets in. Pick ONE:
+   #   API_AUTH_TOKEN=choose_a_secret_value   # gated — visitors paste this once
+   #   API_PUBLIC=true                        # open door — your key pays, rails cap it
+   # Neither one set is fine locally, but a DEPLOY with neither fails closed
+   # (503 on every /api/* route) so nobody ships an open AI bill by accident.
+   API_PUBLIC=true
 
    # Optional: per-task model overrides (see CLAUDE.md for the routing table)
    # OPENROUTER_MODEL=google/gemini-3.1-flash-lite
@@ -126,10 +132,11 @@ plus a custom prompt when you want something stranger.
 
 4. **First API call**
 
-   When you trigger any feature that reads the conversation from the UI, the
-   browser will prompt you for the `API_AUTH_TOKEN`. Paste the same value you
-   set in `.env`—it’s only used to open a short-lived HttpOnly session cookie,
-   so it’s never stored in LocalStorage and you’ll be prompted again when the
+   With `API_PUBLIC=true` there’s no door — features just run. If you set
+   `API_AUTH_TOKEN` instead, the browser prompts for it the first time you
+   trigger a feature that reads the conversation. Paste the same value you set
+   in `.env`—it’s only used to open a short-lived HttpOnly session cookie, so
+   it’s never stored in LocalStorage and you’ll be prompted again when the
    session expires.
 
    Whenever you stop a clip that’s at least 30 seconds long, we automatically

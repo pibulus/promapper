@@ -74,6 +74,10 @@ Deno.test("unconfigured auth: OPEN locally, BLOCKED when deployed", () => {
   // hasToken=true is always fine regardless of environment
   assertEquals(shouldBlockUnconfiguredAuth(true, true), false);
   assertEquals(shouldBlockUnconfiguredAuth(true, false), false);
+  // API_PUBLIC=true is the deliberate open door — no token, deployed, served.
+  assertEquals(shouldBlockUnconfiguredAuth(false, true, true), false);
+  // ...and it must stay something you SAY: absent flag still bricks.
+  assertEquals(shouldBlockUnconfiguredAuth(false, true, false), true);
 });
 
 // ===================================================================

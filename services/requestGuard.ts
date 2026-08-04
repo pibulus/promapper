@@ -66,6 +66,8 @@ const apiGlobalDailyLimit = () => numEnv("API_GLOBAL_DAILY_LIMIT", 20000);
 // Lazy for the same reason the limits are — see numEnv above.
 const getAuthToken = (): string | null =>
   Deno.env.get("API_AUTH_TOKEN")?.trim() || null;
+const isDeclaredPublic = (): boolean =>
+  (Deno.env.get("API_PUBLIC") ?? "").trim().toLowerCase() === "true";
 const SESSION_COOKIE_NAME = "cm_session";
 
 // Deno Deploy always sets DENO_DEPLOYMENT_ID in production; it's absent locally.
@@ -84,12 +86,19 @@ if (isDeployed && Deno.env.get("ALLOWED_ORIGINS") == null) {
  * intended dev flow), but FAIL CLOSED when deployed — a deployer who forgets to
  * set API_AUTH_TOKEN must not silently ship every /api/* route (and the AI bill)
  * open to the internet. Returns true if the request must be BLOCKED.
+ *
+ * API_PUBLIC=true is the deliberate way out: promapper.app is meant to be a
+ * door anyone can walk through, and the house key pays. The flag exists so
+ * "public" is something a deployer SAYS, never something they forget — an
+ * absent token still bricks, a declared-public deploy serves. The money rails
+ * (burst, per-client daily, global ceiling) are what hold the bill down here.
  */
 export function shouldBlockUnconfiguredAuth(
   hasToken: boolean,
   deployed: boolean,
+  declaredPublic = false,
 ): boolean {
-  return !hasToken && deployed;
+  return !hasToken && deployed && !declaredPublic;
 }
 
 /**
@@ -322,7 +331,13 @@ function enforceRateLimit(req: Request): Response | null {
 async function enforceAuth(req: Request): Promise<Response | null> {
   const authToken = getAuthToken();
   if (!authToken) {
-    if (shouldBlockUnconfiguredAuth(Boolean(authToken), isDeployed)) {
+    if (
+      shouldBlockUnconfiguredAuth(
+        Boolean(authToken),
+        isDeployed,
+        isDeclaredPublic(),
+      )
+    ) {
       return jsonResponse(
         { error: "Service unavailable: server auth is not configured." },
         503,
