@@ -573,6 +573,18 @@ export default function UploadIsland() {
             !hasText.value && (
             <span class="mapper-block-meta">Last: {lastUploadName.value}</span>
           )}
+
+          {
+            /* The cold-start half of the hero: it asks for effort before showing
+              anything, so offer the finished thing too. Plain anchor — works
+              with JS off, and it's a navigation, not an action. */
+          }
+          {!lastUploadName.value && !selectedFile.value && !isRecording.value &&
+            !hasText.value && (
+            <a href="/example" class="mapper-block-meta mapper-example-link">
+              or open one someone already made
+            </a>
+          )}
         </div>
       </section>
 

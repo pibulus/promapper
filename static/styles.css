@@ -8668,3 +8668,27 @@ label {
   color: var(--accent-ink);
   transform: translateY(-1px);
 }
+
+/* ─── "or open one someone already made" — the cold-start example link ───
+   Quiet on arrival: it must not compete with the primary action, only exist
+   for someone who wants to see the thing before feeding it anything. Uses the
+   secondary ink token rather than .mapper-block-meta's flat alpha-black. */
+.mapper-example-link {
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(
+    in srgb,
+    var(--color-text-secondary) 35%,
+    transparent
+  );
+  transition: color var(--transition-fast),
+    text-decoration-color var(--transition-fast);
+}
+@media (hover: hover) {
+  .mapper-example-link:hover {
+    color: var(--accent-ink);
+    text-decoration-color: var(--accent-ink);
+  }
+}
