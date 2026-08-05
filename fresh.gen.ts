@@ -18,8 +18,8 @@ import * as $api_process from "./routes/api/process.ts";
 import * as $api_share_shareId_ from "./routes/api/share/[shareId].ts";
 import * as $api_share_create from "./routes/api/share/create.ts";
 import * as $dev_colors from "./routes/dev/colors.tsx";
-import * as $dev_demo from "./routes/dev/demo.tsx";
 import * as $dev_nodemap from "./routes/dev/nodemap.tsx";
+import * as $example from "./routes/example.tsx";
 import * as $index from "./routes/index.tsx";
 import * as $live_roomId_ from "./routes/live/[roomId].tsx";
 import * as $shared_shareId_ from "./routes/shared/[shareId].tsx";
@@ -76,8 +76,8 @@ const manifest = {
     "./routes/api/share/[shareId].ts": $api_share_shareId_,
     "./routes/api/share/create.ts": $api_share_create,
     "./routes/dev/colors.tsx": $dev_colors,
-    "./routes/dev/demo.tsx": $dev_demo,
     "./routes/dev/nodemap.tsx": $dev_nodemap,
+    "./routes/example.tsx": $example,
     "./routes/index.tsx": $index,
     "./routes/live/[roomId].tsx": $live_roomId_,
     "./routes/shared/[shareId].tsx": $shared_shareId_,
