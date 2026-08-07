@@ -100,13 +100,15 @@ export default function App({ Component }: PageProps) {
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
         />
 
-        {/* Icons — FontAwesome (the whole app uses `fa fa-*` icons in chrome). */}
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-          crossOrigin="anonymous"
-          referrerpolicy="no-referrer"
-        />
+        {
+          /* Icons — a self-hosted FontAwesome subset of the 69 icons this app
+             actually uses. The cdnjs stylesheet was 103KB and pulled a 156KB
+             solid font for all of them; this pair is ~10KB and costs no
+             third-party origin. Regenerate with scratch/fa-subset.py after
+             adding a NEW fa-* icon, or its glyph renders as a blank box. */
+        }
+        <link rel="preload" as="font" type="font/woff2" href="/fonts/fa-solid-900.woff2" crossOrigin="anonymous" />
+        <link rel="stylesheet" href="/fa-subset.css" />
 
         {
           /* Styles — styles.build.css is the Tailwind-compiled output of
