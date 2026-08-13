@@ -64,6 +64,19 @@ export class ThemeSystem {
     const root = document.documentElement;
     const prefix = this.config.cssPrefix;
 
+    // Silence transitions for this swap (see .is-theming in styles.css) —
+    // otherwise `transition: all/background/color` rules animate the var
+    // change and the blend reads as a phantom in-between theme. Two rAFs:
+    // the first fires before the next paint, the second after it.
+    root.classList.add("is-theming");
+    if (typeof requestAnimationFrame !== "undefined") {
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => root.classList.remove("is-theming"))
+      );
+    } else {
+      root.classList.remove("is-theming");
+    }
+
     // Apply base, secondary, accent, text, border
     this.setCSSVar(root, `${prefix}-secondary`, theme.secondary);
     this.setCSSVar(root, `${prefix}-accent`, theme.accent);

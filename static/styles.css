@@ -359,6 +359,18 @@ body {
   transition: none !important;
 }
 
+/* While a theme is being applied (class stamped by ThemeSystem.applyTheme),
+   transitions go quiet for the same reason: dozens of `transition: all/
+   background/color` rules otherwise ANIMATE the CSS-var swap at desynced
+   durations, and the blended mid-flight colors read as a phantom "in-between
+   theme" on every shuffle (Pablo's 2026-08-13 dogfood find). One paint with
+   the new vars, then transitions come back. */
+.is-theming *,
+.is-theming *::before,
+.is-theming *::after {
+  transition: none !important;
+}
+
 /* ===================================================================
    MODE TABS - Upload section
    ================================================================ */
