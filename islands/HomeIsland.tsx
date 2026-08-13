@@ -666,7 +666,11 @@ export default function HomeIsland() {
   const heroLines = ["See what you're", "really saying"];
 
   // While the first process brews, loading lives where the result will land:
-  // the dashboard skeleton plus one quiet line that keeps moving. No modal.
+  // the dashboard skeleton plus a LEDGER of stages. One rotating line read as
+  // "blank screen, is anything happening?" (Pablo, 2026-08-13) — done stages
+  // now stay on screen with a tick, so progress visibly ACCUMULATES. The
+  // pacing is time-based (like the rotating line always was); the last stage
+  // holds its pulse until the real result lands.
   const brewNotes = [
     "reading it through…",
     "pulling out the to-dos…",
@@ -674,17 +678,32 @@ export default function HomeIsland() {
     "noticing what connects…",
     "setting the table…",
   ];
+  // Appending to a live map is a different story than the first brew.
+  const appendNotes = [
+    "listening back…",
+    "weaving it into the map…",
+    "checking off what you said you did…",
+  ];
   const isBrewing = processingConversation.value && !conversationData.value
     ? 1
     : 0;
+  const isAppending = processingConversation.value && conversationData.value
+    ? 1
+    : 0;
   useEffect(() => {
-    if (!isBrewing) return;
+    if (!isBrewing && !isAppending) return;
+    const notes = isBrewing ? brewNotes : appendNotes;
     brewNoteIndex.value = 0;
     const timer = setInterval(() => {
-      brewNoteIndex.value = (brewNoteIndex.value + 1) % brewNotes.length;
+      // Hold on the final stage instead of looping back — a loop reads as
+      // "stuck starting over"; a held last stage reads as "almost there".
+      brewNoteIndex.value = Math.min(
+        brewNoteIndex.value + 1,
+        notes.length - 1,
+      );
     }, 2200);
     return () => clearInterval(timer);
-  }, [isBrewing]);
+  }, [isBrewing, isAppending]);
 
   return (
     <div class="mapper-scene flex min-h-screen flex-col">
@@ -1017,10 +1036,25 @@ export default function HomeIsland() {
             }
             {(conversationData.value || processingConversation.value) && (
               <section class="dashboard-section">
-                {isBrewing === 1 && (
-                  <p class="dashboard-brew-note" aria-live="polite">
-                    {brewNotes[brewNoteIndex.value]}
-                  </p>
+                {(isBrewing === 1 || isAppending === 1) && (
+                  <div class="brew-ledger" aria-live="polite">
+                    {(isBrewing ? brewNotes : appendNotes).map((note, i) =>
+                      i < brewNoteIndex.value
+                        ? (
+                          <p key={note} class="brew-ledger__done">
+                            <i class="fa fa-check" aria-hidden="true"></i>
+                            {note.replace(/…$/, "")}
+                          </p>
+                        )
+                        : i === brewNoteIndex.value
+                        ? (
+                          <p key={note} class="dashboard-brew-note">
+                            {note}
+                          </p>
+                        )
+                        : null
+                    )}
+                  </div>
                 )}
                 <DashboardIsland />
               </section>

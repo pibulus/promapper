@@ -5249,6 +5249,44 @@ body {
   border-radius: 18px;
 }
 
+/* The brew ledger — completed stages hold their place with a tick while the
+   current one breathes below them, so progress visibly ACCUMULATES instead of
+   one line replacing itself (read as "blank screen, anything happening?" —
+   Pablo, 2026-08-13). Same grammar for first brews and appends. */
+.brew-ledger {
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.brew-ledger .dashboard-brew-note {
+  padding-top: 0;
+}
+.brew-ledger__done {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  opacity: 0.75;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: brew-done-in 240ms ease-out both;
+}
+.brew-ledger__done .fa-check {
+  color: var(--accent-ink);
+  font-size: 0.75rem;
+}
+@keyframes brew-done-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 0.75;
+    transform: translateY(0);
+  }
+}
+
 /* One quiet line above the skeleton while the first process brews —
    opacity-only breathing (perf law: no paint-heavy loading chrome). */
 .dashboard-brew-note {
