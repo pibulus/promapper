@@ -4,7 +4,9 @@
  * The item is a SENTENCE (July 23): "@mabel fix the fence #garden friday".
  * @word = the person (a chip, not a form field), #word = a colored tag,
  * "when" is human words behind one clock icon. Order is drag; color is the
- * grouping. No sort modes, no filters, no date pickers, no presets.
+ * grouping. No sort MODES, no filters, no date pickers, no presets — the
+ * header's sort button is a one-shot reorder gesture (newest/oldest/shuffle),
+ * dealing a new manual order for drag to refine.
  */
 
 import { useComputed, useSignal } from "@preact/signals";
@@ -632,6 +634,47 @@ export default function ActionItemsCard(
     if (!searchOpen.value) searchQuery.value = "";
   }
 
+  // Sort stays MANUAL (the July 23 law: order is drag). This button is a bulk
+  // reorder GESTURE, not a mode: each press deals the pending rows one new
+  // manual order — newest → oldest → shuffle — which drag can then refine.
+  // Completed rows keep their place in the done drawer.
+  const sortCycleRef = useRef(0);
+  function cycleSort() {
+    const mode = (["newest", "oldest", "shuffle"] as const)[
+      sortCycleRef.current % 3
+    ];
+    sortCycleRef.current++;
+    const pending = visibleItems.value.filter((i) => i.status === "pending");
+    const completed = visibleItems.value.filter(
+      (i) => i.status === "completed",
+    );
+    let dealt: ActionItem[];
+    if (mode === "shuffle") {
+      dealt = [...pending];
+      for (let i = dealt.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [dealt[i], dealt[j]] = [dealt[j], dealt[i]];
+      }
+    } else {
+      dealt = [...pending].sort((a, b) =>
+        mode === "newest"
+          ? b.created_at.localeCompare(a.created_at)
+          : a.created_at.localeCompare(b.created_at)
+      );
+    }
+    publishItems([...dealt, ...completed]);
+    soundSettle();
+    showToast(
+      mode === "newest"
+        ? "Newest first"
+        : mode === "oldest"
+        ? "Oldest first"
+        : "Shuffled",
+      "info",
+      1500,
+    );
+  }
+
   // Bulk complete/clear live on the flip side (Overview back) only — done
   // items fade hard on the front, no divider chrome between the groups.
 
@@ -656,6 +699,16 @@ export default function ActionItemsCard(
                 its own btn--ghost cluster and read as a different species. */
             }
             <div class="card-header-actions">
+              {!readOnly && (
+                <button
+                  onClick={cycleSort}
+                  aria-label="Reorder tasks — newest, oldest, or shuffled"
+                  data-tip="Sort: newest / oldest / shuffle"
+                  data-tip-align="right"
+                >
+                  <i class="fa fa-arrow-down-wide-short" aria-hidden="true"></i>
+                </button>
+              )}
               <button
                 onClick={toggleSearch}
                 aria-label={searchOpen.value ? "Close search" : "Search tasks"}

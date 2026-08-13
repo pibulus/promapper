@@ -25,9 +25,16 @@ for path in APP.rglob("*"):
 css = CSS_SRC.read_text()
 
 # 2. map class -> codepoint from FA's own rules: .fa-check::before{content:"\f00c"}
+# Aliased icons ship as GROUPED selectors (.fa-search::before,.fa-magnifying-
+# glass::before{...}); walk every class in the group, not just the last one —
+# the old single-class regex silently dropped every aliased icon (search,
+# times, rotate, ...) and they rendered as blank boxes.
 cp_by_class = {}
-for m in re.finditer(r"\.fa-([a-z0-9-]+):+before\{content:\"\\([0-9a-fA-F]+)\"", css):
-    cp_by_class.setdefault("fa-" + m.group(1), m.group(2))
+for m in re.finditer(
+    r"((?:\.fa-[a-z0-9-]+:+before,?)+)\{content:\"\\([0-9a-fA-F]+)\"", css
+):
+    for cls in re.findall(r"\.fa-([a-z0-9-]+):+before", m.group(1)):
+        cp_by_class.setdefault("fa-" + cls, m.group(2))
 
 wanted = {c: cp_by_class[c] for c in sorted(used) if c in cp_by_class}
 if not wanted:

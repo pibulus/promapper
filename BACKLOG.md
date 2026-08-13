@@ -31,6 +31,10 @@
 - **microUI-style color picker** for choosing/curating themes — some current
   themes Pablo likes (periwinkle/blue), some he doesn't dig at all. Curate the
   theme bank, cut the duds.
+  - Clue from the phantom-theme fix (2026-08-13): the "in-between theme" Pablo
+    LIKED was the transition blend — i.e. the same hues at lower chroma. The
+    NEON generator may be dealing hotter than his taste; try a chroma-dial or a
+    "soft roll" variant when curating.
 - **Hover link previews** (like QCC front page tiles) for Magpie items.
 - **Soundscape module**: focus mood is a hit ("listened for ages"). Wants more
   moods/stations added in a way that keeps the panel tiny. Maybe mood blending

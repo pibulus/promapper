@@ -56,3 +56,6 @@ key.json
 
 # PartyKit local dev state
 .partykit/
+
+# FA subset generator venv (recreate: python3 -m venv scripts/fa-venv && scripts/fa-venv/bin/pip install fonttools brotli)
+scripts/fa-venv/

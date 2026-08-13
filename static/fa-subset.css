@@ -1,4 +1,4 @@
-/* Font Awesome Free 6.5.2 — self-hosted subset, 69 icons.
+/* Font Awesome Free 6.5.2 — self-hosted subset, 87 icons.
  * Generated, do not hand-edit: scratch/fa-subset.py rebuilds it.
  * Replaces the cdnjs stylesheet (103KB) + full solid font (156KB). Adding a
  * NEW fa-* icon to the app means re-running the generator, otherwise the
@@ -16,16 +16,22 @@
 @media(prefers-reduced-motion:reduce){.fa-spin{animation-delay:-1ms;animation-duration:1ms;animation-iteration-count:1}}
 .fa-8::before{content:"\38"}
 .fa-align-left::before{content:"\f036"}
+.fa-arrow-down-wide-short::before{content:"\f160"}
 .fa-arrow-right::before{content:"\f061"}
+.fa-arrows-rotate::before{content:"\f021"}
 .fa-at::before{content:"\40"}
 .fa-box-archive::before{content:"\f187"}
 .fa-broom::before{content:"\f51a"}
 .fa-camera::before{content:"\f030"}
+.fa-champagne-glasses::before{content:"\f79f"}
 .fa-chart-simple::before{content:"\e473"}
 .fa-check::before{content:"\f00c"}
+.fa-check-circle::before{content:"\f058"}
 .fa-check-double::before{content:"\f560"}
 .fa-chevron-down::before{content:"\f078"}
 .fa-chevron-right::before{content:"\f054"}
+.fa-circle-exclamation::before{content:"\f06a"}
+.fa-circle-question::before{content:"\f059"}
 .fa-clipboard-check::before{content:"\f46c"}
 .fa-clipboard-list::before{content:"\f46d"}
 .fa-clock::before{content:"\f017"}
@@ -35,14 +41,18 @@
 .fa-compress::before{content:"\f066"}
 .fa-copy::before{content:"\f0c5"}
 .fa-dice-five::before{content:"\f523"}
+.fa-display::before{content:"\e163"}
 .fa-down-left-and-up-right-to-center::before{content:"\f422"}
 .fa-download::before{content:"\f019"}
 .fa-exclamation-circle::before{content:"\f06a"}
+.fa-exclamation-triangle::before{content:"\f071"}
 .fa-expand::before{content:"\f065"}
 .fa-feather::before{content:"\f52d"}
 .fa-file-export::before{content:"\f56e"}
+.fa-file-lines::before{content:"\f15c"}
 .fa-file-pdf::before{content:"\f1c1"}
 .fa-flask::before{content:"\f0c3"}
+.fa-forward-step::before{content:"\f051"}
 .fa-grip::before{content:"\f58d"}
 .fa-grip-vertical::before{content:"\f58e"}
 .fa-headphones::before{content:"\f025"}
@@ -55,6 +65,9 @@
 .fa-keyboard::before{content:"\f11c"}
 .fa-leaf::before{content:"\f06c"}
 .fa-link::before{content:"\f0c1"}
+.fa-link-slash::before{content:"\f127"}
+.fa-list-check::before{content:"\f0ae"}
+.fa-magnifying-glass::before{content:"\f002"}
 .fa-maximize::before{content:"\f31e"}
 .fa-microphone::before{content:"\f130"}
 .fa-microphone-slash::before{content:"\f131"}
@@ -67,11 +80,15 @@
 .fa-play::before{content:"\f04b"}
 .fa-plus::before{content:"\2b"}
 .fa-puzzle-piece::before{content:"\f12e"}
+.fa-rotate::before{content:"\f2f1"}
+.fa-rotate-left::before{content:"\f2ea"}
 .fa-save::before{content:"\f0c7"}
+.fa-search::before{content:"\f002"}
 .fa-share-nodes::before{content:"\f1e0"}
 .fa-spinner::before{content:"\f110"}
 .fa-star::before{content:"\f005"}
 .fa-stop::before{content:"\f04d"}
+.fa-times::before{content:"\f00d"}
 .fa-tower-broadcast::before{content:"\f519"}
 .fa-trash::before{content:"\f1f8"}
 .fa-trash-can::before{content:"\f2ed"}
@@ -79,6 +96,7 @@
 .fa-upload::before{content:"\f093"}
 .fa-user-plus::before{content:"\f234"}
 .fa-users::before{content:"\f0c0"}
+.fa-volume-high::before{content:"\f028"}
 .fa-volume-xmark::before{content:"\f6a9"}
 .fa-wand-magic-sparkles::before{content:"\e2ca"}
 .fa-wave-square::before{content:"\f83e"}

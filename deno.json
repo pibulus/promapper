@@ -62,7 +62,8 @@
     "exclude": [
       "static/styles.build.css",
       "static/fa-subset.css",
-      "static/favicon.svg"
+      "static/favicon.svg",
+      "scripts/fa-all.css"
     ]
   },
   "exclude": [
