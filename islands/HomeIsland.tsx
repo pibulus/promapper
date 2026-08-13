@@ -226,7 +226,11 @@ export default function HomeIsland() {
       }).catch(() => {/* entrance animation is optional */});
     }, 50);
     return () => clearTimeout(timer);
-  }, [conversationData.value]);
+    // PRESENCE, not identity: keyed on the object, this replayed the whole
+    // entrance (every card from opacity 0) on EVERY store write — ticking one
+    // action item blinked the entire dashboard (Pablo's 2026-08-13 dogfood
+    // find). The entrance belongs to the none→some transition only.
+  }, [Boolean(conversationData.value)]);
 
   // ═══════════════════════════════════════════════════════════════
   // LIVE MODE — activates on the current dashboard
