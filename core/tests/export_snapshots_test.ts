@@ -10,6 +10,7 @@ import { assert, assertEquals } from "./_assert.ts";
 import {
   clearAllSnapshots,
   deleteSnapshotsFor,
+  deriveSnapshotTitle,
   type ExportSnapshot,
   getAllSnapshots,
   getSnapshotsFor,
@@ -180,4 +181,22 @@ Deno.test("backup import rejects malformed snapshot records", () => {
   const parsed = parseBackupSnapshots(json);
   assertEquals(parsed.length, 1);
   assert(parsed[0].id === "good");
+});
+
+Deno.test("deriveSnapshotTitle: document's own heading wins, format+context falls back", () => {
+  assertEquals(
+    deriveSnapshotTitle("# Band Tour Plan\n\n- fly out", "Plan", "Tour talk"),
+    "Band Tour Plan",
+  );
+  // Heading may not be on line one; markdown emphasis is stripped.
+  assertEquals(
+    deriveSnapshotTitle("intro line\n## **The Recap**\nbody", "Summary"),
+    "The Recap",
+  );
+  assertEquals(
+    deriveSnapshotTitle("no headings here", "Plan", "ProMapper fixes"),
+    "Plan — ProMapper fixes",
+  );
+  assertEquals(deriveSnapshotTitle("no headings", "Haiku"), "Haiku");
+  assertEquals(deriveSnapshotTitle("no headings", "Haiku", "  "), "Haiku");
 });

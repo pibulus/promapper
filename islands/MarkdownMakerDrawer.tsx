@@ -17,6 +17,7 @@ import { markdownService } from "../utils/markdownService.ts";
 import { showToast, showUndoToast } from "../utils/toast.ts";
 import { conversationData } from "@signals/conversationStore.ts";
 import {
+  deriveSnapshotTitle,
   type ExportSnapshot,
   getAllSnapshots,
   getSnapshotsFor,
@@ -150,6 +151,14 @@ export default function MarkdownMakerDrawer(
       ? allOutputs.findIndex((o) => o.id === activeDraftId.value)
       : -1;
 
+    // Auto-title, never asked for: the export's own first heading, else
+    // format + conversation title.
+    const title = deriveSnapshotTitle(
+      markdown.value,
+      label,
+      conversationData.value?.conversation?.title,
+    );
+
     let newId: string | null = null;
     if (existingIndex >= 0) {
       // Update in place — keep id + created_at, refresh content + prompt.
@@ -157,6 +166,7 @@ export default function MarkdownMakerDrawer(
         ...allOutputs[existingIndex],
         content: markdown.value,
         prompt: label,
+        title,
       };
     } else {
       newId = crypto.randomUUID();
@@ -165,6 +175,7 @@ export default function MarkdownMakerDrawer(
         conversation_id: conversationId,
         content: markdown.value,
         prompt: label,
+        title,
         created_at: new Date().toISOString(),
       });
     }
@@ -786,6 +797,24 @@ export default function MarkdownMakerDrawer(
             </div>
           )}
 
+          {
+            /* First-open empty state — no preview, no snapshots, nothing in
+              flight. The bare format grid read as sparse/unfinished (Pablo,
+              2026-08-13); this names what the drawer DOES and where results
+              land, same empty-state grammar as the dashboard cards. */
+          }
+          {!markdown.value && !loading.value && !error.value &&
+            savedOutputs.value.length === 0 && (
+            <div class="empty-state">
+              <div class="empty-state-face" aria-hidden="true">
+                ( • ᴗ • )
+              </div>
+              <div class="empty-state-text">
+                Pick a format — your exports stack up here as snapshots.
+              </div>
+            </div>
+          )}
+
           {/* Saved snapshots */}
           {savedOutputs.value.length > 0 && (
             <div class="export-snaps pt-4 mt-4">
@@ -803,11 +832,12 @@ export default function MarkdownMakerDrawer(
                     >
                       <div class="flex justify-between items-start mb-2">
                         <div class="flex-1 min-w-0">
-                          <p class="export-snap-label">
-                            {output.prompt}
+                          <p class="export-snap-label truncate">
+                            {output.title || output.prompt}
                             {isActive ? " · editing" : ""}
                           </p>
                           <p class="export-snap-date">
+                            {output.prompt} ·{" "}
                             {new Date(output.created_at).toLocaleString()}
                           </p>
                         </div>

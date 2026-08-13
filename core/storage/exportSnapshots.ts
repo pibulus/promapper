@@ -19,6 +19,26 @@ export interface ExportSnapshot {
   content: string;
   prompt: string;
   created_at: string;
+  /** Auto-derived display title (older snapshots may not have one). */
+  title?: string;
+}
+
+/**
+ * A snapshot's display title, derived — never asked for. The document's own
+ * first heading wins (it's what the export is ABOUT); otherwise the format
+ * plus the conversation's title. Pablo's 2026-08-13 ask: snapshots in the
+ * drawer were unlabeled beyond their format name.
+ */
+export function deriveSnapshotTitle(
+  content: string,
+  promptLabel: string,
+  conversationTitle?: string,
+): string {
+  const heading = content.match(/^#{1,3}\s+(.+?)\s*$/m)?.[1]
+    .replace(/[*_`]/g, "").trim();
+  if (heading) return heading.slice(0, 80);
+  const ctx = conversationTitle?.trim();
+  return ctx ? `${promptLabel} — ${ctx}`.slice(0, 80) : promptLabel;
 }
 
 /**
