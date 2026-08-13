@@ -4,6 +4,27 @@
 > session notes + Claude's read of 4 screenshots. This is the working list for
 > the next ProMapper session.
 
+## ✅ SHIPPED overnight 2026-08-13 (deployed to promapper.app, verified live)
+
+- Summary scaffold: prompt constrained + leading generic titles stripped at
+  render (diagnosis 1 — turned out to be markdown rendering fine, the AI was
+  emitting a duplicate "# Summary" title at heading scale)
+- Dashboard blink on tick (diagnosis 2 — anime.js entrance keyed on object
+  identity instead of presence; one-line fix, verified via playwright: opacity
+  holds 1.0 through a tick)
+- Theme phantom flash (diagnosis 3 — CSS transitions animating the var swap;
+  `.is-theming` one-paint mute, mirroring `.is-resizing`)
+- Brew ledger (diagnosis 4 — stages accumulate with ticks, appends get their own
+  visible story)
+- Missing icons (search/flip/delete X + 8 more — FA subset parser dropped
+  grouped alias selectors; regenerated, 86 icons, sources vendored)
+- Sort cycle button (one-shot reorder gesture: newest/oldest/shuffle)
+- Snapshot auto-titles + export drawer empty state
+- Delete confirmation: resolved WITHOUT a modal — the X icon now renders,
+  tooltip says undoable, undo toast is the app's danger law. Overrule if you
+  still want a confirm.
+- Rex reviewed the full diff: zero blockers. 384 tests green.
+
 ## 🔴 Claude's screenshot diagnosis (start here)
 
 1. **Summary panel renders RAW markdown at giant size.** Screenshots 43/44/45
