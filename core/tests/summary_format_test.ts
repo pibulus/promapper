@@ -23,8 +23,33 @@ Deno.test("already-structured summaries pass through untouched", () => {
   assert(paragraphizeSummary(structured) === structured);
   const bullets = "- did the thing\n- did the other thing";
   assert(paragraphizeSummary(bullets) === bullets);
-  const heading = "# Recap\nSome text under it.";
+  // Specific headings are real structure and stay.
+  const heading = "# The Pig Situation\nSome text under it.";
   assert(paragraphizeSummary(heading) === heading);
+});
+
+Deno.test("leading generic titles are stripped (card header owns 'Summary')", () => {
+  assert(
+    paragraphizeSummary("# Summary\n\nThe goats escaped again.") ===
+      "The goats escaped again.",
+  );
+  // Leading scaffold labels ("Main Points:") are noise too — the bullets
+  // speak for themselves.
+  assert(
+    paragraphizeSummary(
+      "## Meeting Summary\n**Main Points:**\n- one\n- two",
+    ) ===
+      "- one\n- two",
+  );
+  assert(
+    paragraphizeSummary("**Summary**\nDennis fixed the fence.") ===
+      "Dennis fixed the fence.",
+  );
+  // A generic title is stripped even when prose follows on later lines only.
+  assert(
+    paragraphizeSummary("# Recap\nSome text under it.") ===
+      "Some text under it.",
+  );
 });
 
 Deno.test("short summaries stay as they are", () => {

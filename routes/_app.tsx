@@ -107,7 +107,13 @@ export default function App({ Component }: PageProps) {
              third-party origin. Regenerate with scratch/fa-subset.py after
              adding a NEW fa-* icon, or its glyph renders as a blank box. */
         }
-        <link rel="preload" as="font" type="font/woff2" href="/fonts/fa-solid-900.woff2" crossOrigin="anonymous" />
+        <link
+          rel="preload"
+          as="font"
+          type="font/woff2"
+          href="/fonts/fa-solid-900.woff2"
+          crossOrigin="anonymous"
+        />
         <link rel="stylesheet" href="/fa-subset.css" />
 
         {

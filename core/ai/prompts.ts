@@ -259,6 +259,8 @@ export const buildSummaryPrompt = (
     : "";
 
   return `Summarize the following conversation text. Focus on the main points and key takeaways. Return the summary in a concise and clear format.
+
+Write short plain-prose paragraphs (simple "-" bullets only when genuinely listing). Do NOT add a title or headings ("# Summary" etc.) and do NOT open with bold section labels like "**Main Points:**" — the UI already labels and frames the summary.
 ${topicHint}
 <transcript>
 ${text}

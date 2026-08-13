@@ -60,7 +60,9 @@
   },
   "fmt": {
     "exclude": [
-      "static/styles.build.css"
+      "static/styles.build.css",
+      "static/fa-subset.css",
+      "static/favicon.svg"
     ]
   },
   "exclude": [

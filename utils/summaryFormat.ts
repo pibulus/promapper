@@ -32,20 +32,43 @@ function splitSentences(text: string): string[] {
   return merged;
 }
 
+/** Generic titles the model likes to open with. The card header already says
+ * "Summary", so a leading "# Summary"/"## Overview" renders as a giant
+ * duplicate title (Pablo's 2026-08-13 dogfood find). Specific headings
+ * ("# The Pig Situation") are real structure and stay. */
+const REDUNDANT_TITLE =
+  /^#{1,3}\s+((conversation|meeting)\s+)?(summary|recap|overview|main\s+points):?\s*$/i;
+
+/** Drop a leading generic markdown title (and a bare bold variant of it). */
+function stripRedundantTitle(text: string): string {
+  const lines = text.split("\n");
+  let i = 0;
+  while (
+    i < lines.length && (
+      lines[i].trim() === "" ||
+      REDUNDANT_TITLE.test(lines[i].trim()) ||
+      REDUNDANT_TITLE.test(lines[i].trim().replace(/^\*\*(.*)\*\*$/, "# $1"))
+    )
+  ) i++;
+  return i > 0 ? lines.slice(i).join("\n") : text;
+}
+
 /**
  * If the summary is one long unbroken paragraph, regroup it into short
  * paragraphs of a couple of sentences each. Anything that already has
- * structure (blank lines, bullets, headings) is left exactly as written.
+ * structure (blank lines, bullets, headings) is left exactly as written —
+ * except a leading generic title, which is always stripped (the card
+ * header owns the word "Summary").
  */
 export function paragraphizeSummary(text: string): string {
   if (!text) return text;
-  const trimmed = text.trim();
+  const trimmed = stripRedundantTitle(text.trim()).trim();
   // Already structured — real paragraphs, list items, or headings.
   if (/\n\s*\n/.test(trimmed) || /^\s*([-*+]|\d+\.|#)\s/m.test(trimmed)) {
-    return text;
+    return trimmed;
   }
   const sentences = splitSentences(trimmed);
-  if (sentences.length <= SENTENCES_PER_PARA + 1) return text;
+  if (sentences.length <= SENTENCES_PER_PARA + 1) return trimmed;
 
   const paras: string[] = [];
   for (let i = 0; i < sentences.length; i += SENTENCES_PER_PARA) {
