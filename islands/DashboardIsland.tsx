@@ -629,8 +629,8 @@ export default function DashboardIsland() {
                         type="button"
                         onClick={() => drawFromConversation(false)}
                         disabled={isDrawing.value}
-                        data-tip="AI adds to the board"
-                        aria-label="Ask the AI to draw from the conversation"
+                        data-tip="Draw from the conversation"
+                        aria-label="Draw topics onto the board"
                       >
                         <i
                           class={`fa ${
@@ -698,7 +698,7 @@ export default function DashboardIsland() {
                           type="button"
                           onClick={() => drawFromConversation(false)}
                           disabled={isDrawing.value}
-                          aria-label="Ask the AI to draw from the conversation"
+                          aria-label="Draw topics onto the board"
                         >
                           <i
                             class={`fa ${

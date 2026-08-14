@@ -388,6 +388,31 @@ export function sanitizeShareConversation(
       input.summary,
       SHARE_ROOM_LIMITS.MAX_SUMMARY_LENGTH,
     ),
+    ...(Array.isArray(input.deletedTopicLabels) &&
+        input.deletedTopicLabels.length
+      ? {
+        deletedTopicLabels: input.deletedTopicLabels
+          .map((s) =>
+            normalizeString(s, SHARE_ROOM_LIMITS.MAX_NODE_LABEL_LENGTH)
+          )
+          .filter((s): s is string => !!s)
+          .slice(0, 100),
+      }
+      : {}),
+    ...(Array.isArray(input.deletedActionDescriptions) &&
+        input.deletedActionDescriptions.length
+      ? {
+        deletedActionDescriptions: input.deletedActionDescriptions
+          .map((s) =>
+            normalizeString(
+              s,
+              SHARE_ROOM_LIMITS.MAX_ACTION_DESCRIPTION_LENGTH,
+            )
+          )
+          .filter((s): s is string => !!s)
+          .slice(0, 100),
+      }
+      : {}),
   };
 }
 

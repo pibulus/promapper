@@ -131,7 +131,7 @@ Deno.test("sanitizeConversationData caps the number of nodes", () => {
 
 Deno.test("createRoomMetadata defaults rev to 0 and preserves an existing rev", async () => {
   const { createRoomMetadata } = await import(
-    "../../party/conversationProtocol.ts"
+    "../../workers/collab/src/conversationProtocol.ts"
   );
   assertEquals(createRoomMetadata().rev, 0);
   assertEquals(createRoomMetadata({ rev: 7 }).rev, 7);
@@ -139,7 +139,7 @@ Deno.test("createRoomMetadata defaults rev to 0 and preserves an existing rev", 
 
 Deno.test("touchRoomMetadata carries rev through untouched", async () => {
   const { createRoomMetadata, touchRoomMetadata } = await import(
-    "../../party/conversationProtocol.ts"
+    "../../workers/collab/src/conversationProtocol.ts"
   );
   const touched = touchRoomMetadata(createRoomMetadata({ rev: 41 }));
   assertEquals(touched.rev, 41);
@@ -156,7 +156,7 @@ Deno.test("touchRoomMetadata carries rev through untouched", async () => {
 //
 // This compares BEHAVIOUR, not text, so harmless formatting drift is fine and
 // a real divergence fails the build.
-import { sanitizeConversationData as sanitizeInPartyCopy } from "../../party/conversationProtocol.ts";
+import { sanitizeConversationData as sanitizeInPartyCopy } from "../../workers/collab/src/conversationProtocol.ts";
 
 Deno.test("the collab sanitizer copies agree — live worker vs party/", async () => {
   const { sanitizeShareConversation: sanitizeInCore } = await import(

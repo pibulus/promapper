@@ -756,7 +756,7 @@ export default function MobileHistoryMenu() {
             aria-modal="true"
             aria-label="Delete this conversation?"
             style={{
-              background: "rgba(255, 255, 255, 0.98)",
+              background: "var(--soft-cream)",
               backdropFilter: "blur(20px)",
               WebkitBackdropFilter: "blur(20px)",
               borderRadius: "var(--border-radius-xl)",
@@ -803,17 +803,15 @@ export default function MobileHistoryMenu() {
                   color: "var(--surface-white-warm)",
                   cursor: "pointer",
                   transition: "all var(--transition-medium)",
-                  boxShadow: "0 4px 0 0 rgba(220, 38, 38, 0.3)",
+                  boxShadow: "var(--shadow-md)",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow =
-                    "0 6px 0 0 rgba(220, 38, 38, 0.3)";
+                  e.currentTarget.style.boxShadow = "var(--shadow-lg)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow =
-                    "0 4px 0 0 rgba(220, 38, 38, 0.3)";
+                  e.currentTarget.style.boxShadow = "var(--shadow-md)";
                 }}
               >
                 Delete
