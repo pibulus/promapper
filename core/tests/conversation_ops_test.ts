@@ -204,6 +204,60 @@ Deno.test("renameSpeaker escapes regex-special characters in the old name", () =
   assertEquals(next.transcript.text, "Friend: hi\nAXB: no");
 });
 
+Deno.test("renameSpeaker syncs action item assignees and summary mentions", () => {
+  const data = baseData();
+  data.actionItems = [
+    {
+      ...data.actionItems[0],
+      id: "a1",
+      assignee: "Alice",
+      description: "Review docs",
+    },
+    {
+      ...data.actionItems[0],
+      id: "a2",
+      assignee: "Bob",
+      description: "Ship it",
+    },
+    {
+      ...data.actionItems[0],
+      id: "a3",
+      assignee: null,
+      description: "Test",
+    },
+  ];
+  data.summary =
+    "Alice proposed the timeline. Bob suggested Alice review the budget first.";
+
+  const next = renameSpeaker(data, "Alice", "Alicia");
+
+  // Transcript synced (already tested above)
+  assertEquals(next.transcript.speakers, ["Alicia", "Bob"]);
+
+  // Action items: assignee "Alice" → "Alicia", others untouched
+  assertEquals(next.actionItems[0].assignee, "Alicia");
+  assertEquals(next.actionItems[1].assignee, "Bob");
+  assertEquals(next.actionItems[2].assignee, null);
+
+  // Summary: "Alice" → "Alicia" at word boundaries (twice)
+  assertEquals(
+    next.summary,
+    "Alicia proposed the timeline. Bob suggested Alicia review the budget first.",
+  );
+
+  // Original untouched
+  assertEquals(data.actionItems[0].assignee, "Alice");
+  assertEquals(data.summary?.includes("Alice"), true);
+});
+
+Deno.test("renameSpeaker uses word boundaries for summary (no partial matches)", () => {
+  const data = baseData();
+  data.summary = "Bob and Bobby discussed the timeline.";
+  const next = renameSpeaker(data, "Bob", "Robert");
+  // "Bob" → "Robert", "Bobby" stays "Bobby" (word boundary)
+  assertEquals(next.summary, "Robert and Bobby discussed the timeline.");
+});
+
 // ===================================================================
 // topic graph ops
 // ===================================================================

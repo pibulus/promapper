@@ -163,9 +163,9 @@ export function clearCompletedActionItems(items: ActionItem[]): ActionItem[] {
 }
 
 /**
- * Rename a speaker everywhere it appears: the transcript text, the conversation
- * transcript copy, and the speakers list (deduped). No-op for an empty/identical
- * rename. Returns the same object reference when nothing changes.
+ * Rename a speaker everywhere it appears: transcript text, conversation
+ * transcript copy, speakers list, action item assignees, and summary mentions.
+ * No-op for empty/identical rename. Returns same object reference when nothing changes.
  */
 export function renameSpeaker(
   data: ConversationData,
@@ -190,6 +190,21 @@ export function renameSpeaker(
     speaker === oldName ? trimmedNew : speaker
   );
 
+  // Update action item assignees — exact match only (case-sensitive).
+  const nextActionItems = data.actionItems.map((item) =>
+    item.assignee === oldName ? { ...item, assignee: trimmedNew } : item
+  );
+
+  // Update summary if it mentions the speaker by name. Uses word boundaries
+  // so "Bob" doesn't match "Bobby" but does match "Bob's" or "Bob,".
+  const speakerMention = new RegExp(
+    `\\b${escapedOldName}\\b`,
+    "g",
+  );
+  const nextSummary = data.summary
+    ? data.summary.replace(speakerMention, trimmedNew)
+    : data.summary;
+
   return {
     ...data,
     conversation: {
@@ -201,6 +216,8 @@ export function renameSpeaker(
       text: updatedText,
       speakers: Array.from(new Set(nextSpeakers)),
     },
+    actionItems: nextActionItems,
+    summary: nextSummary,
   };
 }
 

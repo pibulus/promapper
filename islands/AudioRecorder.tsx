@@ -46,6 +46,19 @@ interface AudioRecorderProps {
   onRecordingComplete?: () => void;
 }
 
+// Cycling processing messages — change every few seconds to show progress.
+function getProcessingMessage(seconds: number): string {
+  const messages = [
+    "Mapping your words…",
+    "Finding the topics…",
+    "Checking action items…",
+    "Almost there…",
+    "Wrapping it up…",
+  ];
+  const index = Math.floor(seconds / 3) % messages.length;
+  return messages[index];
+}
+
 export default function AudioRecorder(
   { conversationId, onRecordingComplete }: AudioRecorderProps,
 ) {
@@ -58,6 +71,10 @@ export default function AudioRecorder(
   const lastTakeIdRef = useRef<string | null>(null);
   // Re-entry guard for processAudioAppend — see the note at its definition.
   const appendingRef = useRef(false);
+
+  // Processing feedback: elapsed time + cycling messages.
+  const processingTime = useSignal(0);
+  const processingStartRef = useRef<number | null>(null);
 
   const MAX_RECORDING_TIME = 10 * 60;
   const WARNING_TIME = 30;
@@ -130,6 +147,24 @@ export default function AudioRecorder(
   const timeRemaining = useComputed(() =>
     MAX_RECORDING_TIME - recordingTime.value
   );
+
+  // Track processing time for feedback (elapsed seconds).
+  useEffect(() => {
+    if (!isProcessing.value) {
+      processingTime.value = 0;
+      processingStartRef.current = null;
+      return;
+    }
+    processingStartRef.current = Date.now();
+    const interval = setInterval(() => {
+      if (processingStartRef.current) {
+        processingTime.value = Math.floor(
+          (Date.now() - processingStartRef.current) / 1000,
+        );
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isProcessing.value]);
 
   // Hydrate takes from IndexedDB whenever the conversation changes. (The orphan
   // sweep moved to HomeIsland's mount — here it only ran once a conversation
@@ -443,13 +478,16 @@ export default function AudioRecorder(
         ? (
           <button
             type="button"
-            class="header-icon-btn"
+            class="header-icon-btn is-processing"
             disabled
-            aria-label="Mapping your words"
-            data-tip="Mapping your words…"
+            aria-label={`Mapping your words (${processingTime.value}s)`}
+            data-tip={getProcessingMessage(processingTime.value)}
             data-tip-align="right"
           >
             <i class="fa fa-spinner fa-spin" aria-hidden="true" />
+            <span class="processing-time" aria-hidden="true">
+              {processingTime.value}s
+            </span>
           </button>
         )
         : (
