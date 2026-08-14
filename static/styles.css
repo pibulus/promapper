@@ -2348,6 +2348,16 @@ body {
   box-shadow: var(--shadow-slab);
 }
 
+/* Mobile: let the modules float free — no nested container chrome */
+@media (max-width: 768px) {
+  .dashboard-shell {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+}
+
 /* ===================================================================
    MODULES — optional cards that plug into the dashboard grid.
    Three sizes and one rule (docs/MODULES.md): the grid runs on 6 UNITS
