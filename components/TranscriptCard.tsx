@@ -127,24 +127,60 @@ export default function TranscriptCard(
         open={editingSpeaker.value !== null}
         onClose={cancelRename}
         titleId="rename-speaker-title"
-        panelClass="max-w-sm"
+        panelClass="max-w-md"
       >
         <h3 id="rename-speaker-title" class="modal-heading">
           Rename {editingSpeaker.value}
         </h3>
-        <input
-          type="text"
-          value={speakerName.value}
-          onInput={(e) =>
-            speakerName.value = (e.target as HTMLInputElement).value}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") saveRename();
-          }}
-          class="export-textarea"
-          aria-label={`New name for ${editingSpeaker.value}`}
-          autoFocus
-        />
-        <div class="flex gap-2 mt-3">
+
+        {/* Show other speakers for quick merge */}
+        {transcript?.speakers && transcript.speakers.length > 1 && (
+          <div class="mb-4">
+            <p class="text-sm opacity-75 mb-2">
+              Merge with existing speaker:
+            </p>
+            <div class="flex flex-wrap gap-2">
+              {transcript.speakers
+                .filter((s) => s !== editingSpeaker.value)
+                .map((speaker) => (
+                  <button
+                    key={speaker}
+                    onClick={() => {
+                      speakerName.value = speaker;
+                      saveRename();
+                    }}
+                    class="px-3 py-1.5 text-sm rounded-lg border-2 border-current hover:bg-accent-soft transition-colors"
+                    style={{
+                      borderColor: "var(--color-accent)",
+                      color: "var(--color-accent)",
+                    }}
+                  >
+                    {speaker}
+                  </button>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* Custom name input */}
+        <div>
+          <p class="text-sm opacity-75 mb-2">Or rename to:</p>
+          <input
+            type="text"
+            value={speakerName.value}
+            onInput={(e) =>
+              speakerName.value = (e.target as HTMLInputElement).value}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") saveRename();
+            }}
+            class="export-textarea"
+            aria-label={`New name for ${editingSpeaker.value}`}
+            placeholder="Type a new name..."
+            autoFocus
+          />
+        </div>
+
+        <div class="flex gap-2 mt-4">
           <button
             onClick={saveRename}
             class="btn btn--accent flex-1"
