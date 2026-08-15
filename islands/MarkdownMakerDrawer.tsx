@@ -9,10 +9,12 @@ import { useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef, useState } from "preact/hooks";
 import {
   buildExportPrompt,
+  DECK_PROMPT_ID,
   markdownPrompts,
   parseFormatMismatch,
   pickExportFormats,
 } from "../utils/markdownPrompts.ts";
+import { buildDeckUrl, parseDeckJson } from "../utils/deckExport.ts";
 import { markdownService } from "../utils/markdownService.ts";
 import { showToast, showUndoToast } from "../utils/toast.ts";
 import { conversationData } from "@signals/conversationStore.ts";
@@ -54,6 +56,9 @@ export default function MarkdownMakerDrawer(
   // The model said "this content suits a different format" — shown as a
   // friendly hint, never as a fake successful export.
   const formatHint = useSignal<string | null>(null);
+  // Slideomatic URL for a freshly generated deck — rendered as an
+  // "Open the deck" link (an anchor, so popup blockers stay out of it).
+  const deckUrl = useSignal<string | null>(null);
   const savedOutputs = useSignal<SavedOutput[]>([]);
   // When a saved snapshot is loaded back for editing, saving updates it in
   // place instead of appending a new one.
@@ -249,6 +254,7 @@ export default function MarkdownMakerDrawer(
     loading.value = true;
     error.value = null;
     formatHint.value = null;
+    deckUrl.value = null;
     selectedPromptId.value = promptId;
 
     try {
@@ -270,6 +276,25 @@ export default function MarkdownMakerDrawer(
       if (!result.trim()) {
         error.value = "The export came back empty — try again.";
         showToast("The export came back empty — try again", "error");
+        return;
+      }
+      // The Deck preset outputs Slideomatic deck JSON, not markdown —
+      // validate it and turn it into an open-the-deck link. Invalid JSON is a
+      // retry, never a broken deck shipped to a new tab.
+      if (promptId === DECK_PROMPT_ID) {
+        const slides = parseDeckJson(result);
+        if (!slides) {
+          error.value = "The deck didn't come out right — give it another go.";
+          showToast(
+            "The deck didn't come out right — give it another go",
+            "error",
+          );
+          return;
+        }
+        deckUrl.value = await buildDeckUrl(slides);
+        markdown.value = JSON.stringify(slides, null, 2);
+        activeDraftId.value = null;
+        showToast("Deck ready — open it below", "success");
         return;
       }
       markdown.value = result;
@@ -298,6 +323,7 @@ export default function MarkdownMakerDrawer(
     loading.value = true;
     error.value = null;
     formatHint.value = null;
+    deckUrl.value = null;
     selectedPromptId.value = null;
 
     try {
@@ -737,6 +763,19 @@ export default function MarkdownMakerDrawer(
               <i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i>
               <span>{formatHint.value}</span>
             </div>
+          )}
+
+          {/* Fresh deck — one tap opens it in Slideomatic */}
+          {deckUrl.value && (
+            <a
+              href={deckUrl.value}
+              target="_blank"
+              rel="noopener"
+              class="btn btn--accent w-full mb-4"
+            >
+              <i class="fa fa-display" aria-hidden="true"></i>
+              <span>Open the deck</span>
+            </a>
           )}
 
           {/* Markdown Preview */}

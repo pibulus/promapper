@@ -64,10 +64,22 @@ export function parseFormatMismatch(result: string): string | null {
  * context blocks (see core/export/exportContext.ts); this tells every format
  * to actually use them instead of re-deriving from raw text.
  */
-const CONTEXT_PREAMBLE =
-  `You will receive structured context blocks: PROJECT TITLE, CURRENT SUMMARY, OPEN/COMPLETED ACTION ITEMS (with assignees and due dates), TOPICS with their connections, and the TRANSCRIPT. Ground your output in those blocks — reuse the real names, tasks, and topics rather than re-deriving or inventing them. Output clean markdown only, with no preamble and no code fences.`;
+const CONTEXT_GROUNDING =
+  `You will receive structured context blocks: PROJECT TITLE, CURRENT SUMMARY, OPEN/COMPLETED ACTION ITEMS (with assignees and due dates), TOPICS with their connections, and the TRANSCRIPT. Ground your output in those blocks — reuse the real names, tasks, and topics rather than re-deriving or inventing them.`;
 
-// Curated to EIGHT on purpose (July 22 trim — was 12 and read as a wall);
+const CONTEXT_PREAMBLE =
+  `${CONTEXT_GROUNDING} Output clean markdown only, with no preamble and no code fences.`;
+
+/**
+ * The one preset whose output is NOT markdown: it emits Slideomatic deck JSON
+ * which the drawer validates and turns into an "Open the deck" link
+ * (utils/deckExport.ts). buildExportPrompt skips the markdown clause for it.
+ */
+export const DECK_PROMPT_ID = "slide-deck";
+
+// Curated to EIGHT markdown formats on purpose (July 22 trim — was 12 and
+// read as a wall) plus the Deck handoff (Aug 15 — a different output channel,
+// not a ninth flavor of markdown);
 // the drawer SHOWS a contextual six of these (pickExportFormats, July 23).
 // Every format maps to a real ProMapper persona: meetings (Meeting, What got
 // done, Plan), research groups (Research), voice notes (Journal), everything
@@ -166,6 +178,36 @@ Ground each one in a specific moment (quote or closely paraphrase, with the spea
     suggestInstead: ["summary-report"],
   },
   {
+    id: DECK_PROMPT_ID,
+    label: "Deck",
+    // fa-display, not fa-person-chalkboard: the self-hosted FA subset
+    // (static/fa-subset.css) only carries icons already in the app.
+    icon: "fa-display",
+    description: "The whole map as slides, ready to present",
+    short: "Ready to present",
+    prompt:
+      `Turn this conversation into a short presentation deck (6 to 9 slides) as JSON for a slide app.
+
+Return ONLY a JSON array of slide objects — no markdown wrapper, no code fences, no prose before or after.
+
+VALID SLIDE TYPES (use ONLY these, never invent new ones):
+- "title" — keys: type, title, subtitle
+- "standard" — keys: type, badge, headline, body:["line","line"]
+- "quote" — keys: type, quote, attribution
+- "pillars" — keys: type, badge, headline, pillars:[{title,body}]
+
+SHAPE OF THE DECK:
+1. Open with a "title" slide: the project title, with a subtitle that frames what this is really about.
+2. Follow with 3 to 6 content slides covering the key themes — "standard" for narrative points, "pillars" when 2 to 4 parallel ideas belong together. Real substance from the conversation, not a list of topic names.
+3. If someone said something genuinely memorable, give it a "quote" slide with the speaker as attribution.
+4. Close with a "standard" slide (badge: "Next steps") of the open action items with their owners. If everything is done, close with the outcome instead.
+
+RULES:
+- "body" is always an array of strings; each string is one line or bullet.
+- Keep slides light: at most 5 body lines per slide, headlines under 10 words.
+- This is a presentation, not a dump — pick what matters and give it an arc.`,
+  },
+  {
     id: "haiku",
     label: "Haiku",
     icon: "fa-leaf",
@@ -182,7 +224,11 @@ Ground each one in a specific moment (quote or closely paraphrase, with the spea
  * are derived from the registry so they can never drift from the real ones.
  */
 export function buildExportPrompt(preset: MarkdownPrompt): string {
-  const parts = [CONTEXT_PREAMBLE, preset.prompt];
+  // The deck preset outputs JSON — the markdown clause would fight it.
+  const preamble = preset.id === DECK_PROMPT_ID
+    ? CONTEXT_GROUNDING
+    : CONTEXT_PREAMBLE;
+  const parts = [preamble, preset.prompt];
   const alternatives = (preset.suggestInstead ?? [])
     .map((id) => markdownPrompts.find((p) => p.id === id)?.label)
     .filter(Boolean);
@@ -236,6 +282,9 @@ export function pickExportFormats(
     "summary-report": 70,
     "unasked": transcriptLength >= 600 ? 60 : 8,
     "haiku": transcriptLength > 0 && transcriptLength < 600 ? 65 : 30,
+    // The party trick: below Summary, above the situational tail — visible
+    // whenever there's real content to present.
+    [DECK_PROMPT_ID]: transcriptLength >= 200 ? 68 : 20,
   };
 
   return markdownPrompts
