@@ -51,6 +51,56 @@ function buildSummary(items: ActionItem[]): string {
 }
 
 /**
+ * ZipList's import link decodes with plain atob, so the payload must be
+ * Latin-1. Smart punctuation gets ASCII equivalents; anything else non-Latin-1
+ * (emoji, CJK) is dropped rather than arriving as mojibake.
+ */
+function toLatin1(s: string): string {
+  return s
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/[–—]/g, "-")
+    .replace(/…/g, "...")
+    // deno-lint-ignore no-control-regex
+    .replace(/[^\x00-\xFF]/g, "")
+    .trim();
+}
+
+/**
+ * Open the action items as a ready-to-import ZipList checklist — the map
+ * stays the archive, the list goes in your pocket. ZipList's /import route
+ * shows its own confirm dialog; schema is its own share format:
+ * {name, items:[{text, checked}]} base64 in the #listdata= fragment.
+ * ProMapper #tags in descriptions ride along — ZipList parses them natively.
+ */
+function sendToZipList(items: ActionItem[]) {
+  const name = toLatin1(conversationData.value?.conversation?.title ?? "") ||
+    "Action items";
+  const payload = {
+    name,
+    items: items.map((i) => ({
+      text: toLatin1(i.description),
+      checked: i.status === "completed",
+    })).filter((i) => i.text),
+  };
+  if (payload.items.length === 0) {
+    showToast("Nothing here ZipList can carry — try adding items", "warning");
+    return;
+  }
+  try {
+    const encoded = btoa(JSON.stringify(payload));
+    globalThis.open(
+      `https://ziplist.app/import#listdata=${encoded}`,
+      "_blank",
+      "noopener",
+    );
+  } catch (error) {
+    console.error("ZipList handoff failed:", error);
+    showToast("Couldn't package that list — try again", "error");
+  }
+}
+
+/**
  * Share just one person's slice: a snapshot share whose actionItems are
  * filtered to that assignee, with filter metadata so the shared view says so.
  */
@@ -137,6 +187,15 @@ export default function ActionItemsBack(
             disabled={total === 0}
           >
             <i class="fa fa-copy text-sm"></i>
+          </button>
+          <button
+            onClick={() => sendToZipList(items)}
+            class="cursor-pointer"
+            data-tip="Send to ZipList"
+            aria-label="Send to ZipList"
+            disabled={total === 0}
+          >
+            <i class="fa fa-paper-plane text-sm"></i>
           </button>
           <button
             onClick={onClearDone}
