@@ -19,6 +19,7 @@ import {
 } from "@signals/liveSessionStore.ts";
 import {
   createBestShareLink,
+  createServerShareLink,
   type ShareCreationResult,
 } from "../core/storage/shareService.ts";
 import { ensureApiSession } from "../utils/apiAuth.ts";
@@ -27,6 +28,7 @@ import { showToast } from "../utils/toast.ts";
 export default function ShareButton() {
   const share = useSignal<ShareCreationResult | null>(null);
   const isGenerating = useSignal(false);
+  const qrGenerating = useSignal(false);
   const liveStarting = useSignal(false);
   const popoverOpen = useSignal(false);
   // What the current share.value was minted from — lets a re-click reopen the
@@ -157,6 +159,47 @@ export default function ShareButton() {
       showToast("That didn't take — give it another try in a sec", "error");
     } finally {
       isGenerating.value = false;
+    }
+  }
+
+  /**
+   * QR the map via QRBuddy's prefill deep link. Only the short server-share
+   * `/shared/<id>` links scan well — never the long `?data=` form — so if the
+   * current share isn't one, mint a server share first.
+   */
+  async function handleQr() {
+    const data = conversationData.value;
+    if (!data || qrGenerating.value) return;
+    // Open the tab inside the click gesture — window.open after an await gets
+    // popup-blocked — then point it once the link exists.
+    const tab = globalThis.open("", "_blank");
+    qrGenerating.value = true;
+    try {
+      const json = JSON.stringify(data);
+      let url =
+        share.value?.mode === "server-share" && lastSharedJSON.value === json
+          ? share.value.url
+          : null;
+      if (!url) {
+        const extras = liveSession.value
+          ? { live: { roomId: liveSession.value.roomId } }
+          : undefined;
+        const result = await createServerShareLink(data, 30, extras);
+        share.value = result;
+        lastSharedJSON.value = json;
+        url = result.url;
+      }
+      const qrUrl = `https://qrbuddy.app/q?d=${
+        encodeURIComponent(url)
+      }&s=candy`;
+      if (tab) tab.location.href = qrUrl;
+      else globalThis.open(qrUrl, "_blank");
+    } catch (error) {
+      tab?.close();
+      console.error("Failed to QR the map:", error);
+      showToast("Couldn't mint a link to QR — try again in a sec", "error");
+    } finally {
+      qrGenerating.value = false;
     }
   }
 
@@ -379,6 +422,25 @@ export default function ShareButton() {
                 <i class="fa fa-copy" aria-hidden="true"></i>
               </button>
             </div>
+          )}
+
+          {!isLocalOnly && (
+            <button
+              type="button"
+              onClick={handleQr}
+              disabled={qrGenerating.value}
+              class="min-h-9 w-full px-3 py-1 text-xs font-bold share-copy-btn"
+              data-tip="Put it on a screen — phones scan straight to the map"
+            >
+              <i
+                class={`fa ${
+                  qrGenerating.value ? "fa-spinner fa-spin" : "fa-qrcode"
+                }`}
+                aria-hidden="true"
+              >
+              </i>{" "}
+              QR this map
+            </button>
           )}
 
           {remaining !== null && remaining > 0 && (

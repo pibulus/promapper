@@ -309,6 +309,50 @@ function createLocalShareLink(
   };
 }
 
+/**
+ * Mint a server share (`/shared/<id>` short link) regardless of payload size —
+ * the form that scans well as a QR. Throws on failure; callers that can
+ * degrade to a local link should use createBestShareLink instead.
+ */
+export async function createServerShareLink(
+  data: ConversationData,
+  expiresInDays?: number,
+  extras?: ShareExtras,
+): Promise<ShareCreationResult> {
+  await ensureApiSession();
+  const response = await fetch("/api/share/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      data: createShareableData(data, extras),
+      ttlDays: expiresInDays,
+    }),
+  });
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      typeof payload.error === "string"
+        ? payload.error
+        : "Server share failed.",
+    );
+  }
+
+  const shareId = typeof payload.shareId === "string" ? payload.shareId : "";
+  if (!shareId) {
+    throw new Error("Server share response did not include a share ID.");
+  }
+
+  return {
+    shareId,
+    url: getShareUrl(shareId),
+    mode: "server-share",
+    expiresAt: typeof payload.expiresAt === "string"
+      ? payload.expiresAt
+      : undefined,
+  };
+}
+
 export async function createBestShareLink(
   data: ConversationData,
   expiresInDays?: number,
@@ -336,38 +380,7 @@ export async function createBestShareLink(
     // on purpose: cancelling the auth modal still degrades to the local link
     // with its warning, same as today, minus the lie. After the <2000-char
     // early return too, so small conversations never see a modal at all.
-    await ensureApiSession();
-    const response = await fetch("/api/share/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        data: createShareableData(data, extras),
-        ttlDays: expiresInDays,
-      }),
-    });
-    const payload = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(
-        typeof payload.error === "string"
-          ? payload.error
-          : "Server share failed.",
-      );
-    }
-
-    const shareId = typeof payload.shareId === "string" ? payload.shareId : "";
-    if (!shareId) {
-      throw new Error("Server share response did not include a share ID.");
-    }
-
-    return {
-      shareId,
-      url: getShareUrl(shareId),
-      mode: "server-share",
-      expiresAt: typeof payload.expiresAt === "string"
-        ? payload.expiresAt
-        : undefined,
-    };
+    return await createServerShareLink(data, expiresInDays, extras);
   } catch (error) {
     console.warn("Falling back to local-only share:", error);
     // Keep the extras — dropping them here silently lost the live-room
