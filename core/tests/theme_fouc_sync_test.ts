@@ -1,34 +1,33 @@
 /**
- * Guard against drift between the typed theme source (core/theme/themes.ts) and
- * the hand-inlined FOUC-prevention map in routes/_app.tsx. The FOUC script must
- * stay zero-import (it runs before any module JS), so the palette is duplicated
- * there by necessity — this test fails if the two ever fall out of sync.
+ * Guard: the FOUC script in _app.tsx handles SHUFFLE rolls (the only theme
+ * source since Aug 2026 — named themes are dead). It must restore saved vars
+ * and check the current schema version so old rolls get discarded.
  */
 
 import { assertEquals } from "./_assert.ts";
-import { proMapperThemes } from "../theme/themes.ts";
+import { SHUFFLE_SCHEMA_VERSION } from "../theme/themeEngine.ts";
 
 const appSource = await Deno.readTextFile(
   new URL("../../routes/_app.tsx", import.meta.url),
 );
 
-Deno.test("every theme name appears in the _app.tsx FOUC script", () => {
-  for (const theme of proMapperThemes) {
-    assertEquals(
-      appSource.includes(`"${theme.name}"`),
-      true,
-      `Theme "${theme.name}" is defined in themes.ts but missing from the FOUC script in routes/_app.tsx`,
-    );
-  }
+Deno.test("FOUC script restores SHUFFLE rolls from localStorage", () => {
+  assertEquals(
+    appSource.includes('"SHUFFLE"'),
+    true,
+    "FOUC script must handle SHUFFLE theme name",
+  );
+  assertEquals(
+    appSource.includes("custom.vars"),
+    true,
+    "FOUC script must apply saved vars from custom.vars",
+  );
 });
 
-Deno.test("each theme's accent color appears in the _app.tsx FOUC script", () => {
-  for (const theme of proMapperThemes) {
-    // accent is a plain hex literal; if it drifts the pre-paint color is stale
-    assertEquals(
-      appSource.includes(theme.accent),
-      true,
-      `Theme "${theme.name}" accent ${theme.accent} is missing/stale in the FOUC script in routes/_app.tsx`,
-    );
-  }
+Deno.test("FOUC script checks the current SHUFFLE_SCHEMA_VERSION", () => {
+  assertEquals(
+    appSource.includes(`parsed.v!==${SHUFFLE_SCHEMA_VERSION}`),
+    true,
+    `FOUC script must check v===${SHUFFLE_SCHEMA_VERSION} (bump both together)`,
+  );
 });

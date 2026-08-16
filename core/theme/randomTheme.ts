@@ -214,13 +214,14 @@ export const SURFACE_CREAM = "#fbf1e4";
  * Tests mirror this value. */
 export const BAND_CREAM = "#ffefdc";
 
-/** The deep companion: same hue as the accent, chroma capped so the deep
- * tone reads rich instead of neon, lightness walked down until it clears
- * AA against cream (and therefore white-on-it) with margin. OKLCH descent
- * holds the hue honest — the old HSL walk drifted it. */
+/** The deep companion: same hue as the accent, lightness walked down from
+ * a HIGH start until it JUST clears AA against cream. Starting at 0.60
+ * instead of 0.55 keeps the strong as light as possible — rich and
+ * colourful, not heavy and muddy. The old 0.55 start meant greens and
+ * blues bottomed out at L 0.40–0.50 (the dull register). */
 export function deriveStrong(hue: number, chroma: number): string {
-  const c = Math.min(chroma, 0.15);
-  for (let L = 0.55; L >= 0.2; L -= 0.01) {
+  const c = Math.min(chroma, 0.18);
+  for (let L = 0.60; L >= 0.2; L -= 0.005) {
     const hex = oklchToHex(L, c, hue);
     if (contrast(hex, SURFACE_CREAM) >= 4.6) return hex;
   }
@@ -342,11 +343,14 @@ export function harmonyHues(
  * equal perceived WEIGHT but costs them their vividness — which is the exact
  * trade that turned lime into khaki. Neon wants the peak.
  *
- * Clamped to [0.56, 0.82]: below 0.56 an accent reads "too dark" as a candy
- * plate and above 0.82 it cannot hold a band (both vetoed live, July 2026).
+ * Clamped to [0.74, 0.90]: the high floor is the whole aesthetic — "fresh,
+ * spritzy, light". Below 0.74 accents start reading as mid-tone solids;
+ * at 0.74+ they're pastel-bright with whatever chroma the gamut offers.
+ * The cost: deep-peak hues (blue ~0.47, violet ~0.52) lose their maximum
+ * chroma, but they gain the airy register that makes the system feel alive.
  */
 export function peakLightness(hue: number): number {
-  let bestL = 0.62;
+  let bestL = 0.74;
   let bestC = 0;
   for (let L = 0.45; L <= 0.95; L += 0.01) {
     const c = maxChroma(L, wrap(hue));
@@ -355,12 +359,7 @@ export function peakLightness(hue: number): number {
       bestL = L;
     }
   }
-  // Ceiling raised 0.82 → 0.90 for one reason: YELLOW. Yellow's chroma peaks
-  // at L 0.84–0.88, so clamping to 0.82 handed back #f3bb2b — mustard, not
-  // yellow ("the yellow is a bit brown"). A bright band is fine now that the
-  // band IS the accent and the ink solves itself; the old ceiling existed to
-  // protect a tint recipe that no longer exists.
-  return Math.min(0.90, Math.max(0.56, bestL));
+  return Math.min(0.90, Math.max(0.74, bestL));
 }
 
 /**
@@ -369,10 +368,10 @@ export function peakLightness(hue: number): number {
  * The wheel is wildly lopsided: magenta tops out at C 0.315 while cobalt and
  * amber sit near 0.19. Riding 94% of each hue's own ceiling therefore made
  * fuchsia scream at C 0.296 while everything else lived at 0.15–0.20 — "the
- * fuchsia is a bit much". This caps the loud end so every hue lands in the
- * same register, which is the whole point of working in OKLCH.
+ * fuchsia is a bit much". 0.21 is the sweet spot: vivid enough to sing,
+ * capped enough that magenta/violet don't shout past the rest.
  */
-export const NEON_CHROMA_CEILING = 0.225;
+export const NEON_CHROMA_CEILING = 0.21;
 
 /** An accent riding its hue's own sRGB chroma ceiling, capped so the hues
  * with enormous gamuts (magenta, violet) don't shout past the rest. */
@@ -387,27 +386,28 @@ export const WARM_WHITE = "#fffef7";
 export const SOFT_BLACK = "#1e1714";
 
 /**
- * THE BAND IS THE ACCENT.
+ * THE BAND IS THE OFFSET.
  *
- * It used to be a 62% tint over cream, then briefly a mix solved to one fixed
- * lightness. Both were the same mistake wearing different hats: pinning every
- * band to a single weight means DILUTING deep hues to reach it, and the header
- * band is the largest block of colour on a card. Measured on the fixed-weight
- * version, a vivid indigo accent lost 59% of its chroma on the way to its own
- * header (#505ef7 C0.226 → #a9a8e9 C0.093). Neon accent, pastel card.
+ * The band used to be the accent's own hue at ceiling chroma — "the band IS
+ * the accent". That made every card header the same colour as the checkboxes,
+ * the CTA, the tags, the accent ink. One note, no tension.
  *
- * So the band keeps the accent's hue at its chroma ceiling and the INK adapts:
- * bright hues (lime, cyan, coral, amber) carry warm-black; deep ones (indigo,
- * violet, blue) go a step deeper and carry warm-white. Both outcomes are
- * saturated — the choice is only ever which ink survives on them, and that is
- * solved rather than assumed, so AA holds by construction on every hue.
+ * Now the band rides a DIFFERENT hue (the harmony's secondary) at its own
+ * ceiling, and the INK adapts: bright bands carry warm-black; deep ones
+ * carry warm-white. The accent and the band are two colours in conversation,
+ * not one colour repeated at different weights.
+ *
+ * Chroma is capped at NEON_CHROMA_CEILING so garish hues (magenta, violet)
+ * stay in the same register as everything else.
  */
 export function solveBandAndInk(
   hue: number,
   lightness: number,
 ): { band: string; ink: string } {
-  const at = (L: number) =>
-    oklchToHex(L, maxChroma(L, wrap(hue)) * 0.94, wrap(hue));
+  const at = (L: number) => {
+    const c = Math.min(maxChroma(L, wrap(hue)) * 0.94, NEON_CHROMA_CEILING);
+    return oklchToHex(L, c, wrap(hue));
+  };
 
   // Prefer the accent exactly as it is, with whichever ink clears AA.
   const own = at(lightness);
@@ -431,8 +431,10 @@ export function solveBandAndInk(
  * lands, and no lighter.
  */
 export function solvePlate(hue: number, lightness: number): string {
-  const at = (L: number) =>
-    oklchToHex(L, maxChroma(L, wrap(hue)) * 0.94, wrap(hue));
+  const at = (L: number) => {
+    const c = Math.min(maxChroma(L, wrap(hue)) * 0.94, NEON_CHROMA_CEILING);
+    return oklchToHex(L, c, wrap(hue));
+  };
   for (let L = Math.max(lightness, 0.6); L <= 0.92; L += 0.01) {
     const plate = at(L);
     if (contrast(plate, SOFT_BLACK) >= 4.5) return plate;
@@ -453,6 +455,9 @@ export interface ShuffleParts {
   chroma: number;
   /** Accent OKLCH lightness. */
   lightness: number;
+  /** The OFFSET hue — card header bands ride this, not the accent. The
+   * separation between accent and band is where the tension lives. */
+  bandHue: number;
   /** Hue the paper ground landed on. */
   bgHue: number;
   /** The three wash hexes composited into --gradient-bg (light → the eye;
@@ -485,6 +490,8 @@ export interface ComposeInput {
   hue: number;
   lightness: number;
   chroma: number;
+  /** Offset hue for card header bands (creates accent/band tension). */
+  bandHue?: number;
   /** Ground OKLCH hue + wash registers. */
   bgHue: number;
   groundL: number;
@@ -520,40 +527,42 @@ export function generateThemeParts(
   // weight instead of drifting apart roll to roll.
   const nudge = (rand() - 0.5) * 0.04;
   const lightness = Math.min(
-    0.82,
-    Math.max(0.56, peakLightness(accentHue) + nudge),
+    0.90,
+    Math.max(0.74, peakLightness(accentHue) + nudge),
   );
   const accentHex = neonAt(lightness, accentHue);
   const [, chroma] = hexToOklch(accentHex);
 
-  // THE SKY IS A RELATIVE OF THE ACCENT, not a stranger.
-  //
-  // It used to take the harmony's BASE hue while the accent took a companion —
-  // so on a triadic or split-complementary roll they landed 120–210° apart and
-  // simply didn't talk to each other ("the backgrounds aren't really meeting
-  // them"). The trio law was always that relationships live between LAYERS —
-  // ground ↔ band ↔ plate — and an arbitrary harmony member isn't a
-  // relationship, it's a coincidence.
-  //
-  // An analogous step (18–42°, either side) keeps the room recognisably the
-  // accent's family while staying far enough off to read as its own surface.
-  // The harmony still earns its keep: its other members become the companion
-  // hues that nodes and confetti wear.
-  const skyOffset = (18 + rand() * 24) * (rand() < 0.5 ? -1 : 1);
+  // THE OFFSET: band uses the secondary harmony hue, not the accent.
+  // This is where the tension lives — accent and band are two colours in
+  // conversation, not one colour repeated. The harmony guarantees they're
+  // related but distinct (split-comp: 60°+ apart, triadic: 120°, golden:
+  // 137.5°, only analogous sits close and that's weighted rare).
+  const bandHue = wrap(H[2 % H.length]);
+
+  // GROUND VIBES: three proven families — peach, aqua, lavender — that Pablo
+  // actually liked. Each is very light, very low chroma: airy, warm/cool,
+  // never competing. The dice picks a family; the accent and band come from
+  // harmony math on top. This replaces the harmony-base-hue ground which
+  // could land on ugly ranges (olive, mud, grey-green).
+  const GROUND_VIBES: Array<{ hue: [number, number]; c: [number, number] }> = [
+    { hue: [40, 60], c: [0.04, 0.06] }, // peach — the warm orangey fresh one
+    { hue: [185, 205], c: [0.03, 0.045] }, // aqua — the light airy cool one
+    { hue: [280, 300], c: [0.025, 0.04] }, // lavender — soft warm purple cloud
+  ];
+  const gv = GROUND_VIBES[Math.floor(rand() * GROUND_VIBES.length)];
+  const gHue = gv.hue[0] + rand() * (gv.hue[1] - gv.hue[0]);
+  const gC = gv.c[0] + rand() * (gv.c[1] - gv.c[0]);
+
   return composeTheme({
     hue: accentHue,
     lightness,
     chroma,
-    bgHue: wrap(accentHue + skyOffset),
-    // The sky. It started at the Flexoki paper register (L 0.925–0.95,
-    // C 0.016–0.036) and read as near-white — "still too pastel and soft"
-    // even once the band went full-saturation. Nothing was forcing it pale:
-    // body ink measures 11.3–11.6 against the ground where the guard floor is
-    // 5.5, so there was ~6 stops of unused headroom. Now a genuinely tinted
-    // sky that still lands on the cream floor where the cards sit.
-    groundL: 0.855 + rand() * 0.03,
-    groundC: 0.095 + rand() * 0.025,
-    secondaryHue: wrap(H[2 % H.length]),
+    bandHue,
+    bgHue: gHue,
+    groundL: 0.96 + rand() * 0.015,
+    groundC: gC,
+    secondaryHue: bandHue,
     tertiaryHue: wrap(H[3 % H.length]),
     harmony,
     rand,
@@ -581,8 +590,10 @@ export function composeTheme(input: ComposeInput): ShuffleParts {
   const secondary = neonAt(peakLightness(secondaryHue), secondaryHue);
   const tertiary = neonAt(peakLightness(tertiaryHue), tertiaryHue);
 
-  // The band IS the accent; the ink adapts to it. The plate stays candy.
-  const { band, ink: bandInk } = solveBandAndInk(hue, lightness);
+  // The band rides the OFFSET hue — a different harmony member from the
+  // accent, at its own peak lightness. The CTA plate stays accent-family.
+  const bHue = wrap(input.bandHue ?? hue);
+  const { band, ink: bandInk } = solveBandAndInk(bHue, peakLightness(bHue));
   const plate = solvePlate(hue, lightness);
 
   // PAPER SKY: the ground is a barely-tinted paper that still travels — two
@@ -668,6 +679,7 @@ export function composeTheme(input: ComposeInput): ShuffleParts {
     hue,
     chroma,
     lightness,
+    bandHue: bHue,
     bgHue,
     bgWashes: washes,
     bgBase,

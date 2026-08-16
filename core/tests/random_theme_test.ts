@@ -67,10 +67,10 @@ Deno.test("accents are NEON — every roll rides near its hue's chroma ceiling",
   const rand = seededRand(505);
   for (let i = 0; i < 300; i++) {
     const { chroma, lightness, hue } = generateThemeParts(rand);
-    // The usable band: below 0.56 an accent reads "too dark" as a candy
-    // plate, above 0.82 it cannot hold a header band. Both vetoed live.
+    // The usable band: below 0.74 an accent reads mid-tone and heavy (Aug 2026 —
+    // "fresh, spritzy, lighter"), above 0.90 it washes out.
     assert(
-      lightness >= 0.56 && lightness <= 0.82,
+      lightness >= 0.74 && lightness <= 0.90,
       `outside the usable band: L${lightness}`,
     );
     // Neon means riding the ceiling. maxChroma varies ~3x between hues, so
@@ -97,66 +97,53 @@ Deno.test("accents are NEON — every roll rides near its hue's chroma ceiling",
   }
 });
 
-Deno.test("the ground is a TINTED SKY — present, but still lands on cream", () => {
-  // It shipped for a few hours at the Flexoki paper register (C 0.016–0.036)
-  // and read as near-white — "still too pastel and soft" even after the band
-  // went full-saturation. Nothing was forcing it pale: body ink measured
-  // 11.3–11.6 against the ground where the floor is 5.5. So the sky carries
-  // real colour now. What it must NOT do is get dark enough to fight the
-  // cards or dim the ink, which is what these two bounds hold.
+Deno.test("the ground is LUSH PAPER — tinted, light, airy, never competing", () => {
+  // Three proven ground families (peach, aqua, lavender) at very high L and
+  // low C. The dice picks a family; the accent/band ride harmony math on top.
   const rand = seededRand(6161);
   for (let i = 0; i < 300; i++) {
-    const { bgBase, bgHue, theme } = generateThemeParts(rand);
+    const { bgBase, theme } = generateThemeParts(rand);
     const [L, C] = hexToOklch(bgBase[0]);
-    // Ratio, not a flat floor — the same gamut fact that governs the accents.
-    // At sky lightness a blue simply cannot hold the chroma a coral can (0.049
-    // vs 0.120 across the wheel here), so "did it stay colourful" has to mean
-    // "did it take what its own hue had available".
-    const ceiling = maxChroma(L, wrap(bgHue));
-    assert(
-      C >= Math.min(0.06, ceiling * 0.9),
-      `ground went pale again: C${C.toFixed(3)} (ceiling ${
-        ceiling.toFixed(3)
-      })`,
-    );
-    assert(C <= 0.14, `ground too saturated — it competes: C${C.toFixed(3)}`);
-    assert(L >= 0.83, `ground too dark: L${L.toFixed(3)}`);
-    // The cream floor is the whole reason a tinted sky stays airy: cards sit
-    // on cream, not on the colour.
+    // Lush paper: tinted enough to have life, never enough to compete.
+    // bgBase[0] is derived at gL+0.015 — at very high L the sRGB gamut
+    // compresses chroma, so the hex reads lower than the input gC.
+    assert(C >= 0.005, `ground went dead: C${C.toFixed(3)}`);
+    assert(C <= 0.09, `ground too saturated — it competes: C${C.toFixed(3)}`);
+    assert(L >= 0.94, `ground too dark: L${L.toFixed(3)}`);
+    // The cream floor is why cards sit on warmth, not on colour.
     assert(
       bgBase[2] === "#fff4e8",
-      `the sky stopped landing on the cream floor: ${bgBase[2]}`,
+      `the ground stopped landing on the cream floor: ${bgBase[2]}`,
     );
-    assert(!!theme.cssVars?.["--gradient-bg"], "roll missing its sky");
+    assert(!!theme.cssVars?.["--gradient-bg"], "roll missing its gradient");
   }
 });
 
-Deno.test("the band stays VIVID — it never dilutes the accent into a pastel", () => {
+Deno.test("the band stays VIVID — it never dilutes the offset into a pastel", () => {
   // THE bug this guards, and the reason the whole approach changed: pinning
   // every band to one lightness meant diluting deep hues with cream to reach
-  // it. Measured on that version, a vivid indigo lost 59% of its chroma on the
-  // way to its own header (#505ef7 C0.226 -> #a9a8e9 C0.093) — neon accent,
-  // pastel card. The band now keeps the accent's hue at its chroma ceiling.
+  // it. The band now keeps the OFFSET hue (not the accent) at its chroma
+  // ceiling — the offset is what gives the palette tension.
   const rand = seededRand(8888);
   for (let i = 0; i < 300; i++) {
-    const { theme, hue } = generateThemeParts(rand);
+    const { theme, bandHue } = generateThemeParts(rand);
     const band = theme.cssVars?.["--header-band"] as string;
     assert(!!band?.startsWith("#"), "roll missing --header-band");
     const [bL, bC, bH] = hexToOklch(band);
     // Riding its own ceiling at its own lightness — the only honest measure of
     // "vivid", since maxChroma varies ~3x across the wheel.
-    const ceiling = Math.min(maxChroma(bL, wrap(hue)), NEON_CHROMA_CEILING);
+    const ceiling = Math.min(maxChroma(bL, wrap(bandHue)), NEON_CHROMA_CEILING);
     assert(
       bC >= ceiling * 0.85,
       `band went pastel: C${bC.toFixed(3)} vs ceiling ${
         ceiling.toFixed(3)
       } (accent ${theme.accent})`,
     );
-    // And it stayed the accent's own colour rather than drifting toward cream.
+    // And it stayed the offset's own colour rather than drifting toward cream.
     assert(
-      _hueDist(bH, hue) < 12,
-      `band drifted off-hue: ${bH.toFixed(0)} vs accent ${
-        wrap(hue).toFixed(0)
+      _hueDist(bH, bandHue) < 12,
+      `band drifted off-hue: ${bH.toFixed(0)} vs offset ${
+        wrap(bandHue).toFixed(0)
       }`,
     );
   }

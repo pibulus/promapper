@@ -32,12 +32,7 @@ let lastAccentHue = -999;
 const MIN_ACCENT_TRAVEL = 40;
 
 export default function ThemeSwitcher() {
-  // Init on mount: apply the saved theme (named default or last shuffle).
-  useEffect(() => {
-    themeSystem.init();
-  }, []);
-
-  function shuffle() {
+  function shuffle(silent = false) {
     let parts = generateThemeParts();
     for (
       let tries = 0;
@@ -48,13 +43,20 @@ export default function ThemeSwitcher() {
     }
     lastAccentHue = parts.hue;
     themeSystem.applyCustomTheme(parts.theme);
-    soundToggle(true);
+    if (!silent) soundToggle(true);
   }
+
+  // Init on mount: restore a saved SHUFFLE roll, or auto-roll a fresh one.
+  // Named themes (DAYBREAK etc.) are dead — any legacy save gets replaced.
+  useEffect(() => {
+    const theme = themeSystem.init();
+    if (theme.name !== "SHUFFLE") shuffle(true);
+  }, []);
 
   return (
     <button
       type="button"
-      onClick={shuffle}
+      onClick={() => shuffle()}
       class="header-icon-btn"
       data-tip="Shuffle the vibe"
       data-tip-align="right"
