@@ -3250,6 +3250,9 @@ body {
 .flip-card-perspective {
   perspective: 1600px;
   height: 100%;
+  /* Anchor for .flip-card-btn, which sits OUTSIDE the rotating inner so the
+     glyph never mirrors during the flip. */
+  position: relative;
 }
 
 .flip-card-inner {

@@ -64,18 +64,6 @@ export default function FlipCard(
           inert={flipped.value ? true : undefined}
         >
           {front}
-          <button
-            type="button"
-            onClick={toggle}
-            class="flip-card-btn"
-            data-tip="Flip"
-            aria-label={label ? `${label} — flip` : "Flip card"}
-          >
-            <i class="fa fa-rotate flip-card-btn__icon" aria-hidden="true"></i>
-            {frontBadge && (
-              <span class="flip-card-btn__dot" aria-hidden="true"></span>
-            )}
-          </button>
         </div>
 
         {/* BACK */}
@@ -85,21 +73,33 @@ export default function FlipCard(
           inert={flipped.value ? undefined : true}
         >
           {back}
-          <button
-            type="button"
-            onClick={toggle}
-            class="flip-card-btn"
-            data-tip="Flip back"
-            aria-label="Flip back to front"
-          >
-            <i class="fa fa-rotate-left flip-card-btn__icon" aria-hidden="true">
-            </i>
-            {backBadge && (
-              <span class="flip-card-btn__dot" aria-hidden="true"></span>
-            )}
-          </button>
         </div>
       </div>
+
+      {
+        /* The flip button lives OUTSIDE the rotating plane so its glyph never
+          mirrors mid-turn — only the card flips, the control stays upright. */
+      }
+      <button
+        type="button"
+        onClick={toggle}
+        class="flip-card-btn"
+        data-tip={flipped.value ? "Flip back" : "Flip"}
+        aria-label={flipped.value
+          ? "Flip back to front"
+          : (label ? `${label} — flip` : "Flip card")}
+      >
+        <i
+          class={`fa ${
+            flipped.value ? "fa-rotate-left" : "fa-rotate"
+          } flip-card-btn__icon`}
+          aria-hidden="true"
+        >
+        </i>
+        {(flipped.value ? backBadge : frontBadge) && (
+          <span class="flip-card-btn__dot" aria-hidden="true"></span>
+        )}
+      </button>
     </div>
   );
 }
