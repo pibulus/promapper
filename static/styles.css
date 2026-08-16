@@ -271,6 +271,12 @@
   --border-cream: rgba(30, 23, 20, 0.12); /* Subtle warm borders */
   --border-cream-medium: rgba(30, 23, 20, 0.18); /* Medium contrast borders */
   --border-cream-strong: rgba(30, 23, 20, 0.25); /* High contrast borders */
+
+  /* The one page-level scrim (drawers, modals, readers). Deliberately LIGHT:
+     a heavy dim multiplies into whatever the theme rolled, and a bright coral
+     band under a 35% wash comes out dusty brick — maroon by the back door.
+     At 0.18 the page recedes and every band keeps its own hue. */
+  --scrim: rgba(30, 23, 20, 0.18);
 }
 
 /* ===================================================================
@@ -3500,7 +3506,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: clamp(1rem, 4vw, 3rem);
-  background: rgba(30, 23, 20, 0.42);
+  background: var(--scrim);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -5056,7 +5062,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background: rgba(30, 23, 20, 0.42);
+  background: var(--scrim);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -6669,7 +6675,7 @@ a:focus-visible {
   position: fixed;
   inset: 0;
   z-index: calc(var(--z-drawer, 40) - 1);
-  background: rgba(30, 23, 20, 0.32);
+  background: var(--scrim);
   opacity: 0;
   pointer-events: none;
   transition: opacity 280ms ease;
@@ -7290,7 +7296,7 @@ a:focus-visible {
   bottom: 0;
   z-index: calc(var(--z-drawer) - 10);
   top: var(--header-height);
-  background: rgba(30, 23, 20, 0.35);
+  background: var(--scrim);
   opacity: 0;
   pointer-events: none;
   transition: opacity 400ms ease-out;
@@ -7610,8 +7616,12 @@ a:focus-visible {
   align-items: center;
   gap: 0.5rem;
   padding: 0.45rem 0.75rem 0.45rem 1rem;
-  background: var(--accent-strong);
-  color: var(--surface-white-warm);
+  /* The same solved band every card header wears — bright, with the ink
+     solved against it. It used to be --accent-strong, which on a warm roll
+     is a deep espresso: a big slab of it read as maroon. Bands are fills,
+     inks are ink. */
+  background: var(--header-band);
+  color: var(--header-band-ink);
   font-weight: 700;
   font-size: var(--font-size-sm);
 }

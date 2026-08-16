@@ -214,14 +214,41 @@ export const SURFACE_CREAM = "#fbf1e4";
  * Tests mirror this value. */
 export const BAND_CREAM = "#ffefdc";
 
-/** The deep companion: same hue as the accent, lightness walked down from
- * a HIGH start until it JUST clears AA against cream. Starting at 0.60
- * instead of 0.55 keeps the strong as light as possible — rich and
- * colourful, not heavy and muddy. The old 0.55 start meant greens and
- * blues bottomed out at L 0.40–0.50 (the dull register). */
+/**
+ * NO MAROON. EVER. (Pablo's veto, Aug 17 2026 — "we never ever do maroon on
+ * anything ever": not the export drawer, not a PDF heading, nowhere.)
+ *
+ * A dark tone of a warm hue IS brown — that is colour, not opinion. Walking
+ * red/orange/amber/olive down until they clear AA on cream therefore landed
+ * squarely in brick and rust (#c53550, #c63a2a, #b84b00, #956300 measured
+ * across the wheel), and --accent-ink carries text, borders and plates in
+ * ~100 places, so every warm roll painted the app maroon.
+ *
+ * So the deep companion is hue-aware. Cool hues (teal → indigo → violet)
+ * keep a genuinely coloured deep tone, because theirs stays clean. Hues on
+ * the mud arc give up chroma instead and resolve to a warm espresso ink —
+ * near-black with a whisper of the accent, which is the house ink law
+ * anyway. The accent stays vivid where it is a FILL (band, plate, dot);
+ * only the ink goes quiet.
+ */
+export function mudRisk(hue: number): number {
+  // Centre 55° (amber) with an 80° half-width covers red → chartreuse plus
+  // the wine edge at 330–360. A 25° shoulder keeps the transition smooth so
+  // neighbouring rolls don't jump between espresso and colour.
+  const raw = Math.abs(wrap(hue) - 55) % 360;
+  const dist = raw > 180 ? 360 - raw : raw;
+  if (dist <= 80) return 1;
+  if (dist >= 105) return 0;
+  return 1 - (dist - 80) / 25;
+}
+
 export function deriveStrong(hue: number, chroma: number): string {
-  const c = Math.min(chroma, 0.18);
-  for (let L = 0.60; L >= 0.2; L -= 0.005) {
+  const risk = mudRisk(hue);
+  const c = Math.min(chroma, 0.18) * (1 - risk) + 0.04 * risk;
+  // Mud-prone hues start their walk already deep, so they read as ink from
+  // the first step instead of passing through brick on the way down.
+  const startL = 0.60 * (1 - risk) + 0.32 * risk;
+  for (let L = startL; L >= 0.2; L -= 0.005) {
     const hex = oklchToHex(L, c, hue);
     if (contrast(hex, SURFACE_CREAM) >= 4.6) return hex;
   }

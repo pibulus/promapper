@@ -215,6 +215,29 @@ Deno.test("white on the solved --accent-strong passes AA for every roll", () => 
   }
 });
 
+Deno.test("NO MAROON: no roll ever produces a mid-dark warm ink", () => {
+  // Maroon/brick/rust is a dark WARM hue that kept enough chroma to read as
+  // a colour. Pablo's standing veto (Aug 17 2026). Deep warm inks are fine
+  // when they are quiet enough to read as near-black ink instead.
+  const rand = seededRand(31337);
+  for (let i = 0; i < 400; i++) {
+    const { theme } = generateThemeParts(rand);
+    const strong = theme.cssVars?.["--accent-strong"] as string;
+    const [L, C, H] = hexToOklch(strong);
+    // The veto arc is red → rust → olive. Deep aubergine (H ~330) sits on
+    // the purple side and stays allowed; violet must keep its chroma, and no
+    // smooth hue function can separate 331 from 315.
+    const warm = H >= 345 || H <= 120;
+    const maroon = warm && C > 0.06 && L < 0.62;
+    assert(
+      !maroon,
+      `maroon ${strong} (L ${L.toFixed(2)} C ${C.toFixed(2)} H ${
+        H.toFixed(0)
+      })`,
+    );
+  }
+});
+
 Deno.test("the deep companion reads as ink on cream for every roll", () => {
   const rand = seededRand(41);
   for (let i = 0; i < 300; i++) {

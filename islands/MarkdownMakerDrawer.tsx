@@ -449,6 +449,8 @@ export default function MarkdownMakerDrawer(
         let code: string[] = [];
         let list: "ul" | "ol" | null = null;
         let inCode = false;
+        let table: string[][] = [];
+        let quote: string[] = [];
         const closeList = () => {
           if (list) out.push(`</${list}>`);
           list = null;
@@ -457,7 +459,50 @@ export default function MarkdownMakerDrawer(
           if (para.length) out.push(`<p>${inline(para.join("<br>"))}</p>`);
           para = [];
         };
+        const flushQuote = () => {
+          if (quote.length) {
+            out.push(`<blockquote>${inline(quote.join("<br>"))}</blockquote>`);
+          }
+          quote = [];
+        };
+        const flushTable = () => {
+          if (table.length) {
+            const [head, ...rows] = table;
+            const cells = (r: string[], tag: string) =>
+              r.map((c) => `<${tag}>${inline(c)}</${tag}>`).join("");
+            out.push(
+              `<table><thead><tr>${cells(head, "th")}</tr></thead><tbody>` +
+                rows.map((r) => `<tr>${cells(r, "td")}</tr>`).join("") +
+                `</tbody></table>`,
+            );
+          }
+          table = [];
+        };
         for (const line of escapeHtml(md).split("\n")) {
+          // Pipe tables — AI meeting minutes love them; without this they
+          // print as raw | soup. Separator rows (|---|) are skipped.
+          if (/^\s*\|.*\|\s*$/.test(line) && !inCode) {
+            flushPara();
+            flushQuote();
+            closeList();
+            if (!/^\s*\|[\s\-:|]+\|\s*$/.test(line)) {
+              table.push(
+                line.trim().replace(/^\||\|$/g, "").split("|").map((c) =>
+                  c.trim()
+                ),
+              );
+            }
+            continue;
+          }
+          flushTable();
+          const quoted = line.match(/^\s*&gt;\s?(.*)$/);
+          if (quoted && !inCode) {
+            flushPara();
+            closeList();
+            quote.push(quoted[1]);
+            continue;
+          }
+          flushQuote();
           if (line.trim().startsWith("```")) {
             flushPara();
             closeList();
@@ -502,14 +547,19 @@ export default function MarkdownMakerDrawer(
         }
         if (inCode && code.length) out.push(`<pre>${code.join("\n")}</pre>`);
         flushPara();
+        flushQuote();
+        flushTable();
         closeList();
         return out.join("\n");
       };
       const htmlContent = renderPrintHtml(markdown.value);
 
-      // Print in the active theme's accent instead of a hardcoded purple.
-      const accent = getComputedStyle(document.documentElement)
-        .getPropertyValue("--accent-strong").trim() || "#1e1714";
+      // A printed document is not a themed surface. Headings are warm
+      // near-black ink and the rules are warm sepia — a paper document, the
+      // same on every roll. (The theme accent used to ride in here, which is
+      // how a warm roll printed maroon headings. Never again.)
+      const INK = "#1e1714";
+      const RULE = "#d8cbbb";
       const docTitle = conversationData.value?.conversation?.title?.trim() ||
         promptLabel;
 
@@ -521,8 +571,8 @@ export default function MarkdownMakerDrawer(
             <style>
               @media print {
                 @page {
-                  margin: 0.75in;
-                  size: letter;
+                  margin: 18mm;
+                  size: A4;
                 }
               }
               body {
@@ -534,17 +584,37 @@ export default function MarkdownMakerDrawer(
                 padding: 1rem;
               }
               h1, h2, h3, h4 {
-                color: ${accent};
+                color: ${INK};
                 margin-top: 1.5em;
               }
-              h1 { font-size: 24pt; border-bottom: 2px solid ${accent}; padding-bottom: 0.3em; }
+              h1 { font-size: 22pt; border-bottom: 1px solid ${RULE}; padding-bottom: 0.35em; }
               h2 { font-size: 18pt; }
               h3 { font-size: 14pt; }
               h4 { font-size: 12pt; }
               p {
                 margin: 0.8em 0;
-                text-align: justify;
               }
+              blockquote {
+                margin: 1em 0;
+                padding: 0.4em 1em;
+                border-left: 3px solid ${RULE};
+                color: #57493f;
+                font-style: italic;
+              }
+              table {
+                border-collapse: collapse;
+                margin: 1em 0;
+                width: 100%;
+                font-size: 10.5pt;
+              }
+              th, td {
+                border: 1px solid #e2d8cc;
+                padding: 0.4em 0.7em;
+                text-align: left;
+                vertical-align: top;
+              }
+              th { background: #faf3ea; }
+              tr { break-inside: avoid; }
               code, pre {
                 background: #f3f4f6;
                 padding: 2px 6px;
@@ -566,7 +636,7 @@ export default function MarkdownMakerDrawer(
                 text-align: center;
                 margin-bottom: 2em;
                 padding-bottom: 1em;
-                border-bottom: 3px solid ${accent};
+                border-bottom: 1px solid ${RULE};
               }
               .footer {
                 margin-top: 3em;
@@ -587,7 +657,7 @@ export default function MarkdownMakerDrawer(
             </div>
             <div>${htmlContent}</div>
             <div class="footer">
-              Generated by ProMapper
+              Mapped with ProMapper &middot; promapper.app
             </div>
           </body>
         </html>
