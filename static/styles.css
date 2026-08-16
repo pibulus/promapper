@@ -748,7 +748,10 @@ body {
   font-size: var(--font-size-md); /* 16px — small + confident */
   font-weight: 800;
   letter-spacing: -0.03em;
-  color: var(--color-text);
+  /* The wordmark stays warm near-black on EVERY theme roll — shuffles tint
+     --color-text toward the ground hue, and the brand must not drift with it
+     (Pablo's decree, Aug 2026). The dot keeps carrying the accent. */
+  color: var(--soft-black);
   text-decoration: none;
   line-height: 1;
   padding: 0.3rem 0.1rem;

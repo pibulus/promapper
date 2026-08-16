@@ -16,6 +16,11 @@ const cookieMaxAge = Number(Deno.env.get("API_SESSION_TTL_MS") ?? "14400000") /
 
 export const handler = async (req: Request, _ctx: FreshContext) => {
   if (!authToken) {
+    // Auth disabled. GET is the client's "may I proceed?" probe — answer 204
+    // so the happy path doesn't paint a red 501 in every visitor's console.
+    if (req.method === "GET") {
+      return new Response(null, { status: 204 });
+    }
     return new Response(JSON.stringify({ error: "Auth disabled" }), {
       status: 501,
       headers: { "Content-Type": "application/json" },
