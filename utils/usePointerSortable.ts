@@ -72,6 +72,12 @@ export function usePointerSortable(options: SortableOptions) {
     } | null
   >(null);
 
+  /** How to unregister the CURRENT drag's global listeners, captured when
+   * they were registered (see beginDrag). */
+  const activeTeardown = useRef<(() => void) | null>(null);
+  /** Ditto for the long-press watch (see onRowPointerDown). */
+  const pendingTeardown = useRef<(() => void) | null>(null);
+
   function rows(container: HTMLElement): HTMLElement[] {
     return Array.from(
       container.querySelectorAll<HTMLElement>(rowSelector),
@@ -159,6 +165,18 @@ export function usePointerSortable(options: SortableOptions) {
     globalThis.addEventListener("pointerup", onUp);
     globalThis.addEventListener("pointercancel", onUp);
     globalThis.addEventListener("keydown", onDragKeyDown);
+    // Remember how to undo exactly THESE registrations. The handlers are
+    // function declarations, so every render mints new identities: an unmount
+    // cleanup that closes over the first render's copies calls
+    // removeEventListener with objects that were never registered and quietly
+    // removes nothing. Capturing the teardown at registration time is the only
+    // version that works — same pattern as useGridSortable.
+    activeTeardown.current = () => {
+      globalThis.removeEventListener("pointermove", onMove);
+      globalThis.removeEventListener("pointerup", onUp);
+      globalThis.removeEventListener("pointercancel", onUp);
+      globalThis.removeEventListener("keydown", onDragKeyDown);
+    };
   }
 
   // Escape aborts the drag — routed through the pointercancel path so the
@@ -244,10 +262,8 @@ export function usePointerSortable(options: SortableOptions) {
     const s = session.current;
     if (!s || event.pointerId !== s.pointerId) return;
 
-    globalThis.removeEventListener("pointermove", onMove);
-    globalThis.removeEventListener("pointerup", onUp);
-    globalThis.removeEventListener("pointercancel", onUp);
-    globalThis.removeEventListener("keydown", onDragKeyDown);
+    activeTeardown.current?.();
+    activeTeardown.current = null;
     if (s.autoScrollRAF != null) cancelAnimationFrame(s.autoScrollRAF);
 
     // Spring the lifted row's transform back to zero in its (new) slot.
@@ -321,6 +337,13 @@ export function usePointerSortable(options: SortableOptions) {
     });
     globalThis.addEventListener("pointerup", clearPending);
     globalThis.addEventListener("pointercancel", clearPending);
+    // Same identity trap as beginDrag: capture the undo now, while these
+    // exact function objects are the ones registered.
+    pendingTeardown.current = () => {
+      globalThis.removeEventListener("pointermove", onPendingMove);
+      globalThis.removeEventListener("pointerup", clearPending);
+      globalThis.removeEventListener("pointercancel", clearPending);
+    };
   }
 
   function onPendingMove(event: PointerEvent) {
@@ -338,9 +361,8 @@ export function usePointerSortable(options: SortableOptions) {
     const p = pending.current;
     if (p) clearTimeout(p.timer);
     pending.current = null;
-    globalThis.removeEventListener("pointermove", onPendingMove);
-    globalThis.removeEventListener("pointerup", clearPending);
-    globalThis.removeEventListener("pointercancel", clearPending);
+    pendingTeardown.current?.();
+    pendingTeardown.current = null;
   }
 
   // Drags don't survive unmount — same law as useGridSortable. Usually the
@@ -353,10 +375,8 @@ export function usePointerSortable(options: SortableOptions) {
     return () => {
       const s = session.current;
       if (s?.autoScrollRAF != null) cancelAnimationFrame(s.autoScrollRAF);
-      globalThis.removeEventListener("pointermove", onMove);
-      globalThis.removeEventListener("pointerup", onUp);
-      globalThis.removeEventListener("pointercancel", onUp);
-      globalThis.removeEventListener("keydown", onDragKeyDown);
+      activeTeardown.current?.();
+      activeTeardown.current = null;
       clearPending();
       session.current = null;
     };

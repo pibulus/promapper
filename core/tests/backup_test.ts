@@ -111,3 +111,32 @@ Deno.test("mergeBackup treats a garbage date as oldest, not NaN-drop", () => {
   const importedGarbage = { a: conv("a", "nonsense") };
   assertEquals(mergeBackup(existingValid, importedGarbage).a.updatedAt, now);
 });
+
+Deno.test("a backup carries link/text scraps but never file pointers", () => {
+  // Magpie file rows point at bytes in THIS device's Blob store, which JSON
+  // cannot carry. Left in, they restore on another machine looking entirely
+  // real — right name, right size — until clicked. A backup must not contain
+  // a promise it can't keep.
+  const now = "2026-08-17T00:00:00.000Z";
+  const c = conv("a", now);
+  c.magpie = [
+    { id: "1", kind: "link", value: "https://x.org/a", addedAt: now },
+    { id: "2", kind: "text", value: "remember the pelicans", addedAt: now },
+    {
+      id: "3",
+      kind: "file",
+      value: "blob-id",
+      name: "council-letter.pdf",
+      size: 8412,
+      mime: "application/pdf",
+      addedAt: now,
+    },
+  ];
+
+  const kinds = buildBackup({ a: c }, now).conversations[0].magpie?.map((i) =>
+    i.kind
+  );
+  assertEquals(kinds, ["link", "text"]);
+  // ...and the live conversation is untouched — stripping is for the copy.
+  assertEquals(c.magpie?.length, 3);
+});

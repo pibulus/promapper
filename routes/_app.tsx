@@ -156,6 +156,24 @@ for(var ck in cv){document.documentElement.style.setProperty(ck,cv[ck]);}
               `(function(){var t;addEventListener("resize",function(){document.documentElement.classList.add("is-resizing");clearTimeout(t);t=setTimeout(function(){document.documentElement.classList.remove("is-resizing")},150)})})();`,
           }}
         />
+        {
+          /* MISSING THE DROPZONE MUST NOT NAVIGATE AWAY.
+            The Magpie shelf and the upload box accept dropped files, which
+            teaches people this app eats files — and then a drop that lands
+            40px wide, on the map or the gap between cards, hits the BROWSER's
+            default handler and replaces the whole board with a preview of
+            their PDF. Autosave makes it recoverable; it still reads as a
+            crash. Anything outside a real dropzone is swallowed instead.
+            Inline and listener-based so it covers the page from first paint,
+            including routes with no island mounted yet. */
+        }
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              `(function(){function outside(e){var t=e.target;return !(t&&t.closest&&t.closest("[data-dropzone]"))}` +
+              `["dragover","drop"].forEach(function(n){addEventListener(n,function(e){if(outside(e))e.preventDefault()},false)})})();`,
+          }}
+        />
       </head>
       <body>
         <div class="scroll-progress" aria-hidden="true"></div>

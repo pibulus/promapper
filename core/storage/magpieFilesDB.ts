@@ -51,6 +51,16 @@ function idbAvailable(): boolean {
   return typeof indexedDB !== "undefined";
 }
 
+/**
+ * Whether the Blob store can be consulted at all. The shelf uses this before
+ * pruning rows whose bytes are missing: with no IndexedDB every lookup
+ * returns null, and a pruner that can't tell "gone" from "can't look" would
+ * cheerfully delete a private-mode user's entire shelf.
+ */
+export function magpieFilesAvailable(): boolean {
+  return idbAvailable();
+}
+
 let dbPromise: Promise<IDBDatabase> | null = null;
 
 function openDB(): Promise<IDBDatabase> {
@@ -96,11 +106,44 @@ function txComplete(tx: IDBTransaction): Promise<void> {
   });
 }
 
-async function getAll(db: IDBDatabase): Promise<StoredMagpieFile[]> {
-  const tx = db.transaction(STORE, "readonly");
-  return await requestToPromise(
-    tx.objectStore(STORE).getAll() as IDBRequest<StoredMagpieFile[]>,
-  );
+/**
+ * Just the numbers eviction needs, walked with a cursor.
+ *
+ * `getAll()` would structured-clone every record — Blobs included — to work
+ * out three fields per file, so a near-full shelf meant allocating the whole
+ * 60MB on every drop, on a phone, right after the user handed us a 12MB
+ * screenshot. The cursor holds one record at a time instead.
+ *
+ * ponytail: still deserialises each record in turn; a sibling metadata store
+ * would make it genuinely free, worth doing if the cap ever grows.
+ */
+function getAllMeta(
+  db: IDBDatabase,
+): Promise<{ id: string; bytes: number; createdAt: string; mapped: true }[]> {
+  return new Promise((resolve, reject) => {
+    const out: {
+      id: string;
+      bytes: number;
+      createdAt: string;
+      mapped: true;
+    }[] = [];
+    const req = db.transaction(STORE, "readonly").objectStore(STORE)
+      .openCursor();
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor) return resolve(out);
+      const v = cursor.value as StoredMagpieFile;
+      out.push({
+        id: v.id,
+        bytes: v.data?.size ?? 0,
+        createdAt: v.createdAt,
+        mapped: true,
+      });
+      cursor.continue();
+    };
+    req.onerror = () =>
+      reject(req.error ?? new Error("IndexedDB cursor failed"));
+  });
 }
 
 /** Save a file, then trim the oldest until the caps hold. */
@@ -117,16 +160,8 @@ export async function saveMagpieFile(
     // planEviction sorts unmapped-last then oldest-first; with everything
     // marked mapped it degrades to pure oldest-first, which is the whole
     // policy here. Reused rather than re-derived.
-    const all = await getAll(db);
-    const drop = planEviction(
-      all.map((f) => ({
-        id: f.id,
-        bytes: f.data?.size ?? 0,
-        createdAt: f.createdAt,
-        mapped: true,
-      })),
-      MAGPIE_FILE_CAPS,
-    ).filter((id) => id !== rec.id);
+    const drop = planEviction(await getAllMeta(db), MAGPIE_FILE_CAPS)
+      .filter((id) => id !== rec.id);
     for (const id of drop) await deleteMagpieFile(id);
     return true;
   } catch (err) {

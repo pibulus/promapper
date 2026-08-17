@@ -618,6 +618,10 @@ export default function HomeIsland() {
         }
         return false;
       }
+      // Re-arm the notice: the ref meant "once per page" rather than "once
+      // per limit", so a long meeting that tripped a rail, recovered, and
+      // tripped again hours later went silent the second time.
+      chunkLimitNotified.current = false;
       const payload = await res.json().catch(() => null);
       const text = typeof payload?.text === "string" ? payload.text : "";
       const speakers = Array.isArray(payload?.speakers)

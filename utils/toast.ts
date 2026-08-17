@@ -247,10 +247,12 @@ export function showErrorToast(
   const message = error instanceof Error && error.message.trim()
     ? error.message.trim()
     : fallback;
+  // Deliberately NOT matching a bare "reset": "Connection reset by peer" is
+  // an ordinary network failure, and painting it amber would tell someone
+  // their upload was fine when it wasn't. Match the guard's actual phrasings.
   const isLimit =
-    /allowance|too many|slow down|busy today|reset|refills|tomorrow/i.test(
-      message,
-    );
+    /allowance|too many|slow down|busy today|refills|things reset|back tomorrow|it refills/i
+      .test(message);
   return showToast(
     message,
     isLimit ? "warning" : "error",

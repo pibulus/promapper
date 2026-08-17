@@ -228,8 +228,16 @@ export const BAND_CREAM = "#ffefdc";
  * keep a genuinely coloured deep tone, because theirs stays clean. Hues on
  * the mud arc give up chroma instead and resolve to a warm espresso ink —
  * near-black with a whisper of the accent, which is the house ink law
- * anyway. The accent stays vivid where it is a FILL (band, plate, dot);
- * only the ink goes quiet.
+ * anyway.
+ *
+ * Note what this DOES cover: --accent-ink, --accent-strong AND --accent-fill
+ * are all this one value, so on a warm roll every accent solid that carries
+ * warm-white text turns espresso too. That is correct rather than incidental
+ * — those fills exist to hold white ink, and a bright accent cannot. The
+ * vivid register still shows up everywhere it is safe: --color-accent itself,
+ * the header band, the CTA plate (bright fill, dark ink), node and tag
+ * colours. Bright surfaces take dark ink; dark surfaces take light ink; the
+ * hue is honest in both.
  */
 export function mudRisk(hue: number): number {
   // Centre 55° (amber) with an 80° half-width covers red → chartreuse plus

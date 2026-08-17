@@ -443,6 +443,7 @@ export default function UploadIsland() {
         aria-label="Conversation input"
       >
         <div
+          data-dropzone
           class={`mapper-unified-input${isDragActive.value ? " is-drop" : ""}${
             selectedFile.value ? " has-file" : ""
           }${isRecording.value ? " is-recording" : ""}`}
@@ -457,7 +458,12 @@ export default function UploadIsland() {
               // No timer, no progress bar — numbers make it a stopwatch. A
               // breathing dot, a soft word, and the bars dancing to your
               // voice. Words-only nudge near the ten-minute auto-stop.
-              <div class="mapper-record-visual">
+              // aria-live on the wrapper (which mounts when recording starts)
+              // so the ten-minute nudge below is actually SPOKEN when it
+              // appears — it was a silent visual-only warning. "listening…"
+              // itself is covered by the button relabelling to "Stop
+              // recording" under the user's own focus.
+              <div class="mapper-record-visual" aria-live="polite">
                 <div class="mapper-record-visual__top">
                   <span class="mapper-record-dot" aria-hidden="true"></span>
                   <div class="mapper-record-label">listening…</div>
@@ -511,12 +517,18 @@ export default function UploadIsland() {
                 />
 
                 {selectedFile.value && (
-                  <div class="mapper-input-hint" aria-hidden="true">
+                  // NOT aria-hidden: this used to hide the whole chip from
+                  // assistive tech — so the staged filename was never
+                  // announced AND its Remove button stayed keyboard-focusable
+                  // inside a hidden subtree (the classic aria-hidden trap: a
+                  // tab stop that reads as nothing). role=status announces the
+                  // staged file the moment it lands.
+                  <div class="mapper-input-hint" role="status">
                     <div class="mapper-file-chip">
                       <span>{selectedFile.value.name}</span>
                       <button
                         type="button"
-                        aria-label="Remove file"
+                        aria-label={`Remove ${selectedFile.value.name}`}
                         onClick={(event) => {
                           event.stopPropagation();
                           clearSelectedFile();

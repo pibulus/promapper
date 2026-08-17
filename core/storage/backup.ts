@@ -39,9 +39,22 @@ export function buildBackup(
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
     exportedAt: now,
-    conversations: Object.values(conversations),
+    conversations: Object.values(conversations).map(stripLocalOnlyPointers),
     snapshots,
   };
+}
+
+/**
+ * Magpie file rows point at bytes in this device's Blob store, and a JSON
+ * backup cannot carry bytes. Left in, they restore on a new machine as rows
+ * that look completely real — right name, right size — until someone clicks
+ * one and gets "that's no longer on the shelf". A backup should never contain
+ * a promise it can't keep, so the pointers come out. Links, images and text
+ * scraps are self-contained and travel fine.
+ */
+function stripLocalOnlyPointers(c: StoredConversation): StoredConversation {
+  if (!c.magpie?.some((i) => i.kind === "file")) return c;
+  return { ...c, magpie: c.magpie.filter((i) => i.kind !== "file") };
 }
 
 /**

@@ -450,6 +450,7 @@ export default function MarkdownMakerDrawer(
         let list: "ul" | "ol" | null = null;
         let inCode = false;
         let table: string[][] = [];
+        let sawTableSep = false;
         let quote: string[] = [];
         const closeList = () => {
           if (list) out.push(`</${list}>`);
@@ -467,16 +468,30 @@ export default function MarkdownMakerDrawer(
         };
         const flushTable = () => {
           if (table.length) {
-            const [head, ...rows] = table;
+            // Ragged rows get padded to the widest one, or a short row runs
+            // past the table's own border in print.
+            const width = Math.max(...table.map((r) => r.length));
+            const pad = (
+              r: string[],
+            ) => [...r, ...Array(Math.max(0, width - r.length)).fill("")];
             const cells = (r: string[], tag: string) =>
-              r.map((c) => `<${tag}>${inline(c)}</${tag}>`).join("");
+              pad(r).map((c) => `<${tag}>${inline(c)}</${tag}>`).join("");
+            // Only promote row one to a HEADING when a separator row actually
+            // said it was one. An AI table that opens straight into data (or
+            // leads with its separator) was rendering its first real row in
+            // header type, on the header's shaded ground.
+            const head = sawTableSep && table.length > 1 ? table[0] : null;
+            const rows = head ? table.slice(1) : table;
             out.push(
-              `<table><thead><tr>${cells(head, "th")}</tr></thead><tbody>` +
+              `<table>` +
+                (head ? `<thead><tr>${cells(head, "th")}</tr></thead>` : "") +
+                `<tbody>` +
                 rows.map((r) => `<tr>${cells(r, "td")}</tr>`).join("") +
                 `</tbody></table>`,
             );
           }
           table = [];
+          sawTableSep = false;
         };
         for (const line of escapeHtml(md).split("\n")) {
           // Pipe tables — AI meeting minutes love them; without this they
@@ -485,7 +500,9 @@ export default function MarkdownMakerDrawer(
             flushPara();
             flushQuote();
             closeList();
-            if (!/^\s*\|[\s\-:|]+\|\s*$/.test(line)) {
+            if (/^\s*\|[\s\-:|]+\|\s*$/.test(line)) {
+              sawTableSep = true;
+            } else {
               table.push(
                 line.trim().replace(/^\||\|$/g, "").split("|").map((c) =>
                   c.trim()

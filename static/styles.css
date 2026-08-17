@@ -28,7 +28,12 @@
   --color-secondary: rgba(255, 255, 255, 0.62);
   --color-accent: #4a7bc9;
   --color-text: #232a3a;
-  --color-text-secondary: #6b7386;
+  /* Matches DAYBREAK's own textSecondary (core/theme/themes.ts) — the raw
+     default was #6b7386, 4.25:1 on cream, i.e. every helper line, footer and
+     placeholder rendered below AA until the theme engine's JS caught up. The
+     shipped themes are already pinned ≥4.5 by theme_contrast_test.ts; this is
+     the one copy of the token that wasn't. */
+  --color-text-secondary: #656d80;
   --color-border: rgba(35, 42, 58, 0.1);
   /* AIRY SKY wash: colored at the top, fading into warm cream where the
      components live (mirror of WARM_BG in core/theme/themes.ts + the
@@ -1212,7 +1217,9 @@ body {
 
 .mapper-block-meta {
   font-size: 0.78rem;
-  color: rgba(0, 0, 0, 0.5);
+  /* Themed secondary ink, not flat alpha-black: rgba(0,0,0,0.5) on cream is
+     3.9:1 (below AA) and ignores the theme system entirely. */
+  color: var(--color-text-secondary);
   line-height: 1.4;
 }
 
@@ -1339,6 +1346,11 @@ body {
   border: none;
   background: transparent; /* sits directly on the cream surface */
   padding-right: 3.5rem;
+  /* The "+ file" chip is absolutely positioned over the bottom-right corner
+     and is wider (~68px) than padding-right reserves, so a long paste ran its
+     last line straight under the button. Clear the chip vertically instead —
+     box-sizing is border-box, so this eats padding, not layout. */
+  padding-bottom: 2.75rem;
   /* Thinking mode line-height - not stiff paragraph mode */
   line-height: 1.5;
   font-size: 0.98rem;
@@ -1398,7 +1410,11 @@ body {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.85rem;
-  color: rgba(0, 0, 0, 0.55);
+  color: var(--color-text-secondary);
+  /* The staged filename can be long ("Tuesday rehearsal — second take.m4a").
+     Without a min-width floor the flex child refuses to shrink and the chip
+     spills straight through the input's right border at 375px. */
+  min-width: 0;
 }
 
 .mapper-capture-badge-row {
@@ -1439,21 +1455,58 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  background: rgba(0, 0, 0, 0.12);
+  min-width: 0; /* so the name can ellipsis instead of blowing the chip out */
+  max-width: 100%;
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--soft-cream));
   border-radius: 999px;
-  padding: 0.2rem 0.75rem;
+  padding: 0.2rem 0.35rem 0.2rem 0.75rem;
   font-size: 0.85rem;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  color: var(--module-ink);
+  border: 1px solid var(--border-cream-medium);
+  color: var(--color-text);
 }
 
+/* The filename, not the × , is what gives way on a narrow screen. */
+.mapper-file-chip > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The ONLY way to unstage a file — it was a bare 16px glyph with no padding.
+   28px visible, 44px of tap zone underneath it on touch. */
 .mapper-file-chip button {
+  flex-shrink: 0;
+  position: relative;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: none;
+  border-radius: 999px;
   background: transparent;
   cursor: pointer;
   font-size: 1rem;
   line-height: 1;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--color-text-secondary);
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.mapper-file-chip button:hover {
+  color: var(--accent-ink);
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+@media (pointer: coarse) {
+  .mapper-file-chip button::after {
+    content: "";
+    position: absolute;
+    inset: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
 }
 
 /* Inline paperclip control - MUST be visible and intentional, not a ghost */
@@ -1486,6 +1539,19 @@ body {
   transform: translate(-1px, -1px);
   box-shadow: 3px 3px 0 0 var(--accent-ink);
   outline: none;
+}
+
+/* The chip measures ~28px tall — the house pattern (see .header-export-btn,
+   .topic-map-ctrl) is an invisible 44px box rather than a fatter pill. Insets
+   span the plate's width so the word "file" is tappable too, not just a
+   square over the middle. */
+@media (pointer: coarse) {
+  .mapper-clip-btn::after {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    min-height: 44px;
+  }
 }
 
 .mapper-record-visual {
@@ -2157,9 +2223,14 @@ body {
 
   .mapper-unified-input textarea {
     /* Sized so the whole first screen sits inside the fold — scroll is for
-       bonus, not for reaching the record button. */
+       bonus, not for reaching the record button. The desktop chip-clearance
+       padding is reverted here on purpose: an iPhone SE column already lands
+       at ~656px of a 667px viewport, and +2.75rem would drop the example link
+       under the fold. The chip overlap costs the last line on a full phone
+       paste; the fold costs everyone the second door. Fold wins. */
     min-height: 118px;
     padding-right: 2.4rem;
+    padding-bottom: 1.15rem;
     font-size: 0.92rem;
     line-height: 1.42;
   }
@@ -3201,7 +3272,8 @@ body {
     transform var(--transition-fast);
 }
 .magpie-file:hover {
-  border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
+  border-color: color-mix(in srgb, var(--color-accent) 55%,
+    var(--color-border));
   transform: translateY(-1px);
 }
 .magpie-file__icon {
@@ -3244,6 +3316,7 @@ body {
 
 .magpie-remove {
   flex-shrink: 0;
+  position: relative; /* anchors the coarse-pointer 44px tap box below */
   width: 1.5rem;
   height: 1.5rem;
   display: inline-flex;
@@ -3269,6 +3342,16 @@ body {
 @media (pointer: coarse) {
   .magpie-remove {
     opacity: 0.5;
+  }
+  /* 24px of glyph is not a thumb target. Same invisible-box pattern as
+     .topic-map-ctrl / .radio-play — the shelf row keeps its slim look. */
+  .magpie-remove::after {
+    content: "";
+    position: absolute;
+    inset: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
   }
 }
 
