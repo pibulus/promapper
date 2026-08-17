@@ -295,14 +295,28 @@ rooms expire 24h after last activity.
   results to the room when a `roomId` is passed. `/api/live/create` seeds a
   room.
 - **To deploy (manual):** `cd workers/collab && npm run deploy` (wrangler, needs
-  a Cloudflare account). Then set **`PUBLIC_COLLAB_HOST`** in the app env (plus
-  `COLLAB_UPDATE_TOKEN` for server push). The legacy `PARTYKIT_HOST` /
-  `PUBLIC_PARTYKIT_HOST` names are still honored so a half-migrated env keeps
-  working.
+  a Cloudflare account). Then set **`PUBLIC_COLLAB_HOST`** in the app env, plus
+  the update token for server push — `COLLAB_UPDATE_TOKEN` is the canonical name
+  and `PARTYKIT_UPDATE_TOKEN` (what prod actually uses) is honored as the legacy
+  alias; both resolve through `collabUpdateToken()` in `services/collabHost.ts`.
+  The token value must MATCH the worker's own `PARTYKIT_UPDATE_TOKEN` secret or
+  every push is a 403 that surfaces as "Could not create live room". Same alias
+  story for the host: `PARTYKIT_HOST` / `PUBLIC_PARTYKIT_HOST` still work.
 - **Unset host = live collab is OFF, silently.** `/api/live/create` returns 503
   "Live collaboration is not configured" and "Go Live" fails. Single-player is
-  unaffected. **Check this before launch** — it is the difference between the
-  feature existing and the feature working.
+  unaffected.
+- ✅ **VERIFIED WORKING IN PRODUCTION, 2026-08-17.** promapper.app has both vars
+  set; a real snapshot POST to `/api/live/create` returns 200 with a room id on
+  the deployed worker. Locally verified end to end against the worker: room
+  create → join → snapshot delivery → **two-browser edit sync** (an action item
+  typed in one tab appears in the other in ~2s, with `@who` and `#tag` parsed) →
+  presence count. Re-verify with:
+  `curl -s https://promapper-collab.pibulus.workers.dev/health` (worker alive)
+  then a POST of a full
+  `{conversation, transcript, nodes, edges, actionItems,
+  summary}` snapshot to
+  `/api/live/create`. **A bare `{}` body returns 502, not 503** — that is the
+  payload being rejected, not the feature being off.
 
 ## When Adding Features
 

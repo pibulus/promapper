@@ -17,3 +17,16 @@ export function collabHost(): string {
     Deno.env.get("PARTYKIT_HOST") ??
     Deno.env.get("PUBLIC_PARTYKIT_HOST") ?? "").trim();
 }
+
+/**
+ * The shared secret the app presents when pushing snapshots to a room. Same
+ * alias story as the host, and for a sharper reason: CLAUDE.md tells you to
+ * set COLLAB_UPDATE_TOKEN while the push helper only ever read
+ * PARTYKIT_UPDATE_TOKEN. Following the docs therefore left the app sending no
+ * token at all, the worker answering 403, and "Go Live" failing with
+ * "Could not create live room" — with both names looking correctly set.
+ */
+export function collabUpdateToken(): string {
+  return (Deno.env.get("COLLAB_UPDATE_TOKEN") ??
+    Deno.env.get("PARTYKIT_UPDATE_TOKEN") ?? "").trim();
+}

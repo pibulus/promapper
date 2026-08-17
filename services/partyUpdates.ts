@@ -9,7 +9,10 @@
  */
 
 import type { ConversationFlowResult } from "@core/orchestration/conversation-flow.ts";
-import { collabHost as partyHost } from "@services/collabHost.ts";
+import {
+  collabHost as partyHost,
+  collabUpdateToken,
+} from "@services/collabHost.ts";
 
 /** Map a flow result into the conversation-snapshot shape the room sanitizes. */
 function toSnapshot(result: ConversationFlowResult) {
@@ -50,7 +53,7 @@ export async function pushSnapshotToRoom(
       /^(localhost|127\.0\.0\.1)(:|$)/.test(bare) ? "http" : "https"
     }://${bare}`;
   const url = `${base}/parties/conversation/${encodeURIComponent(roomId)}`;
-  const token = Deno.env.get("PARTYKIT_UPDATE_TOKEN")?.trim();
+  const token = collabUpdateToken();
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5_000);

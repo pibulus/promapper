@@ -50,11 +50,19 @@ export const handler: Handlers = {
     // Push the WHOLE body, not body.conversation. The room sanitizes a full
     // snapshot envelope ({conversation, transcript, nodes, edges, ...}) and
     // rejects a bare conversation object with 400 — which this route then
-    // surfaced as a mystery 502. The mismatch went unnoticed because this path
-    // has never run in production: the collab WORKER is deployed and healthy
-    // (promapper-collab.pibulus.workers.dev, since 2026-07-20), but the app
-    // has no PUBLIC_COLLAB_HOST set, so collabHost() is empty and every
-    // request 503s before reaching here. Verified against prod 2026-07-26.
+    // surfaces as a 502. (An empty or malformed body still does exactly that,
+    // so a 502 here usually means the CALLER sent the wrong shape, not that
+    // the worker is down. /health on the worker is the way to tell them
+    // apart.)
+    //
+    // LIVE AND WORKING IN PRODUCTION as of 2026-08-17: promapper.app has both
+    // PUBLIC_COLLAB_HOST (promapper-collab.pibulus.workers.dev) and the update
+    // token set, and a real snapshot POST returns 200 with a room id. The
+    // previous note here — "this path has never run in production, no
+    // PUBLIC_COLLAB_HOST set" — was true on 2026-07-26 and is now stale.
+    // Verified end to end: room create, join, snapshot delivery, two-browser
+    // edit sync.
+    //
     // Accept either shape: if the caller sent only {conversation}, wrap it.
     const raw = (body ?? {}) as Record<string, unknown>;
     const snapshot = raw.transcript === undefined && raw.conversation
