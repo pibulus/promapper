@@ -2196,7 +2196,7 @@ body {
     overflow: visible;
   }
 
-  .dashboard-skeleton-card {
+  .board-skeleton__lines {
     padding: 1rem;
   }
 
@@ -5259,16 +5259,172 @@ body {
   transform: translateX(100%);
 }
 
-.dashboard-skeleton-grid {
+/* ===================================================================
+   BOARD SKELETON — the board arriving
+   The old version was four identical grey pulsing slabs: correct, and
+   completely characterless ("it's just loading text, there's no design"
+   — Pablo, 2026-08-17). This mirrors the REAL layout instead — three
+   cards over a wide map — wearing the theme's own header band, with the
+   map slot drawing a constellation while it waits.
+   Perf law: opacity + transform only, no filters, no JS.
+   ================================================================ */
+.board-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem 0;
+}
+.board-skeleton__row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1rem;
-  padding: 1.5rem 0;
+}
+.board-skeleton__card {
+  border: var(--card-border-width, 2px) solid var(--color-border);
+  border-radius: var(--border-radius-lg, 18px);
+  background: var(--surface-cream, #fbf1e4);
+  overflow: hidden;
+  box-shadow: var(--shadow-soft);
+  /* Each card lands a beat after the one before — the board being set,
+     not four things blinking in unison. */
+  opacity: 0;
+  animation: board-skeleton-arrive 420ms ease-out forwards;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+.board-skeleton__band {
+  height: 2.5rem;
+  background: var(--header-band);
+  opacity: 0.72;
+  animation: board-skeleton-breathe 2.4s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 120ms);
+}
+.board-skeleton__lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.1rem;
+}
+.board-skeleton__lines span {
+  height: 0.6rem;
+  border-radius: 999px;
+  background: var(--color-border);
+  opacity: 0.6;
+  animation: board-line-breathe 2.4s ease-in-out infinite;
+}
+@keyframes board-line-breathe {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.32;
+  }
+}
+.board-skeleton__lines span:nth-child(2) {
+  animation-delay: 160ms;
+}
+.board-skeleton__lines span:nth-child(3) {
+  animation-delay: 320ms;
+}
+.board-skeleton__lines span:nth-child(4) {
+  animation-delay: 480ms;
 }
 
-.dashboard-skeleton-card {
-  padding: 1.2rem;
-  border-radius: 18px;
+.board-skeleton__map {
+  min-height: 13rem;
+  max-height: 17rem;
+  display: flex;
+  flex-direction: column;
+}
+/* Bounded on purpose: left to fill the map card the viewBox scaled up and
+   the nodes rendered as beach balls. */
+.board-skeleton__constellation {
+  width: min(300px, 70%);
+  height: 9.5rem;
+  margin: auto;
+}
+/* Nodes pop in one after another and then hold, bobbing very slightly —
+   the shape of a map assembling itself. */
+.board-skeleton__node {
+  fill: var(--color-accent);
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation:
+    board-node-pop 520ms cubic-bezier(0.34, 1.4, 0.64, 1) forwards,
+    board-node-bob 3.2s ease-in-out infinite;
+  animation-delay: calc(300ms + var(--i) * 180ms),
+    calc(900ms + var(--i) * 180ms);
+}
+.board-skeleton__edge {
+  stroke: var(--accent-ink);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  opacity: 0;
+  animation: board-edge-in 600ms ease-out forwards;
+  animation-delay: calc(700ms + var(--i) * 180ms);
+}
+@keyframes board-skeleton-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes board-skeleton-breathe {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 0.44;
+  }
+}
+@keyframes board-node-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  to {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+}
+@keyframes board-node-bob {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-2.5px) scale(1);
+  }
+}
+@keyframes board-edge-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.28;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-skeleton__card,
+  .board-skeleton__band,
+  .board-skeleton__lines span,
+  .board-skeleton__node,
+  .board-skeleton__edge {
+    animation: none;
+    opacity: 1;
+  }
+  .board-skeleton__node {
+    opacity: 0.9;
+  }
+  .board-skeleton__edge {
+    opacity: 0.28;
+  }
 }
 
 /* The brew ledger — completed stages hold their place with a tick while the
@@ -5276,10 +5432,22 @@ body {
    one line replacing itself (read as "blank screen, anything happening?" —
    Pablo, 2026-08-13). Same grammar for first brews and appends. */
 .brew-ledger {
-  padding-top: 1rem;
+  /* A small plaque rather than four sentences adrift in the corner: centered
+     over the board that is assembling underneath it, on the same cream and
+     border as the cards so the whole loading moment reads as one object. */
+  width: fit-content;
+  max-width: min(30rem, 92%);
+  margin: 0.25rem auto -0.25rem;
+  padding: 0.7rem 1.1rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-lg, 18px);
+  background: var(--surface-cream, #fbf1e4);
+  box-shadow: var(--shadow-soft);
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  position: relative;
+  z-index: 1;
 }
 .brew-ledger .dashboard-brew-note {
   padding-top: 0;

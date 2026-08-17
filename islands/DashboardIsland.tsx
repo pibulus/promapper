@@ -455,19 +455,68 @@ export default function DashboardIsland() {
   }
 
   if (!conversationData.value) {
+    // THE BOARD ARRIVING, not a grey rectangle farm. Four identical pulsing
+    // slabs said "generic web app loading"; this says "your board is being
+    // set" — the real layout (three cards over a wide map), wearing the
+    // theme's own band, with the map slot drawing a little constellation
+    // while it waits.
+    //
+    // Perf law: opacity + transform only, no filters, no canvas, no JS loop.
+    // The whole thing is CSS on ~12 elements and stops dead under
+    // prefers-reduced-motion.
+    const NODES = [
+      { cx: 26, cy: 62, r: 7 },
+      { cx: 50, cy: 30, r: 9 },
+      { cx: 74, cy: 58, r: 6 },
+      { cx: 40, cy: 88, r: 5 },
+      { cx: 88, cy: 88, r: 6 },
+    ];
+    const EDGES = [[0, 1], [1, 2], [0, 3], [2, 4]];
     return (
-      <div class="dashboard-skeleton-grid">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div
-            class="skeleton dashboard-skeleton-card skeleton-pulse"
-            key={index}
+      <div class="board-skeleton" aria-hidden="true">
+        <div class="board-skeleton__row">
+          {[0, 1, 2].map((i) => (
+            <div class="board-skeleton__card" key={i} style={`--i:${i}`}>
+              <div class="board-skeleton__band"></div>
+              <div class="board-skeleton__lines">
+                <span style="width:82%"></span>
+                <span style="width:64%"></span>
+                <span style="width:74%"></span>
+                <span style="width:48%"></span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div class="board-skeleton__card board-skeleton__map" style="--i:3">
+          <div class="board-skeleton__band"></div>
+          <svg
+            class="board-skeleton__constellation"
+            viewBox="0 0 114 114"
+            preserveAspectRatio="xMidYMid meet"
           >
-            <div class="skeleton-line skeleton-lg"></div>
-            <div class="skeleton-line" style="width: 70%"></div>
-            <div class="skeleton-line" style="width: 85%"></div>
-            <div class="skeleton-line" style="width: 55%"></div>
-          </div>
-        ))}
+            {EDGES.map(([a, b], i) => (
+              <line
+                key={`e${i}`}
+                x1={NODES[a].cx}
+                y1={NODES[a].cy}
+                x2={NODES[b].cx}
+                y2={NODES[b].cy}
+                class="board-skeleton__edge"
+                style={`--i:${i}`}
+              />
+            ))}
+            {NODES.map((n, i) => (
+              <circle
+                key={`n${i}`}
+                cx={n.cx}
+                cy={n.cy}
+                r={n.r}
+                class="board-skeleton__node"
+                style={`--i:${i}`}
+              />
+            ))}
+          </svg>
+        </div>
       </div>
     );
   }
