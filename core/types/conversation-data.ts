@@ -47,12 +47,22 @@ export interface ConversationData {
   notes?: string;
   /** The Magpie shelf — collected POINTERS (links, image URLs, text
    * scraps), never file payloads. Same citizenship as notes: rides saves,
-   * backups, and undo via the stored object. */
+   * backups, and undo via the stored object.
+   *
+   * `kind: "file"` is still a pointer: `value` is an id into the local Blob
+   * store (core/storage/magpieFilesDB.ts), never the bytes. The bytes are
+   * device-local — they do not travel in a backup or a share, exactly like
+   * recorded takes. */
   magpie?: Array<{
     id: string;
-    kind: "link" | "image" | "text";
+    kind: "link" | "image" | "text" | "file";
     value: string;
     addedAt: string;
+    /** file only — display name, byte size, and mime, so the shelf can be
+     * drawn without waking IndexedDB. */
+    name?: string;
+    size?: number;
+    mime?: string;
   }>;
   /** Delete memory — the delete twin of merge aliases. Normalized labels /
    * descriptions of things the user removed, so a later append can't

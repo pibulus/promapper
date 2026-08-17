@@ -3180,6 +3180,68 @@ body {
   border: 2px solid var(--border-cream-medium);
   border-radius: var(--border-radius-sm);
 }
+/* A dropped file: icon (or its own thumbnail) + name + weight. Reads as a
+   thing on a shelf, not an upload row — and says where it lives, because a
+   file kept here is device-local and does not ride a backup. */
+.magpie-file {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.4rem 0.55rem;
+  text-align: left;
+  background: var(--surface-cream);
+  border: 1px solid var(--border-cream-medium);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition:
+    border-color var(--transition-fast),
+    transform var(--transition-fast);
+}
+.magpie-file:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
+  transform: translateY(-1px);
+}
+.magpie-file__icon {
+  flex-shrink: 0;
+  width: 1.75rem;
+  font-size: 1rem;
+  color: var(--accent-ink);
+  opacity: 0.85;
+  text-align: center;
+}
+.magpie-file .magpie-image {
+  width: 2.75rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  border-width: 1px;
+}
+.magpie-file__meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.magpie-file__name {
+  font-size: var(--small-size);
+  font-weight: 600;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.magpie-file__size {
+  font-size: var(--tiny-size);
+  color: var(--color-text-secondary);
+}
+/* Drop target — a dashed accent hug, no wash over the card. */
+.magpie-card--dropping {
+  outline: 2px dashed var(--color-accent);
+  outline-offset: -6px;
+}
+
 .magpie-remove {
   flex-shrink: 0;
   width: 1.5rem;

@@ -72,7 +72,7 @@ export const moduleRegistry: ModuleEntry[] = [
   {
     id: "magpie",
     name: "Magpie",
-    tagline: "A shelf for shiny things — links, pictures, scraps.",
+    tagline: "A shelf for shiny things — drop files, links, scraps.",
     icon: "gem",
     size: "medium",
     component: MagpieModule,
