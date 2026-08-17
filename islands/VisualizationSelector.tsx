@@ -57,7 +57,7 @@ export default function VisualizationSelector() {
                 aria-expanded={menuOpen.value}
                 data-tip="Switch visualization"
               >
-                <i class={`fa fa-${active.icon}`} aria-hidden="true"></i>
+                <i class={`fa ${active.icon}`} aria-hidden="true"></i>
                 <span>{active.label}</span>
                 <i class="fa fa-chevron-down text-xs" aria-hidden="true"></i>
               </button>
@@ -77,7 +77,7 @@ export default function VisualizationSelector() {
                         menuOpen.value = false;
                       }}
                     >
-                      <i class={`fa fa-${viz.icon}`} aria-hidden="true"></i>
+                      <i class={`fa ${viz.icon}`} aria-hidden="true"></i>
                       <span>{viz.label}</span>
                       {viz.id === activeViz.value && (
                         <i class="fa fa-check ml-auto" aria-hidden="true"></i>

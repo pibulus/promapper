@@ -48,7 +48,7 @@ export default function ModuleRack() {
             return (
               <li key={m.id} class="module-rack-row">
                 <span class="module-rack-icon" aria-hidden="true">
-                  <i class={`fa fa-${m.icon}`}></i>
+                  <i class={`fa ${m.icon}`}></i>
                 </span>
                 <span class="module-rack-copy">
                   <span class="module-rack-name">{m.name}</span>

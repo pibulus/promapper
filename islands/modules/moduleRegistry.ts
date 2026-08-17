@@ -30,7 +30,10 @@ export interface ModuleEntry {
   name: string;
   /** One line for the rack — what it does, in the app's voice. */
   tagline: string;
-  /** FontAwesome icon name, without the `fa-` prefix. */
+  /** FULL FontAwesome class, `fa-` prefix included. The prefix is not
+   * optional bookkeeping: scripts/build-fa-subset.py finds the icons to keep
+   * by scanning source for literal `fa-*` tokens, so a name assembled at
+   * render time (`fa-${icon}`) is invisible to it and ships as a blank box. */
   icon: string;
   size: ModuleSize;
   component: ComponentType;
@@ -41,7 +44,7 @@ export const moduleRegistry: ModuleEntry[] = [
     id: "notes",
     name: "Notes",
     tagline: "A scratch pad that stays with this conversation.",
-    icon: "note-sticky",
+    icon: "fa-note-sticky",
     size: "small",
     component: NotesModule,
   },
@@ -49,7 +52,7 @@ export const moduleRegistry: ModuleEntry[] = [
     id: "ask",
     name: "Ask",
     tagline: "Ask a question — answered from this conversation only.",
-    icon: "circle-question",
+    icon: "fa-circle-question",
     size: "small",
     component: AskModule,
   },
@@ -57,7 +60,7 @@ export const moduleRegistry: ModuleEntry[] = [
     id: "takes",
     name: "Takes",
     tagline: "Every recording kept — listen back, see what each one changed.",
-    icon: "record-vinyl",
+    icon: "fa-record-vinyl",
     size: "medium",
     component: TakesModule,
   },
@@ -65,7 +68,7 @@ export const moduleRegistry: ModuleEntry[] = [
     id: "sound",
     name: "Sound",
     tagline: "Radio and a hum for your head — one dial.",
-    icon: "radio",
+    icon: "fa-radio",
     size: "small",
     component: SoundModule,
   },
@@ -73,7 +76,7 @@ export const moduleRegistry: ModuleEntry[] = [
     id: "magpie",
     name: "Magpie",
     tagline: "A shelf for shiny things — drop files, links, scraps.",
-    icon: "gem",
+    icon: "fa-gem",
     size: "medium",
     component: MagpieModule,
   },

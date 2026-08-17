@@ -21,7 +21,12 @@ export interface VizEntry {
 // The switcher renders whatever is listed here. With one viz it's a single
 // pill; add entries and it becomes a dropdown — the UI already scales.
 export const vizRegistry: VizEntry[] = [
-  { id: "map", label: "Map", icon: "diagram-project", component: EmojimapViz },
+  {
+    id: "map",
+    label: "Map",
+    icon: "fa-diagram-project",
+    component: EmojimapViz,
+  },
 ];
 
 export const defaultVizId = vizRegistry[0].id;

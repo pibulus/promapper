@@ -1,4 +1,4 @@
-/* Font Awesome Free 6.5.2 — self-hosted subset, 90 icons.
+/* Font Awesome Free 6.5.2 — self-hosted subset, 98 icons.
  * Generated, do not hand-edit: scratch/fa-subset.py rebuilds it.
  * Replaces the cdnjs stylesheet (103KB) + full solid font (156KB). Adding a
  * NEW fa-* icon to the app means re-running the generator, otherwise the
@@ -40,6 +40,7 @@
 .fa-compass::before{content:"\f14e"}
 .fa-compress::before{content:"\f066"}
 .fa-copy::before{content:"\f0c5"}
+.fa-diagram-project::before{content:"\f542"}
 .fa-dice-five::before{content:"\f523"}
 .fa-display::before{content:"\e163"}
 .fa-down-left-and-up-right-to-center::before{content:"\f422"}
@@ -51,8 +52,11 @@
 .fa-file-export::before{content:"\f56e"}
 .fa-file-lines::before{content:"\f15c"}
 .fa-file-pdf::before{content:"\f1c1"}
+.fa-file-zipper::before{content:"\f1c6"}
+.fa-film::before{content:"\f008"}
 .fa-flask::before{content:"\f0c3"}
 .fa-forward-step::before{content:"\f051"}
+.fa-gem::before{content:"\f3a5"}
 .fa-grip::before{content:"\f58d"}
 .fa-grip-vertical::before{content:"\f58e"}
 .fa-headphones::before{content:"\f025"}
@@ -73,7 +77,9 @@
 .fa-microphone-slash::before{content:"\f131"}
 .fa-music::before{content:"\f001"}
 .fa-newspaper::before{content:"\f1ea"}
+.fa-note-sticky::before{content:"\f249"}
 .fa-paper-plane::before{content:"\f1d8"}
+.fa-paperclip::before{content:"\f0c6"}
 .fa-pause::before{content:"\f04c"}
 .fa-pen::before{content:"\f304"}
 .fa-pencil::before{content:"\f303"}
@@ -82,6 +88,8 @@
 .fa-plus::before{content:"\2b"}
 .fa-puzzle-piece::before{content:"\f12e"}
 .fa-qrcode::before{content:"\f029"}
+.fa-radio::before{content:"\f8d7"}
+.fa-record-vinyl::before{content:"\f8d9"}
 .fa-rotate::before{content:"\f2f1"}
 .fa-rotate-left::before{content:"\f2ea"}
 .fa-save::before{content:"\f0c7"}
