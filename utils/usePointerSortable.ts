@@ -22,7 +22,7 @@
  *   read sortable.draggingId / sortable.settlingId for styling.
  */
 
-import { useRef } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import { hapticSnap, hapticTap } from "./haptics.ts";
 
@@ -342,6 +342,25 @@ export function usePointerSortable(options: SortableOptions) {
     globalThis.removeEventListener("pointerup", clearPending);
     globalThis.removeEventListener("pointercancel", clearPending);
   }
+
+  // Drags don't survive unmount — same law as useGridSortable. Usually the
+  // stray pointerup still reaches globalThis and onUp self-cleans, but when
+  // the dragged ROW is what disappeared (conversation switch, a remote update
+  // removing the item) the pointercancel goes to a detached node, onUp never
+  // runs, and the auto-scroll rAF plus four global listeners stay alive for
+  // the life of the page.
+  useEffect(() => {
+    return () => {
+      const s = session.current;
+      if (s?.autoScrollRAF != null) cancelAnimationFrame(s.autoScrollRAF);
+      globalThis.removeEventListener("pointermove", onMove);
+      globalThis.removeEventListener("pointerup", onUp);
+      globalThis.removeEventListener("pointercancel", onUp);
+      globalThis.removeEventListener("keydown", onDragKeyDown);
+      clearPending();
+      session.current = null;
+    };
+  }, []);
 
   return {
     draggingId,

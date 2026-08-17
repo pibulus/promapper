@@ -226,3 +226,34 @@ export function formatDate(
     return "Unknown date";
   }
 }
+
+/**
+ * The one place a caught error becomes a toast.
+ *
+ * Two rules the four call sites kept getting wrong by hand:
+ *
+ * 1. NO "Error:" PREFIX. The server's messages are already finished warm
+ *    sentences ("Today's recording allowance is used up — it refills
+ *    tomorrow."). Stapling "Error:" on the front turned the house voice into
+ *    a stack trace.
+ * 2. A LIMIT IS NOT A FAILURE. Hitting an allowance is an expected, benign
+ *    event, so it gets the amber "heads up" treatment, never the red one.
+ *    (Design law: limits are met as a warm sentence, never a number.)
+ */
+export function showErrorToast(
+  error: unknown,
+  fallback: string,
+): HTMLElement | null {
+  const message = error instanceof Error && error.message.trim()
+    ? error.message.trim()
+    : fallback;
+  const isLimit =
+    /allowance|too many|slow down|busy today|reset|refills|tomorrow/i.test(
+      message,
+    );
+  return showToast(
+    message,
+    isLimit ? "warning" : "error",
+    isLimit ? 6000 : 4000,
+  );
+}

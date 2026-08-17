@@ -33,7 +33,7 @@ import {
   type StoredRecording,
   updateRecording,
 } from "@core/storage/recordingsDB.ts";
-import { showToast } from "../utils/toast.ts";
+import { showErrorToast, showToast } from "../utils/toast.ts";
 import { ensureApiSession } from "../utils/apiAuth.ts";
 import { saveAudioBackup } from "../utils/downloadBackup.ts";
 import { enqueueApiRequest } from "../utils/requestQueue.ts";
@@ -418,10 +418,7 @@ export default function AudioRecorder(
       );
     } catch (error) {
       console.error("❌ Error processing audio:", error);
-      showToast(
-        `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
-        "error",
-      );
+      showErrorToast(error, "That take didn't land — give it another go.");
     } finally {
       appendingRef.current = false;
       isProcessing.value = false;

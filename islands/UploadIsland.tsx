@@ -9,7 +9,7 @@ import { enqueueApiRequest } from "../utils/requestQueue.ts";
 import { coerceFlowResult } from "../utils/coerceFlowResult.ts";
 import { soundBloom } from "@utils/sound.ts";
 import AudioVisualizer from "./AudioVisualizer.tsx";
-import { showToast } from "../utils/toast.ts";
+import { showErrorToast, showToast } from "../utils/toast.ts";
 
 // Module-level so pasted text survives the hero unmounting during processing
 // (an error remounts the hero — losing the paste would sting).
@@ -231,10 +231,7 @@ export default function UploadIsland() {
       );
     } catch (error) {
       console.error("❌ Error processing audio:", error);
-      showToast(
-        `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
-        "error",
-      );
+      showErrorToast(error, "That didn't go through — give it another go.");
     } finally {
       isProcessing.value = false;
     }
@@ -283,10 +280,7 @@ export default function UploadIsland() {
       );
     } catch (error) {
       console.error("❌ Error processing text:", error);
-      showToast(
-        `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
-        "error",
-      );
+      showErrorToast(error, "That didn't go through — give it another go.");
     } finally {
       isProcessing.value = false;
     }
@@ -373,10 +367,7 @@ export default function UploadIsland() {
       );
     } catch (error) {
       console.error("❌ Error processing audio:", error);
-      showToast(
-        `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
-        "error",
-      );
+      showErrorToast(error, "That didn't go through — give it another go.");
     } finally {
       isProcessing.value = false;
       selectedFile.value = null;

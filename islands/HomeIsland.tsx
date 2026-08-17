@@ -310,6 +310,9 @@ export default function HomeIsland() {
   const chunkInFlightRef = useRef<Promise<void> | null>(null);
   // Complete recordings awaiting upload (oldest first) — the retry queue.
   const pendingChunksRef = useRef<Blob[]>([]);
+  // "We already said the allowance is out" — one toast per session, not one
+  // per rejected chunk.
+  const chunkLimitNotified = useRef(false);
 
   // Belt: recording is live-session-gated today, and the session effect's
   // cleanup stops it on unmount — but if a record path ever appears outside
@@ -598,6 +601,21 @@ export default function HomeIsland() {
         // A non-OK response is a lost chunk too — this branch didn't exist,
         // so a 429 or a 500 dropped the audio as quietly as a thrown error.
         console.error("Chunk send rejected:", res.status);
+        // A rail closing mid-meeting used to be console-only: the transcript
+        // simply stopped growing and nothing said why. Say it once (the chunk
+        // loop fires every few seconds — a toast per chunk would be a siren),
+        // in the server's own warm words.
+        if (res.status === 429 && !chunkLimitNotified.current) {
+          chunkLimitNotified.current = true;
+          const said = await res.json().catch(() => null);
+          showToast(
+            typeof said?.error === "string" && said.error.trim()
+              ? said.error
+              : "That's a lot of listening for one day — the map keeps everything so far.",
+            "warning",
+            7000,
+          );
+        }
         return false;
       }
       const payload = await res.json().catch(() => null);
