@@ -215,9 +215,6 @@ export function renameSpeaker(
     return nextNode;
   });
 
-  // Cascade to summary
-  const nextSummary = data.summary?.replaceAll(oldName, trimmedNew);
-
   // Update summary if it mentions the speaker by name. Uses word boundaries
   // so "Bob" doesn't match "Bobby" but does match "Bob's" or "Bob,".
   const speakerMention = new RegExp(
