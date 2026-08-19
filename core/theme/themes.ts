@@ -37,26 +37,26 @@ import type { Theme, ThemeSystemConfig } from "@core/theme/types.ts";
 // fades to the cream floor where components live — cards get their freshness
 // from figure/ground separation. Mirror any change into the _app.tsx FOUC map.
 export const WARM_BG =
-  "radial-gradient(circle at 18% 0%, rgba(255,166,128,0.85), transparent 52%), radial-gradient(circle at 82% 6%, rgba(255,143,112,0.7), transparent 52%), linear-gradient(168deg, #ffb28c 0%, #ffe0c9 38%, #fff4e8 78%)";
+  "radial-gradient(circle at 18% 0%, rgba(255,148,92,0.92), transparent 54%), radial-gradient(circle at 82% 6%, rgba(255,120,86,0.75), transparent 54%), linear-gradient(168deg, #ff9a5c 0%, #ffc296 38%, #ffe8d0 78%)";
 
 /**
- * Daybreak (default) — cobalt on the sunrise sky. The old hot-pink default
- * meant every fresh load (and every discarded stale roll) greeted the user
- * with bubblegum; a denim-cobalt accent on the coral-fade ground is the
- * unisex, fresh face of the app.
+ * Daybreak (default) — electric cobalt on a richer coral sky. The old
+ * denim-cobalt (#4a7bc9) on the washed #ffe2cf ground read faint ("getting
+ * a little bit too faint"); Aug 19 sharpened both — a more saturated coral
+ * ground that holds its colour longer, and a vivid cobalt accent.
  */
 export const daybreak: Theme = {
   name: "DAYBREAK",
   vibe: "fresh & steady",
-  base: "linear-gradient(135deg, #ffe2cf 0%, #ffd0bd 100%)",
+  base: "linear-gradient(135deg, #ffc79a 0%, #ffab80 100%)",
   secondary: "rgba(255, 250, 243, 0.62)",
-  accent: "#4a7bc9",
+  accent: "#2f6bff",
   text: "#232a3a",
   textSecondary: "#656d80",
   border: "rgba(35, 42, 58, 0.1)",
   cssVars: {
-    "--color-base-solid": "#ffe2cf",
-    "--shadow-soft": "0 4px 12px rgba(74, 123, 201, 0.14)",
+    "--color-base-solid": "#ffb98a",
+    "--shadow-soft": "0 4px 12px rgba(47, 107, 255, 0.16)",
     "--gradient-bg": WARM_BG,
   },
 };

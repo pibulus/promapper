@@ -21,12 +21,13 @@
      THEME SYSTEM - Dynamic runtime color variables
      ================================================================ */
   /* Defaults = DAYBREAK (overridden by theme system + FOUC script):
-     denim-cobalt accent on the sunrise-fade sky. The old hot-pink default
-     meant every fresh load opened on bubblegum. */
-  --color-base: linear-gradient(135deg, #ffe2cf 0%, #ffd0bd 100%);
-  --color-base-solid: #ffe2cf;
+     electric cobalt accent on a richer coral sky (sharpened Aug 19 — the
+     old #4a7bc9/#ffe2cf read too faint). The old hot-pink default meant
+     every fresh load opened on bubblegum. */
+  --color-base: linear-gradient(135deg, #ffc79a 0%, #ffab80 100%);
+  --color-base-solid: #ffb98a;
   --color-secondary: rgba(255, 255, 255, 0.62);
-  --color-accent: #4a7bc9;
+  --color-accent: #2f6bff;
   --color-text: #232a3a;
   /* Matches DAYBREAK's own textSecondary (core/theme/themes.ts) — the raw
      default was #6b7386, 4.25:1 on cream, i.e. every helper line, footer and
@@ -42,13 +43,13 @@
   --gradient-bg:
     radial-gradient(
     circle at 18% 0%,
-    rgba(255, 166, 128, 0.85),
-    transparent 52%
+    rgba(255, 148, 92, 0.92),
+    transparent 54%
   ), radial-gradient(
     circle at 82% 6%,
-    rgba(255, 143, 112, 0.7),
-    transparent 52%
-  ), linear-gradient(168deg, #ffb28c 0%, #ffe0c9 38%, #fff4e8 78%);
+    rgba(255, 120, 86, 0.75),
+    transparent 54%
+  ), linear-gradient(168deg, #ff9a5c 0%, #ffc296 38%, #ffe8d0 78%);
 
   /* ===================================================================
      DESIGN TOKENS - Consistent styling across components
@@ -79,16 +80,17 @@
   --border-radius-xl: 32px;
 
   /* Typography */
-  /* ONE font, committed (July 9 final ruling): Inter everywhere — the
-     original app voice, restored (JetBrains Mono and Jakarta were both
-     tried and overruled; headers present right in Inter). --font-mono
-     intentionally points at the SAME stack so transcript/task "machine
-     text" stays consistent; if mono ever earns its way back, this is the
-     one line to flip. */
+  /* TWO fonts (Aug 19 reversal of the July 9 "Inter everywhere" ruling):
+     IBM Plex Mono is the app voice — body, inputs, transcript, tasks, chips.
+     Headers/titles stay Inter (--font-display). Pablo: "big fan of the
+     monospace vibe." A future font picker can flip --font-family the way the
+     theme picker flips --color-accent. */
   --font-family:
+    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-display:
     "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono:
-    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   /* Two notches more compact than the 15px original (July 9 + July 10
      morning): 14/13/12 — dense-tool sizing, still no squinting. */
   --heading-size: 1.0625rem;
@@ -314,6 +316,18 @@ body {
   font-family: var(--font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headers/titles stay Inter — the mono covers everything else (Aug 19).
+   Semantic h1–h6 covers card bands, modal headings, hero, key-points and
+   the app-header title; any title class that isn't an hN adds its own rule. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
 }
 
 /* ===================================================================
@@ -5017,20 +5031,8 @@ body {
 }
 
 .topic-map-canvas {
-  /* Theme-aware tint: follows the active --color-accent instead of a baked
-     PEACH wash, so the map matches the rest of the app on every theme. */
-  background:
-    radial-gradient(
-    circle at 18% 15%,
-    color-mix(in srgb, var(--color-accent) 13%, transparent),
-    transparent 28%
-  ),
-    radial-gradient(
-    circle at 82% 28%,
-    color-mix(in srgb, var(--color-accent) 14%, transparent),
-    transparent 30%
-  ),
-    rgba(255, 255, 255, 0.68);
+  /* Inherit the card's background seamlessly */
+  background: transparent;
 }
 
 .topic-map-canvas svg {

@@ -26,8 +26,14 @@ export default {
         "soft-mint": "#98FB98",
       },
       fontFamily: {
-        "mono": ["JetBrains Mono", "Courier New", "monospace"],
-        "sans": ["-apple-system", "system-ui", "sans-serif"],
+        "mono": [
+          "IBM Plex Mono",
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "monospace",
+        ],
+        "sans": ["Inter", "-apple-system", "system-ui", "sans-serif"],
       },
       boxShadow: {
         "brutal": "4px 4px 0px 0px #000",

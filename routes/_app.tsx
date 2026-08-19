@@ -82,12 +82,12 @@ export default function App({ Component }: PageProps) {
         />
 
         {/* Theme Color */}
-        <meta name="theme-color" content="#FFE5EC" />
+        <meta name="theme-color" content="#ffb98a" />
 
         {
-          /* Inter — as <link>s so the font fetch runs parallel to the
-            stylesheet (the old @import inside styles.css serialized it
-            behind the whole CSS download). */
+          /* Inter (headers) + IBM Plex Mono (body) — as <link>s so the font
+            fetch runs parallel to the stylesheet (the old @import inside
+            styles.css serialized it behind the whole CSS download). */
         }
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -97,7 +97,7 @@ export default function App({ Component }: PageProps) {
         />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap"
         />
 
         {

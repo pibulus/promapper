@@ -33,7 +33,7 @@ const ACCENT_PRESETS: ReadonlyArray<[string, string]> = [
   ["electric", "#7659FF"],
   ["grape neon", "#8335ff"],
   ["raspberry", "#E85D8F"],
-  ["cobalt", "#4a7bc9"],
+  ["cobalt", "#2f6bff"],
 ];
 
 /** Harmony modes — candidate ground hues derived from the accent hue
