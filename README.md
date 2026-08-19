@@ -228,7 +228,6 @@ MIT License - see [LICENSE](./LICENSE) file for details
 
 ## 🤝 Contributing
 
-[Add contributing guidelines if you want contributions]
 
 ## 🙏 Acknowledgments
 
