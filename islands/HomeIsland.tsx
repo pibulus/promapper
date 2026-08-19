@@ -794,7 +794,7 @@ export default function HomeIsland() {
                       if (!drawerOpen.value) historyDrawerOpen.value = false;
                       drawerOpen.value = !drawerOpen.value;
                     }}
-                    class="header-export-btn"
+                    class="header-action-btn"
                     data-tip="Turn this into a document"
                     aria-label="Export conversation"
                   >

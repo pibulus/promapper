@@ -1014,7 +1014,7 @@ export default function ActionItemsCard(
                             </div>
                           )}
                           {!isEditing && (
-                            <div class="grid grid-cols-[auto_1fr_auto] gap-2.5 items-start relative z-[2]">
+                            <div class="grid grid-cols-[auto_1fr_auto_auto] gap-2.5 items-start relative z-[2]">
                               {/* Drag Handle (mouse/pen: press to grab; touch: long-press the row) */}
                               <div class="flex items-center pt-1">
                                 {canDrag

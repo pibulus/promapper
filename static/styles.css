@@ -448,16 +448,16 @@ body {
    it stays clickable. On touch, tapping the row selects it and the pair
    fades in. */
 .action-item-actions {
-  position: absolute;
+  position: relative;
   z-index: 3;
-  right: 3.1rem;
-  top: 50%;
-  transform: translateY(-50%);
+  /* right: 3.1rem; */
+  /* top: 50%; */
+  /* transform: translateY(-50%); */
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  opacity: 0;
-  pointer-events: none;
+  opacity: 1;
+  pointer-events: auto;
   transition: opacity var(--transition-fast);
 }
 .action-item-card:hover .action-item-actions,
@@ -470,9 +470,9 @@ body {
    peeking through the gaps between them. The scrim must match the row's
    ACTUAL background: base rows are accent-tinted, hovered rows deepen —
    a fixed deep scrim showed a seam on touch-selected (non-hovered) rows. */
-.action-item-actions::before {
+.action-item-actions-removed-scrim::before {
   content: "";
-  position: absolute;
+  position: relative;
   inset: -0.6rem -0.45rem;
   z-index: -1;
   border-radius: 0.6rem;
@@ -481,9 +481,9 @@ body {
     transparent,
     color-mix(in srgb, var(--color-accent) 5%, var(--surface-card)) 40%
   );
-  pointer-events: none;
+  pointer-events: auto;
 }
-.action-item-card:hover .action-item-actions::before {
+.action-item-card:hover .action-item-actions-removed-scrim::before {
   background: linear-gradient(
     to right,
     transparent,
@@ -513,7 +513,7 @@ body {
    overlap and make the pair a coin-flip on touch. */
 .action-item-icon-btn::before {
   content: "";
-  position: absolute;
+  position: relative;
   inset: 50%;
   width: 30px;
   height: 44px;
@@ -655,7 +655,7 @@ body {
 }
 .btn--compact::before {
   content: "";
-  position: absolute;
+  position: relative;
   inset: 50%;
   width: 44px;
   height: 44px;
@@ -735,7 +735,7 @@ body {
   .header-export-btn::after,
   .header-action-btn::after {
     content: "";
-    position: absolute;
+    position: relative;
     inset: -8px 0;
     min-height: 44px;
   }
@@ -851,7 +851,7 @@ body {
 /* Keep a 44px touch target under the small visual (iOS ergonomics). */
 .header-icon-btn::after {
   content: "";
-  position: absolute;
+  position: relative;
   inset: 50%;
   width: 44px;
   height: 44px;
@@ -867,7 +867,7 @@ body {
 }
 /* Tiny count badge (e.g. recordings) — accent dot, top-right. */
 .header-icon-btn__badge {
-  position: absolute;
+  position: relative;
   top: -2px;
   right: -2px;
   min-width: 1rem;
@@ -902,11 +902,11 @@ body {
 /* The label chip — drops below the control. */
 [data-tip]::before {
   content: attr(data-tip);
-  position: absolute;
+  position: relative;
   left: 50%;
   top: calc(100% + 8px);
-  opacity: 0;
-  pointer-events: none;
+  opacity: 1;
+  pointer-events: auto;
   transition: opacity var(--transition-fast), transform var(--transition-fast);
   z-index: var(--z-modal);
   transform: translate(-50%, -4px);
@@ -985,7 +985,7 @@ body {
 
 .mapper-scene::before {
   content: "";
-  position: absolute;
+  position: relative;
   inset: -30% -20% auto -20%;
   height: 70%;
   background: linear-gradient(
@@ -995,15 +995,15 @@ body {
   );
   opacity: 0.35;
   transform: rotate(1deg);
-  pointer-events: none;
+  pointer-events: auto;
   animation: sceneDrift 26s ease-in-out infinite alternate;
 }
 
 .mapper-scene::after {
   content: "";
-  position: absolute;
+  position: relative;
   inset: 0;
-  pointer-events: none;
+  pointer-events: auto;
   /* Golden Master grain texture: 1-2% opacity warm noise */
   background-image:
     radial-gradient(
@@ -1076,7 +1076,7 @@ body {
 
 .mapper-card::after {
   content: "";
-  position: absolute;
+  position: relative;
   inset: -34px; /* wider glow spread */
   border-radius: 48px;
   /* Hero underglow - entire card, not button - this is the emotional "zone
@@ -1103,7 +1103,7 @@ body {
     transparent 72%
   );
   opacity: 0.85;
-  pointer-events: none;
+  pointer-events: auto;
   z-index: -1;
 }
 
@@ -1501,7 +1501,7 @@ body {
 @media (pointer: coarse) {
   .mapper-file-chip button::after {
     content: "";
-    position: absolute;
+    position: relative;
     inset: 50%;
     width: 44px;
     height: 44px;
@@ -1513,7 +1513,7 @@ body {
 /* A labeled chip, not a paperclip FAB — office stationery read as a
    bummer, and a bare icon was mystery meat. Says what it does. */
 .mapper-clip-btn {
-  position: absolute;
+  position: relative;
   bottom: 12px;
   right: 12px;
   padding: 0.4rem 0.75rem;
@@ -1548,7 +1548,7 @@ body {
 @media (pointer: coarse) {
   .mapper-clip-btn::after {
     content: "";
-    position: absolute;
+    position: relative;
     inset: -8px;
     min-height: 44px;
   }
@@ -1871,7 +1871,7 @@ body {
     #ffc400
   );
   z-index: 60;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 /* Skeleton shimmer */
@@ -1887,7 +1887,7 @@ body {
    loops) — a soft band riding across on the compositor. */
 .skeleton::after {
   content: "";
-  position: absolute;
+  position: relative;
   inset: 0;
   background: linear-gradient(
     90deg,
@@ -2015,7 +2015,7 @@ body {
      light single-row header — Pablo's call). The h1 stays in the a11y tree,
      visually hidden; .app-footer__title carries the visible copy. */
   .app-header-glass .app-header__title {
-    position: absolute;
+    position: relative;
     width: 1px;
     height: 1px;
     padding: 0;
@@ -2425,7 +2425,7 @@ body {
   border: 2px solid var(--line-ink);
   border-radius: 28px;
   padding: clamp(0.8rem, 1.8vw, 1.4rem);
-  box-shadow: var(--shadow-slab);
+  box-shadow: none;
 }
 
 /* Mobile: let the modules float free — no nested container chrome */
@@ -2613,7 +2613,7 @@ body {
   display: inline-flex;
   align-items: center;
   border-radius: var(--btn-radius-pill);
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   background: var(--surface-cream);
   cursor: pointer;
   transition:
@@ -2622,7 +2622,7 @@ body {
 }
 .module-rack-toggle::after {
   content: "";
-  position: absolute;
+  position: relative;
   inset: 50%;
   width: 44px;
   height: 44px;
@@ -2847,7 +2847,7 @@ body {
   .radio-play::before,
   .ask-send::before {
     content: "";
-    position: absolute;
+    position: relative;
     inset: 50%;
     width: 44px;
     height: 44px;
@@ -2897,7 +2897,7 @@ body {
    button gets tapped repeatedly, a bare 32px glyph is too small to chase. */
 .radio-next::after {
   content: "";
-  position: absolute;
+  position: relative;
   inset: 50%;
   width: 44px;
   height: 44px;
@@ -3138,7 +3138,7 @@ body {
   min-width: 0;
   min-height: 2.75rem;
   padding: 0.6rem 0.7rem;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: var(--border-radius-sm);
   background: var(--surface-cream);
   color: var(--color-text);
@@ -3327,7 +3327,7 @@ body {
   border-radius: 999px;
   color: var(--color-text-secondary);
   cursor: pointer;
-  opacity: 0;
+  opacity: 1;
   transition:
     opacity var(--transition-fast),
     color var(--transition-fast);
@@ -3347,7 +3347,7 @@ body {
      .topic-map-ctrl / .radio-play — the shelf row keeps its slim look. */
   .magpie-remove::after {
     content: "";
-    position: absolute;
+    position: relative;
     inset: 50%;
     width: 44px;
     height: 44px;
@@ -3390,7 +3390,7 @@ body {
      warm slab shadow (no blur). Gives the card a confident toy-brut edge
      that reads as ours, not corporate. 24px radius keeps it a touch refined. */
   border: 2px solid var(--line-ink);
-  box-shadow: var(--shadow-slab);
+  box-shadow: none;
   height: 100%;
   overflow: hidden;
 }
@@ -3442,7 +3442,7 @@ body {
 /* The back face is stacked on top of the front, pre-rotated so it reads
    correctly once the inner flips. */
 .flip-card-back {
-  position: absolute;
+  position: relative;
   inset: 0;
   transform: rotateY(180deg);
 }
@@ -3450,7 +3450,7 @@ body {
 /* Corner flip button — sits in the card's top-right, clear of the header
    title. Soft, on-theme, unobtrusive until hovered. */
 .flip-card-btn {
-  position: absolute;
+  position: relative;
   /* EXACTLY the .card-header-actions button metrics (2rem square at the
      header's own padding coordinates) — a 1.9rem button at hand-picked
      offsets sat a few px off its siblings on every card. */
@@ -3500,7 +3500,7 @@ body {
 
 /* News dot — something landed on the face you're not looking at. */
 .flip-card-btn__dot {
-  position: absolute;
+  position: relative;
   top: 0.15rem;
   right: 0.15rem;
   width: 0.5rem;
@@ -3619,7 +3619,7 @@ body {
 
 .card-header-actions button::after {
   content: "";
-  position: absolute;
+  position: relative;
   inset: 50%;
   width: 44px;
   height: 44px;
@@ -3664,7 +3664,7 @@ body {
   border: 2px solid var(--line-ink);
   border-radius: var(--border-radius-lg);
   background: var(--surface-white-warm, #fffef7);
-  box-shadow: var(--shadow-slab);
+  box-shadow: none;
   overflow: hidden;
 }
 
@@ -3724,9 +3724,9 @@ body {
   /* A shade of its own (accent-tinted) so items read as objects against the
      card body — theme-driven like the header band. */
   background: color-mix(in srgb, var(--color-accent) 5%, var(--surface-card));
-  border: 2px solid var(--color-border);
-  box-shadow: 2px 2px 0px 0px
-    var(--soft-black); /* Converted inline styles to a clean brutalist shadow */
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
+  box-shadow: none; /* 2px 2px 0px 0px */
+    /* var(--soft-black); */
   transition:
     transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
     box-shadow 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -3741,14 +3741,14 @@ body {
    carry, one per item. Pending = vivid pop; completed = quiet echo. */
 .action-item-card::before {
   content: "";
-  position: absolute;
+  position: relative;
   left: 0;
   top: 0;
   bottom: 0;
   width: 4px;
   border-radius: var(--border-radius-sm) 0 0 var(--border-radius-sm);
   background: color-mix(in srgb, var(--color-accent) 80%, transparent);
-  pointer-events: none;
+  pointer-events: auto;
 }
 .action-item-card.is-completed::before {
   background: color-mix(in srgb, var(--color-accent) 22%, transparent);
@@ -3769,9 +3769,8 @@ body {
 }
 
 .action-item-card:hover {
-  transform: translateY(-2.5px);
-  box-shadow: 5px 5px 0px 0px var(--soft-black);
-  border-color: var(--soft-black);
+  transform: none;
+  box-shadow: none;
   background: var(--surface-card-deep);
 }
 
@@ -3798,7 +3797,7 @@ body {
 .action-item-card.is-completed:hover {
   opacity: 0.85;
   transform: scale(0.99) translateY(-1px);
-  box-shadow: 2px 2px 0px 0px rgba(30, 23, 20, 0.15);
+  box-shadow: none;
   border-color: var(--soft-black);
   background: linear-gradient(
     180deg,
@@ -3975,7 +3974,7 @@ body {
   width: 10rem;
   max-width: 100%;
   padding: 0.15rem 0.5rem;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: var(--border-radius-sm);
   background: var(--surface-cream);
   color: var(--color-text);
@@ -4032,7 +4031,7 @@ body {
    synced — no scrollbar, no resize nub). */
 .action-edit-text {
   width: 100%;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: var(--border-radius-sm);
   background: var(--surface-card);
   padding: 0.5rem 0.65rem;
@@ -4071,7 +4070,7 @@ body {
 @keyframes edit-unfold {
   from {
     grid-template-rows: 0fr;
-    opacity: 0;
+    opacity: 1;
   }
   to {
     grid-template-rows: 1fr;
@@ -4107,7 +4106,7 @@ body {
   gap: 0.4rem;
   padding: 0.3rem 0.65rem;
   border-radius: 9999px;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   background: var(--surface-cream);
   color: var(--color-text-secondary);
   font-size: var(--font-size-xs);
@@ -4170,7 +4169,7 @@ body {
   padding: 0.35rem 0.65rem;
   border-radius: 9999px;
   background: var(--surface-cream);
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   color: var(--color-text-secondary);
   box-shadow: 1px 1px 0px 0px var(--color-border);
   transition:
@@ -4233,7 +4232,7 @@ body {
 
 .action-item-checkbox-button::before {
   content: "";
-  position: absolute;
+  position: relative;
   inset: 50%;
   width: 44px;
   height: 44px;
@@ -4314,7 +4313,7 @@ body {
 
 @keyframes checkmark-pop {
   0% {
-    opacity: 0;
+    opacity: 1;
     transform: scale(0) rotate(-20deg);
   }
   70% {
@@ -4334,11 +4333,11 @@ body {
   z-index: var(--z-dropdown);
 }
 .action-dropdown-menu {
-  position: absolute;
+  position: relative;
   z-index: var(--z-dropdown);
   margin-top: 0.3rem;
   border-radius: var(--border-radius-sm);
-  box-shadow: var(--shadow-slab);
+  box-shadow: none;
   background: var(--surface-cream);
   border: 2px solid var(--line-ink);
   min-width: 170px;
@@ -4356,7 +4355,7 @@ body {
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
   font-size: var(--font-size-xs);
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   background: var(--surface-cream);
   color: var(--color-text);
   outline: none;
@@ -4456,7 +4455,7 @@ body {
   width: 100%;
   padding: 0.5rem 0.75rem;
   border-radius: var(--border-radius-sm);
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   background: var(--surface-cream);
   color: var(--color-text);
   font-size: var(--small-size);
@@ -4504,14 +4503,14 @@ body {
   font-weight: 600;
   padding: 0.35rem 0.7rem;
   border-radius: 999px;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   cursor: pointer;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 /* 44px touch target without growing the visual (mirrors the checkbox/edit btn). */
 .action-filter-pill::before {
   content: "";
-  position: absolute;
+  position: relative;
   inset: 50%;
   min-width: 44px;
   min-height: 44px;
@@ -4704,7 +4703,7 @@ body {
 }
 @keyframes done-rise {
   from {
-    opacity: 0;
+    opacity: 1;
     transform: translateY(6px) scale(0.985);
   }
 }
@@ -4750,15 +4749,15 @@ body {
 /* Bordered input (2px, theme token, text-size). */
 .action-input {
   font-size: var(--text-size);
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
 }
 .action-input--sm {
   font-size: var(--small-size);
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
 }
 .action-input--xs {
   font-size: var(--tiny-size);
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
 }
 
 /* Compact date-preset pill (Today / Tmrw / Clear). */
@@ -4787,7 +4786,7 @@ body {
 
 /* Modal cancel button (quiet companion). */
 .btn--modal-cancel {
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   font-size: var(--small-size);
   transition: var(--transition-fast);
   color: var(--color-text);
@@ -4835,7 +4834,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.72);
   box-shadow: 1px 1px 0 rgba(30, 23, 20, 0.07);
@@ -4869,7 +4868,7 @@ body {
    chips (cream, 2px border, hard shadow) to match the add-topic button instead
    of the old plain white-70% floating circles. */
 .topic-map-ctrls {
-  position: absolute;
+  position: relative;
   bottom: 1rem;
   right: 1rem;
   display: flex;
@@ -4883,7 +4882,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: var(--border-radius-sm);
   background: var(--surface-white-warm, #fffef7);
   box-shadow: 2px 2px 0 rgba(30, 23, 20, 0.08);
@@ -4901,7 +4900,7 @@ body {
 @media (pointer: coarse) {
   .topic-map-ctrl::before {
     content: "";
-    position: absolute;
+    position: relative;
     inset: 50%;
     width: 44px;
     height: 44px;
@@ -4943,7 +4942,7 @@ body {
 
 /* Viz switcher — floats on the map's top-left, above the canvas. */
 .topic-viz-switcher {
-  position: absolute;
+  position: relative;
   top: 0.85rem;
   left: 0.85rem;
   z-index: var(--z-dropdown);
@@ -4956,7 +4955,7 @@ body {
   align-items: center;
   gap: 0.45rem;
   padding: 0.3rem 0.7rem;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: var(--border-radius-sm);
   background: var(--surface-white-warm, #fffef7);
   box-shadow: 2px 2px 0 rgba(30, 23, 20, 0.08);
@@ -4978,7 +4977,7 @@ body {
 }
 
 .topic-viz-menu {
-  position: absolute;
+  position: relative;
   top: calc(100% + 0.35rem);
   left: 0;
   min-width: 11rem;
@@ -4986,7 +4985,7 @@ body {
   flex-direction: column;
   gap: 0.1rem;
   padding: 0.35rem;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: var(--border-radius-sm);
   background: var(--surface-white-warm, #fffef7);
   box-shadow: 4px 4px 0 rgba(30, 23, 20, 0.1);
@@ -5061,7 +5060,7 @@ body {
 }
 
 .topic-node-detail {
-  position: absolute;
+  position: relative;
   left: 1rem;
   bottom: 1rem;
   z-index: 10;
@@ -5070,7 +5069,7 @@ body {
   grid-template-columns: auto 1fr;
   gap: 0.8rem;
   padding: 0.9rem;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: 16px;
   /* No backdrop-filter: at 92% opaque there is nothing left to see through,
      so the blur was invisible and still cost a full re-blur of everything
@@ -5083,7 +5082,7 @@ body {
 }
 
 .topic-node-detail__close {
-  position: absolute;
+  position: relative;
   top: 0.4rem;
   right: 0.4rem;
   width: 2rem;
@@ -5100,7 +5099,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: 14px;
   background: var(--surface-white-warm);
   font-size: 1.75rem;
@@ -5144,7 +5143,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: var(--border-radius-sm);
   background: var(--surface-white-warm, #fffef7);
   color: var(--color-text);
@@ -5216,7 +5215,7 @@ body {
   width: min(24rem, 100%);
   display: grid;
   gap: 0.9rem;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: 18px;
   background: var(--color-secondary);
   padding: 1rem;
@@ -5247,7 +5246,7 @@ body {
 
 .topic-node-modal input {
   min-height: 2.75rem;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: 10px;
   background: var(--surface-white-warm);
   padding: 0.55rem 0.7rem;
@@ -5268,7 +5267,7 @@ body {
 
 .topic-node-modal__actions button {
   flex: 1;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   background: var(--surface-white-warm);
 }
 
@@ -5302,7 +5301,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: 0;
   background: var(--color-secondary);
   padding: clamp(0.8rem, 2vw, 1.1rem);
@@ -5336,7 +5335,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.84);
   font-size: 1.1rem;
@@ -5351,7 +5350,7 @@ body {
 }
 
 .topic-map-fullscreen__controls {
-  position: absolute;
+  position: relative;
   right: 1.1rem;
   bottom: 1.1rem;
   display: flex;
@@ -5432,7 +5431,7 @@ body {
   box-shadow: var(--shadow-soft);
   /* Each card lands a beat after the one before — the board being set,
      not four things blinking in unison. */
-  opacity: 0;
+  opacity: 1;
   animation: board-skeleton-arrive 420ms ease-out forwards;
   animation-delay: calc(var(--i, 0) * 90ms);
 }
@@ -5492,7 +5491,7 @@ body {
    the shape of a map assembling itself. */
 .board-skeleton__node {
   fill: var(--color-accent);
-  opacity: 0;
+  opacity: 1;
   transform-box: fill-box;
   transform-origin: center;
   animation:
@@ -5505,13 +5504,13 @@ body {
   stroke: var(--accent-ink);
   stroke-width: 1.5;
   stroke-linecap: round;
-  opacity: 0;
+  opacity: 1;
   animation: board-edge-in 600ms ease-out forwards;
   animation-delay: calc(700ms + var(--i) * 180ms);
 }
 @keyframes board-skeleton-arrive {
   from {
-    opacity: 0;
+    opacity: 1;
     transform: translateY(8px);
   }
   to {
@@ -5530,7 +5529,7 @@ body {
 }
 @keyframes board-node-pop {
   from {
-    opacity: 0;
+    opacity: 1;
     transform: scale(0.2);
   }
   to {
@@ -5549,7 +5548,7 @@ body {
 }
 @keyframes board-edge-in {
   from {
-    opacity: 0;
+    opacity: 1;
   }
   to {
     opacity: 0.28;
@@ -5584,7 +5583,7 @@ body {
   max-width: min(30rem, 92%);
   margin: 0.25rem auto -0.25rem;
   padding: 0.7rem 1.1rem;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: var(--border-radius-lg, 18px);
   background: var(--surface-cream, #fbf1e4);
   box-shadow: var(--shadow-soft);
@@ -5613,7 +5612,7 @@ body {
 }
 @keyframes brew-done-in {
   from {
-    opacity: 0;
+    opacity: 1;
     transform: translateY(3px);
   }
   to {
@@ -5742,7 +5741,7 @@ a:focus-visible {
 
 /* Skip link for keyboard navigation */
 .skip-link {
-  position: absolute;
+  position: relative;
   top: -40px;
   left: 0;
   background: var(--accent-fill);
@@ -5777,7 +5776,7 @@ a:focus-visible {
 
 /* Screen-reader-only text. */
 .sr-only {
-  position: absolute;
+  position: relative;
   width: 1px;
   height: 1px;
   padding: 0;
@@ -5897,7 +5896,7 @@ a:focus-visible {
     --surface-cream,
     color-mix(in srgb, var(--color-accent) 6%, transparent)
   );
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: 8px;
   overflow-x: auto;
 }
@@ -5965,14 +5964,14 @@ a:focus-visible {
 .node-group .emoji {
   filter: drop-shadow(0 2px 3px rgba(30, 23, 20, 0.25));
   /* Native color emoji — never tint via fill. */
-  pointer-events: none;
+  pointer-events: auto;
   user-select: none;
 }
 
 .node-group .label {
   font-weight: 600;
   letter-spacing: 0.01em;
-  pointer-events: none;
+  pointer-events: auto;
   user-select: none;
   paint-order: stroke;
   stroke: var(--surface-cream, #fff7ef);
@@ -5997,7 +5996,7 @@ a:focus-visible {
 /* Bloom-in start state: tiny + transparent. D3 adds .is-entering on enter and
    drops it next frame, so CSS springs the node up to full size. */
 .node-group.is-entering {
-  opacity: 0;
+  opacity: 1;
 }
 
 .node-group.is-entering .node-inner {
@@ -6006,7 +6005,7 @@ a:focus-visible {
 
 /* Leave state: shrink + fade, then D3 removes the element. */
 .node-group.is-leaving {
-  opacity: 0;
+  opacity: 1;
 }
 
 .node-group.is-leaving .node-inner {
@@ -6069,13 +6068,13 @@ a:focus-visible {
    reads clearly even on a busy 20-node map. */
 .node-group.is-dimmed {
   opacity: 0.12;
-  pointer-events: none;
+  pointer-events: auto;
   transition: opacity 0.4s ease;
 }
 
 .links path.is-dimmed {
   stroke-opacity: 0.06;
-  pointer-events: none;
+  pointer-events: auto;
   transition: stroke-opacity 0.4s ease;
 }
 
@@ -6334,7 +6333,7 @@ a:focus-visible {
 }
 .history-action-btn::after {
   content: "";
-  position: absolute;
+  position: relative;
   inset: 50%;
   width: 44px;
   height: 44px;
@@ -6422,7 +6421,7 @@ a:focus-visible {
   }
 }
 .share-popover-close {
-  position: absolute;
+  position: relative;
   top: 0.4rem;
   right: 0.4rem;
   width: 1.6rem;
@@ -6572,7 +6571,7 @@ a:focus-visible {
   gap: 0.4rem;
   padding: 0.4rem 0.75rem;
   border-radius: var(--border-radius-sm);
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   background: var(--surface-cream);
   color: var(--color-text);
   font-size: var(--tiny-size);
@@ -6708,7 +6707,7 @@ a:focus-visible {
    vertical only, the neighbor button sits 0.4rem away horizontally. */
 .whiteboard-draw-btn::after {
   content: "";
-  position: absolute;
+  position: relative;
   inset: -8px 0;
 }
 .whiteboard-draw-btn:hover:not(:disabled) {
@@ -6866,7 +6865,7 @@ a:focus-visible {
   display: flex;
   flex-direction: column;
   background: var(--surface-cream);
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-xl);
   overflow: hidden;
@@ -6944,7 +6943,7 @@ a:focus-visible {
 /* Chat message text input. */
 .chat-message-input {
   font-size: var(--small-size);
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   background: var(--soft-cream);
 }
 
@@ -6989,8 +6988,8 @@ a:focus-visible {
   inset: 0;
   z-index: calc(var(--z-drawer, 40) - 1);
   background: var(--scrim);
-  opacity: 0;
-  pointer-events: none;
+  opacity: 1;
+  pointer-events: auto;
   transition: opacity 280ms ease;
 }
 
@@ -7001,7 +7000,7 @@ a:focus-visible {
 
 /* Visible close affordance — always reachable, never trapped. */
 .voice-drawer-close {
-  position: absolute;
+  position: relative;
   top: 0.6rem;
   right: 0.6rem;
   width: 44px;
@@ -7059,7 +7058,7 @@ a:focus-visible {
 @keyframes toast-slide-in {
   from {
     transform: translateX(120%) scale(0.88);
-    opacity: 0;
+    opacity: 1;
   }
   to {
     transform: translateX(0) scale(1);
@@ -7074,7 +7073,7 @@ a:focus-visible {
 @keyframes toast-slide-out {
   to {
     transform: translateX(120%) scale(0.9);
-    opacity: 0;
+    opacity: 1;
   }
 }
 
@@ -7083,7 +7082,7 @@ a:focus-visible {
    ================================================================ */
 
 .tooltip-floating {
-  position: absolute;
+  position: relative;
   top: 0;
   left: 0;
   z-index: var(--z-tooltip, 60);
@@ -7100,12 +7099,12 @@ a:focus-visible {
   box-shadow:
     0 2px 8px rgba(30, 23, 20, 0.06),
     0 0 0 1px rgba(232, 131, 156, 0.08);
-  opacity: 0;
+  opacity: 1;
   transform: scale(0.85) translateY(4px);
   transition:
     opacity 180ms cubic-bezier(0.4, 0, 0.2, 1),
     transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .tooltip-floating.is-visible {
@@ -7115,7 +7114,7 @@ a:focus-visible {
 }
 
 .tooltip-arrow {
-  position: absolute;
+  position: relative;
   width: 8px;
   height: 8px;
   transform: rotate(45deg);
@@ -7409,7 +7408,7 @@ a:focus-visible {
   gap: 0.25rem;
   border-radius: var(--border-radius-sm);
   background: var(--surface-cream);
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   padding: 0.25rem;
 }
 
@@ -7454,7 +7453,7 @@ a:focus-visible {
   font-weight: 500;
   background: var(--accent-fill);
   color: var(--surface-white-warm);
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   min-height: 2rem;
   cursor: pointer;
   transition: transform var(--transition-fast);
@@ -7550,10 +7549,10 @@ a:focus-visible {
   }
   .app-footer__title::before {
     content: "";
-    position: absolute;
+    position: relative;
     left: 1.05rem;
-    top: 50%;
-    transform: translateY(-50%);
+    /* top: 50%; */
+    /* transform: translateY(-50%); */
     width: 0.32rem;
     height: 0.32rem;
     border-radius: 50%;
@@ -7610,8 +7609,8 @@ a:focus-visible {
   z-index: calc(var(--z-drawer) - 10);
   top: var(--header-height);
   background: var(--scrim);
-  opacity: 0;
-  pointer-events: none;
+  opacity: 1;
+  pointer-events: auto;
   transition: opacity 400ms ease-out;
 }
 
@@ -7667,7 +7666,7 @@ a:focus-visible {
    on mobile a real 44px tap zone instead of a bare icon-sized hitbox. */
 .export-drawer-close-btn::after {
   content: "";
-  position: absolute;
+  position: relative;
   inset: 50%;
   width: 44px;
   height: 44px;
@@ -7918,7 +7917,7 @@ a:focus-visible {
 
 /* Preview frame — themed bar the ghost icon buttons read white against */
 .export-preview {
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: 16px;
   box-shadow: var(--shadow-sm);
   overflow: hidden;
@@ -7972,7 +7971,7 @@ a:focus-visible {
 }
 .export-snap {
   background: var(--surface-cream);
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: 12px;
   padding: 0.75rem;
 }
@@ -8153,7 +8152,7 @@ label {
   color: #ffd28a;
 }
 .recording-hub__count {
-  position: absolute;
+  position: relative;
   top: -0.2rem;
   right: -0.2rem;
   min-width: 0.95rem;
@@ -8308,7 +8307,7 @@ label {
   /* Both dock buttons share one explicit height — padding math left the takes
      chip 2px shorter than Record, a visibly misaligned pair inside one pill. */
   height: 2.7rem;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: 999px;
   background: var(--surface-cream);
   color: var(--color-text);
@@ -8430,7 +8429,7 @@ label {
 
 /* Takes sheet — pops up above the pill */
 .recording-dock__sheet {
-  position: absolute;
+  position: relative;
   bottom: calc(100% + 0.6rem);
   left: 50%;
   transform: translateX(-50%);
@@ -8449,7 +8448,7 @@ label {
 
 @keyframes dock-sheet-in {
   from {
-    opacity: 0;
+    opacity: 1;
     transform: translateX(-50%) translateY(8px) scale(0.97);
   }
   to {
@@ -8511,7 +8510,7 @@ label {
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.6rem 0.75rem;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: var(--border-radius);
   background: var(--surface-cream);
 }
@@ -8708,7 +8707,7 @@ label {
 .shared-filter-badge {
   padding: 0.5rem 0.9rem;
   margin-bottom: 1rem;
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: 999px;
   background: var(--surface-cream);
   font-size: var(--small-size);
@@ -8720,7 +8719,7 @@ label {
    warm, no red/purple Tailwind one-offs. */
 .shared-panel {
   background: var(--color-secondary);
-  border: 2px solid var(--color-border);
+  border: none; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
   border-radius: 16px;
   box-shadow: var(--shadow-sm);
   padding: 2rem;
@@ -9013,7 +9012,7 @@ label {
    "pick me up". Faint until the card is hovered; always faintly there on
    touch (no hover to reveal it), where it is THE drag handle. */
 .board-grip {
-  position: absolute;
+  position: relative;
   top: 0.3rem;
   left: 50%;
   transform: translateX(-50%);
@@ -9031,7 +9030,7 @@ label {
   line-height: 1;
   cursor: grab;
   touch-action: none;
-  opacity: 0;
+  opacity: 1;
   transition:
     opacity var(--transition-fast),
     background var(--transition-fast),
