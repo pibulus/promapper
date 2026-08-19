@@ -270,6 +270,25 @@ const MOODS: Mood[] = [
     // you feel more than hear.
     build: (ctx, out) => drone(ctx, out, [55, 55.22, 82.5], "sine", 280),
   },
+  {
+    id: "airlock",
+    name: "Airlock",
+    line: "The quiet hum of a ship in transit.",
+    build: (ctx, out) => [
+      ...noiseBed(ctx, out, true, 20, 150, 0.4),
+      ...drone(ctx, out, [130.81, 196.00], "sine", 250),
+      ...breathVoice(ctx, out, 523.25, "sine", 0.015, rand(20, 40)),
+    ],
+  },
+  {
+    id: "glass",
+    name: "Glass",
+    line: "High, delicate frequencies shimmering.",
+    build: (ctx, out) => [
+      ...noiseBed(ctx, out, false, 2000, 8000, 0.03),
+      ...drone(ctx, out, [440, 554.37, 659.25], "sine", 1000),
+    ],
+  },
 ];
 
 /** One flat list for the dial + next-cycling: stations first, moods after. */

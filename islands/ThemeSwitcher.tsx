@@ -1,37 +1,49 @@
 /**
- * ThemeSwitcher Island — the shuffle die.
+ * Vibe Curator (was ThemeSwitcher) — the color picker.
  *
- * No fixed theme list in the UI anymore: one button rolls a fresh warm/airy
- * theme from the constrained generator (core/theme/randomTheme.ts) and
- * persists it. On mount it restores the last roll (or the bubblegum default)
- * from localStorage — the _app.tsx FOUC script has already painted it.
+ * Lets users pick from a few hand-curated vibes or roll the dice for the
+ * neon office generator.
  */
 
-import { useEffect } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
+import { useSignal } from "@preact/signals";
 import { createThemeSystem } from "@core/theme/themeEngine.ts";
 import { proMapperThemeConfig } from "@core/theme/themes.ts";
-import { generateThemeParts } from "@core/theme/randomTheme.ts";
+import { generateThemeParts, CURATED_PAIRS, composeTheme } from "@core/theme/randomTheme.ts";
 import { soundToggle } from "@utils/sound.ts";
 
-// Instantiated once per hydration root so it isn't re-created on render.
 const themeSystem = createThemeSystem({
   ...proMapperThemeConfig,
   randomEnabled: false,
 });
 
-/** Circular hue distance in degrees. */
 function hueDist(a: number, b: number): number {
   const d = Math.abs(((a % 360) + 360) % 360 - ((b % 360) + 360) % 360);
   return Math.min(d, 360 - d);
 }
 
-// The roll must visibly change. Under the NEON OFFICE generator the ground is
-// always paper, so the ACCENT is what carries a roll's identity — anti-repeat
-// on that, not on the ground family (which no longer varies enough to matter).
 let lastAccentHue = -999;
 const MIN_ACCENT_TRAVEL = 40;
 
-export default function ThemeSwitcher() {
+export default function VibeCurator() {
+  const menuOpen = useSignal(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close when clicking outside
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (
+        menuOpen.value &&
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        menuOpen.value = false;
+      }
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
   function shuffle(silent = false) {
     let parts = generateThemeParts();
     for (
@@ -44,25 +56,83 @@ export default function ThemeSwitcher() {
     lastAccentHue = parts.hue;
     themeSystem.applyCustomTheme(parts.theme);
     if (!silent) soundToggle(true);
+    menuOpen.value = false;
   }
 
-  // Init on mount: restore a saved SHUFFLE roll, or auto-roll a fresh one.
-  // Named themes (DAYBREAK etc.) are dead — any legacy save gets replaced.
+  function applyCurated(pairIndex: number) {
+    const p = CURATED_PAIRS[pairIndex];
+    if (!p) return;
+    const mid = (a: readonly [number, number]) => (a[0] + a[1]) / 2;
+    const parts = composeTheme({
+      hue: mid(p.accent),
+      lightness: mid(p.accentL),
+      chroma: mid(p.accentC),
+      bgHue: mid(p.ground),
+      groundL: p.groundL,
+      groundC: p.groundC,
+    });
+    themeSystem.applyCustomTheme({ ...parts.theme, name: p.name });
+    soundToggle(true);
+    menuOpen.value = false;
+  }
+
   useEffect(() => {
     const theme = themeSystem.init();
-    if (theme.name !== "SHUFFLE") shuffle(true);
+    if (theme.name === "SHUFFLE" || theme.name === "random") shuffle(true);
   }, []);
 
   return (
-    <button
-      type="button"
-      onClick={() => shuffle()}
-      class="header-icon-btn"
-      data-tip="Shuffle the vibe"
-      data-tip-align="right"
-      aria-label="Shuffle the color theme"
-    >
-      <i class="fa fa-dice-five" aria-hidden="true"></i>
-    </button>
+    <div class="relative" ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => { menuOpen.value = !menuOpen.value; if (menuOpen.value) soundToggle(true); }}
+        class="header-icon-btn"
+        data-tip="Curate vibe"
+        data-tip-align="right"
+        aria-label="Open vibe curator"
+      >
+        <i class="fa fa-palette" aria-hidden="true"></i>
+      </button>
+
+      {menuOpen.value && (
+        <div class="absolute right-0 top-12 mt-2 p-2 bg-white rounded-xl shadow-lg border border-slate-100 flex flex-col gap-2 z-50 min-w-[140px] shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+          <div class="text-[10px] uppercase font-bold text-slate-400 px-2 pt-1">Vibe</div>
+          
+          <button
+            class="flex items-center gap-3 px-2 py-1.5 hover:bg-slate-50 rounded-lg text-sm text-slate-600 transition-colors"
+            onClick={() => shuffle()}
+          >
+            <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-purple-400 to-pink-400 flex items-center justify-center text-white shadow-inner">
+              <i class="fa fa-dice-five text-[10px]" />
+            </div>
+            Random Roll
+          </button>
+          
+          <div class="h-px bg-slate-100 mx-2" />
+
+          {CURATED_PAIRS.map((p, i) => {
+            const mid = (a: readonly [number, number]) => (a[0] + a[1]) / 2;
+            const accentL = mid(p.accentL);
+            const accentC = mid(p.accentC);
+            const accentH = mid(p.accent);
+            // approximate hex for the preview circle (we can just use the actual oklch in CSS)
+            const cssOklch = `oklch(${accentL} ${accentC} ${accentH})`;
+            return (
+              <button
+                key={p.name}
+                class="flex items-center gap-3 px-2 py-1.5 hover:bg-slate-50 rounded-lg text-sm text-slate-600 capitalize transition-colors"
+                onClick={() => applyCurated(i)}
+              >
+                <div 
+                  class="w-5 h-5 rounded-full shadow-inner" 
+                  style={{ backgroundColor: cssOklch }}
+                />
+                {p.name.replace('-', ' ')}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }

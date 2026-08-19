@@ -191,9 +191,32 @@ export function renameSpeaker(
   );
 
   // Update action item assignees — exact match only (case-sensitive).
-  const nextActionItems = data.actionItems.map((item) =>
-    item.assignee === oldName ? { ...item, assignee: trimmedNew } : item
-  );
+  const nextActionItems = data.actionItems.map((item) => {
+    let nextItem = item;
+    if (item.assignee === oldName) {
+      nextItem = { ...nextItem, assignee: trimmedNew };
+    }
+    // Also replace inside description
+    if (nextItem.description.includes(oldName)) {
+      nextItem = { ...nextItem, description: nextItem.description.replaceAll(oldName, trimmedNew) };
+    }
+    return nextItem;
+  });
+
+  // Cascade to nodes (labels and aliases)
+  const nextNodes = data.nodes.map((node) => {
+    let nextNode = node;
+    if (node.label.includes(oldName)) {
+      nextNode = { ...nextNode, label: node.label.replaceAll(oldName, trimmedNew) };
+    }
+    if (node.aliases?.some(a => a.includes(oldName))) {
+      nextNode = { ...nextNode, aliases: node.aliases.map(a => a.replaceAll(oldName, trimmedNew)) };
+    }
+    return nextNode;
+  });
+
+  // Cascade to summary
+  const nextSummary = data.summary?.replaceAll(oldName, trimmedNew);
 
   // Update summary if it mentions the speaker by name. Uses word boundaries
   // so "Bob" doesn't match "Bobby" but does match "Bob's" or "Bob,".
