@@ -100,6 +100,7 @@ export interface ProcessAudioOptions {
   existingActionItems?: ActionItem[];
   existingNodes?: NodeInput[];
   existingEdges?: EdgeInput[];
+  existingSummary?: string;
   /** Skip topic extraction + summary when transcript is short. */
   lightweightIfShort?: boolean;
   /** Appends pass the conversation's current title through so it is neither
@@ -128,6 +129,7 @@ export async function processAudio(
     existingActionItems = [],
     existingNodes = [],
     existingEdges = [],
+    existingSummary,
     lightweightIfShort = false,
     existingTitle,
     signal,
@@ -209,6 +211,7 @@ export async function processAudio(
       existingActionItems,
       existingNodes,
       existingEdges,
+      existingSummary,
       signal,
     );
 
@@ -339,6 +342,7 @@ export async function processLiveText(
     existingActionItems,
     existingNodes,
     existingEdges,
+    existingSummary,
     signal,
   );
 
@@ -375,6 +379,7 @@ export async function processText(
   existingActionItems: ActionItem[] = [],
   existingNodes: NodeInput[] = [],
   existingEdges: EdgeInput[] = [],
+  existingSummary?: string,
   signal?: AbortSignal,
 ): Promise<ConversationFlowResult> {
   // Parallel AI analysis
@@ -385,6 +390,7 @@ export async function processText(
     existingActionItems,
     existingNodes,
     existingEdges,
+    existingSummary,
     signal,
   );
 

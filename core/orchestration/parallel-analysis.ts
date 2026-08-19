@@ -39,6 +39,7 @@ export async function analyzeText(
   existingActionItems: ActionItem[] = [],
   existingNodes: NodeInput[] = [],
   existingEdges: EdgeInput[] = [],
+  existingSummary?: string,
   signal?: AbortSignal,
 ): Promise<AnalysisResult> {
   // Topics first so the summary can lead with what the conversation is about.
@@ -57,11 +58,12 @@ export async function analyzeText(
     text,
     existingNodes,
     existingEdges,
+    existingSummary,
     onParseError,
     signal,
   );
   const summaryPromise = topicsPromise.then((topics) =>
-    aiService.generateSummary(text, topics.nodes.map((n) => n.label), signal)
+    aiService.generateSummary(text, topics.nodes.map((n) => n.label), existingSummary, signal)
   ).catch((error) => {
     console.error("Summary generation failed, using fallback:", error);
     return summary_fallback;
@@ -73,6 +75,7 @@ export async function analyzeText(
       text,
       speakers,
       existingActionItems,
+      existingSummary,
       onParseError,
       signal,
     ),
@@ -133,6 +136,7 @@ export async function analyzeAudio(
   existingActionItems: ActionItem[] = [],
   existingNodes: NodeInput[] = [],
   existingEdges: EdgeInput[] = [],
+  existingSummary?: string,
   signal?: AbortSignal,
 ): Promise<
   AnalysisResult & { transcription: { text: string; speakers: string[] } }
@@ -147,6 +151,7 @@ export async function analyzeAudio(
     transcription.text,
     existingNodes,
     existingEdges,
+    existingSummary,
     onParseError,
     signal,
   );
@@ -154,6 +159,7 @@ export async function analyzeAudio(
     aiService.generateSummary(
       transcription.text,
       topics.nodes.map((n) => n.label),
+      existingSummary,
       signal,
     )
   ).catch((error) => {
@@ -167,6 +173,7 @@ export async function analyzeAudio(
       transcription.text,
       transcription.speakers,
       existingActionItems,
+      existingSummary,
       onParseError,
       signal,
     ),

@@ -49,6 +49,7 @@ export interface AIService {
     input: string | AudioInput,
     speakers?: string[],
     existingActionItems?: ActionItem[],
+    existingSummary?: string,
     onParseError?: ParseErrorSink,
     signal?: AbortSignal,
   ): Promise<ActionItemInput[]>;
@@ -62,12 +63,14 @@ export interface AIService {
     text: string,
     existingNodes?: NodeInput[],
     existingEdges?: EdgeInput[],
+    existingSummary?: string,
     onParseError?: ParseErrorSink,
     signal?: AbortSignal,
   ): Promise<ConversationGraph>;
   generateSummary(
     text: string,
     topicLabels?: string[],
+    existingSummary?: string,
     signal?: AbortSignal,
   ): Promise<string>;
   generateMarkdown(

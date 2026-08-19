@@ -61,7 +61,7 @@ function createMockAIService(
       calls.push("extractTopics");
       return { nodes: [], edges: [] };
     },
-    async generateSummary(_text, _labels, _signal?: AbortSignal) {
+    async generateSummary(_text: any, _labels?: any, _existingSummary?: any, _signal?: any) {
       calls.push("generateSummary");
       return "A brief summary.";
     },

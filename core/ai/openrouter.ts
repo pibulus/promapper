@@ -322,6 +322,7 @@ export function createOpenRouterService(
       input: string | AudioInput,
       speakers: string[] = [],
       existingActionItems: ActionItem[] = [],
+      existingSummary?: string,
       onParseError?: ParseErrorSink,
       signal?: AbortSignal,
     ) {
@@ -330,6 +331,7 @@ export function createOpenRouterService(
           input,
           speakers,
           existingActionItems,
+          existingSummary,
         );
         const text = typeof input === "string"
           ? await chatText(prompt, undefined, signal)
@@ -382,6 +384,7 @@ export function createOpenRouterService(
       text: string,
       existingNodes: NodeInput[] = [],
       existingEdges: EdgeInput[] = [],
+      existingSummary?: string,
       onParseError?: ParseErrorSink,
       signal?: AbortSignal,
     ) {
@@ -406,6 +409,7 @@ export function createOpenRouterService(
     async generateSummary(
       text: string,
       topicLabels: string[] = [],
+      existingSummary?: string,
       signal?: AbortSignal,
     ): Promise<string> {
       try {
