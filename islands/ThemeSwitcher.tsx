@@ -10,7 +10,7 @@ import { useSignal } from "@preact/signals";
 import { createThemeSystem } from "@core/theme/themeEngine.ts";
 import { proMapperThemeConfig } from "@core/theme/themes.ts";
 import { generateThemeParts, CURATED_PAIRS, composeTheme } from "@core/theme/randomTheme.ts";
-import { soundToggle } from "@utils/sound.ts";
+import { soundToggle, soundHover } from "@utils/sound.ts";
 
 const themeSystem = createThemeSystem({
   ...proMapperThemeConfig,
@@ -85,7 +85,7 @@ export default function VibeCurator() {
     <div class="relative" ref={containerRef}>
       <button
         type="button"
-        onClick={() => { menuOpen.value = !menuOpen.value; if (menuOpen.value) soundToggle(true); }}
+        onMouseEnter={soundHover} onClick={() => { menuOpen.value = !menuOpen.value; if (menuOpen.value) soundToggle(true); }}
         class="header-icon-btn"
         data-tip="Curate vibe"
         data-tip-align="right"
@@ -100,7 +100,7 @@ export default function VibeCurator() {
           
           <button
             class="flex items-center gap-3 px-2 py-1.5 hover:bg-slate-50 rounded-lg text-sm text-slate-600 transition-colors"
-            onClick={() => shuffle()}
+            onMouseEnter={soundHover} onClick={() => shuffle()}
           >
             <div class="w-5 h-5 rounded-full bg-gradient-to-tr from-purple-400 to-pink-400 flex items-center justify-center text-white shadow-inner">
               <i class="fa fa-dice-five text-[10px]" />
@@ -121,7 +121,7 @@ export default function VibeCurator() {
               <button
                 key={p.name}
                 class="flex items-center gap-3 px-2 py-1.5 hover:bg-slate-50 rounded-lg text-sm text-slate-600 capitalize transition-colors"
-                onClick={() => applyCurated(i)}
+                onMouseEnter={soundHover} onClick={() => applyCurated(i)}
               >
                 <div 
                   class="w-5 h-5 rounded-full shadow-inner" 

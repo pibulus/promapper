@@ -10,6 +10,7 @@
 
 import { useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
+import { soundHover, soundTick } from "../../utils/sound.ts";
 import { showToast } from "@utils/toast.ts";
 import FlipCard from "../FlipCard.tsx";
 
@@ -612,7 +613,7 @@ export default function SoundModule() {
                 type="button"
                 class={source.kind === "channel" ? "is-on" : ""}
                 aria-pressed={source.kind === "channel"}
-                onClick={() => setKind("channel")}
+                onMouseEnter={soundHover} onClick={() => { soundTick(); setKind("channel"); }}
               >
                 <i class="fa fa-music" aria-hidden="true"></i> Radio
               </button>
@@ -620,7 +621,7 @@ export default function SoundModule() {
                 type="button"
                 class={source.kind === "mood" ? "is-on" : ""}
                 aria-pressed={source.kind === "mood"}
-                onClick={() => setKind("mood")}
+                onMouseEnter={soundHover} onClick={() => { soundTick(); setKind("mood"); }}
               >
                 <i class="fa fa-wave-square" aria-hidden="true"></i> Moods
               </button>
@@ -629,7 +630,7 @@ export default function SoundModule() {
               <button
                 type="button"
                 class="radio-play"
-                onClick={() => playing.value ? stop() : start(source)}
+                onMouseEnter={soundHover} onClick={() => { soundTick(); playing.value ? stop() : start(source); }}
                 aria-label={playing.value ? "Stop sound" : "Play sound"}
               >
                 <i
@@ -645,7 +646,7 @@ export default function SoundModule() {
               <button
                 type="button"
                 class="radio-next"
-                onClick={next}
+                onMouseEnter={soundHover} onClick={() => { soundTick(); next(); }}
                 data-tip={source.kind === "channel"
                   ? "Next station"
                   : "Next mood"}
@@ -689,7 +690,7 @@ export default function SoundModule() {
                     key={sourceId(s)}
                     type="button"
                     class={`radio-station-row${current ? " is-current" : ""}`}
-                    onClick={() => switchTo(i)}
+                    onMouseEnter={soundHover} onClick={() => { soundTick(); switchTo(i); }}
                     aria-pressed={current}
                   >
                     <i

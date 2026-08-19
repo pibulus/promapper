@@ -19,6 +19,7 @@ import {
   soundCheckoff,
   soundSettle,
   soundTick,
+  soundHover,
   soundToggle,
 } from "@utils/sound.ts";
 import { showToast, showUndoToast } from "@utils/toast.ts";
@@ -702,6 +703,7 @@ export default function ActionItemsCard(
               {!readOnly && (
                 <button
                   onClick={cycleSort}
+                onMouseEnter={soundHover}
                   aria-label="Reorder tasks — newest, oldest, or shuffled"
                   data-tip="Sort: newest / oldest / shuffle"
                   data-tip-align="right"
@@ -711,6 +713,7 @@ export default function ActionItemsCard(
               )}
               <button
                 onClick={toggleSearch}
+                onMouseEnter={soundHover}
                 aria-label={searchOpen.value ? "Close search" : "Search tasks"}
                 aria-pressed={searchOpen.value}
                 data-tip="Search"
@@ -984,6 +987,7 @@ export default function ActionItemsCard(
 
                                   <div class="action-edit-footer">
                                     <button
+                                      onMouseEnter={soundHover}
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         cancelEdit();
@@ -993,6 +997,7 @@ export default function ActionItemsCard(
                                       Cancel
                                     </button>
                                     <button
+                                      onMouseEnter={soundHover}
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         saveEdit();
@@ -1077,6 +1082,7 @@ export default function ActionItemsCard(
                                         ? (
                                           <button
                                             key={ti}
+                onMouseEnter={soundHover}
                                             type="button"
                                             class="action-tag-chip"
                                             style={{
@@ -1158,6 +1164,7 @@ export default function ActionItemsCard(
                                       : item.due_date && (
                                         <button
                                           type="button"
+                onMouseEnter={soundHover}
                                           class="action-when-chip"
                                           onClick={(e) => {
                                             e.stopPropagation();
@@ -1194,6 +1201,7 @@ export default function ActionItemsCard(
                                   >
                                     <button
                                       type="button"
+                onMouseEnter={soundHover}
                                       class="action-item-chip action-item-chip--ai px-3 py-1 rounded text-xs"
                                       aria-expanded={expandedReasonId
                                         .value === item.id}
@@ -1234,6 +1242,7 @@ export default function ActionItemsCard(
                                   item.status === "pending" && (
                                   <button
                                     type="button"
+                onMouseEnter={soundHover}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       editingWhenId.value = item.id;
@@ -1251,6 +1260,7 @@ export default function ActionItemsCard(
                                 )}
                                 <button
                                   type="button"
+                onMouseEnter={soundHover}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     startEditing(
@@ -1272,6 +1282,7 @@ export default function ActionItemsCard(
                                 </button>
                                 <button
                                   type="button"
+                onMouseEnter={soundHover}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     deleteItem(item.id);
@@ -1293,6 +1304,7 @@ export default function ActionItemsCard(
                                 {
                                   <button
                                     type="button"
+                onMouseEnter={soundHover}
                                     // `disabled` (not a hidden handler) so the
                                     // snapshot reads as a photo to a mouse, a
                                     // thumb AND a screen reader at once.
@@ -1387,6 +1399,7 @@ export default function ActionItemsCard(
                         {completedRows.length > 0 && (
                           <button
                             type="button"
+                onMouseEnter={soundHover}
                             class={`action-done-toggle font-mono${
                               doneShown.value ? " is-open" : ""
                             }${doneBump.value ? " is-bumping" : ""}`}

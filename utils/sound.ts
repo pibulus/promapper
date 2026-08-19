@@ -25,6 +25,15 @@ function prefersReducedMotion(): boolean {
 const engine = typeof window === "undefined" ? null : new Weightless({
   volume: 0.7,
   cues: {
+
+    hover: {
+      cooldownMs: 80,
+      detuneCents: 4,
+      variants: [
+        [{ frequency: 800, duration: 0.02, gain: 0.007, voice: "tap" }],
+        [{ frequency: 840, duration: 0.02, gain: 0.006, voice: "tap" }],
+      ],
+    },
     // --- light UI ticks (very quiet) ---
     tick: {
       cooldownMs: 30,
@@ -150,6 +159,11 @@ function play(cue: string): void {
 // ===================================================================
 // SEMANTIC API — call sites read clearly
 // ===================================================================
+
+/** A tiny blip for mouse enter / focus. */
+export function soundHover(): void {
+  play("hover");
+}
 
 /** Quiet tick: button clicks, tab/filter switches. */
 export function soundTick(): void {
