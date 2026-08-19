@@ -714,6 +714,7 @@ export default function HomeIsland() {
     : 0;
   useEffect(() => {
     if (!isBrewing && !isAppending) return;
+    soundPortal();
     const notes = isBrewing ? brewNotes : appendNotes;
     brewNoteIndex.value = 0;
     const timer = setInterval(() => {
