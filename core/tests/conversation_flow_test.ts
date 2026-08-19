@@ -29,6 +29,7 @@ function createMockAIService(): AIService {
       _input,
       _speakers,
       _existing,
+      _existingSummary,
       _onParseError,
       _signal?: AbortSignal,
     ) {
@@ -50,6 +51,7 @@ function createMockAIService(): AIService {
       _text,
       _existing,
       _existingEdges,
+      _existingSummary,
       _onParseError,
       _signal?: AbortSignal,
     ) {
@@ -58,7 +60,12 @@ function createMockAIService(): AIService {
         edges: [],
       };
     },
-    async generateSummary(_text: any, _labels?: any, _existingSummary?: any, _signal?: any) {
+    async generateSummary(
+      _text: any,
+      _labels?: any,
+      _existingSummary?: any,
+      _signal?: any,
+    ) {
       return "This is a summary.";
     },
     async generateMarkdown(_formatPrompt, _text, _signal?: AbortSignal) {

@@ -36,6 +36,7 @@ function createMockAIService(
       _input,
       _speakers,
       _existing,
+      _existingSummary,
       _onParseError,
       _signal?: AbortSignal,
     ) {
@@ -55,13 +56,19 @@ function createMockAIService(
       _text,
       _existing,
       _existingEdges,
+      _existingSummary,
       _onParseError,
       _signal?: AbortSignal,
     ) {
       calls.push("extractTopics");
       return { nodes: [], edges: [] };
     },
-    async generateSummary(_text: any, _labels?: any, _existingSummary?: any, _signal?: any) {
+    async generateSummary(
+      _text: any,
+      _labels?: any,
+      _existingSummary?: any,
+      _signal?: any,
+    ) {
       calls.push("generateSummary");
       return "A brief summary.";
     },
@@ -295,7 +302,13 @@ Deno.test("a FAILED AI call warns, exactly like a failed parse does", async () =
   // onParseError. So a 429, a 500, or a dropped connection handed back a map
   // with a whole section missing and presented it as a complete success.
   const service = createMockAIService({
-    async extractActionItems(_input, _speakers, _existing, onParseError) {
+    async extractActionItems(
+      _input,
+      _speakers,
+      _existing,
+      _existingSummary,
+      onParseError,
+    ) {
       // What the provider layer does on a request failure.
       onParseError?.("action items");
       return [];

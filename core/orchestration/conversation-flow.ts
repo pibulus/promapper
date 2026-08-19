@@ -332,6 +332,7 @@ export async function processLiveText(
     existingActionItems = [],
     existingNodes = [],
     existingEdges = [],
+    existingSummary,
     signal,
   } = options;
 
