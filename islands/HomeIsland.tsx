@@ -51,7 +51,7 @@ import {
 } from "@signals/liveAnalysis.ts";
 import { processingConversation } from "@signals/conversationStore.ts";
 import { ensureApiSession } from "@utils/apiAuth.ts";
-import { soundBloom, soundChime, soundPortal } from "@utils/sound.ts";
+import { soundBloom, soundChime, soundPortal, soundTick } from "@utils/sound.ts";
 import { formatTime, useRecorder } from "./useRecorder.ts";
 import UploadIsland from "./UploadIsland.tsx";
 import DashboardIsland from "./DashboardIsland.tsx";
@@ -719,10 +719,14 @@ export default function HomeIsland() {
     const timer = setInterval(() => {
       // Hold on the final stage instead of looping back — a loop reads as
       // "stuck starting over"; a held last stage reads as "almost there".
-      brewNoteIndex.value = Math.min(
+      const nextIndex = Math.min(
         brewNoteIndex.value + 1,
         notes.length - 1,
       );
+      if (brewNoteIndex.value !== nextIndex) {
+        brewNoteIndex.value = nextIndex;
+        soundTick();
+      }
     }, 2200);
     return () => clearInterval(timer);
   }, [isBrewing, isAppending]);

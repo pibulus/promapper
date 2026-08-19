@@ -502,9 +502,47 @@ export default function ForceDirectedGraph(
   // ===================================================================
 
   if (loading) {
+    // The constellation loading animation from DashboardIsland, so the map
+    // feels like it's mapping while crunching audio, not just a generic spinner.
+    const NODES = [
+      { cx: 26, cy: 62, r: 7 },
+      { cx: 50, cy: 30, r: 9 },
+      { cx: 74, cy: 58, r: 6 },
+      { cx: 40, cy: 88, r: 5 },
+      { cx: 88, cy: 88, r: 6 },
+    ];
+    const EDGES = [[0, 1], [1, 2], [0, 3], [2, 4]];
+    
     return (
-      <div class="flex h-full items-center justify-center">
-        <div class="loading loading-spinner text-primary"></div>
+      <div class="flex h-full items-center justify-center" aria-hidden="true" style="opacity: 0.6;">
+        <svg
+          class="board-skeleton__constellation"
+          viewBox="0 0 114 114"
+          preserveAspectRatio="xMidYMid meet"
+          
+        >
+          {EDGES.map(([a, b], i) => (
+            <line
+              key={`e${i}`}
+              x1={NODES[a].cx}
+              y1={NODES[a].cy}
+              x2={NODES[b].cx}
+              y2={NODES[b].cy}
+              class="board-skeleton__edge"
+              style={`--i:${i}`}
+            />
+          ))}
+          {NODES.map((n, i) => (
+            <circle
+              key={`n${i}`}
+              cx={n.cx}
+              cy={n.cy}
+              r={n.r}
+              class="board-skeleton__node"
+              style={`--i:${i}`}
+            />
+          ))}
+        </svg>
       </div>
     );
   }
