@@ -15,6 +15,7 @@ import {
   pickExportFormats,
 } from "../utils/markdownPrompts.ts";
 import { buildDeckUrl, parseDeckJson } from "../utils/deckExport.ts";
+import { soundToggle, soundTick, soundBloom, soundCheckoff, soundHover } from "@utils/sound.ts";
 import { markdownService } from "../utils/markdownService.ts";
 import { showToast, showUndoToast } from "../utils/toast.ts";
 import { conversationData } from "@signals/conversationStore.ts";
@@ -63,6 +64,10 @@ export default function MarkdownMakerDrawer(
   // When a saved snapshot is loaded back for editing, saving updates it in
   // place instead of appending a new one.
   const activeDraftId = useSignal<string | null>(null);
+  const theaterPhase = useSignal("");
+  const claimPending = useSignal<{ result: string, promptId: string | null, finalDeckUrl?: string } | null>(null);
+  const theaterIntervalRef = useRef<number | null>(null);
+
 
   const drawerRef = useRef<HTMLDivElement>(null);
   const lastFocused = useRef<HTMLElement | null>(null);
@@ -240,9 +245,7 @@ export default function MarkdownMakerDrawer(
       }
       loadSavedOutputs();
     });
-  }
-
-  // Generate markdown from preset prompt
+  }  // Generate markdown from preset prompt
   async function generateFromPreset(promptId: string) {
     const promptOption = markdownPrompts.find((p) => p.id === promptId);
     if (!promptOption || !transcript.trim()) {
@@ -250,66 +253,11 @@ export default function MarkdownMakerDrawer(
       showToast("No transcript content available", "error");
       return;
     }
-
-    loading.value = true;
-    error.value = null;
-    formatHint.value = null;
-    deckUrl.value = null;
-    selectedPromptId.value = promptId;
-
-    try {
-      const result = await markdownService.generateMarkdown(
-        buildExportPrompt(promptOption),
-        transcript,
-        conversationData.value ?? undefined,
-      );
-      // The model can decline a bad fit — surface that as a hint, not a
-      // "success" that pretends the refusal is your export.
-      const mismatch = parseFormatMismatch(result);
-      if (mismatch) {
-        formatHint.value = mismatch;
-        showToast("That format doesn't quite fit this one", "info");
-        return;
-      }
-      // An empty (or whitespace-only) reply is a failed generation, not a
-      // blank document — showing an empty editor read as "your export is gone".
-      if (!result.trim()) {
-        error.value = "The export came back empty — try again.";
-        showToast("The export came back empty — try again", "error");
-        return;
-      }
-      // The Deck preset outputs Slideomatic deck JSON, not markdown —
-      // validate it and turn it into an open-the-deck link. Invalid JSON is a
-      // retry, never a broken deck shipped to a new tab.
-      if (promptId === DECK_PROMPT_ID) {
-        const slides = parseDeckJson(result);
-        if (!slides) {
-          error.value = "The deck didn't come out right — give it another go.";
-          showToast(
-            "The deck didn't come out right — give it another go",
-            "error",
-          );
-          return;
-        }
-        deckUrl.value = await buildDeckUrl(slides);
-        markdown.value = JSON.stringify(slides, null, 2);
-        activeDraftId.value = null;
-        showToast("Deck ready — open it below", "success");
-        return;
-      }
-      markdown.value = result;
-      activeDraftId.value = null; // fresh generation = a new snapshot
-      showToast("Markdown generated!", "success");
-    } catch (err) {
-      // Keep the previous output — a failed retry shouldn't eat good work.
-      error.value = err instanceof Error ? err.message : "Generation failed";
-      showToast(
-        err instanceof Error ? err.message : "Failed to generate markdown",
-        "error",
-      );
-    } finally {
-      loading.value = false;
-    }
+    await runTheater(() => markdownService.generateMarkdown(
+      buildExportPrompt(promptOption),
+      transcript,
+      conversationData.value ?? undefined,
+    ), promptId);
   }
 
   // Generate markdown from custom prompt
@@ -319,29 +267,85 @@ export default function MarkdownMakerDrawer(
       showToast("Please provide both a prompt and transcript", "warning");
       return;
     }
+    await runTheater(() => markdownService.generateMarkdown(
+      customPrompt.value,
+      transcript,
+      conversationData.value ?? undefined,
+    ), null);
+  }
 
+  async function runTheater(work: () => Promise<string>, promptId: string | null) {
     loading.value = true;
     error.value = null;
     formatHint.value = null;
     deckUrl.value = null;
-    selectedPromptId.value = null;
+    selectedPromptId.value = promptId;
+    claimPending.value = null;
+    markdown.value = "";
+    activeDraftId.value = null;
 
+    const phases = [
+      "Analyzing conversation weight...",
+      "Aligning semantic nodes...",
+      "Crunching context...",
+      "Polishing output..."
+    ];
+    let phaseIdx = 0;
+    theaterPhase.value = phases[0];
+    soundTick();
+
+    if (theaterIntervalRef.current !== null) {
+      clearInterval(theaterIntervalRef.current);
+    }
+    theaterIntervalRef.current = setInterval(() => {
+      phaseIdx = (phaseIdx + 1) % phases.length;
+      theaterPhase.value = phases[phaseIdx];
+      soundTick();
+    }, 700) as unknown as number;
+
+    const start = Date.now();
     try {
-      const result = await markdownService.generateMarkdown(
-        customPrompt.value,
-        transcript,
-        conversationData.value ?? undefined,
-      );
+      const result = await work();
+      
+      const elapsed = Date.now() - start;
+      if (elapsed < 3000) {
+        await new Promise((r) => setTimeout(r, 3000 - elapsed));
+      }
+
+      clearInterval(theaterIntervalRef.current);
+      theaterIntervalRef.current = null;
+
+      const mismatch = parseFormatMismatch(result);
+      if (mismatch) {
+        formatHint.value = mismatch;
+        showToast("That format doesn't quite fit this one", "info");
+        return;
+      }
       if (!result.trim()) {
         error.value = "The export came back empty — try again.";
         showToast("The export came back empty — try again", "error");
         return;
       }
-      markdown.value = result;
-      activeDraftId.value = null; // fresh generation = a new snapshot
-      showToast("Markdown generated!", "success");
+
+      if (promptId === DECK_PROMPT_ID) {
+        const slides = parseDeckJson(result);
+        if (!slides) {
+          error.value = "The deck didn't come out right — give it another go.";
+          showToast("The deck didn't come out right — give it another go", "error");
+          return;
+        }
+        const url = await buildDeckUrl(slides);
+        claimPending.value = { result: JSON.stringify(slides, null, 2), promptId, finalDeckUrl: url };
+      } else {
+        claimPending.value = { result, promptId };
+      }
+      
+      soundBloom();
     } catch (err) {
-      // Keep the previous output — a failed retry shouldn't eat good work.
+      if (theaterIntervalRef.current !== null) {
+        clearInterval(theaterIntervalRef.current);
+        theaterIntervalRef.current = null;
+      }
       error.value = err instanceof Error ? err.message : "Generation failed";
       showToast(
         err instanceof Error ? err.message : "Failed to generate markdown",
@@ -351,6 +355,22 @@ export default function MarkdownMakerDrawer(
       loading.value = false;
     }
   }
+
+  function claimExport() {
+    if (!claimPending.value) return;
+    const { result, finalDeckUrl } = claimPending.value;
+    markdown.value = result;
+    if (finalDeckUrl) {
+      deckUrl.value = finalDeckUrl;
+      showToast("Deck ready — open it below", "success");
+    } else {
+      showToast("Markdown generated!", "success");
+    }
+    claimPending.value = null;
+    soundCheckoff();
+    setTimeout(() => saveOutput(), 50);
+  }
+
 
   // Copy to clipboard
   async function copyToClipboard() {
@@ -750,7 +770,7 @@ export default function MarkdownMakerDrawer(
                     ? " is-selected"
                     : ""
                 }`}
-                onClick={() => generateFromPreset(promptOption.id)}
+                onMouseEnter={soundHover} onClick={() => { soundTick(); generateFromPreset(promptOption.id); }}
                 disabled={loading.value}
               >
                 <i
@@ -775,7 +795,7 @@ export default function MarkdownMakerDrawer(
               type="button"
               class="export-custom-toggle"
               aria-expanded={customOpen.value}
-              onClick={() => customOpen.value = !customOpen.value}
+              onMouseEnter={soundHover} onClick={() => { soundToggle(!customOpen.value); customOpen.value = !customOpen.value; }}
             >
               <i
                 class={`fa ${
@@ -802,7 +822,7 @@ export default function MarkdownMakerDrawer(
                 <button
                   type="button"
                   class="btn btn--accent w-full"
-                  onClick={generateFromCustom}
+                  onMouseEnter={soundHover} onClick={() => { soundTick(); generateFromCustom(); }}
                   disabled={loading.value || !customPrompt.value.trim() ||
                     !transcript.trim()}
                 >
@@ -817,19 +837,32 @@ export default function MarkdownMakerDrawer(
               always know which run (preset or custom) is in flight. */
           }
           {loading.value && (
-            <div
-              class="flex items-center justify-center gap-2 mb-4 py-2 text-sm font-bold"
-              style={{ color: "var(--accent-ink)" }}
-            >
-              <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
-              <span>
-                Generating {selectedPromptId.value
-                  ? `“${
-                    markdownPrompts.find((p) => p.id === selectedPromptId.value)
-                      ?.label || "export"
-                  }”`
-                  : "your custom export"}…
-              </span>
+            <div class="empty-state" style={{ minHeight: "160px" }}>
+              <div class="empty-state-face" aria-hidden="true">
+                <i class="fa fa-asterisk fa-spin"></i>
+              </div>
+              <div class="empty-state-text animate-pulse">
+                {theaterPhase.value}
+              </div>
+            </div>
+          )}
+
+          {claimPending.value && !loading.value && (
+            <div class="empty-state" style={{ minHeight: "160px", border: "2px dashed var(--accent)", background: "transparent" }}>
+              <div class="empty-state-face" aria-hidden="true">
+                 <i class="fa fa-gift" style={{ color: "var(--accent)" }}></i>
+              </div>
+              <div class="empty-state-text" style={{ marginBottom: "1.25rem", color: "var(--accent-ink)", fontWeight: "bold" }}>
+                Your export is ready
+              </div>
+              <button 
+                type="button"
+                class="btn btn--accent"
+                onMouseEnter={soundHover}
+                onClick={claimExport}
+              >
+                Claim Export
+              </button>
             </div>
           )}
 
@@ -929,7 +962,7 @@ export default function MarkdownMakerDrawer(
               2026-08-13); this names what the drawer DOES and where results
               land, same empty-state grammar as the dashboard cards. */
           }
-          {!markdown.value && !loading.value && !error.value &&
+          {!markdown.value && !claimPending.value && !loading.value && !error.value &&
             savedOutputs.value.length === 0 && (
             <div class="empty-state">
               <div class="empty-state-face" aria-hidden="true">
