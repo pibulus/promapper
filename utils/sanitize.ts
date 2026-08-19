@@ -39,39 +39,70 @@ export function formatTranscriptSafe(
 ): string {
   if (!text) return "";
 
-  // Escape all HTML first
   const escaped = escapeHtml(text);
+  const lines = escaped.split('\n');
+  
+  const knownSpeakersPattern = speakers
+    .map(s => escapeHtml(s.trim()))
+    .filter(s => s)
+    .map(s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|");
+    
+  const knownRegex = knownSpeakersPattern ? new RegExp(`^(${knownSpeakersPattern}):\\s*(.*)`) : null;
+  const fallbackRegex = /^(Speaker\\s*\\d+|[A-Z][a-z]+):\\s*(.*)/;
 
-  // Convert newlines to <br/>
-  let formatted = escaped.replace(/\n/g, "<br/>");
+  let currentSpeaker = '';
+  let currentColor = 'var(--accent-ink)';
+  let html = '';
+  let isFirstUtterance = true;
 
-  // Known speakers first — exact (escaped) names, each in their own color.
-  for (const speaker of speakers) {
-    const name = speaker.trim();
-    if (!name) continue;
-    const escapedName = escapeHtml(name);
-    const pattern = new RegExp(
-      `(^|<br/>)(${escapedName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}):`,
-      "g",
-    );
-    const color = speakerColor(name, speakers);
-    // data-speaker makes the name tappable (rename-in-place); the value is
-    // already HTML-escaped above, safe inside a quoted attribute.
-    formatted = formatted.replace(
-      pattern,
-      `$1<span class="transcript-speaker" data-speaker="$2" style="font-weight: 600; color: ${color}; margin-right: 0.5rem;">$2:</span>`,
-    );
+  for (const line of lines) {
+    let newSpeaker = null;
+    let restOfLine = line;
+
+    if (knownRegex && knownRegex.test(line)) {
+      const match = line.match(knownRegex);
+      if (match) {
+        newSpeaker = match[1];
+        restOfLine = match[2];
+      }
+    } else if (fallbackRegex.test(line)) {
+      const match = line.match(fallbackRegex);
+      if (match) {
+        newSpeaker = match[1];
+        restOfLine = match[2];
+      }
+    }
+
+    if (newSpeaker) {
+      if (!isFirstUtterance) {
+        html += `</div></div>`;
+      }
+      isFirstUtterance = false;
+      currentSpeaker = newSpeaker;
+      currentColor = speakers.includes(currentSpeaker) ? speakerColor(currentSpeaker, speakers) : 'var(--accent-ink)';
+      
+      html += `<div class="transcript-utterance" style="margin-bottom: 1.25rem; border-left: 3px solid ${currentColor}; padding-left: 0.85rem;">`;
+      html += `<div class="transcript-speaker" data-speaker="${currentSpeaker}" style="font-weight: 700; font-size: 0.8rem; letter-spacing: 0.02em; color: ${currentColor}; margin-bottom: 0.2rem; cursor: pointer; text-transform: uppercase;">${currentSpeaker}</div>`;
+      html += `<div class="transcript-text" style="color: var(--color-text); line-height: 1.6;">`;
+      if (restOfLine.trim()) {
+        html += `${restOfLine}<br/>`;
+      }
+    } else {
+      if (isFirstUtterance) {
+        html += `<div class="transcript-utterance" style="margin-bottom: 1.25rem; padding-left: 0.85rem;">`;
+        html += `<div class="transcript-text" style="color: var(--color-text); line-height: 1.6;">`;
+        isFirstUtterance = false;
+      }
+      html += `${line}<br/>`;
+    }
   }
-
-  // Fallback highlight for name-ish prefixes not in the speakers list.
-  // (Names already wrapped above no longer sit directly after ^ or <br/>,
-  // so they can't double-match here.)
-  formatted = formatted.replace(
-    /(^|<br\/>)(Speaker\s*\d+|[A-Z][a-z]+):/g,
-    '$1<span style="font-weight: 600; color: var(--accent-ink); margin-right: 0.5rem;">$2:</span>',
-  );
-
-  return formatted;
+  
+  if (!isFirstUtterance) {
+    html += `</div></div>`;
+  }
+  
+  return html;
 }
 
 // Only these URL schemes are allowed in rendered links/images. Anything else
