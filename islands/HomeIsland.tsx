@@ -51,7 +51,12 @@ import {
 } from "@signals/liveAnalysis.ts";
 import { processingConversation } from "@signals/conversationStore.ts";
 import { ensureApiSession } from "@utils/apiAuth.ts";
-import { soundBloom, soundChime, soundPortal, soundTick } from "@utils/sound.ts";
+import {
+  soundBloom,
+  soundChime,
+  soundPortal,
+  soundTick,
+} from "@utils/sound.ts";
 import { formatTime, useRecorder } from "./useRecorder.ts";
 import UploadIsland from "./UploadIsland.tsx";
 import DashboardIsland from "./DashboardIsland.tsx";
@@ -794,7 +799,7 @@ export default function HomeIsland() {
                       if (!drawerOpen.value) historyDrawerOpen.value = false;
                       drawerOpen.value = !drawerOpen.value;
                     }}
-                    class="header-action-btn"
+                    class="header-export-btn"
                     data-tip="Turn this into a document"
                     aria-label="Export conversation"
                   >

@@ -393,7 +393,12 @@ export function createOpenRouterService(
       try {
         return parseGraphResponse(
           await chatText(
-            buildTopicExtractionPrompt(text, existingNodes, existingEdges),
+            buildTopicExtractionPrompt(
+              text,
+              existingNodes,
+              existingEdges,
+              existingSummary,
+            ),
             options.topicModel,
             signal,
           ),
@@ -414,7 +419,7 @@ export function createOpenRouterService(
     ): Promise<string> {
       try {
         return (await chatText(
-          buildSummaryPrompt(text, topicLabels),
+          buildSummaryPrompt(text, topicLabels, existingSummary),
           options.summaryModel,
           signal,
         )).trim();

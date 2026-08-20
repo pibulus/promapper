@@ -15,7 +15,13 @@ import {
   pickExportFormats,
 } from "../utils/markdownPrompts.ts";
 import { buildDeckUrl, parseDeckJson } from "../utils/deckExport.ts";
-import { soundToggle, soundTick, soundBloom, soundCheckoff, soundHover } from "@utils/sound.ts";
+import {
+  soundBloom,
+  soundCheckoff,
+  soundHover,
+  soundTick,
+  soundToggle,
+} from "@utils/sound.ts";
 import { markdownService } from "../utils/markdownService.ts";
 import { showToast, showUndoToast } from "../utils/toast.ts";
 import { conversationData } from "@signals/conversationStore.ts";
@@ -65,9 +71,10 @@ export default function MarkdownMakerDrawer(
   // place instead of appending a new one.
   const activeDraftId = useSignal<string | null>(null);
   const theaterPhase = useSignal("");
-  const claimPending = useSignal<{ result: string, promptId: string | null, finalDeckUrl?: string } | null>(null);
+  const claimPending = useSignal<
+    { result: string; promptId: string | null; finalDeckUrl?: string } | null
+  >(null);
   const theaterIntervalRef = useRef<number | null>(null);
-
 
   const drawerRef = useRef<HTMLDivElement>(null);
   const lastFocused = useRef<HTMLElement | null>(null);
@@ -245,7 +252,7 @@ export default function MarkdownMakerDrawer(
       }
       loadSavedOutputs();
     });
-  }  // Generate markdown from preset prompt
+  } // Generate markdown from preset prompt
   async function generateFromPreset(promptId: string) {
     const promptOption = markdownPrompts.find((p) => p.id === promptId);
     if (!promptOption || !transcript.trim()) {
@@ -253,11 +260,12 @@ export default function MarkdownMakerDrawer(
       showToast("No transcript content available", "error");
       return;
     }
-    await runTheater(() => markdownService.generateMarkdown(
-      buildExportPrompt(promptOption),
-      transcript,
-      conversationData.value ?? undefined,
-    ), promptId);
+    await runTheater(() =>
+      markdownService.generateMarkdown(
+        buildExportPrompt(promptOption),
+        transcript,
+        conversationData.value ?? undefined,
+      ), promptId);
   }
 
   // Generate markdown from custom prompt
@@ -267,14 +275,18 @@ export default function MarkdownMakerDrawer(
       showToast("Please provide both a prompt and transcript", "warning");
       return;
     }
-    await runTheater(() => markdownService.generateMarkdown(
-      customPrompt.value,
-      transcript,
-      conversationData.value ?? undefined,
-    ), null);
+    await runTheater(() =>
+      markdownService.generateMarkdown(
+        customPrompt.value,
+        transcript,
+        conversationData.value ?? undefined,
+      ), null);
   }
 
-  async function runTheater(work: () => Promise<string>, promptId: string | null) {
+  async function runTheater(
+    work: () => Promise<string>,
+    promptId: string | null,
+  ) {
     loading.value = true;
     error.value = null;
     formatHint.value = null;
@@ -288,7 +300,7 @@ export default function MarkdownMakerDrawer(
       "Analyzing conversation weight...",
       "Aligning semantic nodes...",
       "Crunching context...",
-      "Polishing output..."
+      "Polishing output...",
     ];
     let phaseIdx = 0;
     theaterPhase.value = phases[0];
@@ -306,7 +318,7 @@ export default function MarkdownMakerDrawer(
     const start = Date.now();
     try {
       const result = await work();
-      
+
       const elapsed = Date.now() - start;
       if (elapsed < 3000) {
         await new Promise((r) => setTimeout(r, 3000 - elapsed));
@@ -331,15 +343,22 @@ export default function MarkdownMakerDrawer(
         const slides = parseDeckJson(result);
         if (!slides) {
           error.value = "The deck didn't come out right — give it another go.";
-          showToast("The deck didn't come out right — give it another go", "error");
+          showToast(
+            "The deck didn't come out right — give it another go",
+            "error",
+          );
           return;
         }
         const url = await buildDeckUrl(slides);
-        claimPending.value = { result: JSON.stringify(slides, null, 2), promptId, finalDeckUrl: url };
+        claimPending.value = {
+          result: JSON.stringify(slides, null, 2),
+          promptId,
+          finalDeckUrl: url,
+        };
       } else {
         claimPending.value = { result, promptId };
       }
-      
+
       soundBloom();
     } catch (err) {
       if (theaterIntervalRef.current !== null) {
@@ -370,7 +389,6 @@ export default function MarkdownMakerDrawer(
     soundCheckoff();
     setTimeout(() => saveOutput(), 50);
   }
-
 
   // Copy to clipboard
   async function copyToClipboard() {
@@ -770,7 +788,11 @@ export default function MarkdownMakerDrawer(
                     ? " is-selected"
                     : ""
                 }`}
-                onMouseEnter={soundHover} onClick={() => { soundTick(); generateFromPreset(promptOption.id); }}
+                onMouseEnter={soundHover}
+                onClick={() => {
+                  soundTick();
+                  generateFromPreset(promptOption.id);
+                }}
                 disabled={loading.value}
               >
                 <i
@@ -795,7 +817,11 @@ export default function MarkdownMakerDrawer(
               type="button"
               class="export-custom-toggle"
               aria-expanded={customOpen.value}
-              onMouseEnter={soundHover} onClick={() => { soundToggle(!customOpen.value); customOpen.value = !customOpen.value; }}
+              onMouseEnter={soundHover}
+              onClick={() => {
+                soundToggle(!customOpen.value);
+                customOpen.value = !customOpen.value;
+              }}
             >
               <i
                 class={`fa ${
@@ -822,7 +848,11 @@ export default function MarkdownMakerDrawer(
                 <button
                   type="button"
                   class="btn btn--accent w-full"
-                  onMouseEnter={soundHover} onClick={() => { soundTick(); generateFromCustom(); }}
+                  onMouseEnter={soundHover}
+                  onClick={() => {
+                    soundTick();
+                    generateFromCustom();
+                  }}
                   disabled={loading.value || !customPrompt.value.trim() ||
                     !transcript.trim()}
                 >
@@ -848,14 +878,28 @@ export default function MarkdownMakerDrawer(
           )}
 
           {claimPending.value && !loading.value && (
-            <div class="empty-state" style={{ minHeight: "160px", border: "2px dashed var(--accent)", background: "transparent" }}>
+            <div
+              class="empty-state"
+              style={{
+                minHeight: "160px",
+                border: "2px dashed var(--accent)",
+                background: "transparent",
+              }}
+            >
               <div class="empty-state-face" aria-hidden="true">
-                 <i class="fa fa-gift" style={{ color: "var(--accent)" }}></i>
+                <i class="fa fa-gift" style={{ color: "var(--accent)" }}></i>
               </div>
-              <div class="empty-state-text" style={{ marginBottom: "1.25rem", color: "var(--accent-ink)", fontWeight: "bold" }}>
+              <div
+                class="empty-state-text"
+                style={{
+                  marginBottom: "1.25rem",
+                  color: "var(--accent-ink)",
+                  fontWeight: "bold",
+                }}
+              >
                 Your export is ready
               </div>
-              <button 
+              <button
                 type="button"
                 class="btn btn--accent"
                 onMouseEnter={soundHover}
@@ -962,7 +1006,8 @@ export default function MarkdownMakerDrawer(
               2026-08-13); this names what the drawer DOES and where results
               land, same empty-state grammar as the dashboard cards. */
           }
-          {!markdown.value && !claimPending.value && !loading.value && !error.value &&
+          {!markdown.value && !claimPending.value && !loading.value &&
+            !error.value &&
             savedOutputs.value.length === 0 && (
             <div class="empty-state">
               <div class="empty-state-face" aria-hidden="true">

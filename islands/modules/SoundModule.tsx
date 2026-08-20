@@ -613,7 +613,11 @@ export default function SoundModule() {
                 type="button"
                 class={source.kind === "channel" ? "is-on" : ""}
                 aria-pressed={source.kind === "channel"}
-                onMouseEnter={soundHover} onClick={() => { soundTick(); setKind("channel"); }}
+                onMouseEnter={soundHover}
+                onClick={() => {
+                  soundTick();
+                  setKind("channel");
+                }}
               >
                 <i class="fa fa-music" aria-hidden="true"></i> Radio
               </button>
@@ -621,7 +625,11 @@ export default function SoundModule() {
                 type="button"
                 class={source.kind === "mood" ? "is-on" : ""}
                 aria-pressed={source.kind === "mood"}
-                onMouseEnter={soundHover} onClick={() => { soundTick(); setKind("mood"); }}
+                onMouseEnter={soundHover}
+                onClick={() => {
+                  soundTick();
+                  setKind("mood");
+                }}
               >
                 <i class="fa fa-wave-square" aria-hidden="true"></i> Moods
               </button>
@@ -630,7 +638,11 @@ export default function SoundModule() {
               <button
                 type="button"
                 class="radio-play"
-                onMouseEnter={soundHover} onClick={() => { soundTick(); playing.value ? stop() : start(source); }}
+                onMouseEnter={soundHover}
+                onClick={() => {
+                  soundTick();
+                  playing.value ? stop() : start(source);
+                }}
                 aria-label={playing.value ? "Stop sound" : "Play sound"}
               >
                 <i
@@ -646,7 +658,11 @@ export default function SoundModule() {
               <button
                 type="button"
                 class="radio-next"
-                onMouseEnter={soundHover} onClick={() => { soundTick(); next(); }}
+                onMouseEnter={soundHover}
+                onClick={() => {
+                  soundTick();
+                  next();
+                }}
                 data-tip={source.kind === "channel"
                   ? "Next station"
                   : "Next mood"}
@@ -690,7 +706,11 @@ export default function SoundModule() {
                     key={sourceId(s)}
                     type="button"
                     class={`radio-station-row${current ? " is-current" : ""}`}
-                    onMouseEnter={soundHover} onClick={() => { soundTick(); switchTo(i); }}
+                    onMouseEnter={soundHover}
+                    onClick={() => {
+                      soundTick();
+                      switchTo(i);
+                    }}
                     aria-pressed={current}
                   >
                     <i

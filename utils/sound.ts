@@ -25,7 +25,6 @@ function prefersReducedMotion(): boolean {
 const engine = typeof window === "undefined" ? null : new Weightless({
   volume: 0.7,
   cues: {
-
     hover: {
       cooldownMs: 80,
       detuneCents: 4,

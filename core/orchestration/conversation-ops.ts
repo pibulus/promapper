@@ -198,7 +198,10 @@ export function renameSpeaker(
     }
     // Also replace inside description
     if (nextItem.description.includes(oldName)) {
-      nextItem = { ...nextItem, description: nextItem.description.replaceAll(oldName, trimmedNew) };
+      nextItem = {
+        ...nextItem,
+        description: nextItem.description.replaceAll(oldName, trimmedNew),
+      };
     }
     return nextItem;
   });
@@ -207,10 +210,16 @@ export function renameSpeaker(
   const nextNodes = data.nodes.map((node) => {
     let nextNode = node;
     if (node.label.includes(oldName)) {
-      nextNode = { ...nextNode, label: node.label.replaceAll(oldName, trimmedNew) };
+      nextNode = {
+        ...nextNode,
+        label: node.label.replaceAll(oldName, trimmedNew),
+      };
     }
-    if (node.aliases?.some(a => a.includes(oldName))) {
-      nextNode = { ...nextNode, aliases: node.aliases.map(a => a.replaceAll(oldName, trimmedNew)) };
+    if (node.aliases?.some((a) => a.includes(oldName))) {
+      nextNode = {
+        ...nextNode,
+        aliases: node.aliases.map((a) => a.replaceAll(oldName, trimmedNew)),
+      };
     }
     return nextNode;
   });
@@ -236,6 +245,7 @@ export function renameSpeaker(
       text: updatedText,
       speakers: Array.from(new Set(nextSpeakers)),
     },
+    nodes: nextNodes,
     actionItems: nextActionItems,
     summary: nextSummary,
   };

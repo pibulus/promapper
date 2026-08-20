@@ -40,20 +40,22 @@ export function formatTranscriptSafe(
   if (!text) return "";
 
   const escaped = escapeHtml(text);
-  const lines = escaped.split('\n');
-  
+  const lines = escaped.split("\n");
+
   const knownSpeakersPattern = speakers
-    .map(s => escapeHtml(s.trim()))
-    .filter(s => s)
-    .map(s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .map((s) => escapeHtml(s.trim()))
+    .filter((s) => s)
+    .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
     .join("|");
-    
-  const knownRegex = knownSpeakersPattern ? new RegExp(`^(${knownSpeakersPattern}):\\s*(.*)`) : null;
+
+  const knownRegex = knownSpeakersPattern
+    ? new RegExp(`^(${knownSpeakersPattern}):\\s*(.*)`)
+    : null;
   const fallbackRegex = /^(Speaker\\s*\\d+|[A-Z][a-z]+):\\s*(.*)/;
 
-  let currentSpeaker = '';
-  let currentColor = 'var(--accent-ink)';
-  let html = '';
+  let currentSpeaker = "";
+  let currentColor = "var(--accent-ink)";
+  let html = "";
   let isFirstUtterance = true;
 
   for (const line of lines) {
@@ -80,28 +82,35 @@ export function formatTranscriptSafe(
       }
       isFirstUtterance = false;
       currentSpeaker = newSpeaker;
-      currentColor = speakers.includes(currentSpeaker) ? speakerColor(currentSpeaker, speakers) : 'var(--accent-ink)';
-      
-      html += `<div class="transcript-utterance" style="margin-bottom: 1.25rem; border-left: 3px solid ${currentColor}; padding-left: 0.85rem;">`;
-      html += `<div class="transcript-speaker" data-speaker="${currentSpeaker}" style="font-weight: 700; font-size: 0.8rem; letter-spacing: 0.02em; color: ${currentColor}; margin-bottom: 0.2rem; cursor: pointer; text-transform: uppercase;">${currentSpeaker}</div>`;
-      html += `<div class="transcript-text" style="color: var(--color-text); line-height: 1.6;">`;
+      currentColor = speakers.includes(currentSpeaker)
+        ? speakerColor(currentSpeaker, speakers)
+        : "var(--accent-ink)";
+
+      html +=
+        `<div class="transcript-utterance" style="margin-bottom: 1.25rem; border-left: 3px solid ${currentColor}; padding-left: 0.85rem;">`;
+      html +=
+        `<div class="transcript-speaker" data-speaker="${currentSpeaker}" style="font-weight: 700; font-size: 0.8rem; letter-spacing: 0.02em; color: ${currentColor}; margin-bottom: 0.2rem; cursor: pointer; text-transform: uppercase;">${currentSpeaker}</div>`;
+      html +=
+        `<div class="transcript-text" style="color: var(--color-text); line-height: 1.6;">`;
       if (restOfLine.trim()) {
         html += `${restOfLine}<br/>`;
       }
     } else {
       if (isFirstUtterance) {
-        html += `<div class="transcript-utterance" style="margin-bottom: 1.25rem; padding-left: 0.85rem;">`;
-        html += `<div class="transcript-text" style="color: var(--color-text); line-height: 1.6;">`;
+        html +=
+          `<div class="transcript-utterance" style="margin-bottom: 1.25rem; padding-left: 0.85rem;">`;
+        html +=
+          `<div class="transcript-text" style="color: var(--color-text); line-height: 1.6;">`;
         isFirstUtterance = false;
       }
       html += `${line}<br/>`;
     }
   }
-  
+
   if (!isFirstUtterance) {
     html += `</div></div>`;
   }
-  
+
   return html;
 }
 

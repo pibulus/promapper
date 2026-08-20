@@ -512,14 +512,17 @@ export default function ForceDirectedGraph(
       { cx: 88, cy: 88, r: 6 },
     ];
     const EDGES = [[0, 1], [1, 2], [0, 3], [2, 4]];
-    
+
     return (
-      <div class="flex h-full items-center justify-center" aria-hidden="true" style="opacity: 0.6;">
+      <div
+        class="flex h-full items-center justify-center"
+        aria-hidden="true"
+        style="opacity: 0.6;"
+      >
         <svg
           class="board-skeleton__constellation"
           viewBox="0 0 114 114"
           preserveAspectRatio="xMidYMid meet"
-          
         >
           {EDGES.map(([a, b], i) => (
             <line

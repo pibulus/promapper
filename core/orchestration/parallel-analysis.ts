@@ -63,7 +63,12 @@ export async function analyzeText(
     signal,
   );
   const summaryPromise = topicsPromise.then((topics) =>
-    aiService.generateSummary(text, topics.nodes.map((n) => n.label), existingSummary, signal)
+    aiService.generateSummary(
+      text,
+      topics.nodes.map((n) => n.label),
+      existingSummary,
+      signal,
+    )
   ).catch((error) => {
     console.error("Summary generation failed, using fallback:", error);
     return summary_fallback;

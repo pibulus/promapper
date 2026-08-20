@@ -165,6 +165,7 @@ export const handler: Handlers = {
           [],
           [],
           [],
+          undefined,
           ctrl.signal,
         );
       } finally {

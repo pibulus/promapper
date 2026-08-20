@@ -52,7 +52,9 @@ export const buildActionItemsPrompt = (
 
   // Without an anchor date the model can't resolve "by Friday" / "next
   // week" — it doesn't know what today is, so spoken deadlines were lost.
-  const historyContext = existingSummary ? `\n\nPROJECT HISTORY / CONTEXT:\n${existingSummary}\n\n(Use this history ONLY to understand the context of the new transcript. Extract action items ONLY from the new transcript.)` : "";
+  const historyContext = existingSummary
+    ? `\n\nPROJECT HISTORY / CONTEXT:\n${existingSummary}\n\n(Use this history ONLY to understand the context of the new transcript. Extract action items ONLY from the new transcript.)`
+    : "";
 
   const dateContext =
     `\nFor due_date: today is ${localDateISO(0)}. Resolve relative mentions ` +
@@ -175,7 +177,9 @@ export const buildTopicExtractionPrompt = (
 
   // Build existing edges context to preserve relationships across appends.
   const labelById = new Map(existingNodes.map((node) => [node.id, node.label]));
-  const historyContext = existingSummary ? `\n\nPROJECT HISTORY / CONTEXT:\n${existingSummary}\n\n(Use this history ONLY to understand the context of the new transcript. Extract topics primarily from the new transcript.)` : "";
+  const historyContext = existingSummary
+    ? `\n\nPROJECT HISTORY / CONTEXT:\n${existingSummary}\n\n(Use this history ONLY to understand the context of the new transcript. Extract topics primarily from the new transcript.)`
+    : "";
 
   const existingEdgesContext = existingEdges.length > 0
     ? `\n\nEXISTING RELATIONSHIPS (preserve these when still relevant):\n${
@@ -259,7 +263,9 @@ export const buildSummaryPrompt = (
   // so it leads with what the conversation was actually about. Optional by
   // design: an empty list just yields the plain text summary, so the summary
   // call never has to wait on topics if they aren't ready.
-  const historyContext = existingSummary ? `\n\nPREVIOUS SUMMARY (for context):\n${existingSummary}\n\nIMPORTANT: Do not just repeat the previous summary. Focus your new summary on what is NEW in this transcript, using the previous summary only to understand the ongoing context.` : "";
+  const historyContext = existingSummary
+    ? `\n\nPREVIOUS SUMMARY (for context):\n${existingSummary}\n\nIMPORTANT: Do not just repeat the previous summary. Focus your new summary on what is NEW in this transcript, using the previous summary only to understand the ongoing context.`
+    : "";
 
   const topicHint = topicLabels.length > 0
     ? `\nThis conversation maps to these topics: ${

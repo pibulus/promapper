@@ -23,7 +23,7 @@ distinction is now in CLAUDE.md so nobody repeats my minute of panic.
 
 **Append is reliable.** I synthesised real speech, encoded it to the same
 webm/opus the browser records, and pushed it through the real endpoint. Every
-promise held: self-checkoff got 3/3 right *including the negative* (the item
+promise held: self-checkoff got 3/3 right _including the negative_ (the item
 whose audio said "not started yet" correctly stayed open), the topic map grew
 without trampling existing nodes, and the summary kept its base with an update
 block appended. Short takes skip topics/summary by design, not by accident.
@@ -34,7 +34,7 @@ block appended. Short takes skip topics/summary by design, not by accident.
 
 You were right that it was everywhere, and it wasn't the drawer's fault — it was
 the colour engine. `deriveStrong()` walked warm accents down until they cleared
-contrast on cream, and a dark warm hue *is* brown. Measured across the wheel it
+contrast on cream, and a dark warm hue _is_ brown. Measured across the wheel it
 was producing `#c53550`, `#c63a2a`, `#b84b00`, `#956300` — brick, rust, ochre —
 and `--accent-ink` paints text, borders and plates in about a hundred places.
 
@@ -46,7 +46,7 @@ again.
 Three more places maroon was sneaking in:
 
 - The Preview bar used `--accent-strong` as a big slab. It now rides
-  `--header-band` / `--header-band-ink` — the theme system's *solved* band pair,
+  `--header-band` / `--header-band-ink` — the theme system's _solved_ band pair,
   same as every card header. Still fully theme-adaptive, just no longer using
   the one variable that goes espresso.
 - The page scrim was a 35% dark wash, which multiplied bright coral bands into
@@ -59,7 +59,7 @@ Three more places maroon was sneaking in:
 
 ## What else got fixed
 
-**The flip icon** you flagged: the button lived *inside* the rotating plane, so
+**The flip icon** you flagged: the button lived _inside_ the rotating plane, so
 it mirrored with the card. It sits outside now — only the card turns.
 
 **The wordmark** is pinned to warm near-black on every roll. Verified across six
@@ -79,11 +79,11 @@ reduced-motion.
 
 **Magpie holds real files.** Drop them, paste a screenshot, or use the
 paperclip. The pointers-not-payloads law is intact: localStorage still stores
-only a pointer, and the bytes go to a Blob store shaped like `recordingsDB` —
-in its own database, so a version bump can never block audio takes in a second
-tab. Images carry thumbnails; tossing takes the bytes with it.
+only a pointer, and the bytes go to a Blob store shaped like `recordingsDB` — in
+its own database, so a version bump can never block audio takes in a second tab.
+Images carry thumbnails; tossing takes the bytes with it.
 
-**Limits stopped shouting.** The server's warm sentences were getting `Error: `
+**Limits stopped shouting.** The server's warm sentences were getting `Error:`
 stapled on the front and painted red. A limit isn't a failure — those now read
 in the app's own voice, in amber.
 
@@ -94,7 +94,7 @@ in the app's own voice, in amber.
 Three agents went at it. The two that mattered:
 
 **Rex caught me shipping theatre.** The drag-teardown I'd added earlier removed
-*nothing* — the handlers are function declarations, so every render mints new
+_nothing_ — the handlers are function declarations, so every render mints new
 identities and `removeEventListener` matched none of them. It looked correct in
 review. It's fixed properly now, capturing the teardown at registration.
 
@@ -129,7 +129,7 @@ purpose, so I left it alone.
 
 **2. The audio rail is daily; the pricing sheet says monthly.** The budget store
 buckets by UTC day only, so "~1 hr/month" flattened to a day is about two
-minutes. Monthly bucketing is roughly five lines, but it *is* code, not config.
+minutes. Monthly bucketing is roughly five lines, but it _is_ code, not config.
 Related: there's no supporter identity anywhere yet, so the audio limit is
 necessarily the same number for everyone, and the live-room seat caps (2 free /
 8–10 supporter) have no enforcement point at all. The Keys door — bring your own
