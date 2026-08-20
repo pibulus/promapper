@@ -29,8 +29,12 @@ Two physical facts drive everything:
 Every theme — named or rolled — is three ROLES designed together:
 
 1. **The GROUND**: a two-hue family journey in the sky (L 0.84–0.90, C at the
-   family's gamut-budget), always fading to the cream floor `#fff4e8` where
-   components live. The sky CHANGES with the theme.
+   family's gamut-budget), fading to an AIRY FLOOR where components live. The
+   sky CHANGES with the theme. ⚠️ **Amended Aug 20, 2026 — the floor is no
+   longer the fixed cream `#fff4e8`.** It is derived from the ground's own
+   hue/chroma at a lighter L, because a hardcoded warm cream bleached every roll
+   to near-white by mid-page and sat wrong under cool families. Paper still, but
+   paper you can name the colour of. See "the airy floor" below.
 2. **The BAND**: ONE colour on every card header — the accent at 62% over
    `#ffefdc`. Headers are consistent; they never carry a second hue.
 3. **The POP**: the accent family everywhere ink meets colour — CTA plates,
@@ -42,15 +46,15 @@ colour + one pop.)
 
 ## The tiers (value hierarchy, top of app → ink)
 
-| Tier | Layer          | OKLCH register                                           | Rule                                                 |
-| ---- | -------------- | -------------------------------------------------------- | ---------------------------------------------------- |
-| T0   | Sky ground     | washes L 0.84–0.90, C ≤ 0.10 per-hue clamped → `#fff4e8` | Two-hue family journey, airy, cream floor always     |
-| T1   | Shell          | accent 11% over near-white                               | unchanged recipe                                     |
-| T2   | Card face      | `#fbf1e4` paper cream, L 0.96                            | solid, never glass                                   |
-| T3   | Header band    | accent 62% over `#ffefdc`                                | **MONO — one colour on every card, no exceptions**   |
-| T4   | Chips / washes | accent 4–20% mixes                                       | unchanged recipes, all derive from `--color-accent`  |
-| T5   | CTA plates     | `--cta-plate` (below)                                    | hued ink — never stark black, never a saturated slab |
-| T6   | Ink            | L ≈ 0.30, C 0.03, accent hue                             | text is a color — hue-tinted near-black, never grey  |
+| Tier | Layer          | OKLCH register                                            | Rule                                                 |
+| ---- | -------------- | --------------------------------------------------------- | ---------------------------------------------------- |
+| T0   | Sky ground     | washes L 0.84–0.90, C ≤ 0.10 per-hue clamped → airy floor | Two-hue family journey, airy, floor stays in-family  |
+| T1   | Shell          | accent 11% over near-white                                | unchanged recipe                                     |
+| T2   | Card face      | `#fbf1e4` paper cream, L 0.96                             | solid, never glass                                   |
+| T3   | Header band    | accent 62% over `#ffefdc`                                 | **MONO — one colour on every card, no exceptions**   |
+| T4   | Chips / washes | accent 4–20% mixes                                        | unchanged recipes, all derive from `--color-accent`  |
+| T5   | CTA plates     | `--cta-plate` (below)                                     | hued ink — never stark black, never a saturated slab |
+| T6   | Ink            | L ≈ 0.30, C 0.03, accent hue                              | text is a color — hue-tinted near-black, never grey  |
 
 Saturation is a budget. T3 spends it, T0 whispers it, T4 tints it, T5/T6 are
 hued ink. Nothing else shouts.
@@ -95,7 +99,31 @@ DAYBREAK/SKY periwinkle territory).
 
 Ground hexes live in `themes.ts` cssVars (`--gradient-bg`, `--color-base*`)
 mirrored in the FOUC map. All grounds share the WARM_BG structure: two radial
-corner washes + 168deg linear fading to `#fff4e8` at 78%.
+corner washes + a 168deg linear journey.
+
+### The airy floor (Aug 20, 2026)
+
+⚠️ **Named themes in `themes.ts` are effectively DEAD** — `ThemeSwitcher`
+auto-rolls a `SHUFFLE` theme on mount, so nobody sees DAYBREAK et al. Tuning
+`themes.ts` to change what the app looks like changes nothing. The live knobs
+are all in `core/theme/randomTheme.ts`:
+
+| Knob                       | Where                   | Now              |
+| -------------------------- | ----------------------- | ---------------- |
+| ground family hue/chroma   | `GROUND_VIBES`          | C 0.035–0.085    |
+| ground lightness floor     | `generateThemeParts`    | L 0.94–0.955     |
+| **the 3 linear sky stops** | `composeTheme` `bgBase` | all track ground |
+
+The third row is the one that matters. `bgBase[1]` used to be pinned at
+`L 0.955` on HALF chroma and `bgBase[2]` was the literal `#fff4e8`, so whatever
+the dice rolled, the page washed out by 40% down and finished on a warm cream.
+All three stops now derive from the ground's own L/C/hue, with lightness still
+climbing toward the floor so it reads airy, not toy-solid.
+
+`core/tests/random_theme_test.ts` guards this as a LAW, not a constant: the
+floor must lift off the sky, stay under L 0.985, keep chroma ≥ 0.008, and stay
+within 30° of the ground hue. (It previously asserted the literal `#fff4e8` —
+i.e. the dimness was load-bearing in a test. Don't pin hexes in that file.)
 
 ## The shuffle (OKLCH curated pairs) — ⚠️ SUPERSEDED July 26, 2026
 

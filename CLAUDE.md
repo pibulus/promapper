@@ -220,8 +220,12 @@ the existing conversation.
 
 ## Current Verification Baseline
 
-- `deno task check` passes
-- `deno task test` passes
+Verify with the commands themselves — this list is a snapshot, they are the
+truth:
+
+- `deno task check` passes (fmt + lint + typecheck; **run this, not just tests**
+  — an Aug 19 session left `check` RED while `test` was green)
+- `deno task test` passes (397 tests)
 - `deno task build` passes
 - OpenRouter text, markdown export, and a generated audio smoke test have worked
   locally with `google/gemini-2.5-flash-lite`
@@ -247,6 +251,25 @@ Adding a tool should be drop-a-file + register-a-line:
 - Conversation mutations: add a pure transform in
   `core/orchestration/conversation-ops.ts` + a thin action in
   `signals/actionItemsStore.ts`.
+
+## Styling — read before any CSS pass
+
+- **Two fonts since Aug 19, 2026**: IBM Plex Mono is the body voice (transcript,
+  summary, actions, chips); Inter is `--font-display` for headings. The `h1–h6`
+  rule does NOT cover the header wordmark or footer title — those are `<a>`/
+  `<span>` and are named explicitly in the same rule. Add any new title class
+  there.
+- **Colour is law, and it lives in `docs/COLOR-SYSTEM.md`.** Six source files
+  cite it. The live theme knobs are in `core/theme/randomTheme.ts`, NOT
+  `themes.ts` — the app auto-rolls a SHUFFLE theme on mount, so the named themes
+  are never seen and tuning them changes nothing on screen.
+- ⚠️ **NEVER run a mechanical find-replace over `static/styles.css`.** On Aug 19
+  a "visual sweep" commit swept `position: absolute` → `relative`,
+  `pointer-events: none` → `auto` and `opacity: 0` → `1` across the whole file.
+  It read as a normal three-intention style commit and broke every tooltip, the
+  header lockup, the action-item controls, the card grips and the graph toolbar
+  at once. Audit a suspect style commit with:
+  `git show <sha> -- static/styles.css | grep -c '^+.*position: relative'`
 
 ## Open Issues
 
