@@ -40,7 +40,7 @@ function seededRand(seed: number): () => number {
 const wrap = (h: number) => ((h % 360) + 360) % 360;
 
 /** Circular hue distance in degrees. */
-function _hueDist(a: number, b: number): number {
+function hueDist(a: number, b: number): number {
   const d = Math.abs(wrap(a) - wrap(b));
   return Math.min(d, 360 - d);
 }
@@ -110,10 +110,18 @@ Deno.test("the ground is LUSH PAPER — tinted, light, airy, never competing", (
     assert(C >= 0.005, `ground went dead: C${C.toFixed(3)}`);
     assert(C <= 0.09, `ground too saturated — it competes: C${C.toFixed(3)}`);
     assert(L >= 0.94, `ground too dark: L${L.toFixed(3)}`);
-    // The cream floor is why cards sit on warmth, not on colour.
+    // The floor is AIRY, not white, and it stays in the ground's own family.
+    // It used to be a hardcoded #fff4e8, which bleached every roll to
+    // near-white by mid-page and put a warm cream under cool families
+    // (Aug 20 — this is the assertion that was holding the dimness in).
+    const [floorL, floorC, floorH] = hexToOklch(bgBase[2]);
+    const [skyL, , skyH] = hexToOklch(bgBase[0]);
+    assert(floorL > skyL, `floor no longer lifts off the sky: L${floorL}`);
+    assert(floorL <= 0.985, `floor washed out to white: L${floorL}`);
+    assert(floorC >= 0.008, `floor went colourless: C${floorC.toFixed(3)}`);
     assert(
-      bgBase[2] === "#fff4e8",
-      `the ground stopped landing on the cream floor: ${bgBase[2]}`,
+      hueDist(floorH, skyH) <= 30,
+      `floor left the ground family: h${floorH} vs sky h${skyH}`,
     );
     assert(!!theme.cssVars?.["--gradient-bg"], "roll missing its gradient");
   }
@@ -141,7 +149,7 @@ Deno.test("the band stays VIVID — it never dilutes the offset into a pastel", 
     );
     // And it stayed the offset's own colour rather than drifting toward cream.
     assert(
-      _hueDist(bH, bandHue) < 12,
+      hueDist(bH, bandHue) < 12,
       `band drifted off-hue: ${bH.toFixed(0)} vs offset ${
         wrap(bandHue).toFixed(0)
       }`,
@@ -274,7 +282,7 @@ Deno.test("the ground hue is never the accent's own hue", () => {
   let collisions = 0;
   for (let i = 0; i < 300; i++) {
     const { bgHue, hue } = generateThemeParts(rand);
-    if (_hueDist(bgHue, hue) < 12) collisions++;
+    if (hueDist(bgHue, hue) < 12) collisions++;
   }
   // Analogous rolls legitimately sit close; anything more is a bug.
   assert(
