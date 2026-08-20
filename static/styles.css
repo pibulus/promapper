@@ -5036,8 +5036,23 @@ h6,
 }
 
 .topic-map-canvas {
-  /* Inherit the card's background seamlessly */
-  background: transparent;
+  /* Theme-aware tint: follows the active --color-accent instead of a baked
+     PEACH wash, so the map matches the rest of the app on every theme.
+     NOT transparent — the flip-card face it sits on is itself transparent,
+     so "inherit the card" (Aug 19) actually inherited the board container
+     and left the map a different colour from its sibling cards. */
+  background:
+    radial-gradient(
+    circle at 18% 15%,
+    color-mix(in srgb, var(--color-accent) 13%, transparent),
+    transparent 28%
+  ),
+    radial-gradient(
+    circle at 82% 28%,
+    color-mix(in srgb, var(--color-accent) 14%, transparent),
+    transparent 30%
+  ),
+    var(--surface-card);
 }
 
 .topic-map-canvas svg {
