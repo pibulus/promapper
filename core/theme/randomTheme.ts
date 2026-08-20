@@ -271,7 +271,8 @@ const wrap = (h: number) => ((h % 360) + 360) % 360;
 /**
  * Replaces the curated-pair dice. Three sources, one recipe:
  *
- *  · GROUND is always PAPER. Chroma 0.016–0.036, from the Flexoki base ramp
+ *  · GROUND is always PAPER. Chroma 0.035–0.085 at L 0.94–0.955, one notch
+ *    up from the Flexoki base ramp
  *    (~/Documents/reference/BRAND-flexoki-palette.md — measured at C 0.015,
  *    h95). The room is paper; it never competes with the accent. This is the
  *    "neutral office".
@@ -580,10 +581,14 @@ export function generateThemeParts(
   // never competing. The dice picks a family; the accent and band come from
   // harmony math on top. This replaces the harmony-base-hue ground which
   // could land on ugly ranges (olive, mud, grey-green).
+  // Aug 20: chroma +40% and the floor dropped from L 0.96 to 0.94. At the
+  // old register every roll landed on near-white and Pablo read the whole
+  // app as dim — the ground is still paper, just paper you can name the
+  // colour of. Two knobs: these ranges and the groundL below.
   const GROUND_VIBES: Array<{ hue: [number, number]; c: [number, number] }> = [
-    { hue: [40, 60], c: [0.04, 0.06] }, // peach — the warm orangey fresh one
-    { hue: [185, 205], c: [0.03, 0.045] }, // aqua — the light airy cool one
-    { hue: [280, 300], c: [0.025, 0.04] }, // lavender — soft warm purple cloud
+    { hue: [40, 60], c: [0.055, 0.085] }, // peach — the warm orangey fresh one
+    { hue: [185, 205], c: [0.042, 0.063] }, // aqua — the light airy cool one
+    { hue: [280, 300], c: [0.035, 0.056] }, // lavender — soft warm purple cloud
   ];
   const gv = GROUND_VIBES[Math.floor(rand() * GROUND_VIBES.length)];
   const gHue = gv.hue[0] + rand() * (gv.hue[1] - gv.hue[0]);
@@ -595,7 +600,7 @@ export function generateThemeParts(
     chroma,
     bandHue,
     bgHue: gHue,
-    groundL: 0.96 + rand() * 0.015,
+    groundL: 0.94 + rand() * 0.015,
     groundC: gC,
     secondaryHue: bandHue,
     tertiaryHue: wrap(H[3 % H.length]),
@@ -661,16 +666,21 @@ export function composeTheme(input: ComposeInput): ShuffleParts {
     return `radial-gradient(circle at ${Math.round(x)}% ${Math.round(y)}%, ` +
       `rgba(${r},${g},${b},${washAlphas[i]}), transparent 52%)`;
   });
-  // Linear journey: colored family sky → soft tint → warm cream. The
-  // cream floor is what makes it AIRY instead of toy-solid.
+  // Linear journey: coloured family sky → soft tint → airy floor. Every
+  // stop STAYS IN THE GROUND FAMILY and keeps most of its chroma (Aug 20).
+  // The old middle stop was pinned at L 0.955 on half chroma and the floor
+  // was a hardcoded warm cream — so whatever the ground rolled, the page
+  // bleached to near-white by 40% down and finished on a fixed cream that
+  // fought cool families outright. That, not groundL, was the "dim" ceiling.
+  // Lightness still climbs toward the floor, so it reads airy, not toy-solid.
   const bgBase = [
     oklchToHex(gL + 0.015, gC, wrap(bgHue - 4)),
-    oklchToHex(0.955, gC * 0.5, wrap(bgHue + 4)),
-    "#fff4e8",
+    oklchToHex(Math.min(gL + 0.028, 0.972), gC * 0.8, wrap(bgHue + 4)),
+    oklchToHex(Math.min(gL + 0.042, 0.982), gC * 0.6, wrap(bgHue + 10)),
   ];
   const gradientBg = `${radials.join(", ")}, linear-gradient(168deg, ` +
     `${bgBase[0]} 0%, ${bgBase[1]} 40%, ${bgBase[2]} 80%)`;
-  const baseSolid = oklchToHex(0.94, gC * 0.6, wrap(bgHue));
+  const baseSolid = oklchToHex(gL, gC * 0.85, wrap(bgHue));
 
   const theme: Theme = {
     name: "SHUFFLE",
