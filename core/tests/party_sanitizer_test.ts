@@ -15,7 +15,9 @@
  * every fix: merge memory and statusUpdate sanitising both landed in the dead
  * copy while the LIVE worker silently drifted for six days. Aliases were being
  * stripped in real rooms, so merged topics resurrected as duplicates.
- * The drift guard at the bottom of this file exists so that can't recur.
+ * party/ was deleted outright in 78a60c3, so there are TWO copies now, not
+ * three: the live worker and core/realtime/shareProtocol.ts. The drift guard
+ * at the bottom compares those two.
  *
  * Most load-bearing guarantee: it must PRESERVE ai_checked/checked_reason (the
  * AI self-checkoff feature), which a prior version stripped.
@@ -156,9 +158,8 @@ Deno.test("touchRoomMetadata carries rev through untouched", async () => {
 //
 // This compares BEHAVIOUR, not text, so harmless formatting drift is fine and
 // a real divergence fails the build.
-import { sanitizeConversationData as sanitizeInPartyCopy } from "../../workers/collab/src/conversationProtocol.ts";
 
-Deno.test("the collab sanitizer copies agree — live worker vs party/", async () => {
+Deno.test("the collab sanitizer copies agree — live worker vs core/", async () => {
   const { sanitizeShareConversation: sanitizeInCore } = await import(
     "../realtime/shareProtocol.ts"
   );
@@ -198,14 +199,12 @@ Deno.test("the collab sanitizer copies agree — live worker vs party/", async (
   });
 
   const fromWorker = sanitizeConversationData(structuredClone(hostile));
-  const fromParty = sanitizeInPartyCopy(structuredClone(hostile));
-  assertEquals(
-    fromWorker,
-    fromParty,
-    "workers/collab and party/ sanitizers disagree — re-sync them",
-  );
 
-  // And both must agree with core/, which is the canonical shape the app uses.
+  // core/ is the canonical shape the app uses; the worker must match it.
+  // (This used to also compare the worker against party/ — but party/ is gone,
+  // so that import resolved to the SAME file and the assertion compared a
+  // function to itself. A drift guard that can never fail is worse than none:
+  // it reads green while the thing it names goes unchecked.)
   const fromCore = sanitizeInCore(structuredClone(hostile));
   assertEquals(
     fromWorker?.nodes?.[0]?.aliases,
