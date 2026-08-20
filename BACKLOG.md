@@ -1,4 +1,52 @@
-# ProMapper Backlog — dogfood session 2026-08-13
+# ProMapper Backlog
+
+## ✅ SHIPPED 2026-08-20 — the rescue pass (deployed, verified live)
+
+An unsupervised Aug 19 AI session (85c79c3..7d4d039) had shipped good work AND
+one poisoned commit. That commit was live on promapper.app. All fixed:
+
+- **Reverted `85cdf2c`** — a blanket find-replace over `static/styles.css` (48×
+  `position: absolute`→`relative`, 15× `pointer-events: none`→`auto`,
+  `opacity: 0`→`1`, `--shadow-slab`→none, borders→none). One commit caused EVERY
+  reported symptom: permanent black tooltip badges, the wordmark pushed out of
+  the header, uncentred action-item pencil/×, card grips floating outside their
+  headers, `+ Topic` clipped, module rack overlapped by the map. Everything
+  after it (transcript readability, brew ledger, hover sounds, export theatre,
+  constellation spinner) was kept.
+- Header wordmark + card titles pinned to `--font-display` (Inter). Mono body
+  kept — the `h1–h6` rule never covered the `<a>` wordmark.
+- ThemeSwitcher restored to the shuffle die (the "vibe curator" dropdown was
+  `bg-white` on `slate-400`, against colour law, and its inverted mount guard
+  killed auto-roll on load).
+- Map canvas got its surface back — it was `transparent` on a flip-card face
+  that is _also_ transparent, so it inherited the board container.
+- **Ground stops bleaching to white**: the sky's 40% stop was pinned at L 0.955
+  on half chroma and its floor was a hardcoded `#fff4e8`. All three stops now
+  track the ground's own L/C/hue. Register nudged to L 0.94 / chroma +40%.
+- Three half-shipped bugs from that session, all caught by `deno task check`
+  (which was RED at HEAD while tests were green): `/api/process` passed
+  `ctrl.signal` into `processText`'s `existingSummary` slot so the timeout never
+  fired; `extractTopics`/`generateSummary` never forwarded `existingSummary` to
+  the prompt; `renameSpeaker` computed `nextNodes` and dropped it, so renames
+  stopped cascading to topic labels/aliases.
+- **CDN trap**: `/styles.build.css` was served UNVERSIONED behind a 4h TTL, so
+  every CSS deploy was invisible in production for hours. Both stylesheet links
+  now go through Fresh's `asset()`.
+- Two rotten tests: `random_theme_test` asserted the literal `#fff4e8` (the
+  dimness was load-bearing in a test), and the collab drift guard imported the
+  same module twice after `party/` was deleted — it compared a function to
+  itself and could never fail. Both now guard laws; the collab one was
+  mutation-verified.
+- Docs: un-archived `docs/COLOR-SYSTEM.md` (6 live source files cite it as law),
+  amended it for the airy floor, completed `docs/INDEX.md`, and added a "Styling
+  — read before any CSS pass" section to CLAUDE.md.
+
+**Still unproven:** real-device QA on iPhone — browser-recorded `audio/webm` and
+interactive graph gestures. That's the top of the list.
+
+---
+
+# Older — dogfood session 2026-08-13
 
 > Source: Pablo's own ProMapper export (the app planning its own fixes) + voice
 > session notes + Claude's read of 4 screenshots. This is the working list for
