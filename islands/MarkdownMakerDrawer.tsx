@@ -17,7 +17,6 @@ import {
 import { buildDeckUrl, parseDeckJson } from "../utils/deckExport.ts";
 import {
   soundBloom,
-  soundCheckoff,
   soundHover,
   soundTick,
   soundToggle,
@@ -39,6 +38,10 @@ interface MarkdownMakerDrawerProps {
   transcript: string;
   conversationId: string;
 }
+
+// How long the loading state must stay on screen once shown. Anti-flicker, not
+// padding: below ~600ms a spinner reads as a glitch rather than as work.
+const MIN_VISIBLE_MS = 650;
 
 // The snapshot shape + its persistence live in core/storage/exportSnapshots.ts
 // (quota-safe writes, cleanup on conversation delete, backup/import). This
@@ -70,11 +73,6 @@ export default function MarkdownMakerDrawer(
   // When a saved snapshot is loaded back for editing, saving updates it in
   // place instead of appending a new one.
   const activeDraftId = useSignal<string | null>(null);
-  const theaterPhase = useSignal("");
-  const claimPending = useSignal<
-    { result: string; promptId: string | null; finalDeckUrl?: string } | null
-  >(null);
-  const theaterIntervalRef = useRef<number | null>(null);
 
   const drawerRef = useRef<HTMLDivElement>(null);
   const lastFocused = useRef<HTMLElement | null>(null);
@@ -96,6 +94,24 @@ export default function MarkdownMakerDrawer(
       speakerCount: data?.transcript?.speakers?.length ?? 0,
     });
   });
+
+  // Names the run in flight, so the loading state says which export you asked
+  // for instead of narrating invented pipeline stages.
+  const runningLabel = useComputed(() => {
+    const id = selectedPromptId.value;
+    if (!id) return "your format";
+    // markdownPrompts, not visiblePrompts: the latter is the filtered six.
+    return markdownPrompts.find((p) => p.id === id)?.label ?? "your format";
+  });
+
+  // Nothing is in flight once the drawer is shut, and the next open must not
+  // inherit the last run's spinner — or, worse, another conversation's.
+  useEffect(() => {
+    if (isOpen) return;
+    loading.value = false;
+    error.value = null;
+    formatHint.value = null;
+  }, [isOpen]);
 
   // Load saved outputs from localStorage
   useEffect(() => {
@@ -260,7 +276,7 @@ export default function MarkdownMakerDrawer(
       showToast("No transcript content available", "error");
       return;
     }
-    await runTheater(() =>
+    await runExport(() =>
       markdownService.generateMarkdown(
         buildExportPrompt(promptOption),
         transcript,
@@ -275,7 +291,7 @@ export default function MarkdownMakerDrawer(
       showToast("Please provide both a prompt and transcript", "warning");
       return;
     }
-    await runTheater(() =>
+    await runExport(() =>
       markdownService.generateMarkdown(
         customPrompt.value,
         transcript,
@@ -283,7 +299,7 @@ export default function MarkdownMakerDrawer(
       ), null);
   }
 
-  async function runTheater(
+  async function runExport(
     work: () => Promise<string>,
     promptId: string | null,
   ) {
@@ -292,40 +308,23 @@ export default function MarkdownMakerDrawer(
     formatHint.value = null;
     deckUrl.value = null;
     selectedPromptId.value = promptId;
-    claimPending.value = null;
-    markdown.value = "";
-    activeDraftId.value = null;
-
-    const phases = [
-      "Analyzing conversation weight...",
-      "Aligning semantic nodes...",
-      "Crunching context...",
-      "Polishing output...",
-    ];
-    let phaseIdx = 0;
-    theaterPhase.value = phases[0];
-    soundTick();
-
-    if (theaterIntervalRef.current !== null) {
-      clearInterval(theaterIntervalRef.current);
-    }
-    theaterIntervalRef.current = setInterval(() => {
-      phaseIdx = (phaseIdx + 1) % phases.length;
-      theaterPhase.value = phases[phaseIdx];
-      soundTick();
-    }, 700) as unknown as number;
+    // markdown / activeDraftId are deliberately NOT cleared here. A failed
+    // retry, an empty result, or a format-mismatch hint must not eat good
+    // work — including hand-edits living in the preview textarea. Assign on
+    // success only.
 
     const start = Date.now();
     try {
       const result = await work();
 
+      // Minimum VISIBLE duration, not padding on the work. A spinner that
+      // appears and vanishes inside a few hundred ms is a flash of nothing,
+      // which is what made a fast export feel broken rather than quick. Real
+      // exports take 2-15s, so this only ever fires on the fast tail.
       const elapsed = Date.now() - start;
-      if (elapsed < 3000) {
-        await new Promise((r) => setTimeout(r, 3000 - elapsed));
+      if (elapsed < MIN_VISIBLE_MS) {
+        await new Promise((r) => setTimeout(r, MIN_VISIBLE_MS - elapsed));
       }
-
-      clearInterval(theaterIntervalRef.current);
-      theaterIntervalRef.current = null;
 
       const mismatch = parseFormatMismatch(result);
       if (mismatch) {
@@ -350,21 +349,18 @@ export default function MarkdownMakerDrawer(
           return;
         }
         const url = await buildDeckUrl(slides);
-        claimPending.value = {
-          result: JSON.stringify(slides, null, 2),
-          promptId,
-          finalDeckUrl: url,
-        };
+        markdown.value = JSON.stringify(slides, null, 2);
+        activeDraftId.value = null;
+        deckUrl.value = url;
+        showToast("Deck ready — open it below", "success");
       } else {
-        claimPending.value = { result, promptId };
+        markdown.value = result;
+        activeDraftId.value = null;
+        showToast("Markdown generated!", "success");
       }
 
       soundBloom();
     } catch (err) {
-      if (theaterIntervalRef.current !== null) {
-        clearInterval(theaterIntervalRef.current);
-        theaterIntervalRef.current = null;
-      }
       error.value = err instanceof Error ? err.message : "Generation failed";
       showToast(
         err instanceof Error ? err.message : "Failed to generate markdown",
@@ -373,21 +369,6 @@ export default function MarkdownMakerDrawer(
     } finally {
       loading.value = false;
     }
-  }
-
-  function claimExport() {
-    if (!claimPending.value) return;
-    const { result, finalDeckUrl } = claimPending.value;
-    markdown.value = result;
-    if (finalDeckUrl) {
-      deckUrl.value = finalDeckUrl;
-      showToast("Deck ready — open it below", "success");
-    } else {
-      showToast("Markdown generated!", "success");
-    }
-    claimPending.value = null;
-    soundCheckoff();
-    setTimeout(() => saveOutput(), 50);
   }
 
   // Copy to clipboard
@@ -867,46 +848,26 @@ export default function MarkdownMakerDrawer(
               always know which run (preset or custom) is in flight. */
           }
           {loading.value && (
-            <div class="empty-state" style={{ minHeight: "160px" }}>
-              <div class="empty-state-face" aria-hidden="true">
-                <i class="fa fa-asterisk fa-spin"></i>
-              </div>
-              <div class="empty-state-text animate-pulse">
-                {theaterPhase.value}
-              </div>
-            </div>
-          )}
-
-          {claimPending.value && !loading.value && (
             <div
               class="empty-state"
-              style={{
-                minHeight: "160px",
-                border: "2px dashed var(--accent)",
-                background: "transparent",
-              }}
+              style={{ minHeight: "160px" }}
+              role="status"
+              aria-live="polite"
             >
-              <div class="empty-state-face" aria-hidden="true">
-                <i class="fa fa-gift" style={{ color: "var(--accent)" }}></i>
-              </div>
+              {
+                /* Spinner sits outside .empty-state-face on purpose — that
+                  class carries its own wibble animation and is for the ASCII
+                  glyph face, so an icon inside it spins AND wobbles. */
+              }
               <div
-                class="empty-state-text"
-                style={{
-                  marginBottom: "1.25rem",
-                  color: "var(--accent-ink)",
-                  fontWeight: "bold",
-                }}
+                aria-hidden="true"
+                style={{ fontSize: "1.6rem", color: "var(--accent-ink)" }}
               >
-                Your export is ready
+                <i class="fa fa-asterisk fa-spin"></i>
               </div>
-              <button
-                type="button"
-                class="btn btn--accent"
-                onMouseEnter={soundHover}
-                onClick={claimExport}
-              >
-                Claim Export
-              </button>
+              <div class="empty-state-text">
+                Generating "{runningLabel.value}"…
+              </div>
             </div>
           )}
 
@@ -1006,7 +967,7 @@ export default function MarkdownMakerDrawer(
               2026-08-13); this names what the drawer DOES and where results
               land, same empty-state grammar as the dashboard cards. */
           }
-          {!markdown.value && !claimPending.value && !loading.value &&
+          {!markdown.value && !loading.value &&
             !error.value &&
             savedOutputs.value.length === 0 && (
             <div class="empty-state">
