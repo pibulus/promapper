@@ -7,7 +7,10 @@
  */
 
 import { assertEquals, assertStringIncludes } from "./_assert.ts";
-import { formatMarkdownSafe } from "../../utils/sanitize.ts";
+import {
+  formatMarkdownSafe,
+  formatTranscriptSafe,
+} from "../../utils/sanitize.ts";
 
 // A live (executable) vector survives only if an unescaped dangerous token
 // reaches the output. Escaped text like "&lt;script&gt;" is inert, so we look
@@ -130,4 +133,45 @@ Deno.test("formatMarkdownSafe drops javascript: image, keeps alt text", () => {
   const out = formatMarkdownSafe("![logo](javascript:alert(1))");
   assertEquals(hasLiveVector(out), false);
   assertStringIncludes(out, "logo");
+});
+
+// ===================================================================
+// TRANSCRIPT SPEAKER SPLITTING
+// ===================================================================
+
+const TRANSCRIPT = `Speaker 1: we should ship the drawer first
+Speaker 2: agreed, but the colours need a pass
+Pablo: lets do both`;
+
+function speakerLabels(html: string): number {
+  return (html.match(/transcript-speaker/g) ?? []).length;
+}
+
+Deno.test("formatTranscriptSafe splits utterances for known speakers", () => {
+  const out = formatTranscriptSafe(TRANSCRIPT, [
+    "Speaker 1",
+    "Speaker 2",
+    "Pablo",
+  ]);
+  assertEquals(speakerLabels(out), 3);
+});
+
+// The regression: the fallback was written as a regex LITERAL carrying
+// string-style escapes (`\\s`, `\\d`), which match a literal backslash. It
+// matched nothing, so any transcript without a speakers list rendered as one
+// undifferentiated wall of text.
+Deno.test("formatTranscriptSafe still labels speakers with NO speakers list", () => {
+  const out = formatTranscriptSafe(TRANSCRIPT, []);
+  assertEquals(speakerLabels(out), 3);
+  assertStringIncludes(out, 'data-speaker="Speaker 1"');
+  assertStringIncludes(out, 'data-speaker="Pablo"');
+});
+
+Deno.test("formatTranscriptSafe escapes HTML in transcript text", () => {
+  const out = formatTranscriptSafe(
+    "Bob: <img src=x onerror=alert(1)>",
+    ["Bob"],
+  );
+  assertEquals(hasLiveVector(out), false);
+  assertStringIncludes(out, "&lt;img");
 });

@@ -51,7 +51,9 @@ export function formatTranscriptSafe(
   const knownRegex = knownSpeakersPattern
     ? new RegExp(`^(${knownSpeakersPattern}):\\s*(.*)`)
     : null;
-  const fallbackRegex = /^(Speaker\\s*\\d+|[A-Z][a-z]+):\\s*(.*)/;
+  // Single backslashes: this is a regex LITERAL, not a string. `\\s` here would
+  // mean a literal backslash followed by "s", which matches no real transcript.
+  const fallbackRegex = /^(Speaker\s*\d+|[A-Z][a-z]+):\s*(.*)/;
 
   let currentSpeaker = "";
   let currentColor = "var(--accent-ink)";
