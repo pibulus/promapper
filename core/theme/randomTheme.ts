@@ -585,6 +585,15 @@ export function generateThemeParts(
   // old register every roll landed on near-white and Pablo read the whole
   // app as dim — the ground is still paper, just paper you can name the
   // colour of. Two knobs: these ranges and the groundL below.
+  //
+  // 🚨 Aug 21: raising chroma here does almost NOTHING on its own, and that is
+  // why the Aug 20 pass didn't land. oklchToHex clamps chroma to the sRGB
+  // ceiling at the requested L, and near-white has almost no room: measured at
+  // the old L 0.947, peach delivered 43% of the chroma it asked for and
+  // lavender 59% (aqua 100% — which is why only aqua rolls ever looked right).
+  // LIGHTNESS is what buys chroma headroom, so groundL below is the knob that
+  // matters. At L 0.90 the same requests deliver 83/99/101%. Don't reach for
+  // these ranges again before checking what the clamp is actually returning.
   const GROUND_VIBES: Array<{ hue: [number, number]; c: [number, number] }> = [
     { hue: [40, 60], c: [0.055, 0.085] }, // peach — the warm orangey fresh one
     { hue: [185, 205], c: [0.042, 0.063] }, // aqua — the light airy cool one
@@ -600,7 +609,7 @@ export function generateThemeParts(
     chroma,
     bandHue,
     bgHue: gHue,
-    groundL: 0.94 + rand() * 0.015,
+    groundL: 0.90 + rand() * 0.015,
     groundC: gC,
     secondaryHue: bandHue,
     tertiaryHue: wrap(H[3 % H.length]),

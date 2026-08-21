@@ -105,11 +105,17 @@ Deno.test("the ground is LUSH PAPER — tinted, light, airy, never competing", (
     const { bgBase, theme } = generateThemeParts(rand);
     const [L, C] = hexToOklch(bgBase[0]);
     // Lush paper: tinted enough to have life, never enough to compete.
-    // bgBase[0] is derived at gL+0.015 — at very high L the sRGB gamut
-    // compresses chroma, so the hex reads lower than the input gC.
-    assert(C >= 0.005, `ground went dead: C${C.toFixed(3)}`);
+    // 🚨 These bounds are the anti-dimness guard, so they assert DELIVERED
+    // chroma (post sRGB clamp), not what the generator asked for. The old
+    // `C >= 0.005` passed on a ground with no visible colour at all and is
+    // exactly why the "everything looks washed out" regression shipped twice.
+    // Measured range at the current register: C 0.034-0.063, L 0.915-0.931.
+    assert(C >= 0.03, `ground went dead: C${C.toFixed(3)}`);
     assert(C <= 0.09, `ground too saturated — it competes: C${C.toFixed(3)}`);
-    assert(L >= 0.94, `ground too dark: L${L.toFixed(3)}`);
+    // Upper L bound matters as much as the lower one: drift back toward
+    // near-white silently strangles chroma through the gamut clamp.
+    assert(L >= 0.89, `ground too dark: L${L.toFixed(3)}`);
+    assert(L <= 0.95, `ground drifted back to near-white: L${L.toFixed(3)}`);
     // The floor is AIRY, not white, and it stays in the ground's own family.
     // It used to be a hardcoded #fff4e8, which bleached every roll to
     // near-white by mid-page and put a warm cream under cool families
@@ -118,7 +124,7 @@ Deno.test("the ground is LUSH PAPER — tinted, light, airy, never competing", (
     const [skyL, , skyH] = hexToOklch(bgBase[0]);
     assert(floorL > skyL, `floor no longer lifts off the sky: L${floorL}`);
     assert(floorL <= 0.985, `floor washed out to white: L${floorL}`);
-    assert(floorC >= 0.008, `floor went colourless: C${floorC.toFixed(3)}`);
+    assert(floorC >= 0.015, `floor went colourless: C${floorC.toFixed(3)}`);
     assert(
       hueDist(floorH, skyH) <= 30,
       `floor left the ground family: h${floorH} vs sky h${skyH}`,

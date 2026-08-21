@@ -26,7 +26,10 @@
      every fresh load opened on bubblegum. */
   --color-base: linear-gradient(135deg, #ffc79a 0%, #ffab80 100%);
   --color-base-solid: #ffb98a;
-  --color-secondary: rgba(255, 255, 255, 0.62);
+  /* Warm near-white, never absolute #fff — matches DAYBREAK's own secondary in
+     themes.ts and the value SHUFFLE writes at runtime, so the pre-hydration
+     paint agrees with the settled one instead of flashing a cold white veil. */
+  --color-secondary: rgba(255, 250, 243, 0.62);
   --color-accent: #2f6bff;
   --color-text: #232a3a;
   /* Matches DAYBREAK's own textSecondary (core/theme/themes.ts) — the raw
@@ -1006,12 +1009,15 @@ h6,
   position: absolute;
   inset: -30% -20% auto -20%;
   height: 70%;
+  /* Warm near-white, not absolute white: this sheet covers the top 70% of the
+     viewport, so a cold veil here desaturated the whole ground on every theme
+     (the "washed out" report, Aug 21). Same light sweep, no bleach. */
   background: linear-gradient(
     128deg,
-    rgba(255, 255, 255, 0.55) 0%,
-    rgba(255, 255, 255, 0) 65%
+    rgba(255, 254, 247, 0.55) 0%,
+    rgba(255, 254, 247, 0) 65%
   );
-  opacity: 0.35;
+  opacity: 0.28;
   transform: rotate(1deg);
   pointer-events: none;
   animation: sceneDrift 26s ease-in-out infinite alternate;
@@ -1022,17 +1028,16 @@ h6,
   position: absolute;
   inset: 0;
   pointer-events: none;
-  /* Golden Master grain texture: 1-2% opacity warm noise */
+  /* Golden Master grain texture: 1-2% opacity warm noise.
+     The 35% white radial that used to lead this stack is GONE (Aug 21). With
+     `mix-blend-mode: overlay` on a light backdrop it resolved to near-pure
+     white across the ENTIRE viewport — un-themeable, and between them the two
+     scene veils were destroying roughly half the ground's chroma on every
+     theme. The grain and the warm dot are the texture; the bleach was not. */
   background-image:
-    radial-gradient(
-    circle at 50% 10%,
-    rgba(255, 255, 255, 0.35),
-    transparent 60%
-  ),
     radial-gradient(circle at 1px 1px, rgba(30, 23, 20, 0.02), transparent 3px),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='4' seed='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)' opacity='0.015'/%3E%3C/svg%3E");
-  background-size: 100% 100%, 140px 140px, auto;
-  mix-blend-mode: overlay;
+  background-size: 140px 140px, auto;
   opacity: 1;
 }
 
