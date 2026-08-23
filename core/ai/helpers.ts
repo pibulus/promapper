@@ -33,6 +33,20 @@ export function extractSpeakers(text: string): string[] {
  * with exponential backoff. Non-transient errors throw immediately. Shared by
  * both providers and the server service layer so retry behavior is identical.
  */
+/**
+ * A 429 means two very different things. Rate-limited is a blip and retrying
+ * is exactly right. A DEPLETED BALANCE is permanent until someone pays, and
+ * retrying it just burns three round trips and ~3s of backoff before the
+ * caller can fall over to a provider that still works. Told apart by wording,
+ * because the status code alone cannot. (Learned 2026-08-23, when one empty
+ * prepay balance took seven apps down at once.)
+ */
+export function isBalanceExhausted(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /\(402\)|payment required|credits? (?:are )?(?:depleted|exhausted)|insufficient (?:credits|balance|funds)|billing|prepay/i
+    .test(message);
+}
+
 export async function withRetry<T>(
   fn: () => Promise<T>,
   tries = 3,
@@ -46,6 +60,9 @@ export async function withRetry<T>(
       return await fn();
     } catch (err) {
       const msg = String((err as Error)?.message || err);
+      // Never spend retries on an empty till - it cannot succeed, and every
+      // attempt delays the fallback that can.
+      if (isBalanceExhausted(err)) throw err;
       // Deno/Web fetch throws TypeError for network failures ("Failed to fetch"
       // / "NetworkError…"), while Node.js surfaces ECONNRESET/ETIMEDOUT as error
       // codes. Match both so a brief packet loss during an AI call gets retried.

@@ -5,6 +5,7 @@
  */
 
 import { encodeBase64 } from "$std/encoding/base64.ts";
+import { chatViaGemini, isQuotaError } from "./geminiFallback.ts";
 import type { ActionItem, EdgeInput, NodeInput } from "../types/index.ts";
 import {
   extractSpeakers,
@@ -64,6 +65,24 @@ interface ChatMessage {
  * delta it carries, or null for heartbeats/blank lines/[DONE]/malformed
  * chunks. Pure + exported for tests.
  */
+/**
+ * Cap reasoning on Google's rolling aliases.
+ *
+ * ~google/* aliases resolve to whatever Google's current flash tier is, which
+ * is thinking-capable and thinks by default. Measured 2026-08-24 on one topic
+ * extraction: 361 output tokens (330 of them reasoning) and 4.8s uncapped vs
+ * 35 tokens and 2.4s capped - 8x the cost for identical output.
+ *
+ * TRAP: `reasoning: { enabled: false }` is SILENTLY IGNORED by OpenRouter -
+ * it still billed 331 reasoning tokens. Only `effort` takes effect.
+ *
+ * Anthropic models are left alone: Haiku does not reason by default and the
+ * roles still on it (summary, Ask, markdown) are the ones we want thorough.
+ */
+function reasoningFor(model: string): Record<string, unknown> {
+  return /(^|\/)~?google\//.test(model) ? { reasoning: { effort: "low" } } : {};
+}
+
 export function parseOpenRouterStreamLine(line: string): string | null {
   const trimmed = line.trim();
   if (!trimmed.startsWith("data:")) return null;
@@ -236,17 +255,39 @@ export function createOpenRouterService(
     modelHint?: string,
     signal?: AbortSignal,
   ): Promise<string> {
+    const model = modelHint ?? options.model;
+    try {
+      return await chatViaOpenRouter(messages, model, signal);
+    } catch (error) {
+      // OpenRouter is one billing account. When its balance dies every AI
+      // call in the app dies with it, so a quota failure - and ONLY a quota
+      // failure - gets replayed against Gemini directly, on a different
+      // account. Anything else is rethrown untouched.
+      if (!isQuotaError(error)) throw error;
+      const rescued = await chatViaGemini(messages, model, signal);
+      if (rescued === null) throw error;
+      console.warn("[openrouter] out of credits - served via Gemini direct");
+      return rescued;
+    }
+  }
+
+  async function chatViaOpenRouter(
+    messages: ChatMessage[],
+    model: string,
+    signal?: AbortSignal,
+  ): Promise<string> {
     return await withRetry(
       async () => {
         const response = await fetcher(joinUrl(baseUrl, "/chat/completions"), {
           method: "POST",
           headers: buildHeaders(options),
           body: JSON.stringify({
-            model: modelHint ?? options.model,
+            model,
             messages,
             stream: false,
             temperature: 0.1, // low temp for consistent structured extraction
             max_tokens: 8192,
+            ...reasoningFor(model),
           }),
           signal,
         });
@@ -484,6 +525,7 @@ export function createOpenRouterService(
           stream: true,
           temperature: 0.1,
           max_tokens: 8192,
+          ...reasoningFor(modelHint ?? options.model),
         }),
         signal,
       });

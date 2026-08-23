@@ -5,10 +5,22 @@
 import { createOpenRouterService } from "@core/ai/openrouter.ts";
 import type { AIService } from "@core/ai/types.ts";
 
-const DEFAULT_OPENROUTER_MODEL = "google/gemini-3.1-flash-lite";
+/** The workhorse: general calls AND the self-checkoff status check, which runs
+ * on every append. Was pinned to google/gemini-3.1-flash-lite until 2026-08-24
+ * - the highest-volume path in the app riding a dated slug that Google can
+ * withdraw without notice (gemini-2.0-flash-exp already vanished elsewhere in
+ * the fleet). OpenRouter publishes no rolling *lite* alias, only ~google/
+ * gemini-flash-latest, so the rolling tier costs ~1.5x the pin ($0.000086 vs
+ * $0.000058/call) - worth it to never break. Reasoning is capped to "low" in
+ * core/ai/openrouter.ts, without which this tier costs 8x. */
+const DEFAULT_OPENROUTER_MODEL = "~google/gemini-flash-latest";
 const DEFAULT_OPENROUTER_TRANSCRIPTION_MODEL = "~google/gemini-flash-latest";
 const DEFAULT_OPENROUTER_SUMMARY_MODEL = "~anthropic/claude-haiku-latest";
-const DEFAULT_OPENROUTER_TOPIC_MODEL = "~anthropic/claude-haiku-latest";
+/** Topic extraction is structured work, not prose - the one role here that had
+ * no quality rationale written down. Moved off Haiku 2026-08-24: same rolling
+ * Gemini tier as the workhorse, 4x cheaper, reasoning capped. Summary, Ask and
+ * markdown stay on Haiku because people read those. */
+const DEFAULT_OPENROUTER_TOPIC_MODEL = "~google/gemini-flash-latest";
 /** The Ask module's brain. Haiku, not flash-lite: ask-your-memory is the most
  * reasoning-heavy, least-frequent AI call in the app — quality shows most
  * and costs least here (checked live 2026-07-18: haiku-latest $1/$5 vs
