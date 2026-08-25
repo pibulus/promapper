@@ -3339,6 +3339,107 @@ h6,
   outline-offset: -6px;
 }
 
+.magpie-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+.magpie-row:hover .magpie-actions,
+.magpie-actions:focus-within {
+  opacity: 1;
+}
+@media (pointer: coarse) {
+  .magpie-actions {
+    opacity: 0.85;
+  }
+}
+.magpie-action-btn {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: color var(--transition-fast), transform var(--transition-fast);
+}
+.magpie-action-btn:hover {
+  color: var(--accent-ink);
+  transform: scale(1.15);
+}
+.magpie-action-btn:active {
+  transform: scale(0.95);
+}
+
+.magpie-audio-player {
+  height: 28px;
+  border-radius: var(--border-radius-sm);
+  outline: none;
+  background: var(--surface-cream);
+}
+
+.cursor-zoom-in {
+  cursor: zoom-in;
+}
+
+.magpie-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(26, 22, 20, 0.85);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn 180ms ease-out forwards;
+}
+.magpie-lightbox-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.magpie-lightbox-img {
+  max-width: 100%;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: var(--border-radius-md);
+  border: 3px solid var(--soft-black);
+  box-shadow: 4px 4px 0 var(--line-ink);
+}
+.magpie-lightbox-close {
+  position: absolute;
+  top: -1rem;
+  right: -1rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  background: var(--surface-cream);
+  border: 2px solid var(--soft-black);
+  box-shadow: 2px 2px 0 var(--line-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--soft-black);
+  font-size: 1rem;
+  transition: transform var(--transition-fast);
+  z-index: 10;
+}
+.magpie-lightbox-close:hover {
+  transform: scale(1.1);
+}
+
 .magpie-remove {
   flex-shrink: 0;
   position: relative; /* anchors the coarse-pointer 44px tap box below */
@@ -3352,22 +3453,14 @@ h6,
   border-radius: 999px;
   color: var(--color-text-secondary);
   cursor: pointer;
-  opacity: 0;
   transition:
     opacity var(--transition-fast),
     color var(--transition-fast);
-}
-.magpie-row:hover .magpie-remove,
-.magpie-remove:focus-visible {
-  opacity: 1;
 }
 .magpie-remove:hover {
   color: var(--accent-ink);
 }
 @media (pointer: coarse) {
-  .magpie-remove {
-    opacity: 0.5;
-  }
   /* 24px of glyph is not a thumb target. Same invisible-box pattern as
      .topic-map-ctrl / .radio-play — the shelf row keeps its slim look. */
   .magpie-remove::after {

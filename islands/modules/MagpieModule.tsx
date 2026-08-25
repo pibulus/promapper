@@ -1,16 +1,9 @@
-/**
- * Magpie — the shelf of shiny things. Paste a link, an image URL, or any
- * scrap of text; drop or paste a FILE and the bytes go to a local Blob store
- * while the shelf keeps only a pointer to them (nothing is uploaded, ever).
- * Same conversation-scoped write pattern as Notes: every mutation is pinned
- * to the conversation id it was made in.
- */
-
 import { useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import {
   conversationData,
   isViewingShared,
+  processingConversation,
 } from "@signals/conversationStore.ts";
 import {
   classifyMagpie,
@@ -28,8 +21,23 @@ import {
   magpieFilesAvailable,
   saveMagpieFile,
 } from "@core/storage/magpieFilesDB.ts";
+import { flushPendingSave } from "@core/storage/localStorage.ts";
+import {
+  isModuleEnabled,
+  resetModules,
+  toggleModule,
+} from "@signals/moduleStore.ts";
+import { ensureApiSession } from "../../utils/apiAuth.ts";
+import { enqueueApiRequest } from "../../utils/requestQueue.ts";
+import { coerceFlowResult } from "../../utils/coerceFlowResult.ts";
 import { soundBloom, soundTick } from "@utils/sound.ts";
-import { showToast, showUndoToast } from "@utils/toast.ts";
+import {
+  copyToClipboard,
+  showErrorToast,
+  showToast,
+  showUndoToast,
+} from "@utils/toast.ts";
+import BodyPortal from "../../components/BodyPortal.tsx";
 
 /** Matches showUndoToast's default visible duration — the deferred delete
  * must outlive the button that can cancel it. */
@@ -40,6 +48,7 @@ export default function MagpieModule() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const draft = useSignal("");
   const isDragging = useSignal(false);
+  const activeLightbox = useSignal<{ url: string; name?: string } | null>(null);
   // One object URL per shelved FILE (not just images), minted up front and
   // held in a ref so unmount can revoke every one.
   //
@@ -226,6 +235,78 @@ export default function MagpieModule() {
     }
   }
 
+  // Close lightbox on Escape
+  useEffect(() => {
+    if (!activeLightbox.value) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") activeLightbox.value = null;
+    };
+    globalThis.addEventListener("keydown", onKey);
+    return () => globalThis.removeEventListener("keydown", onKey);
+  }, [activeLightbox.value]);
+
+  function sampleIntoNotes(text: string) {
+    const current = conversationData.value;
+    if (!current || isViewingShared.value) return;
+    const currentNotes = current.notes ? `${current.notes}\n\n` : "";
+    const snippet = text.trim();
+    conversationData.value = {
+      ...current,
+      notes: `${currentNotes}📌 From Magpie:\n> ${snippet}`,
+    };
+    if (!isModuleEnabled("notes")) {
+      toggleModule("notes");
+    }
+    soundBloom();
+    showToast("Sampled into Notes!", "success");
+  }
+
+  async function copyItem(text: string) {
+    await copyToClipboard(text);
+    showToast("Copied to clipboard!", "success");
+  }
+
+  async function resampleScrap(text: string) {
+    if (!text.trim()) return;
+    flushPendingSave();
+    resetModules();
+    conversationData.value = null;
+    processingConversation.value = true;
+    showToast("Resampling scrap into a fresh map…", "info");
+    try {
+      await ensureApiSession();
+      const result = await enqueueApiRequest(async ({ signal }) => {
+        const response = await fetch("/api/process", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: text.trim() }),
+          signal,
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Processing failed");
+        }
+        return response.json();
+      });
+      const flowResult = coerceFlowResult(result);
+      if (!flowResult) {
+        throw new Error("Server returned an unexpected response.");
+      }
+      resetModules();
+      conversationData.value = flowResult;
+      soundBloom();
+      showToast(
+        `Resampled! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
+        "success",
+      );
+    } catch (err) {
+      console.error("❌ Resample error:", err);
+      showErrorToast(err, "Couldn't resample that scrap.");
+    } finally {
+      processingConversation.value = false;
+    }
+  }
+
   function remove(id: string) {
     const current = conversationData.value;
     if (!current || isViewingShared.value) return;
@@ -336,86 +417,187 @@ export default function MagpieModule() {
                 {items.map((item) => (
                   <div key={item.id} class="magpie-row">
                     {item.kind === "text"
-                      ? <p class="magpie-scrap">{item.value}</p>
+                      ? (
+                        <div class="magpie-scrap-card flex-1 min-w-0">
+                          <p class="magpie-scrap">{item.value}</p>
+                        </div>
+                      )
                       : item.kind === "file"
                       ? (
-                        // A real anchor with an already-minted href, NOT a
-                        // button that resolves the blob on click: awaiting
-                        // IndexedDB first spends the user gesture, and Safari
-                        // and Firefox then swallow the window.open, so the tap
-                        // silently did nothing.
-                        <a
-                          href={urls.value[item.id] ?? undefined}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="magpie-file"
-                          title={`${item.name} — opens in a new tab`}
-                          aria-busy={urls.value[item.id] ? undefined : "true"}
-                        >
-                          {(item.mime ?? "").startsWith("image/") &&
-                              urls.value[item.id]
-                            ? (
+                        <div class="flex-1 min-w-0 flex flex-col gap-1">
+                          <a
+                            href={urls.value[item.id] ?? undefined}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="magpie-file"
+                            title={`${item.name} — opens in a new tab`}
+                            aria-busy={urls.value[item.id] ? undefined : "true"}
+                          >
+                            {(item.mime ?? "").startsWith("image/") &&
+                                urls.value[item.id]
+                              ? (
+                                <img
+                                  src={urls.value[item.id]}
+                                  alt=""
+                                  class="magpie-image cursor-zoom-in"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    activeLightbox.value = {
+                                      url: urls.value[item.id],
+                                      name: item.name,
+                                    };
+                                  }}
+                                  onError={(e) =>
+                                    (e.currentTarget as HTMLElement).style
+                                      .display = "none"}
+                                />
+                              )
+                              : (
+                                <i
+                                  class={`fa ${
+                                    magpieFileIcon(item.mime)
+                                  } magpie-file__icon`}
+                                  aria-hidden="true"
+                                >
+                                </i>
+                              )}
+                            <span class="magpie-file__meta">
+                              <span class="magpie-file__name">{item.name}</span>
+                              <span class="magpie-file__size">
+                                {magpieFileSize(item.size ?? 0)}{" "}
+                                · on this device
+                              </span>
+                            </span>
+                          </a>
+                          {(item.mime ?? "").startsWith("audio/") &&
+                            urls.value[item.id] && (
+                            <audio
+                              controls
+                              src={urls.value[item.id]}
+                              class="magpie-audio-player w-full"
+                              preload="metadata"
+                            />
+                          )}
+                        </div>
+                      )
+                      : (
+                        <div class="flex-1 min-w-0">
+                          <a
+                            href={item.value}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="magpie-link"
+                            title={item.value}
+                          >
+                            {item.kind === "image" && (
                               <img
-                                src={urls.value[item.id]}
+                                src={item.value}
                                 alt=""
-                                class="magpie-image"
+                                loading="lazy"
+                                class="magpie-image cursor-zoom-in"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  activeLightbox.value = { url: item.value };
+                                }}
                                 onError={(e) =>
                                   (e.currentTarget as HTMLElement).style
                                     .display = "none"}
                               />
-                            )
-                            : (
-                              <i
-                                class={`fa ${
-                                  magpieFileIcon(item.mime)
-                                } magpie-file__icon`}
-                                aria-hidden="true"
-                              >
-                              </i>
                             )}
-                          <span class="magpie-file__meta">
-                            <span class="magpie-file__name">{item.name}</span>
-                            <span class="magpie-file__size">
-                              {magpieFileSize(item.size ?? 0)} · on this device
+                            <span class="magpie-link-label">
+                              <i class="fa fa-link" aria-hidden="true"></i>
+                              {magpieLabel(item.value, item.kind)}
                             </span>
-                          </span>
-                        </a>
-                      )
-                      : (
-                        <a
-                          href={item.value}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="magpie-link"
-                          title={item.value}
-                        >
-                          {item.kind === "image" && (
-                            <img
-                              src={item.value}
-                              alt=""
-                              loading="lazy"
-                              class="magpie-image"
-                              onError={(e) =>
-                                (e.currentTarget as HTMLElement).style
-                                  .display = "none"}
-                            />
-                          )}
-                          <span class="magpie-link-label">
-                            <i class="fa fa-link" aria-hidden="true"></i>
-                            {magpieLabel(item.value, item.kind)}
-                          </span>
-                        </a>
+                          </a>
+                        </div>
                       )}
-                    <button
-                      type="button"
-                      class="magpie-remove"
-                      onClick={() => remove(item.id)}
-                      aria-label="Toss this off the shelf"
-                      data-tip="Toss"
-                      data-tip-align="right"
-                    >
-                      <i class="fa fa-times text-xs" aria-hidden="true"></i>
-                    </button>
+
+                    {/* Action cluster on hover / focus */}
+                    <div class="magpie-actions">
+                      {item.kind === "text" && (
+                        <>
+                          <button
+                            type="button"
+                            class="magpie-action-btn"
+                            onClick={() => sampleIntoNotes(item.value)}
+                            aria-label="Sample into notes"
+                            data-tip="Sample to Notes"
+                          >
+                            <i class="fa fa-note-sticky" aria-hidden="true"></i>
+                          </button>
+                          <button
+                            type="button"
+                            class="magpie-action-btn"
+                            onClick={() => resampleScrap(item.value)}
+                            aria-label="Resample as map"
+                            data-tip="Resample as Map"
+                          >
+                            <i
+                              class="fa fa-wand-magic-sparkles"
+                              aria-hidden="true"
+                            >
+                            </i>
+                          </button>
+                          <button
+                            type="button"
+                            class="magpie-action-btn"
+                            onClick={() => copyItem(item.value)}
+                            aria-label="Copy scrap"
+                            data-tip="Copy"
+                          >
+                            <i class="fa fa-copy" aria-hidden="true"></i>
+                          </button>
+                        </>
+                      )}
+
+                      {item.kind === "link" && (
+                        <>
+                          <button
+                            type="button"
+                            class="magpie-action-btn"
+                            onClick={() => sampleIntoNotes(item.value)}
+                            aria-label="Sample link to notes"
+                            data-tip="Sample to Notes"
+                          >
+                            <i class="fa fa-note-sticky" aria-hidden="true"></i>
+                          </button>
+                          <button
+                            type="button"
+                            class="magpie-action-btn"
+                            onClick={() => copyItem(item.value)}
+                            aria-label="Copy link"
+                            data-tip="Copy link"
+                          >
+                            <i class="fa fa-copy" aria-hidden="true"></i>
+                          </button>
+                        </>
+                      )}
+
+                      {item.kind === "file" && (
+                        <button
+                          type="button"
+                          class="magpie-action-btn"
+                          onClick={() => sampleIntoNotes(item.name || "File")}
+                          aria-label="Sample file to notes"
+                          data-tip="Sample to Notes"
+                        >
+                          <i class="fa fa-note-sticky" aria-hidden="true"></i>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        class="magpie-action-btn magpie-remove"
+                        onClick={() => remove(item.id)}
+                        aria-label="Toss this off the shelf"
+                        data-tip="Toss"
+                        data-tip-align="right"
+                      >
+                        <i class="fa fa-times text-xs" aria-hidden="true"></i>
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -463,6 +645,35 @@ export default function MagpieModule() {
           }}
         />
       </div>
+
+      {/* Image Lightbox */}
+      {activeLightbox.value && (
+        <BodyPortal>
+          <div
+            class="magpie-lightbox-backdrop"
+            onClick={() => activeLightbox.value = null}
+          >
+            <div
+              class="magpie-lightbox-content"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                class="magpie-lightbox-close"
+                onClick={() => activeLightbox.value = null}
+                aria-label="Close preview"
+              >
+                <i class="fa fa-xmark" aria-hidden="true"></i>
+              </button>
+              <img
+                src={activeLightbox.value.url}
+                alt={activeLightbox.value.name || "Preview"}
+                class="magpie-lightbox-img"
+              />
+            </div>
+          </div>
+        </BodyPortal>
+      )}
     </div>
   );
 }

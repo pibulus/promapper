@@ -20,9 +20,15 @@ import { useEffect, useRef } from "preact/hooks";
 import {
   conversationData,
   isViewingShared,
+  processingConversation,
 } from "@signals/conversationStore.ts";
 import { flushPendingSave } from "@core/storage/localStorage.ts";
-import { copyToClipboard } from "@utils/toast.ts";
+import { resetModules } from "@signals/moduleStore.ts";
+import { ensureApiSession } from "../../utils/apiAuth.ts";
+import { enqueueApiRequest } from "../../utils/requestQueue.ts";
+import { coerceFlowResult } from "../../utils/coerceFlowResult.ts";
+import { copyToClipboard, showErrorToast, showToast } from "@utils/toast.ts";
+import { soundBloom } from "@utils/sound.ts";
 
 const SAVE_DEBOUNCE_MS = 800;
 
@@ -96,6 +102,49 @@ export default function NotesModule() {
     };
   }, []);
 
+  async function resampleNotes() {
+    commit();
+    const text = (taRef.current?.value ?? notes).trim();
+    if (!text) return;
+    flushPendingSave();
+    resetModules();
+    conversationData.value = null;
+    processingConversation.value = true;
+    showToast("Resampling notes into a fresh map…", "info");
+    try {
+      await ensureApiSession();
+      const result = await enqueueApiRequest(async ({ signal }) => {
+        const response = await fetch("/api/process", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+          signal,
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Processing failed");
+        }
+        return response.json();
+      });
+      const flowResult = coerceFlowResult(result);
+      if (!flowResult) {
+        throw new Error("Server returned an unexpected response.");
+      }
+      resetModules();
+      conversationData.value = flowResult;
+      soundBloom();
+      showToast(
+        `Resampled! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
+        "success",
+      );
+    } catch (err) {
+      console.error("❌ Resample error:", err);
+      showErrorToast(err, "Couldn't resample notes.");
+    } finally {
+      processingConversation.value = false;
+    }
+  }
+
   return (
     <div class="w-full h-full">
       <div class="dashboard-card">
@@ -113,6 +162,17 @@ export default function NotesModule() {
             >
               <i class="fa fa-copy text-sm"></i>
             </button>
+            {!isViewingShared.value && (
+              <button
+                onClick={resampleNotes}
+                class="cursor-pointer"
+                data-tip="Resample notes as a new map"
+                aria-label="Resample notes as new map"
+                disabled={!notes.trim()}
+              >
+                <i class="fa fa-wand-magic-sparkles text-sm"></i>
+              </button>
+            )}
           </div>
         </div>
         <div class="dashboard-card-body">

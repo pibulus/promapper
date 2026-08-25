@@ -21,9 +21,17 @@ import {
   soundTick,
   soundToggle,
 } from "@utils/sound.ts";
+import {
+  conversationData,
+  processingConversation,
+} from "@signals/conversationStore.ts";
 import { markdownService } from "../utils/markdownService.ts";
-import { showToast, showUndoToast } from "../utils/toast.ts";
-import { conversationData } from "@signals/conversationStore.ts";
+import { flushPendingSave } from "../core/storage/localStorage.ts";
+import { resetModules } from "@signals/moduleStore.ts";
+import { ensureApiSession } from "../utils/apiAuth.ts";
+import { enqueueApiRequest } from "../utils/requestQueue.ts";
+import { coerceFlowResult } from "../utils/coerceFlowResult.ts";
+import { showErrorToast, showToast, showUndoToast } from "../utils/toast.ts";
 import {
   deriveSnapshotTitle,
   type ExportSnapshot,
@@ -388,6 +396,49 @@ export default function MarkdownMakerDrawer(
       showToast("Copied to clipboard!", "success");
     } catch (_err) {
       showToast("Failed to copy", "error");
+    }
+  }
+
+  // Resample export/snapshot into a fresh conversation map
+  async function resampleText(text: string) {
+    if (!text.trim()) return;
+    onClose();
+    flushPendingSave();
+    resetModules();
+    conversationData.value = null;
+    processingConversation.value = true;
+    showToast("Resampling into a fresh map…", "info");
+    try {
+      await ensureApiSession();
+      const result = await enqueueApiRequest(async ({ signal }) => {
+        const response = await fetch("/api/process", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: text.trim() }),
+          signal,
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || "Processing failed");
+        }
+        return response.json();
+      });
+      const flowResult = coerceFlowResult(result);
+      if (!flowResult) {
+        throw new Error("Server returned an unexpected response — try again.");
+      }
+      resetModules();
+      conversationData.value = flowResult;
+      soundBloom();
+      showToast(
+        `Resampled! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
+        "success",
+      );
+    } catch (err) {
+      console.error("❌ Resample failed:", err);
+      showErrorToast(err, "Couldn't resample that export — try again.");
+    } finally {
+      processingConversation.value = false;
     }
   }
 
@@ -945,6 +996,16 @@ export default function MarkdownMakerDrawer(
                   >
                     <i class="fa fa-save" aria-hidden="true"></i>
                   </button>
+                  <button
+                    type="button"
+                    class="btn btn--accent btn--compact flex items-center gap-1"
+                    onClick={() => resampleText(markdown.value)}
+                    title="Resample this export into a new project map"
+                    aria-label="Resample as Map"
+                  >
+                    <i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i>
+                    <span>Resample</span>
+                  </button>
                 </div>
               </div>
               <div class="export-preview-body">
@@ -1007,6 +1068,19 @@ export default function MarkdownMakerDrawer(
                           </p>
                         </div>
                         <div class="flex gap-1 ml-2">
+                          <button
+                            type="button"
+                            class="btn btn--ghost btn--compact btn--icon"
+                            onClick={() => resampleText(output.content)}
+                            title="Resample this snapshot into a new map"
+                            aria-label="Resample snapshot"
+                          >
+                            <i
+                              class="fa fa-wand-magic-sparkles"
+                              aria-hidden="true"
+                            >
+                            </i>
+                          </button>
                           <button
                             type="button"
                             class="btn btn--ghost btn--compact btn--icon"

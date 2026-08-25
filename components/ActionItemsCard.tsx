@@ -25,6 +25,7 @@ import {
 import { showToast, showUndoToast } from "@utils/toast.ts";
 import {
   canUndo,
+  conversationData,
   isViewingShared,
   undoLastMutation,
 } from "@signals/conversationStore.ts";
@@ -36,6 +37,49 @@ import {
   tokenizeActionText,
 } from "@utils/actionTags.ts";
 import Confetti from "./Confetti.tsx";
+
+/**
+ * ZipList's import link decodes with plain atob, so the payload must be
+ * Latin-1. Smart punctuation gets ASCII equivalents.
+ */
+function toLatin1(s: string): string {
+  return s
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/[–—]/g, "-")
+    .replace(/…/g, "...")
+    // deno-lint-ignore no-control-regex
+    .replace(/[^\x00-\xFF]/g, "")
+    .trim();
+}
+
+function sendToZipList(items: ActionItem[]) {
+  const name = toLatin1(conversationData.value?.conversation?.title ?? "") ||
+    "Action items";
+  const payload = {
+    name,
+    items: items.map((i) => ({
+      text: toLatin1(i.description),
+      checked: i.status === "completed",
+    })).filter((i) => i.text),
+  };
+  if (payload.items.length === 0) {
+    showToast("Nothing here ZipList can carry — try adding items", "warning");
+    return;
+  }
+  try {
+    const encoded = btoa(JSON.stringify(payload));
+    globalThis.open(
+      `https://ziplist.app/import#listdata=${encoded}`,
+      "_blank",
+      "noopener",
+    );
+    showToast("Sent to ZipList!", "success");
+  } catch (error) {
+    console.error("ZipList handoff failed:", error);
+    showToast("Couldn't package that list — try again", "error");
+  }
+}
 
 interface ActionItem {
   id: string;
@@ -700,6 +744,17 @@ export default function ActionItemsCard(
                 its own btn--ghost cluster and read as a different species. */
             }
             <div class="card-header-actions">
+              <button
+                type="button"
+                onClick={() => sendToZipList(visibleItems.value)}
+                onMouseEnter={soundHover}
+                data-tip="Send to ZipList"
+                data-tip-align="right"
+                aria-label="Send action items to ZipList"
+                disabled={visibleItems.value.length === 0}
+              >
+                <i class="fa fa-paper-plane" aria-hidden="true"></i>
+              </button>
               {!readOnly && (
                 <button
                   onClick={cycleSort}
