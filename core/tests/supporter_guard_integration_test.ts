@@ -4,7 +4,6 @@ import { assertEquals } from "./_assert.ts";
 import {
   guardAudioBudget,
   guardLiveRoomAccess,
-  guardRequest,
   isSupporterRequest,
 } from "../../services/requestGuard.ts";
 import { signSupporterPass } from "../../services/supporterPass.ts";

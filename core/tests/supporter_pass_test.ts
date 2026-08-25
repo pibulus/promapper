@@ -2,7 +2,6 @@
 
 import { assertEquals, assertNotEquals } from "./_assert.ts";
 import {
-  getSupporterSecret,
   redeemSupporterCode,
   signSupporterPass,
   verifySupporterPass,
