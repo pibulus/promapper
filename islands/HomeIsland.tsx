@@ -68,6 +68,11 @@ import ThemeSwitcher from "./ThemeSwitcher.tsx";
 import SoundToggle from "./SoundToggle.tsx";
 import ShortcutsModal from "../components/ShortcutsModal.tsx";
 import KeysModal from "../components/KeysModal.tsx";
+import SupporterModal from "./SupporterModal.tsx";
+import {
+  isSupporterSignal,
+  openSupporterModal,
+} from "@signals/supporterStore.ts";
 import AuthModalIsland from "./AuthModalIsland.tsx";
 import VoicePanel from "./VoicePanel.tsx";
 
@@ -807,6 +812,23 @@ export default function HomeIsland() {
                     <span>Export</span>
                   </button>
 
+                  <button
+                    type="button"
+                    onClick={openSupporterModal}
+                    class={`header-supporter-btn ${
+                      isSupporterSignal.value ? "is-active" : ""
+                    }`}
+                    data-tip={isSupporterSignal.value
+                      ? "Supporter Pass Active"
+                      : "Support ProMapper"}
+                    aria-label="Supporter Pass"
+                  >
+                    <i class="fa fa-heart" aria-hidden="true"></i>
+                    <span>
+                      {isSupporterSignal.value ? "Supporter 💜" : "Support"}
+                    </span>
+                  </button>
+
                   {/* History — a ghost icon; navigation, not an action */}
                   <button
                     onClick={() => {
@@ -910,8 +932,24 @@ export default function HomeIsland() {
                 <a href="/" class="app-header__brand flex-1">
                   ProMapper<span class="app-header__brand-dot">.</span>
                 </a>
-                {hasHistory.value && (
-                  <div class="app-header__actions">
+                <div class="app-header__actions">
+                  <button
+                    type="button"
+                    onClick={openSupporterModal}
+                    class={`header-supporter-btn ${
+                      isSupporterSignal.value ? "is-active" : ""
+                    }`}
+                    data-tip={isSupporterSignal.value
+                      ? "Supporter Pass Active"
+                      : "Support ProMapper"}
+                    aria-label="Supporter Pass"
+                  >
+                    <i class="fa fa-heart" aria-hidden="true"></i>
+                    <span>
+                      {isSupporterSignal.value ? "Supporter 💜" : "Support"}
+                    </span>
+                  </button>
+                  {hasHistory.value && (
                     <button
                       onClick={() =>
                         historyDrawerOpen.value = !historyDrawerOpen.value}
@@ -922,8 +960,8 @@ export default function HomeIsland() {
                     >
                       <i class="fa fa-history" aria-hidden="true"></i>
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </>
             )}
         </div>
@@ -1180,6 +1218,9 @@ export default function HomeIsland() {
         open={keysOpen.value}
         onClose={() => keysOpen.value = false}
       />
+
+      {/* Supporter & Pricing Modal */}
+      <SupporterModal />
     </div>
   );
 }

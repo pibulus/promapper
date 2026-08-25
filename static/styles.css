@@ -7742,6 +7742,43 @@ a:focus-visible {
   transform: translateY(0.5px);
   box-shadow: 1px 1px 0 var(--line-ink);
 }
+
+.header-supporter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  font-size: var(--tiny-size);
+  font-weight: 800;
+  color: #fffdf7;
+  background: #9333ea;
+  border: 2px solid var(--soft-black);
+  border-radius: 10px;
+  box-shadow: 2px 2px 0 var(--line-ink);
+  cursor: pointer;
+  position: relative;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.header-supporter-btn:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 3px 3px 0 var(--line-ink);
+  background: #a855f7;
+}
+
+.header-supporter-btn:active {
+  transform: translateY(0.5px);
+  box-shadow: 1px 1px 0 var(--line-ink);
+}
+
+.header-supporter-btn.is-active {
+  background: #15803d;
+  color: #fffdf7;
+}
+
 /* Touch tap zone lives with the other two header actions further up (search
    `pointer: coarse` near .header-action-btn) — one rule for all three. The
    old version here was a 44px SQUARE centred on the plate, which is narrower

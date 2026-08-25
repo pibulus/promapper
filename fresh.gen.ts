@@ -18,6 +18,10 @@ import * as $api_markdown from "./routes/api/markdown.ts";
 import * as $api_process from "./routes/api/process.ts";
 import * as $api_share_shareId_ from "./routes/api/share/[shareId].ts";
 import * as $api_share_create from "./routes/api/share/create.ts";
+import * as $api_square_webhook from "./routes/api/square/webhook.ts";
+import * as $api_supporter_checkout from "./routes/api/supporter/checkout.ts";
+import * as $api_supporter_checkout_checkoutId_ from "./routes/api/supporter/checkout/[checkoutId].ts";
+import * as $api_supporter_redeem from "./routes/api/supporter/redeem.ts";
 import * as $dev_colors from "./routes/dev/colors.tsx";
 import * as $dev_nodemap from "./routes/dev/nodemap.tsx";
 import * as $example from "./routes/example.tsx";
@@ -44,6 +48,7 @@ import * as $ShareButton from "./islands/ShareButton.tsx";
 import * as $SharedConversationLoader from "./islands/SharedConversationLoader.tsx";
 import * as $SharedWhiteboard from "./islands/SharedWhiteboard.tsx";
 import * as $SoundToggle from "./islands/SoundToggle.tsx";
+import * as $SupporterModal from "./islands/SupporterModal.tsx";
 import * as $ThemeSwitcher from "./islands/ThemeSwitcher.tsx";
 import * as $TopicVisualizationsCard from "./islands/TopicVisualizationsCard.tsx";
 import * as $UploadIsland from "./islands/UploadIsland.tsx";
@@ -77,6 +82,11 @@ const manifest = {
     "./routes/api/process.ts": $api_process,
     "./routes/api/share/[shareId].ts": $api_share_shareId_,
     "./routes/api/share/create.ts": $api_share_create,
+    "./routes/api/square/webhook.ts": $api_square_webhook,
+    "./routes/api/supporter/checkout.ts": $api_supporter_checkout,
+    "./routes/api/supporter/checkout/[checkoutId].ts":
+      $api_supporter_checkout_checkoutId_,
+    "./routes/api/supporter/redeem.ts": $api_supporter_redeem,
     "./routes/dev/colors.tsx": $dev_colors,
     "./routes/dev/nodemap.tsx": $dev_nodemap,
     "./routes/example.tsx": $example,
@@ -105,6 +115,7 @@ const manifest = {
     "./islands/SharedConversationLoader.tsx": $SharedConversationLoader,
     "./islands/SharedWhiteboard.tsx": $SharedWhiteboard,
     "./islands/SoundToggle.tsx": $SoundToggle,
+    "./islands/SupporterModal.tsx": $SupporterModal,
     "./islands/ThemeSwitcher.tsx": $ThemeSwitcher,
     "./islands/TopicVisualizationsCard.tsx": $TopicVisualizationsCard,
     "./islands/UploadIsland.tsx": $UploadIsland,

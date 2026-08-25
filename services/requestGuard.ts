@@ -181,6 +181,33 @@ function byoRefusedResponse(): Response {
   );
 }
 
+import { verifySupporterPass } from "@services/supporterPass.ts";
+
+/**
+ * Get Supporter pass token from request headers or cookie.
+ */
+export function getSupporterToken(req: Request): string | null {
+  const header = req.headers.get("x-promapper-pass") ??
+    req.headers.get("x-supporter-pass");
+  if (header?.trim()) return header.trim();
+
+  const cookies = getCookies(req.headers);
+  const cookie = cookies["pm_supporter_pass"] ?? cookies["qrb_supporter_pass"];
+  if (cookie?.trim()) return cookie.trim();
+
+  return null;
+}
+
+/**
+ * Check if the request is from an active, verified supporter.
+ */
+export async function isSupporterRequest(req: Request): Promise<boolean> {
+  const token = getSupporterToken(req);
+  if (!token) return false;
+  const verified = await verifySupporterPass(token);
+  return verified !== null;
+}
+
 export async function guardRequest(req: Request): Promise<Response | null> {
   const authBlock = await enforceAuth(req);
   if (authBlock) return authBlock;
@@ -190,6 +217,10 @@ export async function guardRequest(req: Request): Promise<Response | null> {
 
   const rateBlock = enforceRateLimit(req);
   if (rateBlock) return rateBlock;
+
+  // Active Supporter pass: full access, house budgets waived
+  const isSupporter = await isSupporterRequest(req);
+  if (isSupporter) return null;
 
   // Their key, their costs — no bill rails. But verify the key once: without
   // this, a wrong key 401s inside every AI stage, graceful degradation
@@ -231,19 +262,16 @@ async function enforceDailyBudgets(req: Request): Promise<Response | null> {
  * Disabled until AUDIO_BYTES_PER_DAY is set — flipping tiers on is config,
  * not code.
  *
- * `housePaysAudio` is the BYO escape hatch's own escape hatch. A BYO key buys
- * out the OpenRouter bill and nothing else, so it may only waive a budget that
- * covers OpenRouter work. /api/live/chunk transcribes through DEEPGRAM when a
- * house key is configured — the user's key never touches it — so a blanket
- * waiver there would have let BYO users spend the house's Deepgram without
- * limit the day tiers switch on. Pass true wherever the house's own provider
- * does the work.
+ * Supporter passes and BYO keys waive the recording budget.
  */
 export async function guardAudioBudget(
   req: Request,
   bytes: number,
   housePaysAudio = false,
 ): Promise<Response | null> {
+  // Supporters get unlimited recording allowance
+  if (await isSupporterRequest(req)) return null;
+
   const byteLimit = audioBytesPerDay();
   if (byteLimit <= 0) return null;
   // Their key, their audio bill — but only when their key is what pays.
@@ -258,8 +286,39 @@ export async function guardAudioBudget(
   if (verdict.ok) return null;
 
   return jsonResponse(
-    { error: "Today's recording allowance is used up — it refills tomorrow." },
+    {
+      error:
+        "Today's free recording allowance is used up. Unlock with a Supporter Pass or plug in your own API key under the key icon.",
+    },
     429,
+  );
+}
+
+/**
+ * Guard for live multiplayer collab room creation (/api/live/create).
+ * Gated for Supporters and BYO Key users.
+ */
+export async function guardLiveRoomAccess(
+  req: Request,
+): Promise<Response | null> {
+  const isSupporter = await isSupporterRequest(req);
+  if (isSupporter) return null;
+
+  const byoKey = getByoKey(req);
+  if (byoKey) return null;
+
+  // In local dev without DEPLOYMENT_ID or with API_PUBLIC=true, allow testing
+  if (!isDeployed && !Deno.env.get("REQUIRE_SUPPORTER_LIVE")) {
+    return null;
+  }
+
+  return jsonResponse(
+    {
+      error:
+        "Live multiplayer collaboration requires a Supporter Pass or BYO API key.",
+      needs_supporter: true,
+    },
+    402,
   );
 }
 

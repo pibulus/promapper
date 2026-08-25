@@ -7,7 +7,7 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { guardRequest } from "@services/requestGuard.ts";
+import { guardLiveRoomAccess, guardRequest } from "@services/requestGuard.ts";
 import { pushSnapshotToRoom } from "@services/partyUpdates.ts";
 import { collabHost as publicHost } from "@services/collabHost.ts";
 import { generateShareRoomId } from "@core/realtime/shareProtocol.ts";
@@ -16,6 +16,9 @@ export const handler: Handlers = {
   async POST(req) {
     const guard = await guardRequest(req);
     if (guard) return guard;
+
+    const liveGuard = await guardLiveRoomAccess(req);
+    if (liveGuard) return liveGuard;
 
     const host = publicHost();
     if (!host) {

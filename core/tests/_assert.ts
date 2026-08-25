@@ -19,6 +19,16 @@ export function assertEquals<T>(actual: T, expected: T, msg?: string): void {
   }
 }
 
+export function assertNotEquals<T>(actual: T, expected: T, msg?: string): void {
+  const actualStr = JSON.stringify(actual);
+  const expectedStr = JSON.stringify(expected);
+  if (actualStr === expectedStr) {
+    throw new Error(
+      msg ?? `assertNotEquals failed: both values equal ${actualStr}`,
+    );
+  }
+}
+
 export function assertStringIncludes(
   actual: string,
   expected: string,
