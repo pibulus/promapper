@@ -36,6 +36,11 @@ import {
   conversationData,
   historyDrawerOpen as isOpen,
 } from "@signals/conversationStore.ts";
+import {
+  isModuleEnabled,
+  resetModules,
+  toggleModule,
+} from "@signals/moduleStore.ts";
 import { showToast, showUndoToast } from "../utils/toast.ts";
 
 // Cache date formatter outside component to avoid recreating
@@ -193,6 +198,17 @@ export default function MobileHistoryMenu() {
       // the assignment below re-arms the autosave debounce with the NEW data,
       // clearing the timer that was holding the old one's last change.
       flushPendingSave();
+      if (
+        conv.notes && conv.notes.trim().length > 0 &&
+        !isModuleEnabled("notes")
+      ) {
+        toggleModule("notes");
+      }
+      if (
+        conv.magpie && conv.magpie.length > 0 && !isModuleEnabled("magpie")
+      ) {
+        toggleModule("magpie");
+      }
       conversationData.value = conv;
       isOpen.value = false; // Close drawer after loading
     }
@@ -250,6 +266,7 @@ export default function MobileHistoryMenu() {
     // tell "new" from "deleted"), so flush first or the last edit is dropped
     // deliberately rather than raced away.
     flushPendingSave();
+    resetModules();
     conversationData.value = null;
     isOpen.value = false;
   }

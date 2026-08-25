@@ -254,7 +254,14 @@ export function useGridSortable(options: GridSortableOptions) {
     globalThis.addEventListener("pointerup", onUp);
     globalThis.addEventListener("pointercancel", onUp);
     globalThis.addEventListener("keydown", onDragKeyDown);
+    globalThis.addEventListener("blur", onBlur);
     activeTeardown.current = teardown;
+  }
+
+  function onBlur() {
+    const s = session.current;
+    if (!s) return;
+    onUp({ pointerId: s.pointerId, type: "pointercancel" } as PointerEvent);
   }
 
   // Escape aborts the drag — routed through the pointercancel path so the
@@ -368,6 +375,7 @@ export function useGridSortable(options: GridSortableOptions) {
     globalThis.removeEventListener("pointerup", onUp);
     globalThis.removeEventListener("pointercancel", onUp);
     globalThis.removeEventListener("keydown", onDragKeyDown);
+    globalThis.removeEventListener("blur", onBlur);
     activeTeardown.current = null;
   }
 

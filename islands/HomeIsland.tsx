@@ -19,7 +19,6 @@ import {
   flushPendingSave,
   getActiveConversationId,
   getAllConversations,
-  loadConversation,
 } from "../core/storage/localStorage.ts";
 import { sweepOrphanSnapshots } from "@core/storage/exportSnapshots.ts";
 import { sweepOrphans } from "@core/storage/recordingsDB.ts";
@@ -136,16 +135,6 @@ export default function HomeIsland() {
     sweepOrphans(conversationIds).catch(() => {/* best-effort */});
     sweepOrphanSnapshots(liveIds);
     sweepOrphanTints(liveIds);
-
-    // Auto-restore last active conversation from localStorage
-    const activeId = getActiveConversationId();
-    // SKIP auto-restore if liveSession is active to prevent clobbering the live room's state
-    if (activeId && !conversationData.value && !liveSession.value) {
-      const stored = loadConversation(activeId);
-      if (stored) {
-        conversationData.value = stored;
-      }
-    }
   }, []);
 
   // Cmd/Ctrl+Z → undo the last destructive map/action-item mutation. Skipped

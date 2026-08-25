@@ -165,6 +165,7 @@ export function usePointerSortable(options: SortableOptions) {
     globalThis.addEventListener("pointerup", onUp);
     globalThis.addEventListener("pointercancel", onUp);
     globalThis.addEventListener("keydown", onDragKeyDown);
+    globalThis.addEventListener("blur", onBlur);
     // Remember how to undo exactly THESE registrations. The handlers are
     // function declarations, so every render mints new identities: an unmount
     // cleanup that closes over the first render's copies calls
@@ -176,7 +177,14 @@ export function usePointerSortable(options: SortableOptions) {
       globalThis.removeEventListener("pointerup", onUp);
       globalThis.removeEventListener("pointercancel", onUp);
       globalThis.removeEventListener("keydown", onDragKeyDown);
+      globalThis.removeEventListener("blur", onBlur);
     };
+  }
+
+  function onBlur() {
+    const s = session.current;
+    if (!s) return;
+    onUp({ pointerId: s.pointerId, type: "pointercancel" } as PointerEvent);
   }
 
   // Escape aborts the drag — routed through the pointercancel path so the

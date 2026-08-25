@@ -4,6 +4,7 @@ import {
   conversationData,
   processingConversation,
 } from "@signals/conversationStore.ts";
+import { resetModules } from "@signals/moduleStore.ts";
 import { ensureApiSession } from "../utils/apiAuth.ts";
 import { enqueueApiRequest } from "../utils/requestQueue.ts";
 import { coerceFlowResult } from "../utils/coerceFlowResult.ts";
@@ -217,6 +218,7 @@ export default function UploadIsland() {
       if (!flowResult) {
         throw new Error("Server returned an unexpected response — try again.");
       }
+      resetModules();
       conversationData.value = flowResult;
       pendingAudio.value = null; // it landed — the net can let go
       if (flowResult.warnings.length) {
@@ -266,6 +268,7 @@ export default function UploadIsland() {
       if (!flowResult) {
         throw new Error("Server returned an unexpected response — try again.");
       }
+      resetModules();
       conversationData.value = flowResult;
       if (flowResult.warnings.length) {
         for (const warning of flowResult.warnings) {
@@ -353,6 +356,7 @@ export default function UploadIsland() {
       if (!flowResult) {
         throw new Error("Server returned an unexpected response — try again.");
       }
+      resetModules();
       conversationData.value = flowResult;
       if (flowResult.warnings.length) {
         for (const warning of flowResult.warnings) {

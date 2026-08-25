@@ -52,3 +52,12 @@ export function toggleModule(id: string): void {
     // Storage full/blocked — the toggle still works for this session.
   }
 }
+
+export function resetModules(): void {
+  enabledModules.value = [];
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    // best-effort
+  }
+}
