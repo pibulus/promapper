@@ -5693,53 +5693,78 @@ h6,
   }
 }
 
-/* The brew ledger — completed stages hold their place with a tick while the
-   current one breathes below them, so progress visibly ACCUMULATES instead of
-   one line replacing itself (read as "blank screen, anything happening?" —
-   Pablo, 2026-08-13). Same grammar for first brews and appends. */
+/* The brew ledger — independent floating card elevated above the dashboard skeleton.
+   Fixed positioning ensures it NEVER pushes down or displaces the modules below
+   as progress stages accumulate. */
 .brew-ledger {
-  /* A small plaque rather than four sentences adrift in the corner: centered
-     over the board that is assembling underneath it, on the same cream and
-     border as the cards so the whole loading moment reads as one object. */
+  position: fixed;
+  top: 5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
   width: fit-content;
-  max-width: min(30rem, 92%);
-  margin: 0.25rem auto -0.25rem;
-  padding: 0.7rem 1.1rem;
-  border: 2px solid var(--color-border);
+  max-width: min(28rem, 90vw);
+  margin: 0;
+  padding: 0.85rem 1.35rem;
+  border: 2.5px solid var(--color-border);
   border-radius: var(--border-radius-lg, 18px);
   background: var(--surface-cream, #fbf1e4);
-  box-shadow: var(--shadow-soft);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14), var(--shadow-chunky, 0 4px 0 var(--color-border));
+  backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  position: relative;
-  z-index: 1;
+  pointer-events: none;
+  animation: brew-float-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+@keyframes brew-float-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
 .brew-ledger .dashboard-brew-note {
   padding-top: 0;
 }
+
 .brew-ledger__done {
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--color-text-secondary);
-  opacity: 0.75;
+  opacity: 0.8;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   animation: brew-done-in 240ms ease-out both;
 }
+
 .brew-ledger__done .fa-check {
   color: var(--accent-ink);
   font-size: 0.75rem;
 }
+
 @keyframes brew-done-in {
   from {
     opacity: 0;
     transform: translateY(3px);
   }
   to {
-    opacity: 0.75;
+    opacity: 0.8;
     transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .brew-ledger {
+    top: 4.25rem;
+    max-width: calc(100vw - 2rem);
+    padding: 0.7rem 1rem;
   }
 }
 
@@ -5752,6 +5777,7 @@ h6,
   padding-top: 1rem;
   animation: brew-breathe 2.2s ease-in-out infinite;
 }
+
 @keyframes brew-breathe {
   0%,
   100% {
