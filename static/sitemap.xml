@@ -1,14 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <!-- English Homepage -->
   <url>
     <loc>https://promapper.app/</loc>
-    <lastmod>2026-06-25</lastmod>
-    <changefreq>weekly</changefreq>
+    <lastmod>2026-09-11</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://promapper.app/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://promapper.app/es" />
   </url>
+
+  <!-- Spanish Homepage -->
+  <url>
+    <loc>https://promapper.app/es</loc>
+    <lastmod>2026-09-11</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://promapper.app/es" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://promapper.app/" />
+  </url>
+
+  <!-- Shared Map Directory / Viewer -->
   <url>
     <loc>https://promapper.app/shared</loc>
-    <lastmod>2026-06-25</lastmod>
+    <lastmod>2026-09-11</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
