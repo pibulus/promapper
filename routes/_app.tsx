@@ -25,8 +25,9 @@ export default function App({ Component }: PageProps) {
           content="ProMapper turns voice notes, meetings, research, scenes, and written rants into project memory: transcript, summary, actions, topic map, docs, and sharing."
         />
 
-        {/* Canonical (matches og:url; avoids dup-URL from share query params) */}
         <link rel="canonical" href="https://promapper.app/" />
+        <link rel="alternate" hrefLang="en" href="https://promapper.app/" />
+        <link rel="alternate" hrefLang="es" href="https://promapper.app/es" />
 
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
