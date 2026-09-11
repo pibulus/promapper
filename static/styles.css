@@ -5709,7 +5709,8 @@ h6,
   border: 2.5px solid var(--color-border);
   border-radius: var(--border-radius-lg, 18px);
   background: var(--surface-cream, #fbf1e4);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14), var(--shadow-chunky, 0 4px 0 var(--color-border));
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14), var(--shadow-chunky, 0 4px 0
+    var(--color-border));
   backdrop-filter: blur(8px);
   display: flex;
   flex-direction: column;
