@@ -24,9 +24,14 @@ import * as $api_supporter_checkout_checkoutId_ from "./routes/api/supporter/che
 import * as $api_supporter_redeem from "./routes/api/supporter/redeem.ts";
 import * as $dev_colors from "./routes/dev/colors.tsx";
 import * as $dev_nodemap from "./routes/dev/nodemap.tsx";
+import * as $dnd from "./routes/dnd.tsx";
+import * as $es_index from "./routes/es/index.tsx";
+import * as $es_rol from "./routes/es/rol.tsx";
 import * as $example from "./routes/example.tsx";
+import * as $for_dnd from "./routes/for/dnd.tsx";
 import * as $index from "./routes/index.tsx";
 import * as $live_roomId_ from "./routes/live/[roomId].tsx";
+import * as $rol from "./routes/rol.tsx";
 import * as $shared_shareId_ from "./routes/shared/[shareId].tsx";
 import * as $shared_index from "./routes/shared/index.tsx";
 import * as $AudioRecorder from "./islands/AudioRecorder.tsx";
@@ -35,6 +40,7 @@ import * as $AuthModalIsland from "./islands/AuthModalIsland.tsx";
 import * as $ColorLabIsland from "./islands/ColorLabIsland.tsx";
 import * as $DashboardIsland from "./islands/DashboardIsland.tsx";
 import * as $DemoSeedIsland from "./islands/DemoSeedIsland.tsx";
+import * as $DndStudioIsland from "./islands/DndStudioIsland.tsx";
 import * as $EmojimapViz from "./islands/EmojimapViz.tsx";
 import * as $FlipCard from "./islands/FlipCard.tsx";
 import * as $ForceDirectedGraph from "./islands/ForceDirectedGraph.tsx";
@@ -89,9 +95,14 @@ const manifest = {
     "./routes/api/supporter/redeem.ts": $api_supporter_redeem,
     "./routes/dev/colors.tsx": $dev_colors,
     "./routes/dev/nodemap.tsx": $dev_nodemap,
+    "./routes/dnd.tsx": $dnd,
+    "./routes/es/index.tsx": $es_index,
+    "./routes/es/rol.tsx": $es_rol,
     "./routes/example.tsx": $example,
+    "./routes/for/dnd.tsx": $for_dnd,
     "./routes/index.tsx": $index,
     "./routes/live/[roomId].tsx": $live_roomId_,
+    "./routes/rol.tsx": $rol,
     "./routes/shared/[shareId].tsx": $shared_shareId_,
     "./routes/shared/index.tsx": $shared_index,
   },
@@ -102,6 +113,7 @@ const manifest = {
     "./islands/ColorLabIsland.tsx": $ColorLabIsland,
     "./islands/DashboardIsland.tsx": $DashboardIsland,
     "./islands/DemoSeedIsland.tsx": $DemoSeedIsland,
+    "./islands/DndStudioIsland.tsx": $DndStudioIsland,
     "./islands/EmojimapViz.tsx": $EmojimapViz,
     "./islands/FlipCard.tsx": $FlipCard,
     "./islands/ForceDirectedGraph.tsx": $ForceDirectedGraph,
