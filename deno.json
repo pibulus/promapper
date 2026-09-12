@@ -35,7 +35,8 @@
     "start": "PORT=8003 deno run -A --watch=static/,routes/,islands/,components/,core/,services/,signals/,utils/ dev.ts",
     "dev": "PORT=8003 deno run -A --watch=static/,routes/,islands/,components/,core/,services/,signals/,utils/ dev.ts",
     "build:css": "deno run -A npm:tailwindcss@3.4.1 -c tailwind.config.ts -i static/styles.css -o static/styles.build.css --minify",
-    "build": "deno task build:css && deno run -A dev.ts build",
+    "stamp": "deno run --allow-run --allow-read --allow-write --allow-env scripts/stamp-version.ts",
+    "build": "deno task stamp && deno task build:css && deno run -A dev.ts build",
     "preview": "deno run -A main.ts",
     "update": "deno run -A -r https://fresh.deno.dev/update ."
   },
