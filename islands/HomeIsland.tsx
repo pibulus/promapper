@@ -801,23 +801,6 @@ export default function HomeIsland() {
                     <span>Export</span>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={openSupporterModal}
-                    class={`header-supporter-btn ${
-                      isSupporterSignal.value ? "is-active" : ""
-                    }`}
-                    data-tip={isSupporterSignal.value
-                      ? "Supporter Pass Active"
-                      : "Support ProMapper"}
-                    aria-label="Supporter Pass"
-                  >
-                    <i class="fa fa-heart" aria-hidden="true"></i>
-                    <span>
-                      {isSupporterSignal.value ? "Supporter 💜" : "Support"}
-                    </span>
-                  </button>
-
                   {/* History — a ghost icon; navigation, not an action */}
                   <button
                     onClick={() => {
@@ -922,22 +905,6 @@ export default function HomeIsland() {
                   ProMapper<span class="app-header__brand-dot">.</span>
                 </a>
                 <div class="app-header__actions">
-                  <button
-                    type="button"
-                    onClick={openSupporterModal}
-                    class={`header-supporter-btn ${
-                      isSupporterSignal.value ? "is-active" : ""
-                    }`}
-                    data-tip={isSupporterSignal.value
-                      ? "Supporter Pass Active"
-                      : "Support ProMapper"}
-                    aria-label="Supporter Pass"
-                  >
-                    <i class="fa fa-heart" aria-hidden="true"></i>
-                    <span>
-                      {isSupporterSignal.value ? "Supporter 💜" : "Support"}
-                    </span>
-                  </button>
                   {hasHistory.value && (
                     <button
                       onClick={() =>
@@ -1154,6 +1121,20 @@ export default function HomeIsland() {
             <span class="app-footer__controls">
               <ThemeSwitcher />
               <SoundToggle />
+              <button
+                type="button"
+                class={`header-icon-btn footer-supporter-btn ${
+                  isSupporterSignal.value ? "is-active" : ""
+                }`}
+                onClick={openSupporterModal}
+                aria-label="Supporter Pass"
+                data-tip={isSupporterSignal.value
+                  ? "Supporter Pass active"
+                  : "Support ProMapper"}
+                data-tip-align="right"
+              >
+                <i class="fa fa-heart" aria-hidden="true"></i>
+              </button>
               <button
                 type="button"
                 class="header-icon-btn"

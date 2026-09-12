@@ -687,13 +687,16 @@ h6,
    These are the product's whole loop (add more, open it up, get it out), so
    they share ONE shape, height, and typography to read as a tight, tactile trio.
    Export keeps the solid candy CTA plate as the payoff; Add and Invite wear the
-   same plate outlined in cream surface, keeping visual hierarchy balanced. */
+   same plate outlined in cream surface, keeping visual hierarchy balanced.
+   min-height is NOT touch-only: without it these compute to ~25px from padding
+   alone — SHORTER than the 32px .header-icon-btn ghost beside them, so the
+   promoted CTA read as the smallest thing in the row on every desktop view. */
 .header-export-btn,
-.header-action-btn,
-.header-supporter-btn {
+.header-action-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  min-height: 2.125rem;
   padding: 0.4rem 0.75rem;
   border-radius: 10px;
   font-size: var(--tiny-size);
@@ -710,8 +713,7 @@ h6,
 }
 
 .header-export-btn i,
-.header-action-btn i,
-.header-supporter-btn i {
+.header-action-btn i {
   font-size: 0.875rem;
 }
 
@@ -738,25 +740,18 @@ h6,
 /* The words SURVIVE on mobile — they just get tighter. */
 @media (max-width: 639px) {
   .header-export-btn,
-  .header-action-btn,
-  .header-supporter-btn {
+  .header-action-btn {
     padding: 0.35rem 0.5rem;
     gap: 0.3rem;
     font-size: var(--tiny-size);
   }
 }
 
-/* Touch: a real 44px target without fattening the visual. */
+/* Touch: a real 44px target without fattening the visual. The min-height now
+   lives in the base rule (desktop needed it too), so this only adds the box. */
 @media (pointer: coarse) {
-  .header-export-btn,
-  .header-action-btn,
-  .header-supporter-btn {
-    position: relative;
-    min-height: 2.125rem;
-  }
   .header-export-btn::after,
-  .header-action-btn::after,
-  .header-supporter-btn::after {
+  .header-action-btn::after {
     content: "";
     position: absolute;
     inset: -8px 0;
@@ -7822,9 +7817,20 @@ a:focus-visible {
   transform: translate(-50%, -50%);
 }
 
+/* Supporter — a footer dial beside Keys, not a header plate. The two doors
+   (support / bring your own key) sit together, and both stay off the porch:
+   footer controls only render once a conversation exists, so the app never
+   asks for money before it has given anything. Active = accent wash, the
+   house "on" language — never a saturated slab, never a hardcoded hex. */
+.footer-supporter-btn.is-active {
+  color: var(--accent-ink);
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+}
+
 .export-drawer-close-btn:hover {
   color: var(--accent-ink);
-  transform: scale(1.1);
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  border-radius: var(--border-radius-sm);
 }
 
 /* The header Export CTA — payoff button wears the candy plate */
@@ -7842,29 +7848,6 @@ a:focus-visible {
 .header-export-btn:active {
   transform: translateY(0.5px);
   box-shadow: 1px 1px 0 var(--line-ink);
-}
-
-.header-supporter-btn {
-  color: #fffdf7;
-  background: #9333ea;
-  border: 2px solid var(--soft-black);
-  box-shadow: 2px 2px 0 var(--line-ink);
-}
-
-.header-supporter-btn:hover {
-  transform: translateY(-1.5px);
-  box-shadow: 3px 3px 0 var(--line-ink);
-  background: #a855f7;
-}
-
-.header-supporter-btn:active {
-  transform: translateY(0.5px);
-  box-shadow: 1px 1px 0 var(--line-ink);
-}
-
-.header-supporter-btn.is-active {
-  background: #15803d;
-  color: #fffdf7;
 }
 
 /* Touch tap zone lives with the other two header actions further up (search
@@ -8217,7 +8200,6 @@ label {
 .mapper-clip-btn:active,
 .topic-map-add-button:active,
 .topic-map-ctrl:active,
-.header-export-btn:active,
 .topic-viz-trigger:active,
 .topic-viz-menu-item:active,
 .voice-drawer-close:active,

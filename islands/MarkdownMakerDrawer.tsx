@@ -107,9 +107,9 @@ export default function MarkdownMakerDrawer(
   // for instead of narrating invented pipeline stages.
   const runningLabel = useComputed(() => {
     const id = selectedPromptId.value;
-    if (!id) return "your format";
+    if (!id) return "a custom format";
     // markdownPrompts, not visiblePrompts: the latter is the filtered six.
-    return markdownPrompts.find((p) => p.id === id)?.label ?? "your format";
+    return markdownPrompts.find((p) => p.id === id)?.label ?? "a custom format";
   });
 
   // Nothing is in flight once the drawer is shut, and the next open must not
@@ -862,14 +862,14 @@ export default function MarkdownMakerDrawer(
                 aria-hidden="true"
               >
               </i>
-              <span>Or describe your own format</span>
+              <span>Or describe a format</span>
             </button>
             {customOpen.value && (
               <div class="export-custom-body">
                 <textarea
                   id="custom-prompt-input"
                   class="export-textarea h-24"
-                  placeholder="A letter to my future self… a packing list… anything you can describe."
+                  placeholder="A letter to a future self… a packing list… anything worth describing."
                   maxLength={5000}
                   value={customPrompt.value}
                   onInput={(e) =>
@@ -1036,7 +1036,7 @@ export default function MarkdownMakerDrawer(
                 ( • ᴗ • )
               </div>
               <div class="empty-state-text">
-                Pick a format — your exports stack up here as snapshots.
+                Pick a format — exports stack up here as snapshots.
               </div>
             </div>
           )}
