@@ -103,15 +103,25 @@ corner washes + a 168deg linear journey.
 
 ### The airy floor (Aug 20, 2026)
 
-⚠️ **Named themes in `themes.ts` are effectively DEAD** — `ThemeSwitcher`
-auto-rolls a `SHUFFLE` theme on mount, so nobody sees DAYBREAK et al. Tuning
-`themes.ts` to change what the app looks like changes nothing. The live knobs
-are all in `core/theme/randomTheme.ts`:
+⚠️ **Named themes in `themes.ts` are NEVER SEEN, but they are NOT dead.**
+`ThemeSwitcher` auto-rolls a `SHUFFLE` theme on mount, so nobody looks at
+DAYBREAK et al., and tuning them changes nothing on screen. But `themes.ts` is
+still the CRASH-SAFE DEFAULT: `ThemeSystem`'s constructor resolves
+`this.currentTheme = defaultTheme || config.themes[0]` (`themeEngine.ts:46-50`),
+and `loadTheme()` falls back to it whenever a saved SHUFFLE payload has a stale
+`v`, malformed JSON, or a missing accent (`themeEngine.ts:130-159`). It is the
+only thing between a corrupt localStorage entry and an unthemed page, and it is
+the direct subject of 5 tests in `theme_contrast_test.ts`. **Do not delete it.**
+(Corrected Sept 12 2026 — the previous wording said "effectively DEAD", which
+contradicts line 6 of this same doc listing it as a load-bearing sync point.)
+
+The live knobs — the ones that change what a user actually sees — are all in
+`core/theme/randomTheme.ts`:
 
 | Knob                       | Where                   | Now              |
 | -------------------------- | ----------------------- | ---------------- |
 | ground family hue/chroma   | `GROUND_VIBES`          | C 0.035–0.085    |
-| ground lightness floor     | `generateThemeParts`    | L 0.94–0.955     |
+| ground lightness floor     | `generateThemeParts`    | **L 0.90–0.915** |
 | **the 3 linear sky stops** | `composeTheme` `bgBase` | all track ground |
 
 The third row is the one that matters. `bgBase[1]` used to be pinned at
@@ -170,7 +180,7 @@ never a loosening of the cohesion rules.
 - Contrast swept over 300 seeded rolls: ink/band, white/strong, strong/cream,
   ink/every-bg-layer, white/CTA-plate.
 
-`SHUFFLE_SCHEMA_VERSION = 9` (themeEngine + FOUC script) — older rolls are
+`SHUFFLE_SCHEMA_VERSION = 13` (themeEngine + FOUC script) — older rolls are
 discarded on load, falling back to DAYBREAK.
 
 ## NEON OFFICE — the generator (July 26, 2026, supersedes the curated deck)
