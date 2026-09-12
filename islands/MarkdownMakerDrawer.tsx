@@ -792,7 +792,8 @@ export default function MarkdownMakerDrawer(
             <button
               onClick={onClose}
               class="export-drawer-close-btn"
-              title="Close"
+              data-tip="Close"
+              data-tip-align="right"
               aria-label="Close export"
             >
               <i class="fa fa-xmark" aria-hidden="true"></i>
@@ -959,12 +960,12 @@ export default function MarkdownMakerDrawer(
             <div class="export-preview mb-4">
               <div class="export-preview-bar">
                 <span>Preview</span>
-                <div class="flex gap-1">
+                <div class="flex gap-2">
                   <button
                     type="button"
                     class="btn btn--ghost btn--compact btn--icon"
                     onClick={copyToClipboard}
-                    title="Copy to clipboard"
+                    data-tip="Copy to clipboard"
                     aria-label="Copy to clipboard"
                   >
                     <i class="fa fa-copy" aria-hidden="true"></i>
@@ -973,7 +974,7 @@ export default function MarkdownMakerDrawer(
                     type="button"
                     class="btn btn--ghost btn--compact btn--icon"
                     onClick={downloadMarkdown}
-                    title="Download as .md file"
+                    data-tip="Download .md"
                     aria-label="Download as Markdown file"
                   >
                     <i class="fa fa-download" aria-hidden="true"></i>
@@ -982,7 +983,7 @@ export default function MarkdownMakerDrawer(
                     type="button"
                     class="btn btn--ghost btn--compact btn--icon"
                     onClick={downloadPDF}
-                    title="Download as PDF"
+                    data-tip="Download PDF"
                     aria-label="Download as PDF"
                   >
                     <i class="fa fa-file-pdf" aria-hidden="true"></i>
@@ -991,7 +992,7 @@ export default function MarkdownMakerDrawer(
                     type="button"
                     class="btn btn--ghost btn--compact btn--icon"
                     onClick={saveOutput}
-                    title="Save snapshot"
+                    data-tip="Save snapshot"
                     aria-label="Save snapshot"
                   >
                     <i class="fa fa-save" aria-hidden="true"></i>
@@ -1000,7 +1001,8 @@ export default function MarkdownMakerDrawer(
                     type="button"
                     class="btn btn--accent btn--compact flex items-center gap-1"
                     onClick={() => resampleText(markdown.value)}
-                    title="Resample this export into a new project map"
+                    data-tip="Resample into a new map"
+                    data-tip-align="right"
                     aria-label="Resample as Map"
                   >
                     <i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i>
@@ -1067,12 +1069,12 @@ export default function MarkdownMakerDrawer(
                             {new Date(output.created_at).toLocaleString()}
                           </p>
                         </div>
-                        <div class="flex gap-1 ml-2">
+                        <div class="flex gap-2 ml-2">
                           <button
                             type="button"
                             class="btn btn--ghost btn--compact btn--icon"
                             onClick={() => resampleText(output.content)}
-                            title="Resample this snapshot into a new map"
+                            data-tip="Resample into a new map"
                             aria-label="Resample snapshot"
                           >
                             <i
@@ -1085,7 +1087,7 @@ export default function MarkdownMakerDrawer(
                             type="button"
                             class="btn btn--ghost btn--compact btn--icon"
                             onClick={() => loadDraft(output)}
-                            title="Load to edit"
+                            data-tip="Load to edit"
                             aria-label="Load snapshot to edit"
                           >
                             <i class="fa fa-pen" aria-hidden="true"></i>
@@ -1094,7 +1096,7 @@ export default function MarkdownMakerDrawer(
                             type="button"
                             class="btn btn--ghost btn--compact btn--icon"
                             onClick={() => copySavedOutput(output.content)}
-                            title="Copy"
+                            data-tip="Copy"
                             aria-label="Copy snapshot"
                           >
                             <i class="fa fa-copy" aria-hidden="true"></i>
@@ -1104,7 +1106,8 @@ export default function MarkdownMakerDrawer(
                             type="button"
                             class="btn btn--ghost btn--compact btn--icon"
                             onClick={() => deleteOutput(output.id)}
-                            title="Delete (undoable)"
+                            data-tip="Delete (undoable)"
+                            data-tip-align="right"
                             aria-label="Delete snapshot"
                           >
                             <i class="fa fa-trash" aria-hidden="true"></i>
@@ -1115,7 +1118,7 @@ export default function MarkdownMakerDrawer(
                         type="button"
                         onClick={() => loadDraft(output)}
                         class="export-snap-body line-clamp-3"
-                        title="Load to edit"
+                        aria-label="Load to edit"
                       >
                         {output.content.substring(0, 150)}...
                       </button>
