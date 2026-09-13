@@ -199,10 +199,13 @@ export default function ForceDirectedGraph(
       config: {
         width,
         height,
-        // Warm paper glass, same family as the whiteboard's cream — the map
-        // and the canvas are two faces of one card and should feel like one
-        // material (was a cool white that fought the flip side).
-        backgroundColor: "rgba(251, 241, 228, 0.6)",
+        // The map is its OWN plane — a warm near-white that separates it
+        // cleanly from the creamy cards around it. Sept 12: reverted the
+        // "one material with the whiteboard" call; sharing the cream made
+        // the map read as more card rather than as a distinct surface, and
+        // the 0.6 alpha let the ground bleed through so it landed tan.
+        // Opaque on purpose. Warm near-white, never #fff (house law).
+        backgroundColor: "#fffef7",
         linkDistance: linkDistance.value,
         chargeStrength: chargeStrength.value,
         collisionRadius: collisionRadius.value,
@@ -297,12 +300,12 @@ export default function ForceDirectedGraph(
       header.style.position = "absolute";
       header.style.top = "20px";
       header.style.left = "20px";
-      header.style.backgroundColor = "rgba(255, 255, 255, 0.9)";
+      header.style.backgroundColor = "rgba(255, 254, 247, 0.92)";
       header.style.padding = "8px 20px";
       header.style.borderRadius = "12px";
       header.style.fontSize = "18px";
       header.style.fontWeight = "bold";
-      header.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
+      header.style.boxShadow = "0 2px 8px rgba(30, 23, 20, 0.12)";
 
       const title = conversationData.value?.conversation.title ||
         "Conversation Map";

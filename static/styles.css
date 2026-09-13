@@ -2445,7 +2445,10 @@ h6,
   border: 2px solid var(--line-ink);
   border-radius: 28px;
   padding: clamp(0.8rem, 1.8vw, 1.4rem);
-  box-shadow: var(--shadow-slab);
+  /* FLAT on purpose (Sept 12). The shell wore the same slab as every card
+     inside it, so the offset read twice at two levels and turned to mush.
+     The shell is a container; the cards are the objects. Only objects lift. */
+  box-shadow: none;
 }
 
 /* Mobile: let the modules float free — no nested container chrome */
@@ -3501,9 +3504,12 @@ h6,
   border-radius: var(--border-radius-lg);
   /* project_mapper's chunky soul: a 2px warm-BLACK border (never brown) + a flat
      warm slab shadow (no blur). Gives the card a confident toy-brut edge
-     that reads as ours, not corporate. 24px radius keeps it a touch refined. */
+     that reads as ours, not corporate. 24px radius keeps it a touch refined.
+     OPAQUE ink, not the 25%-alpha slab: a hard offset at low alpha reads as
+     a soft grey smudge — the one thing a neo-brutalist shadow must not do.
+     Matching --line-ink makes the offset look like the border's own cast. */
   border: 2px solid var(--line-ink);
-  box-shadow: var(--shadow-slab);
+  box-shadow: 4px 4px 0 var(--line-ink);
   height: 100%;
   overflow: hidden;
 }

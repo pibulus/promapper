@@ -76,7 +76,11 @@ function sizeOf(id: string): BoardSize | undefined {
   if (id === "canvas") return undefined;
   const override = boardSizes.value[id];
   if (override) return override;
-  if ((CORE_CELL_IDS as readonly string[]).includes(id)) return "medium";
+  // Transcript / Summary / Actions open FULLY EXTENDED on a first load —
+  // they are the three things worth reading, and landing them half-height
+  // meant every one of them opened mid-scroll. A user's own resize still
+  // wins (boardSizes override is checked above); this is only the default.
+  if ((CORE_CELL_IDS as readonly string[]).includes(id)) return "tall";
   return moduleRegistry.find((m) => m.id === id)?.size ?? "small";
 }
 
