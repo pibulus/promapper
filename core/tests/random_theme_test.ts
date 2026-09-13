@@ -21,12 +21,20 @@ import { assert } from "./_assert.ts";
 import {
   contrast,
   generateThemeParts,
+  HARMONIES,
+  harmonyHues,
   hexToOklch,
   maxChroma,
+  mixHex,
   NEON_CHROMA_CEILING,
   oklchToHex,
+  peakLightness,
+  SOFT_BLACK,
+  solveBandAndInk,
+  solveBandSub,
   SURFACE_CREAM,
 } from "../theme/randomTheme.ts";
+import { SPEAKER_PALETTE } from "../theme/speakerColors.ts";
 
 /** Deterministic LCG so the sweep is reproducible. */
 function seededRand(seed: number): () => number {
@@ -320,4 +328,99 @@ Deno.test("oklch round-trip sanity", () => {
   const [cl, , ch] = hexToOklch(clamped);
   assert(Math.abs(cl - 0.9) < 0.02, `clamped L drifted: ${cl}`);
   assert(Math.abs(ch - 260) < 3, `clamped hue drifted: ${ch}`);
+});
+
+// ===================================================================
+// Sept 12, 2026 — three guards for bugs found by measuring, not reading.
+// Each asserts a RELATIONSHIP, never a pinned hex (see the #fff4e8 lesson).
+// ===================================================================
+
+Deno.test("header band sub-text clears AA against its own band, every roll", () => {
+  // Was a flat rgba alpha (0.66/0.72). Blending the solved ink back toward the
+  // band it was just solved against failed AA on 63% of 3000 rolls, worst
+  // 3.67:1. solveBandSub walks up to the quietest alpha that still clears.
+  const rand = seededRand(9112);
+  let worst = Infinity;
+  for (let i = 0; i < 300; i++) {
+    const bandHue = wrap(rand() * 360);
+    const { band, ink } = solveBandAndInk(bandHue, peakLightness(bandHue));
+    const sub = solveBandSub(band, ink);
+    // rgba(r,g,b,a) -> composite it over the band the way the browser will
+    const m = sub.match(/rgba\((\d+),(\d+),(\d+),([\d.]+)\)/);
+    const composited = m
+      ? mixHex(
+        `#${
+          [m[1], m[2], m[3]].map((v) => (+v).toString(16).padStart(2, "0"))
+            .join("")
+        }`,
+        band,
+        Number(m[4]),
+      )
+      : sub;
+    const c = contrast(composited, band);
+    worst = Math.min(worst, c);
+    assert(
+      c >= 4.5,
+      `band sub-text ${composited} on band ${band} is ${
+        c.toFixed(2)
+      }:1 (need 4.5)`,
+    );
+  }
+  assert(worst >= 4.5, `worst band-sub contrast was ${worst.toFixed(2)}:1`);
+});
+
+Deno.test("no harmony collapses the accent and the band onto one hue", () => {
+  // `complementary` returned [base, base+180, base+j(150,210)] while the
+  // accent is H[1] and the band is H[2] — so the band was mathematically
+  // GUARANTEED within 30 degrees of the accent, 100% of the time. The band is
+  // supposed to be the offset; two near-identical hues on one card is a
+  // stutter, not a duo.
+  const rand = seededRand(4242);
+  for (const [harmony] of HARMONIES) {
+    let tightest = 360;
+    for (let i = 0; i < 400; i++) {
+      const base = rand() * 360;
+      const H = harmonyHues(base, harmony, rand);
+      const accent = wrap(H[1 % H.length]);
+      const band = wrap(H[2 % H.length]);
+      let d = Math.abs(accent - band);
+      if (d > 180) d = 360 - d;
+      tightest = Math.min(tightest, d);
+    }
+    assert(
+      tightest >= 25,
+      `harmony "${harmony}" put accent and band ${
+        tightest.toFixed(1)
+      }deg apart (need >= 25)`,
+    );
+  }
+});
+
+Deno.test("every speaker colour is legible as chip text and as a glyph", () => {
+  // The palette is theme-independent, so these fail on EVERY roll or none.
+  // At the old 80% mix all eight failed (3.42-4.36:1) at 12px/700, which is
+  // under the large-text exemption. Mirrors static/styles.css
+  // .action-person-chip and the @ sigil in ActionItemsCard.
+  const CHIP_TEXT_MIX = 0.62;
+  const CHIP_BG_MIX = 0.14;
+  const GLYPH_MIX = 0.70;
+  for (const person of SPEAKER_PALETTE) {
+    const chipBg = mixHex(person, SURFACE_CREAM, CHIP_BG_MIX);
+    const chipText = mixHex(person, SOFT_BLACK, CHIP_TEXT_MIX);
+    const chipC = contrast(chipText, chipBg);
+    assert(
+      chipC >= 4.5,
+      `chip text for ${person} is ${
+        chipC.toFixed(2)
+      }:1 on its own chip (need 4.5)`,
+    );
+    const glyphC = contrast(
+      mixHex(person, SOFT_BLACK, GLYPH_MIX),
+      SURFACE_CREAM,
+    );
+    assert(
+      glyphC >= 4.5,
+      `@ glyph for ${person} is ${glyphC.toFixed(2)}:1 on cream (need 4.5)`,
+    );
+  }
 });

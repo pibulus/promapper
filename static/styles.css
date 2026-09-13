@@ -4042,7 +4042,11 @@ h6,
   padding: 0.1rem 0.5rem;
   border-radius: 999px;
   background: color-mix(in srgb, var(--person-color) 14%, transparent);
-  color: color-mix(in srgb, var(--person-color) 80%, var(--soft-black));
+  /* 62%, not 80%: at 80 all EIGHT palette colours fail AA against this chip's
+     own background (3.42-4.36:1) at 12px/700, which is under the large-text
+     exemption. 62 clears every one (4.73-5.72:1) and is the most identity
+     colour that still does. Guarded by core/tests/speaker_contrast_test.ts. */
+  color: color-mix(in srgb, var(--person-color) 62%, var(--soft-black));
   font-size: var(--tiny-size);
   font-weight: 700;
 }

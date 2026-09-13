@@ -990,10 +990,17 @@ export default function ActionItemsCard(
                                         // person's color once a name exists
                                         style={editingAssignee.value.trim()
                                           ? {
-                                            color: speakerColor(
-                                              editingAssignee.value.trim(),
-                                              speakers,
-                                            ),
+                                            // Deepened, not raw: the bare
+                                            // palette hex on card cream runs
+                                            // 2.81-3.82:1. 70% keeps the most
+                                            // identity colour that still
+                                            // clears AA (4.69-5.93:1).
+                                            color: `color-mix(in srgb, ${
+                                              speakerColor(
+                                                editingAssignee.value.trim(),
+                                                speakers,
+                                              )
+                                            } 70%, var(--soft-black))`,
                                           }
                                           : undefined}
                                       >

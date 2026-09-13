@@ -1,7 +1,9 @@
 /**
  * Guard: the FOUC script in _app.tsx handles SHUFFLE rolls (the only theme
- * source since Aug 2026 — named themes are dead). It must restore saved vars
- * and check the current schema version so old rolls get discarded.
+ * source a user ever SEES since Aug 2026 — though the named themes are not
+ * dead: they remain the crash-safe fallback, see docs/COLOR-SYSTEM.md). It
+ * must restore saved vars and check the current schema version so old rolls
+ * get discarded rather than replaying frozen vars forever.
  */
 
 import { assertEquals } from "./_assert.ts";

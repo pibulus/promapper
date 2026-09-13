@@ -145,7 +145,7 @@ var saved=localStorage.getItem("promapper-theme");
 if(!saved)return;
 var parsed=JSON.parse(saved);
 if(!parsed||parsed.name!=="SHUFFLE")return;
-if(parsed.v!==13||!parsed.custom||!parsed.custom.vars)return;
+if(parsed.v!==14||!parsed.custom||!parsed.custom.vars)return;
 var cv=parsed.custom.vars;
 for(var ck in cv){document.documentElement.style.setProperty(ck,cv[ck]);}
 }catch(e){}})();`,
