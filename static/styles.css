@@ -2001,7 +2001,7 @@ h6,
   }
 
   :root {
-    /* Single-row header now (title lives in the footer strip). */
+    /* Single-row header now (the title lives in the footer's project slot). */
     --header-height: 52px;
   }
 
@@ -2334,7 +2334,9 @@ h6,
        padding tax across the four cards that render every load. The 44px tap
        target does NOT live in this padding (.card-header-actions button
        carries its own absolutely-positioned 44px ::after), so trimming costs
-       no reach. 0.55rem lands at 49.6px, still roomier than desktop. */
+       no reach. 0.55rem lands at 48.05px (the mobile root is 15.5px, NOT
+       16 — see the html font-size tighten above; never do rem math here at
+       16), still roomier than desktop's 46.4px. Measured 48px in-browser. */
     --header-pad-y: 0.55rem;
     --header-pad-x: 0.95rem;
   }
@@ -2427,7 +2429,16 @@ h6,
   }
 
   .action-items-scroll {
-    padding: 0.45rem 0.9rem 0.9rem !important;
+    /* Top matches every other module's body. It was 0.45rem — exactly HALF —
+       so Actions and Magpie began their content at half the breathing room of
+       Notes/Ask/Takes/Sound.
+       Use the TOKEN, not a number: --card-padding is clamp(0.75rem, 1.5vw,
+       1.1rem) and resolves to 11.625px on a 390px phone, so the sibling
+       `.dashboard-card-body { padding: 0.9rem }` rule in this same block never
+       actually wins — the token does. Hardcoding 0.9rem here made the list
+       20% ROOMIER than its siblings instead of equal. Measured, not assumed. */
+    padding: var(--card-padding) var(--card-padding) var(--card-padding)
+      !important;
     /* On mobile the page itself scrolls; a nested 384px scroll region traps the
        list into a double-scroll showing ~2 items. Let it grow naturally — the
        quick-add bar is a sibling after this container, so the footer is safe. */
@@ -3288,8 +3299,12 @@ h6,
 /* Magpie — the shelf of shiny things. Rows are quiet; the toss X shows on
    hover (softly always-there on touch). Images are pointers rendered small —
    never stored, just fetched from their URL. */
+/* Same recipe as .action-items-scroll below — top matches --card-padding like
+   every other module body; bottom stays 0 because the quick-add sibling
+   supplies it. (Duplicated rather than shared: Magpie reuses the
+   action-items-card CLASS but not this one. Worth collapsing one day.) */
 .magpie-body {
-  padding: 0.5rem var(--card-padding) 0;
+  padding: var(--card-padding) var(--card-padding) 0;
 }
 .magpie-list {
   display: flex;
@@ -4085,17 +4100,29 @@ h6,
 }
 
 /* Date presets quiet at rest, revealed on row hover/focus — keeps rows calm. */
-/* #tag chips — colored words living INSIDE the sentence. The tag's identity
-   hue rides in as --tag-color (spritzy rainbow, hash-anchored); tapping a
-   chip re-rolls it for every item wearing that tag. */
+/* #tag chips — ONE theme colour (Sept 15), not eight.
+   tagColor() hashed each tag into SPEAKER_PALETTE, the very same 8-hue
+   identity system @person uses — so a row with three tags showed three
+   unrelated hues, none of them the theme's, competing with the person chip
+   that legitimately owns that palette. Knowingly reverses "tag colors ride
+   the spritzy speaker rainbow".
+   Solid --accent-strong + warm white, NOT a wash: the wash recipes were
+   measured and they fail. --accent-2 (the harmony companion) is raw
+   neonAt(), never contrast-solved, and bottomed out at 1.81:1 over 300
+   rolls; keeping --accent-ink over any tint of cream eroded to 4.05-4.20:1
+   because deriveStrong() is solved with ZERO headroom against cream exactly.
+   This pair is already test-guarded — random_theme_test.ts:226, "white on
+   the solved --accent-strong passes AA for every roll".
+   Hierarchy now reads in three tiers: @person keeps the identity palette,
+   #tag is one theme badge, when-text stays quiet ink. */
 .action-tag-chip {
   display: inline-block;
   padding: 0 0.4rem;
   margin: 0 0.05rem;
   border: none;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--tag-color) 16%, transparent);
-  color: color-mix(in srgb, var(--tag-color) 78%, var(--soft-black));
+  background: var(--accent-strong);
+  color: var(--surface-white-warm);
   font-family: inherit;
   font-size: 0.95em;
   font-weight: 700;
@@ -4107,7 +4134,7 @@ h6,
 }
 .action-tag-chip:hover,
 .action-tag-chip:focus-visible {
-  background: color-mix(in srgb, var(--tag-color) 28%, transparent);
+  background: color-mix(in srgb, var(--accent-strong) 85%, var(--soft-black));
   transform: translateY(-1px);
 }
 
@@ -4412,7 +4439,13 @@ h6,
      card and it used to disappear into the background. */
   border: 2px solid var(--line-ink);
   border-radius: 0.4rem;
-  background: var(--surface-cream);
+  /* ONE theme colour, T4 register — the same 14-16% accent wash the chips use.
+     Safe against .is-checked on every roll BY CONSTRUCTION, not by luck:
+     .is-checked fills with --accent-strong, which deriveStrong() defines as
+     "walk down until it clears 4.6:1 on cream", so it is always deep. This is
+     a near-cream tint of the light peak-vividness accent. The two can never
+     converge; worst measured gap across 300 rolls was 4.20:1. */
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--surface-cream));
   color: var(--surface-cream);
   cursor: pointer;
   box-shadow: 1.5px 1.5px 0px 0px var(--soft-black);

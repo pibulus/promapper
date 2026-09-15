@@ -812,7 +812,9 @@ export default function ActionItemsCard(
             tabIndex={0}
             class="action-items-scroll overflow-y-auto focus-visible:outline-none"
             style={{
-              padding: "0.5rem var(--card-padding) 0",
+              // Top matches every other module body; bottom 0 because the
+              // quick-add bar is a sibling after this and carries its own.
+              padding: "var(--card-padding) var(--card-padding) 0",
             }}
           >
             {sortedActionItems.value.length === 0
