@@ -79,6 +79,12 @@ export default function UploadIsland() {
   }, [liveTranscript.value, liveInterim.value]);
 
   async function startRecording() {
+    if (deepgramClientRef.current) {
+      deepgramClientRef.current.disconnect();
+      deepgramClientRef.current = null;
+    }
+    cleanup();
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -143,10 +149,7 @@ export default function UploadIsland() {
           audioContextRef.current && audioContextRef.current.state !== "closed"
         ) {
           audioContextRef.current.close();
-          audioContextRef.current = null;
         }
-        const AudioContext = (window as any).AudioContext ||
-          (window as any).webkitAudioContext;
         const audioContext = new AudioContext();
         const source = audioContext.createMediaStreamSource(stream);
         const analyser = audioContext.createAnalyser();
@@ -196,11 +199,20 @@ export default function UploadIsland() {
 
       mediaRecorder.onstop = async () => {
         let finalLiveText = "";
-        if (deepgramClientRef.current) {
+        const client = deepgramClientRef.current;
+        const wasConnected = isLiveConnected.value;
+        const hadError = client ? client.state.error.value !== null : false;
+
+        if (client) {
           try {
-            finalLiveText = await deepgramClientRef.current.finish(1200);
+            finalLiveText = await client.finish(1200);
           } catch (e) {
             console.warn("Error finalizing live stream:", e);
+          } finally {
+            client.disconnect();
+            if (deepgramClientRef.current === client) {
+              deepgramClientRef.current = null;
+            }
           }
         }
 
@@ -208,11 +220,20 @@ export default function UploadIsland() {
           type: mediaRecorder.mimeType || "audio/webm",
         });
 
-        // If we captured live transcript words, process directly via text for instant mapping!
-        if (finalLiveText && finalLiveText.trim().length > 0) {
+        // If we captured live transcript words AND client was healthy throughout, process directly via text for instant mapping!
+        // If connection dropped mid-way or errored, fall back to the full recorded audio blob so no words are lost.
+        if (
+          wasConnected && !hadError && finalLiveText &&
+          finalLiveText.trim().length > 0
+        ) {
           await processLiveTranscript(finalLiveText.trim(), audioBlob);
-        } else {
+        } else if (audioBlob.size > 0) {
           await processRecordedAudio(audioBlob);
+        } else {
+          showToast(
+            "Didn't catch that — no clear speech detected. Check your mic and give it another go.",
+            "warning",
+          );
         }
         resolve();
       };
@@ -587,7 +608,15 @@ export default function UploadIsland() {
     }
   };
 
-  useEffect(() => () => cleanup(), []);
+  useEffect(() => {
+    return () => {
+      cleanup();
+      if (deepgramClientRef.current) {
+        deepgramClientRef.current.disconnect();
+        deepgramClientRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <div class="mapper-input-lab">
