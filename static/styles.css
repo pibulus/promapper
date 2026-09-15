@@ -2304,8 +2304,14 @@ h6,
   }
 
   :root {
-    /* Header paddings via the vars — the flip button + reserve track them. */
-    --header-pad-y: 0.85rem;
+    /* Header paddings via the vars — the flip button + reserve track them.
+       pad-y was 0.85rem: mobile bands rendered 59.2px against desktop's
+       46.4px, so the SMALLER screen carried the taller chrome — ~51px of pure
+       padding tax across the four cards that render every load. The 44px tap
+       target does NOT live in this padding (.card-header-actions button
+       carries its own absolutely-positioned 44px ::after), so trimming costs
+       no reach. 0.55rem lands at 49.6px, still roomier than desktop. */
+    --header-pad-y: 0.55rem;
     --header-pad-x: 0.95rem;
   }
 
@@ -2406,7 +2412,7 @@ h6,
   }
 
   .action-item-card {
-    padding: 0.85rem !important;
+    padding: 0.75rem 0.7rem !important;
     border-radius: var(--border-radius-sm) !important;
   }
 
@@ -2451,7 +2457,14 @@ h6,
 
   /* The drag handle is desktop chrome — touch sorting rides the long-press
      on the row itself. Reclaim its column for the words. */
-  .action-item-card .drag-handle {
+  /* The placeholder needs this as much as the handle did. canDrag is
+     `pending && !search && !editing && !readOnly`, so anything NOT draggable
+     renders .drag-handle-placeholder instead — a real 1.5rem box that had no
+     mobile override. Completed rows, every row while searching, and every row
+     of a read-only shared view therefore sat 24px further right than the
+     pending row above them: a visible left-edge jitter plus dead space. */
+  .action-item-card .drag-handle,
+  .action-item-card .drag-handle-placeholder {
     display: none;
   }
 
@@ -3870,11 +3883,15 @@ h6,
 
 .action-item-card {
   position: relative;
-  padding: 0.7rem 0.85rem 0.7rem 1rem;
+  padding: 0.7rem 0.85rem;
   border-radius: var(--border-radius-sm);
-  /* A shade of its own (accent-tinted) so items read as objects against the
-     card body — theme-driven like the header band. */
-  background: color-mix(in srgb, var(--color-accent) 5%, var(--surface-card));
+  /* PLAIN paper (Sept 15). This was color-mix(accent 5%, --surface-card)
+     sitting inside .dashboard-card, which is ALREADY color-mix(accent 5%,
+     #fffdf8) — and .dashboard-card-body sets no background, so it inherits
+     that tint. Two accent mixes over two different creams is how "creamy"
+     turned "beigish". The 2px border + hard offset shadow already make the
+     item read as an object; it needs no colour to do that job. */
+  background: var(--surface-card);
   border: 2px solid var(--color-border);
   box-shadow: 2px 2px 0px 0px
     var(--soft-black); /* Converted inline styles to a clean brutalist shadow */
@@ -3890,17 +3907,11 @@ h6,
 
 /* Accent spine — the same confident left tick the dashboard card headers
    carry, one per item. Pending = vivid pop; completed = quiet echo. */
-.action-item-card::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  border-radius: var(--border-radius-sm) 0 0 var(--border-radius-sm);
-  background: color-mix(in srgb, var(--color-accent) 80%, transparent);
-  pointer-events: none;
-}
+/* The 4px accent spine is GONE (Sept 15). It echoed the card header's own
+   `border-left: 3px solid var(--color-accent)` one region above it, so each
+   card showed two left accent edges — and six items repeated the inner one
+   six times down a phone-width column. One accent edge per card region (the
+   header) is the motif; six is noise. */
 .action-item-card.is-completed::before {
   background: color-mix(in srgb, var(--color-accent) 22%, transparent);
 }
@@ -4404,18 +4415,13 @@ h6,
   box-shadow: 2px 2px 0px 0px var(--color-accent);
 }
 
-/* The checkbox IS the person — wearing theme clothes. The assignee's stable
-   identity hue rides in as --person-color and gets pulled toward the live
-   accent, then pastelized over cream: every dice roll re-harmonizes the whole
-   crew (raw palette hex read garish next to any single theme). Stays BEFORE
-   .is-checked so the checked accent fill wins. */
-.action-item-checkbox-button.is-assigned {
-  background: color-mix(
-    in oklab,
-    color-mix(in oklab, var(--person-color) 80%, var(--color-accent)) 52%,
-    var(--surface-cream)
-  );
-}
+/* NO per-person tint on the checkbox (removed Sept 15). Identity is already
+   carried once, on the label where it belongs: .action-person-chip wears
+   --person-color. Tinting the control too was a second, louder rendition of
+   the same fact — and a filled circular button has far more visual mass than
+   a small text chip, so four items showed four unrelated hues from the
+   theme-INDEPENDENT speaker palette. That read as mess, not identity.
+   Reverses "the checkbox IS the person" knowingly. */
 
 .action-item-checkbox-button.is-checked {
   /* --accent-strong, not raw accent: the white check must stay readable on
