@@ -25,6 +25,103 @@ export function extractSpeakers(text: string): string[] {
 }
 
 // ===================================================================
+// TRANSCRIPT CLEANUP & HALLUCINATION FILTERING
+// ===================================================================
+
+/**
+ * Common Whisper / LLM hallucination phrases generated on silence or low-level background noise.
+ */
+const KNOWN_HALLUCINATION_PATTERNS: RegExp[] = [
+  /^(?:thanks? (?:you )?(?:for )?(?:watching|listening)|please (?:like and )?(?:subscribe|follow)(?:\s+(?:to\s+)?(?:my|this|the)\s+channel)?|like and subscribe|don't forget to subscribe)[.!?,…\s]*$/i,
+  /^(?:subtitles by|translated by|caption(?:ed|ing) by|captions provided by|transcription by).+$/i,
+  /^(?:amara\.org|opensubtitles(?:\.org)?|www\.[a-z0-9-]+\.[a-z]{2,})[.!?,…\s]*$/i,
+  /^(?:the end|to be continued|bye-?bye|goodbye|see you next time|thanks for coming)[.!?,…\s]*$/i,
+  /^(?:mbc\s*뉴스|kbs\s*뉴스|sbs\s*뉴스).*$/i,
+  /^\[(?:music|applause|silence|laughter|cheering|static|noise|blank_audio|groan|sigh)\]$/i,
+  /^\((?:music|applause|silence|laughter|cheering|static|noise|sigh)\)$/i,
+  /^\*(?:music|applause|silence|laughter|cheering|static|noise)\*$/i,
+  /^(?:\.{2,}|[-_]{2,}|[?!]{2,})$/,
+];
+
+/**
+ * Detects if a text consists of a single phrase looped repeatedly (e.g. "yeah yeah yeah yeah" or "Thank you. Thank you. Thank you.").
+ */
+function isRepetitionLoop(text: string): boolean {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  if (words.length < 4) return false;
+  const uniqueWords = new Set(
+    words.map((w) => w.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "")).filter(
+      Boolean,
+    ),
+  );
+  if (words.length >= 5 && uniqueWords.size === 1) return true;
+  if (words.length >= 8 && uniqueWords.size <= 2) return true;
+
+  const sentences = text.split(/[.!?\n]+/).map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  if (sentences.length >= 3) {
+    const uniqueSentences = new Set(sentences);
+    if (uniqueSentences.size === 1) return true;
+  }
+  return false;
+}
+
+/**
+ * Cleans a transcript and filters out silence/noise hallucinations.
+ * Returns empty string if the text contains no legitimate speech.
+ */
+export function cleanTranscriptText(text: string): string {
+  if (!text || typeof text !== "string") return "";
+
+  let cleaned = text.trim();
+  if (!cleaned) return "";
+
+  // Strip non-speech brackets like [Music], [Silence]
+  cleaned = cleaned.replace(
+    /\[(?:music|applause|silence|laughter|cheering|static|noise|blank_audio)\]/gi,
+    " ",
+  );
+  cleaned = cleaned.replace(
+    /\((?:music|applause|silence|laughter|cheering|static|noise)\)/gi,
+    " ",
+  );
+  cleaned = cleaned.replace(
+    /\*(?:music|applause|silence|laughter|cheering|static|noise)\*/gi,
+    " ",
+  );
+
+  // Normalize whitespace while preserving line breaks
+  cleaned = cleaned
+    .split("\n")
+    .map((line) => line.replace(/[^\S\r\n]+/g, " ").trim())
+    .filter(Boolean)
+    .join("\n");
+
+  if (!cleaned) return "";
+
+  for (const pattern of KNOWN_HALLUCINATION_PATTERNS) {
+    if (pattern.test(cleaned)) {
+      return "";
+    }
+  }
+
+  if (isRepetitionLoop(cleaned)) {
+    return "";
+  }
+
+  // If text is only punctuation or symbols with no letter/number
+  if (!/[\p{L}\p{N}]/u.test(cleaned)) {
+    return "";
+  }
+
+  return cleaned;
+}
+
+export function isNoiseOrHallucination(text: string): boolean {
+  return cleanTranscriptText(text) === "";
+}
+
+// ===================================================================
 // TRANSIENT-ERROR RETRY
 // ===================================================================
 

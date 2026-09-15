@@ -17,6 +17,11 @@ export const TRANSCRIPTION_PROMPT =
 removing redundant filler words such as "um," "like," "uh," "you know," "I mean," and similar hesitation markers.
 Return only the cleaned-up transcription, with no additional text.
 
+CRITICAL RULES:
+- If there is no intelligible human speech, or if the audio contains only silence, background noise, ambient sound, breathing, static, music, or typing, return NOTHING (an empty string or "").
+- NEVER invent dialogue, guess words, or hallucinate speech.
+- Do NOT output placeholder phrases like "Thank you for watching", "Please subscribe", "[Music]", "[Silence]", or subtitles credits when nobody is speaking.
+
 I want you to denote all the different speakers.
 If you can work out their names then use their name, otherwise use Speaker1, Speaker2 etc.
 Make sure you show each speaker's name before their text.

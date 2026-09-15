@@ -9,6 +9,7 @@ import * as $_middleware from "./routes/_middleware.ts";
 import * as $api_append from "./routes/api/append.ts";
 import * as $api_ask from "./routes/api/ask.ts";
 import * as $api_auth from "./routes/api/auth.ts";
+import * as $api_deepgram_token from "./routes/api/deepgram/token.ts";
 import * as $api_live_analyze from "./routes/api/live/analyze.ts";
 import * as $api_live_chunk from "./routes/api/live/chunk.ts";
 import * as $api_live_create from "./routes/api/live/create.ts";
@@ -79,6 +80,7 @@ const manifest = {
     "./routes/api/append.ts": $api_append,
     "./routes/api/ask.ts": $api_ask,
     "./routes/api/auth.ts": $api_auth,
+    "./routes/api/deepgram/token.ts": $api_deepgram_token,
     "./routes/api/live/analyze.ts": $api_live_analyze,
     "./routes/api/live/chunk.ts": $api_live_chunk,
     "./routes/api/live/create.ts": $api_live_create,

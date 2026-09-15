@@ -8,6 +8,7 @@ import { encodeBase64 } from "$std/encoding/base64.ts";
 import { chatViaGemini, isQuotaError } from "./geminiFallback.ts";
 import type { ActionItem, EdgeInput, NodeInput } from "../types/index.ts";
 import {
+  cleanTranscriptText,
   extractSpeakers,
   parseActionItemsResponse,
   parseGraphResponse,
@@ -330,12 +331,13 @@ export function createOpenRouterService(
   return {
     async transcribeAudio(audioInput: AudioInput, signal?: AbortSignal) {
       try {
-        const transcriptText = await chatAudio(
+        const rawTranscript = await chatAudio(
           TRANSCRIPTION_PROMPT,
           audioInput,
           options.transcriptionModel,
           signal,
         );
+        const transcriptText = cleanTranscriptText(rawTranscript);
         return {
           text: transcriptText,
           speakers: extractSpeakers(transcriptText),

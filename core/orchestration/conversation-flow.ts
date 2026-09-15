@@ -163,7 +163,9 @@ export async function processAudio(
       edges: [],
       actionItems: [],
       statusUpdates: [],
-      warnings: ["No speech detected in this recording."],
+      warnings: [
+        "Didn't catch that — no clear speech detected. Check your mic and give it another go.",
+      ],
       summary: "(no speech detected)",
     };
   }

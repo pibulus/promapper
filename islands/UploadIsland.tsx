@@ -11,6 +11,11 @@ import { coerceFlowResult } from "../utils/coerceFlowResult.ts";
 import { soundBloom } from "@utils/sound.ts";
 import AudioVisualizer from "./AudioVisualizer.tsx";
 import { showErrorToast, showToast } from "../utils/toast.ts";
+import { formatTime } from "./useRecorder.ts";
+import {
+  createDeepgramLiveClient,
+  type DeepgramLiveClient,
+} from "../utils/deepgramLive.ts";
 
 // Module-level so pasted text survives the hero unmounting during processing
 // (an error remounts the hero — losing the paste would sting).
@@ -19,9 +24,7 @@ const textInput = signal("");
 // IndexedDB before the AI runs ("the audio must survive a failed AI pipeline")
 // — but the first one had no such net: it was POSTed straight from memory, so
 // a failed process meant the recording was simply gone and the only option was
-// to say the whole thing again. IndexedDB isn't usable here (StoredRecording
-// needs a conversationId that doesn't exist yet), so the blob is latched until
-// a process actually succeeds.
+// to say the whole thing again.
 const pendingAudio = signal<Blob | null>(null);
 
 export default function UploadIsland() {
@@ -33,6 +36,11 @@ export default function UploadIsland() {
   const selectedFile = useSignal<File | null>(null);
   const isDragActive = useSignal(false);
 
+  // Live Deepgram transcription signals
+  const liveTranscript = useSignal("");
+  const liveInterim = useSignal("");
+  const isLiveConnected = useSignal(false);
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -41,6 +49,9 @@ export default function UploadIsland() {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+  const streamBoxRef = useRef<HTMLDivElement | null>(null);
+  const deepgramClientRef = useRef<DeepgramLiveClient | null>(null);
+  const unsubsRef = useRef<Array<() => void>>([]);
 
   const MAX_RECORDING_TIME = 10 * 60;
   const WARNING_TIME = 30;
@@ -50,7 +61,7 @@ export default function UploadIsland() {
   );
   const hasText = useComputed(() => textInput.value.trim().length > 0);
   const primaryLabel = useComputed(() => {
-    if (isRecording.value) return "Stop recording";
+    if (isRecording.value) return "Stop & Map";
     if (hasText.value) return "Map it";
     if (selectedFile.value) return "Map audio";
     if (pendingAudio.value) return "Try that again";
@@ -59,6 +70,13 @@ export default function UploadIsland() {
   const primaryDisabled = useComputed(() =>
     isProcessing.value && !isRecording.value
   );
+
+  // Auto-scroll the live stream box as words come in
+  useEffect(() => {
+    if (streamBoxRef.current && (liveTranscript.value || liveInterim.value)) {
+      streamBoxRef.current.scrollTop = streamBoxRef.current.scrollHeight;
+    }
+  }, [liveTranscript.value, liveInterim.value]);
 
   async function startRecording() {
     try {
@@ -70,7 +88,13 @@ export default function UploadIsland() {
         },
       });
 
-      const mimeTypes = ["audio/webm", "audio/ogg", "audio/mp4", ""];
+      const mimeTypes = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg",
+        "audio/mp4",
+        "",
+      ];
       let mediaRecorderOptions: MediaRecorderOptions | undefined;
 
       for (const mimeType of mimeTypes) {
@@ -80,12 +104,37 @@ export default function UploadIsland() {
         }
       }
 
+      // Initialize Deepgram live streaming client
+      const liveClient = createDeepgramLiveClient();
+      deepgramClientRef.current = liveClient;
+      liveTranscript.value = "";
+      liveInterim.value = "";
+      isLiveConnected.value = false;
+
+      // Subscribe to live client state updates
+      const unsubTranscript = liveClient.state.transcript.subscribe((val) => {
+        liveTranscript.value = val;
+      });
+      const unsubInterim = liveClient.state.interim.subscribe((val) => {
+        liveInterim.value = val;
+      });
+      const unsubConnected = liveClient.state.connected.subscribe((val) => {
+        isLiveConnected.value = val;
+      });
+      unsubsRef.current = [unsubTranscript, unsubInterim, unsubConnected];
+
+      // Start Deepgram live connection in background
+      liveClient.connect().catch((err) => {
+        console.warn("Live transcription fallback to batch:", err);
+      });
+
       const mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+        if (event.data && event.data.size > 0) {
           audioChunksRef.current.push(event.data);
+          liveClient.send(event.data);
         }
       };
 
@@ -110,7 +159,8 @@ export default function UploadIsland() {
         console.warn("Failed to initialize Web Audio API:", error);
       }
 
-      mediaRecorder.start(1000);
+      // Stream chunks every 250ms for snappy live display
+      mediaRecorder.start(250);
       mediaRecorderRef.current = mediaRecorder;
       streamRef.current = stream;
       isRecording.value = true;
@@ -142,17 +192,28 @@ export default function UploadIsland() {
 
     return new Promise<void>((resolve) => {
       const mediaRecorder = mediaRecorderRef.current!;
-      // Detach from the ref BEFORE cleanup(): the stop event arrives on a
-      // LATER task, and cleanup nulls .onstop on whatever the ref points to —
-      // stripping the handler synchronously silently dropped the whole
-      // recording (rex audit, July 23).
       mediaRecorderRef.current = null;
 
       mediaRecorder.onstop = async () => {
+        let finalLiveText = "";
+        if (deepgramClientRef.current) {
+          try {
+            finalLiveText = await deepgramClientRef.current.finish(1200);
+          } catch (e) {
+            console.warn("Error finalizing live stream:", e);
+          }
+        }
+
         const audioBlob = new Blob(audioChunksRef.current, {
           type: mediaRecorder.mimeType || "audio/webm",
         });
-        await processRecordedAudio(audioBlob);
+
+        // If we captured live transcript words, process directly via text for instant mapping!
+        if (finalLiveText && finalLiveText.trim().length > 0) {
+          await processLiveTranscript(finalLiveText.trim(), audioBlob);
+        } else {
+          await processRecordedAudio(audioBlob);
+        }
         resolve();
       };
 
@@ -161,10 +222,20 @@ export default function UploadIsland() {
     });
   }
 
+  function cancelRecording() {
+    if (deepgramClientRef.current) {
+      deepgramClientRef.current.disconnect();
+      deepgramClientRef.current = null;
+    }
+    liveTranscript.value = "";
+    liveInterim.value = "";
+    isLiveConnected.value = false;
+    audioChunksRef.current = [];
+    cleanup();
+    showToast("Recording cancelled", "info");
+  }
+
   function cleanup() {
-    // Every recording exit path (manual stop, 10-min auto-stop, unmount)
-    // funnels here — the flag must reset HERE or an error remounts the hero
-    // stuck in a dead "listening…" state with no way back (rex audit).
     isRecording.value = false;
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.onstop = null;
@@ -186,6 +257,71 @@ export default function UploadIsland() {
       audioContextRef.current = null;
     }
     analyserRef.current = null;
+    unsubsRef.current.forEach((fn) => fn());
+    unsubsRef.current = [];
+  }
+
+  async function processLiveTranscript(text: string, audioBlob?: Blob) {
+    if (isProcessing.value) return;
+    isProcessing.value = true;
+    if (audioBlob) pendingAudio.value = audioBlob;
+
+    try {
+      await ensureApiSession();
+      const result = await enqueueApiRequest(async ({ signal }) => {
+        const response = await fetch("/api/process", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+          signal,
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          console.error("❌ API error:", error);
+          throw new Error(error.error || "Processing failed");
+        }
+
+        return response.json();
+      });
+
+      const flowResult = coerceFlowResult(result);
+      if (!flowResult) {
+        throw new Error("Server returned an unexpected response — try again.");
+      }
+
+      // If no speech/topics came out of the text
+      if (!flowResult.transcript?.text && flowResult.nodes.length === 0) {
+        showToast(
+          "Didn't catch that — no clear speech detected. Check your mic and give it another go.",
+          "warning",
+        );
+        pendingAudio.value = null;
+        return;
+      }
+
+      resetModules();
+      conversationData.value = flowResult;
+      pendingAudio.value = null;
+      liveTranscript.value = "";
+      liveInterim.value = "";
+
+      if (flowResult.warnings.length) {
+        for (const warning of flowResult.warnings) {
+          showToast(warning, "warning");
+        }
+      }
+      soundBloom();
+      showToast(
+        `Mapped! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
+        "success",
+      );
+    } catch (error) {
+      console.error("❌ Error processing live transcript:", error);
+      showErrorToast(error, "That didn't go through — give it another go.");
+    } finally {
+      isProcessing.value = false;
+    }
   }
 
   async function processRecordedAudio(audioBlob: Blob) {
@@ -218,6 +354,17 @@ export default function UploadIsland() {
       if (!flowResult) {
         throw new Error("Server returned an unexpected response — try again.");
       }
+
+      // Check if it was empty / silence
+      if (!flowResult.transcript?.text && flowResult.nodes.length === 0) {
+        showToast(
+          "Didn't catch that — no clear speech detected. Check your mic and give it another go.",
+          "warning",
+        );
+        pendingAudio.value = null;
+        return;
+      }
+
       resetModules();
       conversationData.value = flowResult;
       pendingAudio.value = null; // it landed — the net can let go
@@ -228,7 +375,7 @@ export default function UploadIsland() {
       }
       soundBloom();
       showToast(
-        `Processed! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
+        `Mapped! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
         "success",
       );
     } catch (error) {
@@ -240,8 +387,6 @@ export default function UploadIsland() {
   }
 
   async function handleTextSubmit() {
-    // Guard re-entry: a double-click would otherwise fire a second request
-    // (often empty after the first clears the input → "No text provided").
     if (!hasText.value || isProcessing.value) return;
 
     isProcessing.value = true;
@@ -278,7 +423,7 @@ export default function UploadIsland() {
       soundBloom();
       textInput.value = "";
       showToast(
-        `Processed! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
+        `Mapped! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
         "success",
       );
     } catch (error) {
@@ -289,9 +434,6 @@ export default function UploadIsland() {
     }
   }
 
-  // Not just audio: text-ish files (notes, transcripts, subtitles) pour
-  // straight into the textarea — one press of Map it from there. PDFs get
-  // an honest no rather than a silent shrug.
   const TEXT_FILE = /\.(txt|md|markdown|srt|vtt)$/i;
 
   const stageFile = (file: File) => {
@@ -356,6 +498,15 @@ export default function UploadIsland() {
       if (!flowResult) {
         throw new Error("Server returned an unexpected response — try again.");
       }
+
+      if (!flowResult.transcript?.text && flowResult.nodes.length === 0) {
+        showToast(
+          "Didn't catch that — no clear speech detected in the audio file. Give another file a go.",
+          "warning",
+        );
+        return;
+      }
+
       resetModules();
       conversationData.value = flowResult;
       if (flowResult.warnings.length) {
@@ -366,7 +517,7 @@ export default function UploadIsland() {
       soundBloom();
       lastUploadName.value = file.name;
       showToast(
-        `Processed! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
+        `Mapped! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
         "success",
       );
     } catch (error) {
@@ -394,8 +545,6 @@ export default function UploadIsland() {
       return;
     }
 
-    // A recording that never made it through — send the same blob rather than
-    // asking them to say it all again.
     if (pendingAudio.value) {
       await processRecordedAudio(pendingAudio.value);
       return;
@@ -459,22 +608,68 @@ export default function UploadIsland() {
         >
           {isRecording.value
             ? (
-              // No timer, no progress bar — numbers make it a stopwatch. A
-              // breathing dot, a soft word, and the bars dancing to your
-              // voice. Words-only nudge near the ten-minute auto-stop.
-              // aria-live on the wrapper (which mounts when recording starts)
-              // so the ten-minute nudge below is actually SPOKEN when it
-              // appears — it was a silent visual-only warning. "listening…"
-              // itself is covered by the button relabelling to "Stop
-              // recording" under the user's own focus.
               <div class="mapper-record-visual" aria-live="polite">
-                <div class="mapper-record-visual__top">
-                  <span class="mapper-record-dot" aria-hidden="true"></span>
-                  <div class="mapper-record-label">listening…</div>
+                <div class="mapper-record-header">
+                  <div class="mapper-record-status-group">
+                    <span class="mapper-record-dot" aria-hidden="true"></span>
+                    <span class="mapper-record-label">
+                      {isLiveConnected.value ? "Listening live…" : "Listening…"}
+                    </span>
+                    <span class="mapper-record-timer">
+                      {formatTime(recordingTime.value)}
+                    </span>
+                    {isLiveConnected.value && (
+                      <span
+                        class="mapper-live-pill"
+                        title="Live text stream active"
+                      >
+                        ⚡ live text
+                      </span>
+                    )}
+                  </div>
+                  <div class="mapper-record-mini-viz">
+                    <AudioVisualizer
+                      analyser={analyserRef.current}
+                      height="24px"
+                    />
+                  </div>
                 </div>
-                <div class="mapper-record-visualizer">
-                  <AudioVisualizer analyser={analyserRef.current} />
+
+                <div class="mapper-live-stream-box" ref={streamBoxRef}>
+                  {liveTranscript.value || liveInterim.value
+                    ? (
+                      <div>
+                        <span class="mapper-live-final">
+                          {liveTranscript.value}
+                        </span>
+                        {liveInterim.value && (
+                          <span class="mapper-live-interim">
+                            {liveTranscript.value ? " " : ""}
+                            {liveInterim.value}
+                          </span>
+                        )}
+                        <span
+                          class="mapper-live-cursor"
+                          aria-hidden="true"
+                        >
+                        </span>
+                      </div>
+                    )
+                    : (
+                      <div class="mapper-live-empty-prompt">
+                        <span
+                          class="mapper-live-empty-icon"
+                          aria-hidden="true"
+                        >
+                          🎙️
+                        </span>
+                        <span>
+                          Speak freely — your words will stream in here live.
+                        </span>
+                      </div>
+                    )}
                 </div>
+
                 {showTimeWarning.value && (
                   <p class="mapper-record-warning">
                     coming up on ten minutes — wrap it up soon.
@@ -521,12 +716,6 @@ export default function UploadIsland() {
                 />
 
                 {selectedFile.value && (
-                  // NOT aria-hidden: this used to hide the whole chip from
-                  // assistive tech — so the staged filename was never
-                  // announced AND its Remove button stayed keyboard-focusable
-                  // inside a hidden subtree (the classic aria-hidden trap: a
-                  // tab stop that reads as nothing). role=status announces the
-                  // staged file the moment it lands.
                   <div class="mapper-input-hint" role="status">
                     <div class="mapper-file-chip">
                       <span>{selectedFile.value.name}</span>
@@ -560,38 +749,69 @@ export default function UploadIsland() {
         </div>
 
         <div class="mapper-capture-actions">
-          <button
-            class="mapper-slab-button mapper-slab-button--record"
-            disabled={primaryDisabled.value}
-            onClick={handlePrimaryAction}
-          >
-            {primaryLabel.value === "Start recording" && (
-              <i
-                class="fa fa-microphone"
-                aria-hidden="true"
-                style={{ marginRight: "0.45rem" }}
-              >
-              </i>
+          {isRecording.value
+            ? (
+              <div class="mapper-record-actions-row">
+                <button
+                  type="button"
+                  class="mapper-cancel-btn"
+                  onClick={cancelRecording}
+                >
+                  Cancel
+                </button>
+                <button
+                  class="mapper-slab-button mapper-slab-button--record flex-1"
+                  disabled={primaryDisabled.value}
+                  onClick={handlePrimaryAction}
+                >
+                  <i
+                    class="fa fa-check"
+                    aria-hidden="true"
+                    style={{ marginRight: "0.45rem" }}
+                  >
+                  </i>
+                  Stop & Map
+                </button>
+              </div>
+            )
+            : (
+              <>
+                <button
+                  class="mapper-slab-button mapper-slab-button--record"
+                  disabled={primaryDisabled.value}
+                  onClick={handlePrimaryAction}
+                >
+                  {primaryLabel.value === "Start recording" && (
+                    <i
+                      class="fa fa-microphone"
+                      aria-hidden="true"
+                      style={{ marginRight: "0.45rem" }}
+                    >
+                    </i>
+                  )}
+                  {primaryLabel.value}
+                </button>
+
+                {lastUploadName.value && !selectedFile.value &&
+                  !isRecording.value &&
+                  !hasText.value && (
+                  <span class="mapper-block-meta">
+                    Last: {lastUploadName.value}
+                  </span>
+                )}
+
+                {!lastUploadName.value && !selectedFile.value &&
+                  !isRecording.value &&
+                  !hasText.value && (
+                  <a
+                    href="/example"
+                    class="mapper-block-meta mapper-example-link"
+                  >
+                    or open one someone already made
+                  </a>
+                )}
+              </>
             )}
-            {primaryLabel.value}
-          </button>
-
-          {lastUploadName.value && !selectedFile.value && !isRecording.value &&
-            !hasText.value && (
-            <span class="mapper-block-meta">Last: {lastUploadName.value}</span>
-          )}
-
-          {
-            /* The cold-start half of the hero: it asks for effort before showing
-              anything, so offer the finished thing too. Plain anchor — works
-              with JS off, and it's a navigation, not an action. */
-          }
-          {!lastUploadName.value && !selectedFile.value && !isRecording.value &&
-            !hasText.value && (
-            <a href="/example" class="mapper-block-meta mapper-example-link">
-              or open one someone already made
-            </a>
-          )}
         </div>
       </section>
 

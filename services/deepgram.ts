@@ -6,6 +6,8 @@
  * transcript feels instant.
  */
 
+import { cleanTranscriptText } from "@core/ai/helpers.ts";
+
 interface DeepgramUtterance {
   transcript: string;
   speaker?: number;
@@ -25,6 +27,44 @@ export function deepgramKey(): string | undefined {
     Deno.env.get("PROMAPPER_DEEPGRAM_KEY") || undefined;
 }
 
+const DEEPGRAM_GRANT_URL = "https://api.deepgram.com/v1/auth/grant";
+
+/**
+ * Mint a short-lived browser token for WebSocket live dictation.
+ */
+export async function mintDeepgramToken(
+  ttlSeconds = 60,
+): Promise<{ token: string; expiresIn: number } | null> {
+  const key = deepgramKey();
+  if (!key) return null;
+
+  const res = await fetch(DEEPGRAM_GRANT_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Token ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ ttl_seconds: ttlSeconds }),
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text().catch(() => "");
+    console.error(
+      `[Deepgram] Token minting failed (${res.status}):`,
+      errorBody,
+    );
+    return null;
+  }
+
+  const payload = await res.json();
+  if (!payload.access_token) return null;
+
+  return {
+    token: payload.access_token,
+    expiresIn: payload.expires_in ?? ttlSeconds,
+  };
+}
+
 /**
  * Shape a Deepgram response into the pipeline's transcript contract:
  * "Speaker1:"-prefixed lines when diarisation found multiple voices,
@@ -34,9 +74,13 @@ export function deepgramKey(): string | undefined {
 export function formatDeepgramResult(
   data: DeepgramResponse,
 ): { text: string; speakers: string[] } {
-  const utterances = (data.results?.utterances ?? []).filter(
-    (u) => u.transcript?.trim(),
-  );
+  const utterances = (data.results?.utterances ?? [])
+    .map((u) => ({
+      ...u,
+      transcript: cleanTranscriptText(u.transcript ?? ""),
+    }))
+    .filter((u) => u.transcript.length > 0);
+
   const distinct = new Set(
     utterances.map((u) => u.speaker).filter((s) => s !== undefined),
   );
@@ -53,7 +97,9 @@ export function formatDeepgramResult(
 
   const plain = utterances.length
     ? utterances.map((u) => u.transcript.trim()).join(" ")
-    : data.results?.channels?.[0]?.alternatives?.[0]?.transcript?.trim() ?? "";
+    : cleanTranscriptText(
+      data.results?.channels?.[0]?.alternatives?.[0]?.transcript ?? "",
+    );
   return { text: plain, speakers: [] };
 }
 

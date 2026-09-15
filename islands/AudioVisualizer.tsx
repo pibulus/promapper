@@ -10,6 +10,7 @@ import { useEffect, useRef } from "preact/hooks";
 
 interface AudioVisualizerProps {
   analyser: AnalyserNode | null;
+  height?: number | string;
 }
 
 const BAR_COUNT = 9;
@@ -18,7 +19,9 @@ const WEIGHTS = [0.45, 0.62, 0.8, 0.93, 1, 0.93, 0.8, 0.62, 0.45];
 // The badge-chip trio, saturated enough to sing on cream.
 const COLORS = ["#ff8fc7", "#4ecdc4", "#ffc46b"];
 
-export default function AudioVisualizer({ analyser }: AudioVisualizerProps) {
+export default function AudioVisualizer(
+  { analyser, height = "36px" }: AudioVisualizerProps,
+) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameIdRef = useRef<number | null>(null);
 
@@ -88,7 +91,10 @@ export default function AudioVisualizer({ analyser }: AudioVisualizerProps) {
       class="w-full"
       width="720"
       height="144"
-      style={{ display: "block", height: "72px" }}
+      style={{
+        display: "block",
+        height: typeof height === "number" ? `${height}px` : height,
+      }}
     />
   );
 }
