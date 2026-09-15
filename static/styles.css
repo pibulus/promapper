@@ -2091,6 +2091,38 @@ h6,
     flex-shrink: 0;
   }
 
+  /* Tiny phones only. flex-shrink stays 0 above — the wordmark must never be
+     squeezed or overlapped by the actions cluster, which is what that rule
+     fixed. This shrinks the TYPE instead, which is a different lever. At 16px
+     the wordmark plus the three plates measured ~330px into a 320px screen,
+     so Export was clipped mid-word on an iPhone SE. Nothing else in that row
+     can give: the labels have to survive on touch (data-tip never fires on a
+     tap), and the three plates ARE the product's loop. */
+  @media (max-width: 400px) {
+    .app-header__brand {
+      font-size: var(--small-size);
+      letter-spacing: -0.04em;
+    }
+
+    /* One tighter tier for the smallest phones. The actions strip is
+       overflow-x:auto, so what clips is the STRIP's right edge, not the
+       viewport — on a 320px screen the strip gets 206px and the three plates
+       needed ~220px, which cut "Export" mid-word. Trimming the horizontal
+       padding and gap buys that back WITHOUT touching the labels, which have
+       to survive on touch (data-tip never fires on a tap). Vertical padding
+       and min-height are untouched, so the 44px coarse-pointer tap box is
+       unaffected. */
+    .header-export-btn,
+    .header-action-btn {
+      padding-inline: 0.4rem;
+      gap: 0.25rem;
+    }
+
+    .app-header__actions {
+      gap: 0.25rem;
+    }
+  }
+
   .app-header__container > .flex-1 {
     flex: 1 1 auto;
   }

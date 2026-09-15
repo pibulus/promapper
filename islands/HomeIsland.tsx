@@ -801,18 +801,19 @@ export default function HomeIsland() {
                     <span>Export</span>
                   </button>
 
-                  {/* History — a ghost icon; navigation, not an action */}
-                  <button
-                    onClick={() => {
-                      if (!historyDrawerOpen.value) drawerOpen.value = false;
-                      historyDrawerOpen.value = !historyDrawerOpen.value;
-                    }}
-                    class="header-icon-btn"
-                    data-tip="History"
-                    aria-label="View history"
-                  >
-                    <i class="fa fa-history" aria-hidden="true"></i>
-                  </button>
+                  {
+                    /* History moved to the FOOTER dials (Sept 15). It is
+                      navigation, not an action on the thing in front of you —
+                      the same reasoning that made it a ghost — and the header
+                      is now exactly the loop: Add · Invite · Export. This also
+                      bought the room a 320px screen needed: with History here,
+                      Export was clipped 6px off the right edge of an iPhone SE
+                      and History sat 34px past it entirely.
+                      The PORCH header keeps its own History button: the footer
+                      dials only render once a conversation exists, so on an
+                      empty porch this would be the one way back to past work
+                      and it must not disappear. */
+                  }
 
                   {/* Live session controls — shown when a meeting is active */}
                   {session && (
@@ -1119,6 +1120,19 @@ export default function HomeIsland() {
           }
           {conversationData.value && (
             <span class="app-footer__controls">
+              <button
+                type="button"
+                class="header-icon-btn"
+                onClick={() => {
+                  if (!historyDrawerOpen.value) drawerOpen.value = false;
+                  historyDrawerOpen.value = !historyDrawerOpen.value;
+                }}
+                aria-label="View history"
+                data-tip="History"
+                data-tip-align="right"
+              >
+                <i class="fa fa-history" aria-hidden="true"></i>
+              </button>
               <ThemeSwitcher />
               <SoundToggle />
               <button
