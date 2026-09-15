@@ -333,7 +333,7 @@ h5,
 h6,
 .app-header__brand,
 .app-header__title,
-.app-footer__title {
+.app-footer__project {
   font-family: var(--font-display);
 }
 
@@ -683,6 +683,19 @@ h6,
   transform: translate(-50%, -50%);
 }
 
+/* ICON-ONLY (Sept 15, Pablo's call). The labels are hidden rather than
+   deleted from the JSX: they stay in the accessibility tree via each button's
+   own aria-label, and one rule flips the whole thing back.
+   ⚠️ This knowingly reverses "labels survive on mobile" — data-tip fires on
+   hover and :focus-visible, NEITHER of which a touch device sends, so a
+   phone would otherwise get three bare glyphs and no way to learn them.
+   The mitigation is the `:active` tooltip trigger further down (search
+   "PRESS-TO-LABEL"): pressing a control on touch reveals its chip. */
+.header-export-btn > span,
+.header-action-btn > span {
+  display: none;
+}
+
 /* THE THREE HEADER ACTIONS — Add (Record) · Invite (Share) · Export.
    These are the product's whole loop (add more, open it up, get it out), so
    they share ONE shape, height, and typography to read as a tight, tactile trio.
@@ -697,7 +710,11 @@ h6,
   align-items: center;
   gap: 0.4rem;
   min-height: 2.125rem;
-  padding: 0.4rem 0.75rem;
+  /* Symmetric now that the label is gone — a word-width plate around a lone
+     glyph reads as a gap, not a button. */
+  padding: 0.4rem;
+  min-width: 2.125rem;
+  justify-content: center;
   border-radius: 10px;
   font-size: var(--tiny-size);
   font-weight: 700;
@@ -939,10 +956,16 @@ h6,
   box-shadow: var(--shadow-md);
 }
 [data-tip]:hover::before,
-[data-tip]:focus-visible::before {
+[data-tip]:focus-visible::before,
+[data-tip]:active::before {
   opacity: 1;
   transform: translate(-50%, 0);
 }
+
+/* PRESS-TO-LABEL. :active is the only one of these three a touch device
+   actually fires, so it is what stops an icon-only control from being
+   unlearnable on a phone. Pressing any [data-tip] control reveals its chip
+   for as long as the finger is down. Costs no layout and no new element. */
 /* Tooltips anchored at the right edge of the bar flip their alignment so they
    don't spill off-screen. */
 [data-tip][data-tip-align="right"]::before {
@@ -951,7 +974,8 @@ h6,
   transform: translate(0, -4px);
 }
 [data-tip][data-tip-align="right"]:hover::before,
-[data-tip][data-tip-align="right"]:focus-visible::before {
+[data-tip][data-tip-align="right"]:focus-visible::before,
+[data-tip][data-tip-align="right"]:active::before {
   transform: translate(0, 0);
 }
 
@@ -2031,9 +2055,9 @@ h6,
       transparent
     );
   }
-  /* Phones: the conversation title docks in the FOOTER strip (thumb zone,
-     light single-row header — Pablo's call). The h1 stays in the a11y tree,
-     visually hidden; .app-footer__title carries the visible copy. */
+  /* Phones: the conversation title docks in the FOOTER (thumb zone, light
+     single-row header — Pablo's call). The h1 stays in the a11y tree,
+     visually hidden; .app-footer__project carries the visible copy. */
   .app-header-glass .app-header__title {
     position: absolute;
     width: 1px;
@@ -2457,15 +2481,18 @@ h6,
 
   /* The drag handle is desktop chrome — touch sorting rides the long-press
      on the row itself. Reclaim its column for the words. */
-  /* The placeholder needs this as much as the handle did. canDrag is
-     `pending && !search && !editing && !readOnly`, so anything NOT draggable
-     renders .drag-handle-placeholder instead — a real 1.5rem box that had no
-     mobile override. Completed rows, every row while searching, and every row
-     of a read-only shared view therefore sat 24px further right than the
-     pending row above them: a visible left-edge jitter plus dead space. */
+  /* Drag handles are VISIBLE on touch again (Sept 15, Pablo's call) — a
+     220ms long-press with no affordance was a gesture nobody found. Handle
+     and placeholder must move together: canDrag is
+     `pending && !search && !editing && !readOnly`, so anything not draggable
+     renders .drag-handle-placeholder, and hiding only one of the pair left
+     completed rows, every row while searching, and every row of a read-only
+     shared view sitting 24px right of the pending row above them.
+     Narrower than desktop's 1.5rem so the affordance costs less width. */
   .action-item-card .drag-handle,
   .action-item-card .drag-handle-placeholder {
-    display: none;
+    width: 1rem;
+    min-width: 1rem;
   }
 
   .topic-visualizations-shell,
@@ -7711,46 +7738,9 @@ a:focus-visible {
   gap: 1rem;
   flex-wrap: nowrap;
 }
-/* Conversation title strip — the footer's top row on phones (the thumb
-   zone). Hidden on desktop, where the title sits beside the wordmark. */
-.app-footer__title {
-  display: none;
-}
-@media (max-width: 640px) {
-  .app-footer__container {
-    flex-wrap: wrap;
-  }
-  .app-footer__title {
-    display: block;
-    flex: 1 1 100%;
-    /* Bleed through the container's own gutter (Tailwind px-4 = 1rem on
-       phones) to run full-width. */
-    margin: -0.3rem -1rem 0.05rem;
-    padding: 0.34rem 1rem 0.38rem 1.85rem;
-    position: relative;
-    font-family: var(--font-primary, Inter, sans-serif);
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--color-text-secondary);
-    background: color-mix(in srgb, var(--color-accent) 12%, var(--soft-cream));
-    border-bottom: 1.5px solid
-      color-mix(in srgb, var(--color-accent) 22%, transparent);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .app-footer__title::before {
-    content: "";
-    position: absolute;
-    left: 1.05rem;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 0.32rem;
-    height: 0.32rem;
-    border-radius: 50%;
-    background: var(--color-accent);
-  }
-}
+/* The phones-only title strip is retired (Sept 15): the project title now
+   lives in the footer's one left slot at every width, so the bar no longer
+   wraps to a second row on the screen with the least vertical room. */
 /* Footer dials are quieter than header controls — same button, smaller.
    min-height 0 beats the mobile touch-target rule: the invisible 44px
    ::after box still carries the tap zone, the BAR stays slim. */
@@ -7776,6 +7766,30 @@ a:focus-visible {
 }
 .app-footer__brand i {
   color: var(--footer-heart);
+}
+
+/* The project slot. Takes the room the dials leave and truncates rather than
+   wrapping — the bar is one line at every width. The glyph is not the brand
+   heart: that one is a charm, this one is a label. */
+.app-footer__brand--project {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.app-footer__brand--project i {
+  color: var(--color-accent);
+  flex-shrink: 0;
+  font-size: 0.75rem;
+}
+
+.app-footer__project {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 /* The tagline yields entirely on narrow bars — never a mid-word ellipsis. */
 @media (max-width: 640px) {

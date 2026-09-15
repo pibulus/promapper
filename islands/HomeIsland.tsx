@@ -1097,22 +1097,33 @@ export default function HomeIsland() {
       <footer class="app-footer">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 w-full app-footer__container">
           {
-            /* Phones only (CSS-gated): the conversation title docks here in the
-              thumb zone — the h1 stays in the header for screen readers and
-              desktop, so this copy is decorative. */
+            /* The footer's left slot carries the PROJECT, not a copyright
+              (Sept 15, Pablo's call). One element at every width: this used to
+              be a phones-only title strip stacked ABOVE a separate copyright
+              line, which cost the bar a whole second row on the screen with
+              the least room. On the porch there is no project yet, so the
+              brand line takes the slot instead.
+              The h1 stays in the a11y tree (visually hidden on phones), so
+              this stays aria-hidden — it is a duplicate, not the heading. */
           }
-          {conversationData.value?.conversation.title && (
-            <span class="app-footer__title" aria-hidden="true">
-              {conversationData.value.conversation.title}
-            </span>
-          )}
-          <span class="app-footer__brand">
-            © 2026 ProMapper
-            <i class="fa fa-heart" aria-hidden="true"></i>
-            <span class="app-footer__tagline">
-              made in Melbourne
-            </span>
-          </span>
+          {conversationData.value?.conversation.title
+            ? (
+              <span class="app-footer__brand app-footer__brand--project">
+                <i class="fa fa-note-sticky" aria-hidden="true"></i>
+                <span class="app-footer__project" aria-hidden="true">
+                  {conversationData.value.conversation.title}
+                </span>
+              </span>
+            )
+            : (
+              <span class="app-footer__brand">
+                © 2026 ProMapper
+                <i class="fa fa-heart" aria-hidden="true"></i>
+                <span class="app-footer__tagline">
+                  made in Melbourne
+                </span>
+              </span>
+            )}
           {
             /* The dials are workshop tools — they appear with the dashboard.
             On the porch (no conversation yet) three mystery icons read as
