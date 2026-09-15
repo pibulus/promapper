@@ -536,11 +536,6 @@ export function solvePlate(hue: number, lightness: number): string {
   return mixHex(at(0.92), BAND_CREAM, 0.8);
 }
 
-/** Ground families, derived from the curated pairs (kept as an export for
- * the test sweeps and the ThemeSwitcher anti-repeat). */
-export const WARM_FAMILIES: ReadonlyArray<readonly [number, number]> =
-  CURATED_PAIRS.map((p) => p.ground);
-
 export interface ShuffleParts {
   /** Accent OKLCH hue (may exceed 360 when a harmony wraps; wrapped for
    * output, raw here so tests can check membership directly). */
@@ -798,10 +793,6 @@ export function composeTheme(input: ComposeInput): ShuffleParts {
     tertiary,
     theme,
   };
-}
-
-export function generateTheme(rand: () => number = Math.random): Theme {
-  return generateThemeParts(rand).theme;
 }
 
 export { hexToOklch, maxChroma, oklchToHex };

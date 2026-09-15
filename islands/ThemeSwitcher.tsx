@@ -47,7 +47,9 @@ export default function ThemeSwitcher() {
   }
 
   // Init on mount: restore a saved SHUFFLE roll, or auto-roll a fresh one.
-  // Named themes (DAYBREAK etc.) are dead — any legacy save gets replaced.
+  // Named themes (DAYBREAK etc.) are never SEEN — any legacy save gets
+  // replaced — but they are NOT dead: themes.ts is the crash-safe default
+  // behind a stale schema v or malformed JSON. See docs/COLOR-SYSTEM.md.
   useEffect(() => {
     const theme = themeSystem.init();
     if (theme.name !== "SHUFFLE") shuffle(true);

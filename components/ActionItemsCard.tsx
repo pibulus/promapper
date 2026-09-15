@@ -30,12 +30,7 @@ import {
   undoLastMutation,
 } from "@signals/conversationStore.ts";
 import { speakerColor } from "@core/theme/speakerColors.ts";
-import {
-  bumpTagColor,
-  parseQuickAdd,
-  tagColor,
-  tokenizeActionText,
-} from "@utils/actionTags.ts";
+import { parseQuickAdd, tokenizeActionText } from "@utils/actionTags.ts";
 import Confetti from "./Confetti.tsx";
 
 /**
@@ -230,7 +225,6 @@ export default function ActionItemsCard(
   // Which item's "when" is being typed inline (the clock's tiny input).
   const editingWhenId = useSignal<string | null>(null);
   // Re-render tick after a tag color re-roll (colors live in localStorage).
-  const tagTintTick = useSignal(0);
   // Transient "just checked off" id — drives a one-shot checkbox pop. Kept
   // separate from the persistent completed state so it never replays on
   // re-render (scroll/filter/append); cleared after the animation.
@@ -844,7 +838,6 @@ export default function ActionItemsCard(
                   {(() => {
                     // Tag colors re-read after a re-roll (the tick is the
                     // dependency; colors themselves live in localStorage).
-                    void tagTintTick.value;
                     const lingering = lingeringIds.value;
                     const isPendingRow = (row: ActionItem) =>
                       row.status === "pending" || lingering.has(row.id);
@@ -1144,30 +1137,19 @@ export default function ActionItemsCard(
                                     (token, ti) =>
                                       token.kind === "tag"
                                         ? (
-                                          <button
+                                          // A word wearing the theme colour,
+                                          // not a control. It was a <button>
+                                          // whose only job was re-rolling the
+                                          // tag's hue; tags are one colour
+                                          // now, so the tap did nothing while
+                                          // the tooltip still promised it
+                                          // would.
+                                          <span
                                             key={ti}
-                                            onMouseEnter={soundHover}
-                                            type="button"
                                             class="action-tag-chip"
-                                            style={{
-                                              "--tag-color": tagColor(
-                                                token.value,
-                                                conversationId,
-                                              ),
-                                            }}
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              bumpTagColor(
-                                                token.value,
-                                                conversationId,
-                                              );
-                                              tagTintTick.value++;
-                                              soundTick();
-                                            }}
-                                            data-tip="Tap to recolor this tag"
                                           >
                                             #{token.value}
-                                          </button>
+                                          </span>
                                         )
                                         : <span key={ti}>{token.raw}</span>,
                                   )}
@@ -1412,20 +1394,7 @@ export default function ActionItemsCard(
                                       poppingId.value === item.id
                                         ? " is-popping"
                                         : ""
-                                    }${item.assignee ? " is-assigned" : ""}`}
-                                    // The checkbox IS the person: the
-                                    // assignee's stable identity hue rides
-                                    // in as a custom prop and the CSS mixes
-                                    // it toward the live theme (raw palette
-                                    // hex read garish next to any accent).
-                                    style={item.assignee
-                                      ? {
-                                        "--person-color": speakerColor(
-                                          item.assignee,
-                                          speakers,
-                                        ),
-                                      }
-                                      : undefined}
+                                    }`}
                                     title={item.assignee
                                       ? `Assigned to ${item.assignee}`
                                       : undefined}
@@ -1491,7 +1460,7 @@ export default function ActionItemsCard(
 
           {
             /* The quiet add row — always here, just type. One sentence in,
-              one item out: @word names the person, #tags color themselves.
+              one item out: @word names the person, #tags group the work.
               Enter keeps focus for the next thought. */
           }
           {/* No quick-add on a snapshot — a new task would have no home. */}
@@ -1511,7 +1480,7 @@ export default function ActionItemsCard(
                   quickAddText.value = (e.target as HTMLInputElement).value;
                 }}
                 placeholder={addPlaceholder}
-                aria-label="Add an action item — @word names the person, #tags color themselves"
+                aria-label="Add an action item — @word names the person, #tags group the work"
                 data-tip="@who and #tags go right in the sentence"
                 maxLength={500}
               />

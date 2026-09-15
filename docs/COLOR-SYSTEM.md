@@ -180,7 +180,7 @@ never a loosening of the cohesion rules.
 - Contrast swept over 300 seeded rolls: ink/band, white/strong, strong/cream,
   ink/every-bg-layer, white/CTA-plate.
 
-`SHUFFLE_SCHEMA_VERSION = 13` (themeEngine + FOUC script) — older rolls are
+`SHUFFLE_SCHEMA_VERSION = 14` (themeEngine + FOUC script) — older rolls are
 discarded on load, falling back to DAYBREAK.
 
 ## NEON OFFICE — the generator (July 26, 2026, supersedes the curated deck)

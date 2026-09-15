@@ -14,8 +14,6 @@
  * preference, not shared state).
  */
 
-import { SPEAKER_PALETTE } from "@core/theme/speakerColors.ts";
-
 export interface TextToken {
   kind: "text" | "person" | "tag";
   /** For person/tag: the word without its sigil. For text: the run itself. */
@@ -89,18 +87,13 @@ export function parseQuickAdd(
   return { description, assignee };
 }
 
-// ── Tag colors ────────────────────────────────────────────────────────
-
-function tagHash(tag: string): number {
-  let h = 0;
-  for (let i = 0; i < tag.length; i++) {
-    h = (h * 31 + tag.charCodeAt(i)) >>> 0;
-  }
-  return h;
-}
-
-const TINTS_KEY = (conversationId: string) =>
-  `promapper-tag-tints:${conversationId}`;
+// ── Legacy tag-tint storage ───────────────────────────────────────────
+//
+// #tag chips used to hash into SPEAKER_PALETTE and let a tap re-roll the hue,
+// persisting the choice per conversation. Sept 15 collapsed tags to ONE theme
+// colour, so nothing writes these keys any more — but real browsers still
+// HOLD them, so the sweep below stays until it has had time to drain. Once
+// that is rolled out, sweepOrphanTints and TINTS_PREFIX can both go.
 const TINTS_PREFIX = "promapper-tag-tints:";
 
 /**
@@ -126,36 +119,4 @@ export function sweepOrphanTints(liveConversationIds: Set<string>): number {
   }
   for (const key of doomed) localStorage.removeItem(key);
   return doomed.length;
-}
-
-function loadBumps(conversationId: string): Record<string, number> {
-  if (typeof localStorage === "undefined") return {};
-  try {
-    const parsed = JSON.parse(
-      localStorage.getItem(TINTS_KEY(conversationId)) ?? "{}",
-    );
-    return typeof parsed === "object" && parsed !== null ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-/** A tag's stable color — same everywhere in a conversation. */
-export function tagColor(tag: string, conversationId: string): string {
-  const key = tag.toLowerCase();
-  const bump = loadBumps(conversationId)[key] ?? 0;
-  return SPEAKER_PALETTE[(tagHash(key) + bump) % SPEAKER_PALETTE.length];
-}
-
-/** Advance a tag to its next palette color (viewer-local preference). */
-export function bumpTagColor(tag: string, conversationId: string): void {
-  if (typeof localStorage === "undefined") return;
-  const key = tag.toLowerCase();
-  const bumps = loadBumps(conversationId);
-  bumps[key] = ((bumps[key] ?? 0) + 1) % SPEAKER_PALETTE.length;
-  try {
-    localStorage.setItem(TINTS_KEY(conversationId), JSON.stringify(bumps));
-  } catch {
-    // Storage full/blocked — the re-roll just won't persist.
-  }
 }

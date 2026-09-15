@@ -992,11 +992,18 @@ h6,
   transform: translate(0, -4px);
 }
 .card-header-actions [data-tip]:hover::before,
-.card-header-actions [data-tip]:focus-visible::before {
+.card-header-actions [data-tip]:focus-visible::before,
+.card-header-actions [data-tip]:active::before {
   transform: translate(0, 0);
 }
+/* :active belongs on BOTH of these, not just the generic rule above — it is
+   the only one of the three a touch device fires, and without it a pressed
+   card-header tooltip kept the -4px resting offset and, worse, never lifted
+   its card's z-index, so it was clipped under the next sibling card exactly
+   the way this rule was written to prevent. */
 .dashboard-card:has([data-tip]:hover),
-.dashboard-card:has([data-tip]:focus-visible) {
+.dashboard-card:has([data-tip]:focus-visible),
+.dashboard-card:has([data-tip]:active) {
   position: relative;
   z-index: var(--z-tooltip);
 }
@@ -3954,9 +3961,6 @@ h6,
    card showed two left accent edges — and six items repeated the inner one
    six times down a phone-width column. One accent edge per card region (the
    header) is the motif; six is noise. */
-.action-item-card.is-completed::before {
-  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
-}
 
 /* Monospace fonts for all inputs, textareas, search and presets in action items */
 .action-item-card textarea,
