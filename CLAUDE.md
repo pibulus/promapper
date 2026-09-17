@@ -498,7 +498,7 @@ limits exist in the code but users only ever meet them as a warm sentence
 numbers. Split principle: **free gets everything that's cheap to serve;
 supporter gets the things that burn money** (voice relay, streaming live AI).
 
-|                  | Free                                                  | Supporter — $12/year         |
+|                  | Free                                                  | Supporter — $49/year (AUD)   |
 | ---------------- | ----------------------------------------------------- | ---------------------------- |
 | Text maps        | Unlimited (a marketing line: "yours, on your device") | Unlimited                    |
 | Audio mapping    | ~1 hr/month, invisible rail                           | Tall rail                    |
@@ -507,10 +507,23 @@ supporter gets the things that burn money** (voice relay, streaming live AI).
 | Voice chat       | —                                                     | ✓                            |
 | Exports          | All formats (the payoff is never paywalled)           | All formats                  |
 
-- **Keys door — $29 once, forever**: bring your own OpenRouter key, all limits
-  vanish (their compute, their costs). The pressure valve that makes the flat
-  $12/yr mathematically safe — whale supporters get routed here by the gentle
-  note, not by force.
+- **Keys door — FREE**: bring your own OpenRouter key, all limits vanish (their
+  compute, their costs). The pressure valve that makes the flat $49/yr
+  mathematically safe — whale supporters get routed here by the gentle note, not
+  by force.
+
+⚠️ **CORRECTED Sept 16, 2026 — this table had drifted from the code and the code
+is the truth** (confirmed by Pablo). It read "$12/year" and "Keys door — $29
+once"; neither was ever built. What actually ships:
+
+- Supporter Pass is **$49/yr AUD**, hardcoded in `islands/SupporterModal.tsx` (4
+  places) and defaulted in `services/square.ts` `getSupporterPrice()` (4900
+  cents), overridable via `SUPPORTER_PRICE_CENTS` / `SUPPORTER_CURRENCY`.
+- The Keys door takes **no money at all** — `components/KeysModal.tsx` and the
+  SupporterModal `byok` tab both just save an OpenRouter key to the `pm_byok`
+  cookie via `utils/byoKey.ts`. There is no `$29` anywhere in the repo and no
+  payment path on that door. Verify before quoting a price here again:
+  `grep -rn 'getSupporterPrice' services/ && grep -rn '\$49' islands/SupporterModal.tsx`
 - **Never** limit map count (maps are localStorage — their disk, zero cost).
 - Rails already exist in `services/requestGuard.ts`: burst 60/min, 1000
   calls/day, and `AUDIO_BYTES_PER_DAY` audio metering built but disabled —
