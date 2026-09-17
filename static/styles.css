@@ -7978,7 +7978,15 @@ a:focus-visible {
 .app-footer__controls {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  /* 1rem, not 0.35rem. Each .header-icon-btn carries an invisible 44px
+     ::after tap box centred on a 27px visual, so it overhangs 8.5px per side
+     and adjacent boxes OVERLAPPED BY 11.5px at the old gap — measured, at
+     every viewport, on every adjacent pair. A quarter of each target sat in
+     contested space between two different actions. 16px is exactly the width
+     that brings the overlap to zero without shrinking any target below 44px.
+     Affordable only because the footer went from five dials to four; five at
+     this gap would eat 41px off the project title. */
+  gap: 1rem;
   flex-shrink: 0;
 }
 

@@ -66,7 +66,6 @@ import AudioRecorder from "./AudioRecorder.tsx";
 import ThemeSwitcher from "./ThemeSwitcher.tsx";
 import SoundToggle from "./SoundToggle.tsx";
 import ShortcutsModal from "../components/ShortcutsModal.tsx";
-import KeysModal from "../components/KeysModal.tsx";
 import SupporterModal from "./SupporterModal.tsx";
 import {
   isSupporterSignal,
@@ -92,7 +91,6 @@ export default function HomeIsland() {
   const drawerOpen = useSignal(false);
   const voiceDrawerOpen = useSignal(false);
   const shortcutsOpen = useSignal(false);
-  const keysOpen = useSignal(false);
   const brewNoteIndex = useSignal(0);
   // A history button with nothing behind it is a mystery door — only show
   // it once there's actually something saved to reopen.
@@ -1160,16 +1158,19 @@ export default function HomeIsland() {
               >
                 <i class="fa fa-heart" aria-hidden="true"></i>
               </button>
-              <button
-                type="button"
-                class="header-icon-btn"
-                onClick={() => keysOpen.value = true}
-                aria-label="Bring your own key"
-                data-tip="Your key"
-                data-tip-align="right"
-              >
-                <i class="fa fa-key" aria-hidden="true"></i>
-              </button>
+              {
+                /* The Keys dial is GONE (Sept 16). It opened a second door
+                  onto a room that already exists: the Supporter modal's
+                  `byok` tab saves the same OpenRouter key to the same
+                  `pm_byok` cookie via the same utils/byoKey.ts. Two icons,
+                  one feature.
+                  It also had to go for a measured reason — five dials with
+                  44px tap boxes at a 0.35rem gap overlapped by 11.5px on
+                  EVERY adjacent pair, and the worst pair was Support next to
+                  Keys: a paywall and a key form, a fat thumb apart. Clearing
+                  that needs 16px gaps, which five dials cannot afford without
+                  eating the project title. Four can. */
+              }
               <button
                 type="button"
                 class="header-icon-btn footer-shortcuts-btn"
@@ -1209,10 +1210,6 @@ export default function HomeIsland() {
       />
 
       {/* The Keys door — BYO OpenRouter key */}
-      <KeysModal
-        open={keysOpen.value}
-        onClose={() => keysOpen.value = false}
-      />
 
       {/* Supporter & Pricing Modal */}
       <SupporterModal />
