@@ -24,6 +24,7 @@ import {
 } from "../core/storage/shareService.ts";
 import { ensureApiSession } from "../utils/apiAuth.ts";
 import { showToast } from "../utils/toast.ts";
+import { isSpanish } from "../utils/i18n.ts";
 
 export default function ShareButton() {
   const share = useSignal<ShareCreationResult | null>(null);
@@ -273,10 +274,14 @@ export default function ShareButton() {
         disabled={!canShare.value || isGenerating.value}
         class="header-action-btn"
         data-tip={isGenerating.value
-          ? "Generating…"
-          : "Send a link, or open a room and talk it through together"}
+          ? (isSpanish() ? "Generando…" : "Generating…")
+          : (isSpanish()
+            ? "Manda un enlace, o abre una sala para platicar juntos"
+            : "Send a link, or open a room and talk it through together")}
         data-tip-align="right"
-        aria-label="Invite people to this conversation"
+        aria-label={isSpanish()
+          ? "Invitar personas a esta conversación"
+          : "Invite people to this conversation"}
         aria-expanded={popoverOpen.value}
       >
         {
@@ -293,7 +298,7 @@ export default function ShareButton() {
           aria-hidden="true"
         >
         </i>
-        <span>Invite</span>
+        <span>{isSpanish() ? "Invitar" : "Invite"}</span>
       </button>
 
       {share.value && popoverOpen.value && (

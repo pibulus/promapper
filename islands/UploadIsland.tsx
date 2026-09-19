@@ -440,12 +440,15 @@ export default function UploadIsland() {
       soundBloom();
       textInput.value = "";
       showToast(
-        `Mapped! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
+        i18n.mappedSuccess(
+          flowResult.actionItems.length,
+          flowResult.nodes.length,
+        ),
         "success",
       );
     } catch (error) {
       console.error("❌ Error processing text:", error);
-      showErrorToast(error, "That didn't go through — give it another go.");
+      showErrorToast(error, i18n.processFailed);
     } finally {
       isProcessing.value = false;
     }
@@ -456,10 +459,7 @@ export default function UploadIsland() {
   const stageFile = (file: File) => {
     isDragActive.value = false;
     if (file.type === "application/pdf") {
-      showToast(
-        "PDFs can't come in yet — audio or text files for now.",
-        "warning",
-      );
+      showToast(i18n.pdfWarning, "warning");
       return;
     }
     if (file.type.startsWith("text/") || TEXT_FILE.test(file.name)) {
@@ -470,10 +470,7 @@ export default function UploadIsland() {
       return;
     }
     if (!file.type.startsWith("audio/")) {
-      showToast(
-        "That file type isn't supported yet — audio or text files for now.",
-        "warning",
-      );
+      showToast(i18n.unsupportedFile, "warning");
       return;
     }
     selectedFile.value = file;
@@ -517,10 +514,7 @@ export default function UploadIsland() {
       }
 
       if (!flowResult.transcript?.text && flowResult.nodes.length === 0) {
-        showToast(
-          "Didn't catch that — no clear speech detected in the audio file. Give another file a go.",
-          "warning",
-        );
+        showToast(i18n.noSpeechInFile, "warning");
         return;
       }
 
@@ -534,12 +528,15 @@ export default function UploadIsland() {
       soundBloom();
       lastUploadName.value = file.name;
       showToast(
-        `Mapped! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
+        i18n.mappedSuccess(
+          flowResult.actionItems.length,
+          flowResult.nodes.length,
+        ),
         "success",
       );
     } catch (error) {
       console.error("❌ Error processing audio:", error);
-      showErrorToast(error, "That didn't go through — give it another go.");
+      showErrorToast(error, i18n.processFailed);
     } finally {
       isProcessing.value = false;
       selectedFile.value = null;

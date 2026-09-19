@@ -810,11 +810,15 @@ export default function HomeIsland() {
                       drawerOpen.value = !drawerOpen.value;
                     }}
                     class="header-export-btn"
-                    data-tip="Turn this into a document"
-                    aria-label="Export conversation"
+                    data-tip={isSpanish()
+                      ? "Exporta esto a un documento"
+                      : "Turn this into a document"}
+                    aria-label={isSpanish()
+                      ? "Exportar conversación"
+                      : "Export conversation"}
                   >
                     <i class="fa fa-file-export" aria-hidden="true"></i>
-                    <span>Export</span>
+                    <span>{isSpanish() ? "Exportar" : "Export"}</span>
                   </button>
 
                   {
@@ -1066,13 +1070,13 @@ export default function HomeIsland() {
                           href={isSpanish() ? "/es/rol" : "/for/dnd"}
                           class="mapper-hero-pill"
                           aria-label={isSpanish()
-                            ? "Ir al Estudio de Campañas para D&D y Rol"
+                            ? "Mapeo de partidas de rol y D&D"
                             : "Go to Tabletop Campaign Studio for D&D & TTRPGs"}
                         >
                           <span aria-hidden="true">🎲</span>
                           <span>
                             {isSpanish()
-                              ? "Estudio de Campañas para D&D y Rol →"
+                              ? "Mapeo de partidas de rol y D&D →"
                               : "Tabletop Campaign Studio for D&D & GMs →"}
                           </span>
                         </a>
@@ -1177,7 +1181,7 @@ export default function HomeIsland() {
                   historyDrawerOpen.value = !historyDrawerOpen.value;
                 }}
                 aria-label="View history"
-                data-tip="History"
+                data-tip={isSpanish() ? "Historial" : "History"}
                 data-tip-align="right"
               >
                 <i class="fa fa-history" aria-hidden="true"></i>
@@ -1192,8 +1196,10 @@ export default function HomeIsland() {
                 onClick={openSupporterModal}
                 aria-label="Supporter Pass"
                 data-tip={isSupporterSignal.value
-                  ? "Supporter Pass active"
-                  : "Support ProMapper"}
+                  ? (isSpanish()
+                    ? "Pase de soporte activo"
+                    : "Supporter Pass active")
+                  : (isSpanish() ? "Apoya a ProMapper" : "Support ProMapper")}
                 data-tip-align="right"
               >
                 <i class="fa fa-heart" aria-hidden="true"></i>
@@ -1216,7 +1222,7 @@ export default function HomeIsland() {
                 class="header-icon-btn footer-shortcuts-btn"
                 onClick={() => shortcutsOpen.value = true}
                 aria-label="Keyboard shortcuts"
-                data-tip="Shortcuts"
+                data-tip={isSpanish() ? "Atajos" : "Shortcuts"}
                 data-tip-align="right"
               >
                 <i class="fa fa-keyboard" aria-hidden="true"></i>

@@ -12,6 +12,7 @@ import { createThemeSystem } from "@core/theme/themeEngine.ts";
 import { proMapperThemeConfig } from "@core/theme/themes.ts";
 import { generateThemeParts } from "@core/theme/randomTheme.ts";
 import { soundToggle } from "@utils/sound.ts";
+import { isSpanish } from "@utils/i18n.ts";
 
 // Instantiated once per hydration root so it isn't re-created on render.
 const themeSystem = createThemeSystem({
@@ -60,9 +61,11 @@ export default function ThemeSwitcher() {
       type="button"
       onClick={() => shuffle()}
       class="header-icon-btn"
-      data-tip="Shuffle the vibe"
+      data-tip={isSpanish() ? "Cambia la vibra" : "Shuffle the vibe"}
       data-tip-align="right"
-      aria-label="Shuffle the color theme"
+      aria-label={isSpanish()
+        ? "Cambiar el tema de colores"
+        : "Shuffle the color theme"}
     >
       <i class="fa fa-dice-five" aria-hidden="true"></i>
     </button>

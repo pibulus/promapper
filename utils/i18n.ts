@@ -89,6 +89,34 @@ export const TRANSLATIONS = {
     copyToken: "Copy Token",
     lifetimePass: "Lifetime pass active",
     validUntil: (dateStr: string) => `Valid until ${dateStr}`,
+    extendPass: (price: string) => `Extend Supporter Pass (${price})`,
+    featTakes: "Unlimited Audio Takes",
+    featTakesDesc: "(no daily recording cap)",
+    featRooms: "Live Collab Rooms",
+    featRoomsDesc: "(PartyKit multiplayer + WebRTC voice relay)",
+    featDecks: "All 8 Export Decks",
+    featDecksDesc: "(Plan, Research, Haiku, Unasked, Custom)",
+    featAsk: "Ask Panel Deep Queries",
+    featAskDesc: "(unlimited conversational Q&A)",
+    featShare: "Permanent Cloud Share Links",
+    squareNotice:
+      "Card payment via Square · Zero subscriptions · No auto-renew",
+    codePlaceholder: "Paste pass token or master code",
+    byokTitle: "Bring Your Own OpenRouter Key",
+    byokDesc:
+      "If you already have an OpenRouter or Gemini key, plug it here. ProMapper will route all transcription and analysis calls directly through your key.",
+    byokLabel: "OpenRouter API Key:",
+    byokSave: "Save Key",
+    byokClear: "Clear",
+    byokVerifying: "Verifying...",
+    byokRemoved: "Key removed.",
+    byokPrivacy:
+      "Your key stays in your browser cookie (`pm_byok`). It is never stored in any database or logged on our servers.",
+    pdfWarning: "PDFs can't come in yet — audio or text files for now.",
+    unsupportedFile:
+      "That file type isn't supported yet — audio or text files for now.",
+    noSpeechInFile:
+      "Didn't catch that — no clear speech detected in the audio file. Give another file a go.",
   },
   es: {
     // Hero & Landing
@@ -159,6 +187,34 @@ export const TRANSLATIONS = {
     copyToken: "Copiar pase",
     lifetimePass: "Pase vitalicio activo",
     validUntil: (dateStr: string) => `Válido hasta el ${dateStr}`,
+    extendPass: (price: string) => `Extender pase de soporte (${price})`,
+    featTakes: "Tomas de audio ilimitadas",
+    featTakesDesc: "(sin límite diario de grabación)",
+    featRooms: "Salas en vivo colaborativas",
+    featRoomsDesc: "(salas en equipo + voz en vivo)",
+    featDecks: "Los 8 formatos de exportación",
+    featDecksDesc: "(Plan, Investigación, Haiku, Preguntas, Personalizado)",
+    featAsk: "Consultas ilimitadas al panel de preguntas",
+    featAskDesc: "(pregúntale lo que quieras a tus notas)",
+    featShare: "Enlaces permanentes para compartir",
+    squareNotice:
+      "Pago con tarjeta vía Square · Cero suscripciones · Sin cobros automáticos",
+    codePlaceholder: "Pega tu pase o código aquí",
+    byokTitle: "Pon tu propia API key de OpenRouter",
+    byokDesc:
+      "Si ya tienes una llave de OpenRouter o Gemini, conéctala aquí. ProMapper procesará la transcripción y el análisis directo con tu cuenta.",
+    byokLabel: "API Key de OpenRouter:",
+    byokSave: "Guardar llave",
+    byokClear: "Quitar",
+    byokVerifying: "Verificando...",
+    byokRemoved: "Llave eliminada.",
+    byokPrivacy:
+      "Tu llave se queda en tu navegador (`pm_byok`). Nunca se guarda en bases de datos ni se registra en servidores.",
+    pdfWarning: "Por ahora no entran PDFs — solo audio o archivos de texto.",
+    unsupportedFile:
+      "Ese formato no es compatible — por ahora solo audio o texto.",
+    noSpeechInFile:
+      "No se escuchó nada claro en el archivo. Intenta con otro audio.",
   },
 } as const;
 

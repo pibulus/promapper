@@ -4,9 +4,9 @@ import DndStudioIsland from "../../islands/DndStudioIsland.tsx";
 export default function RolLandingPage() {
   const canonicalUrl = "https://promapper.app/es/rol";
   const title =
-    "Mapeo de Partidas de Rol y D&D — De Audio a Grafos de Lore | ProMapper";
+    "Mapeo de partidas de rol y D&D — Del audio al mapa de tu campaña | ProMapper";
   const description =
-    "Convierte sesiones caóticas de D&D y rol en mapas interactivos de lore, conexiones de PNJs, objetivos de misiones y resúmenes en 1 clic para Discord.";
+    "Convierte sesiones caóticas de D&D y rol en mapas vivos: conexiones entre PNJs, misiones, botín y resúmenes en 1 clic para Discord.";
 
   return (
     <>
@@ -35,7 +35,7 @@ export default function RolLandingPage() {
         <meta property="og:image:height" content="630" />
         <meta
           property="og:image:alt"
-          content="ProMapper Rol y D&D — Mapeo de Partidas de Rol"
+          content="ProMapper Rol y D&D — Mapeo de partidas de rol"
         />
 
         {/* Twitter Card */}
@@ -63,7 +63,7 @@ export default function RolLandingPage() {
                 "offers": {
                   "@type": "Offer",
                   "price": "0",
-                  "priceCurrency": "USD",
+                  "priceCurrency": "AUD",
                   "description": "Mapeador de campañas de rol local y gratuito",
                 },
               },
@@ -76,7 +76,7 @@ export default function RolLandingPage() {
                     "acceptedAnswer": {
                       "@type": "Answer",
                       "text":
-                        "Graba el audio de tu partida o pega tus notas. ProMapper extrae automáticamente PNJs, facciones, objetivos de misiones y botín en un grafo visual interactivo.",
+                        "Graba el audio de tu partida o pega tus notas. ProMapper extrae PNJs, facciones, misiones y botín en un mapa interactivo.",
                     },
                   },
                   {
@@ -85,7 +85,7 @@ export default function RolLandingPage() {
                     "acceptedAnswer": {
                       "@type": "Answer",
                       "text":
-                        "¡Sí! Al hacer clic en Compartir obtienes un enlace con datos comprimidos en la URL. Tus jugadores abren el mapa interactivo en sus celulares sin registrar cuentas.",
+                        "Sí. Al darle a Compartir tienes un enlace con los datos en la URL. Tus jugadores abren el mapa en su cel o compu sin registrarse.",
                     },
                   },
                   {
@@ -94,7 +94,7 @@ export default function RolLandingPage() {
                     "acceptedAnswer": {
                       "@type": "Answer",
                       "text":
-                        "¡Totalmente! Genera resúmenes de sesión en Markdown limpios listos para pegar en tu canal de Discord o en tu bóveda de Obsidian.",
+                        "Claro que sí. Genera resúmenes limpios en Markdown listos para pegar en tu servidor de Discord o en tu bóveda de Obsidian.",
                     },
                   },
                 ],

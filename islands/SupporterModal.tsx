@@ -18,7 +18,7 @@ import {
   getPendingCheckout,
   setPendingCheckout,
 } from "../utils/supporter-pass.ts";
-import { t } from "../utils/i18n.ts";
+import { isSpanish, t } from "../utils/i18n.ts";
 
 function stripCheckoutParam() {
   if (typeof window === "undefined") return;
@@ -312,27 +312,23 @@ export default function SupporterModal() {
                 <ul class="mt-4 space-y-2 text-xs sm:text-sm font-medium text-[var(--color-text)]">
                   <li class="flex items-center gap-2">
                     <span class="text-[var(--accent-ink)] font-black">✓</span>
-                    <strong>Unlimited Audio Takes</strong>{" "}
-                    (no daily recording cap)
+                    <strong>{i18n.featTakes}</strong> {i18n.featTakesDesc}
                   </li>
                   <li class="flex items-center gap-2">
                     <span class="text-[var(--accent-ink)] font-black">✓</span>
-                    <strong>Live Collab Rooms</strong>{" "}
-                    (PartyKit multiplayer + WebRTC voice relay)
+                    <strong>{i18n.featRooms}</strong> {i18n.featRoomsDesc}
                   </li>
                   <li class="flex items-center gap-2">
                     <span class="text-[var(--accent-ink)] font-black">✓</span>
-                    <strong>All 8 Export Decks</strong>{" "}
-                    (Plan, Research, Haiku, Unasked, Custom)
+                    <strong>{i18n.featDecks}</strong> {i18n.featDecksDesc}
                   </li>
                   <li class="flex items-center gap-2">
                     <span class="text-[var(--accent-ink)] font-black">✓</span>
-                    <strong>Ask Panel Deep Queries</strong>{" "}
-                    (unlimited conversational Q&A)
+                    <strong>{i18n.featAsk}</strong> {i18n.featAskDesc}
                   </li>
                   <li class="flex items-center gap-2">
                     <span class="text-[var(--accent-ink)] font-black">✓</span>
-                    <strong>Permanent Cloud Share Links</strong>
+                    <strong>{i18n.featShare}</strong>
                   </li>
                 </ul>
 
@@ -345,11 +341,11 @@ export default function SupporterModal() {
                   {isStartingCheckout
                     ? i18n.ctaSquareBusy
                     : isSupporter
-                    ? `Extend Supporter Pass ($49 AUD)`
+                    ? i18n.extendPass("$49 AUD")
                     : i18n.ctaSquare}
                 </button>
                 <p class="text-[11px] text-center text-[var(--color-text-secondary)] mt-2 font-bold">
-                  Card payment via Square · Zero subscriptions · No auto-renew
+                  {i18n.squareNotice}
                 </p>
               </div>
 
@@ -364,7 +360,7 @@ export default function SupporterModal() {
                     value={pastedCode}
                     onInput={(e) =>
                       setPastedCode((e.target as HTMLInputElement).value)}
-                    placeholder="Paste pass token or master code"
+                    placeholder={i18n.codePlaceholder}
                     class="flex-1 px-3 py-2 text-xs font-mono bg-[var(--surface-white-warm)] border-2 border-[var(--line-ink)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                   />
                   <button
@@ -389,18 +385,16 @@ export default function SupporterModal() {
             <div class="space-y-4">
               <div class="p-4 bg-[var(--surface-cream-hover)] border-3 border-[var(--line-ink)] rounded-xl shadow-[3px_3px_0px_var(--line-ink)]">
                 <h4 class="font-black text-sm text-[var(--soft-black)]">
-                  Bring Your Own OpenRouter Key
+                  {i18n.byokTitle}
                 </h4>
                 <p class="text-xs text-[var(--color-text-secondary)] mt-1 leading-relaxed">
-                  If you already have an OpenRouter or Gemini key, plug it here.
-                  ProMapper will route all transcription and analysis calls
-                  directly through your key.
+                  {i18n.byokDesc}
                 </p>
               </div>
 
               <div class="space-y-2">
                 <label class="block text-xs font-bold text-[var(--soft-black)]">
-                  OpenRouter API Key:
+                  {i18n.byokLabel}
                 </label>
                 <input
                   type="password"
@@ -419,7 +413,7 @@ export default function SupporterModal() {
                   disabled={isTestingByo}
                   class="flex-1 py-2.5 px-4 bg-[var(--soft-black)] hover:bg-[var(--soft-black)] text-[var(--surface-white-warm)] font-black text-xs rounded-xl border-2 border-[var(--line-ink)] shadow-[3px_3px_0px_var(--line-ink)] disabled:opacity-50"
                 >
-                  {isTestingByo ? "Verifying..." : "Save Key"}
+                  {isTestingByo ? i18n.byokVerifying : i18n.byokSave}
                 </button>
                 {activeByoKey && (
                   <button
@@ -427,11 +421,11 @@ export default function SupporterModal() {
                     onClick={() => {
                       removeByoKey();
                       setByoInput("");
-                      setByoTestStatus("Key removed.");
+                      setByoTestStatus(i18n.byokRemoved);
                     }}
                     class="py-2.5 px-4 bg-[var(--surface-white-warm)] hover:bg-[var(--surface-cream-hover)] text-[var(--color-text-secondary)] font-black text-xs rounded-xl border-2 border-[var(--line-ink)] shadow-[3px_3px_0px_var(--line-ink)]"
                   >
-                    Clear
+                    {i18n.byokClear}
                   </button>
                 )}
               </div>
@@ -444,9 +438,7 @@ export default function SupporterModal() {
 
               <div class="text-[11px] text-[var(--color-text-secondary)] space-y-1 pt-2">
                 <p>
-                  🔒 <strong>Privacy:</strong>{" "}
-                  Your key stays in your browser cookie (`pm_byok`). It is never
-                  stored in any database or logged on our servers.
+                  🔒 <strong>Privacy:</strong> {i18n.byokPrivacy}
                 </p>
               </div>
             </div>
@@ -454,42 +446,89 @@ export default function SupporterModal() {
 
           {tab === "faq" && (
             <div class="space-y-3 text-xs text-[var(--color-text)]">
-              <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
-                <strong class="text-[var(--soft-black)] block mb-1">
-                  Is this a recurring subscription?
-                </strong>
-                No. It is a single $49 AUD flat payment for 365 days. No cards
-                stored, no surprises.
-              </div>
-              <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
-                <strong class="text-[var(--soft-black)] block mb-1">
-                  Paying from outside Australia?
-                </strong>
-                Fine — the price is in Australian dollars, which lands lower
-                than it reads almost everywhere else. Card issuers handle the
-                conversion at their own rate.
-              </div>
-              <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
-                <strong class="text-[var(--soft-black)] block mb-1">
-                  How do I use it on another laptop/phone?
-                </strong>
-                Copy your pass token (under the Supporter tab) and paste it into
-                the "Already have a pass?" box on your other devices.
-              </div>
-              <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
-                <strong class="text-[var(--soft-black)] block mb-1">
-                  What is the Free Tier limit?
-                </strong>
-                Free tier gives you 10 minutes of audio processing per day and 3
-                saved maps with full AI intelligence. The Supporter Pass unlocks
-                infinite audio and multiplayer live rooms.
-              </div>
-              <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
-                <strong class="text-[var(--soft-black)] block mb-1">
-                  Refund policy?
-                </strong>
-                30 days, no questions asked. Email hello@promapper.app.
-              </div>
+              {isSpanish()
+                ? (
+                  <>
+                    <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
+                      <strong class="text-[var(--soft-black)] block mb-1">
+                        ¿Es una suscripción recurrente?
+                      </strong>
+                      No. Es un pago único de $49 AUD por 365 días. Cero
+                      tarjetas guardadas, cero cobros automáticos.
+                    </div>
+                    <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
+                      <strong class="text-[var(--soft-black)] block mb-1">
+                        ¿Pagar desde fuera de Australia?
+                      </strong>
+                      Sin bronca — el precio es en dólares australianos (AUD),
+                      que casi siempre sale más barato al convertir. Tu banco
+                      hace el cambio en automático.
+                    </div>
+                    <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
+                      <strong class="text-[var(--soft-black)] block mb-1">
+                        ¿Cómo lo uso en otro cel o compu?
+                      </strong>
+                      Copia tu token del pase (en la pestaña Pase) y pégalo en
+                      "¿Tienes un código o pase?" en tu otro dispositivo.
+                    </div>
+                    <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
+                      <strong class="text-[var(--soft-black)] block mb-1">
+                        ¿Cuál es el límite en la versión gratis?
+                      </strong>
+                      La versión gratis te da 10 minutos de audio al día y 3
+                      mapas guardados con toda la IA. El Pase de Soporte
+                      desbloquea audio ilimitado y salas colaborativas en vivo.
+                    </div>
+                    <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
+                      <strong class="text-[var(--soft-black)] block mb-1">
+                        ¿Política de reembolso?
+                      </strong>
+                      30 días sin preguntas ni trabas. Escribe a
+                      hello@promapper.app.
+                    </div>
+                  </>
+                )
+                : (
+                  <>
+                    <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
+                      <strong class="text-[var(--soft-black)] block mb-1">
+                        Is this a recurring subscription?
+                      </strong>
+                      No. It is a single $49 AUD flat payment for 365 days. No
+                      cards stored, no surprises.
+                    </div>
+                    <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
+                      <strong class="text-[var(--soft-black)] block mb-1">
+                        Paying from outside Australia?
+                      </strong>
+                      Fine — the price is in Australian dollars, which lands
+                      lower than it reads almost everywhere else. Card issuers
+                      handle the conversion at their own rate.
+                    </div>
+                    <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
+                      <strong class="text-[var(--soft-black)] block mb-1">
+                        How do I use it on another laptop/phone?
+                      </strong>
+                      Copy your pass token (under the Supporter tab) and paste
+                      it into the "Already have a pass?" box on your other
+                      devices.
+                    </div>
+                    <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
+                      <strong class="text-[var(--soft-black)] block mb-1">
+                        What is the Free Tier limit?
+                      </strong>
+                      Free tier gives you 10 minutes of audio processing per day
+                      and 3 saved maps with full AI intelligence. The Supporter
+                      Pass unlocks infinite audio and multiplayer live rooms.
+                    </div>
+                    <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
+                      <strong class="text-[var(--soft-black)] block mb-1">
+                        Refund policy?
+                      </strong>
+                      30 days, no questions asked. Email hello@promapper.app.
+                    </div>
+                  </>
+                )}
             </div>
           )}
         </div>

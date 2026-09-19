@@ -167,7 +167,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
     } else {
       alert(
         isSpanish
-          ? "No se pudo guardar la campaña de ejemplo en el almacenamiento local."
+          ? "No se pudo guardar la partida de ejemplo en tu navegador."
           : "Failed to save example campaign to local storage.",
       );
       isSeeding.value = false;
@@ -193,9 +193,8 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
             {isSpanish ? "🇬🇧 English" : "🇲🇽 Español"}
           </a>
           <span class="inline-flex items-center gap-1 px-3 py-1 bg-[#1e1714] text-white rounded-full text-xs font-black tracking-wide uppercase">
-            🎲 {isSpanish
-              ? "Juegos de Rol & D&D GMs"
-              : "D&D 5e • Pathfinder • TTRPGs"}
+            🎲{" "}
+            {isSpanish ? "D&D y juegos de rol" : "D&D 5e • Pathfinder • TTRPGs"}
           </span>
         </div>
       </nav>
@@ -204,17 +203,17 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
       <header class="text-center space-y-4 max-w-3xl mx-auto pt-4">
         <div class="inline-block px-3 py-1 bg-amber-100 border-2 border-[#1e1714] rounded-full text-xs font-black text-amber-900 shadow-[2px_2px_0px_#1e1714]">
           {isSpanish
-            ? "Para Directores de Juego y Creadores de Campañas"
+            ? "Para DMs y directores de juego"
             : "For Dungeon Masters & Tabletop Campaign Creators"}
         </div>
         <h1 class="text-3xl sm:text-5xl font-black tracking-tight text-[#1e1714] leading-tight">
           {isSpanish
-            ? "De Sesiones Caóticas de 4 Horas a Mapas de Lore Vivos."
+            ? "De sesiones caóticas de 4 horas a mapas vivos para tu campaña."
             : "Turn 4-Hour Chaotic Sessions Into Living Campaign Lore Maps."}
         </h1>
         <p class="text-base sm:text-xl font-medium text-[#1e1714]/80 leading-relaxed">
           {isSpanish
-            ? "Graba el audio de tu partida o pega notas sueltas. ProMapper extrae PNJs, facciones, misiones y reparto de botín en un mapa interactivo con dados poliédricos y paisajes sonoros integrados, listo para compartir con tus jugadores en Discord."
+            ? "Graba el audio de tu partida o pega notas sueltas. ProMapper saca PNJs, facciones, misiones y botín en un mapa interactivo con dados y sonido ambiental, listo para compartir con tus jugadores en Discord."
             : "Record your session audio or paste loose notes. ProMapper automatically extracts NPCs, factions, active quest hooks, and party loot into an interactive lore map with built-in polyhedral dice and atmospheric soundscapes, ready to share with your party on Discord."}
         </p>
 
@@ -231,7 +230,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
               {isSeeding.value
                 ? (isSpanish ? "Cargando Campaña..." : "Loading Campaign...")
                 : (isSpanish
-                  ? "Ver Campaña de Ejemplo: Cripta de Morzan"
+                  ? "Ver partida de ejemplo: La Cripta de Morzan"
                   : "Explore Interactive Campaign Demo Map")}
             </span>
           </button>
@@ -240,7 +239,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
             class="w-full sm:w-auto px-6 py-3.5 bg-white text-black border-3 border-[#1e1714] rounded-2xl font-black text-base shadow-[4px_4px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2"
           >
             <span>🎙️</span>
-            <span>{isSpanish ? "Grabar Mi Sesión" : "Map My Own Session"}</span>
+            <span>{isSpanish ? "Mapea tu partida" : "Map My Own Session"}</span>
           </a>
         </div>
 
@@ -248,7 +247,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
         <div class="pt-2 flex flex-col items-center justify-center gap-2">
           <div class="inline-flex items-center gap-3 p-2 bg-[#fbf1e4] border-2 border-[#1e1714] rounded-2xl shadow-[3px_3px_0px_#1e1714]">
             <span class="text-xs font-black uppercase tracking-wider text-[#1e1714]/70 pl-2">
-              {isSpanish ? "Prueba un tiro táctil:" : "Test a tactile roll:"}
+              {isSpanish ? "Tira el dado:" : "Test a tactile roll:"}
             </span>
             <button
               type="button"
@@ -259,7 +258,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
               }`}
             >
               <span>🎲</span>
-              <span>{isSpanish ? "Tirar d20" : "Roll d20"}</span>
+              <span>{isSpanish ? "Tira un d20" : "Roll d20"}</span>
             </button>
             {quickRollResult.value !== null && (
               <span
@@ -288,12 +287,12 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
           <div class="text-3xl">🦹‍♀️</div>
           <h3 class="text-lg font-black text-[#1e1714]">
             {isSpanish
-              ? "PNJs y Facciones al Instante"
+              ? "PNJs y facciones al instante"
               : "NPCs & Factions Mapped"}
           </h3>
           <p class="text-xs sm:text-sm text-[#1e1714]/80 leading-relaxed">
             {isSpanish
-              ? "Detecta nombres de personajes, tabernas, cultos y deidades mencionados durante el roleo, conectándolos en nodos visuales con emojis."
+              ? "Detecta personajes, tabernas, cultos y deidades durante la partida, conectándolos en nodos visuales con emojis."
               : "Discovers character names, tavern keepers, cultists, and deities mentioned during roleplay, clustering them into visual emoji nodes."}
           </p>
         </div>
@@ -302,12 +301,12 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
           <div class="text-3xl">⚔️</div>
           <h3 class="text-lg font-black text-[#1e1714]">
             {isSpanish
-              ? "Misiones y Botín sin Olvidos"
+              ? "Misiones y botín al tiro"
               : "Quest Hooks & Party Loot"}
           </h3>
           <p class="text-xs sm:text-sm text-[#1e1714]/80 leading-relaxed">
             {isSpanish
-              ? "Los acuerdos y pistas se convierten en tareas con responsables asignados. Si un jugador completa una misión más tarde, se marca automáticamente."
+              ? "Los acuerdos y pistas se vuelven tareas con responsables. Si alguien cumple un objetivo más tarde, se marca en automático."
               : "Plot hooks and deals turn into action items with party assignees. If a player completes a quest objective later, it auto-ticks itself."}
           </p>
         </div>
@@ -316,12 +315,12 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
           <div class="text-3xl">🎲</div>
           <h3 class="text-lg font-black text-[#1e1714]">
             {isSpanish
-              ? "Dados Poliédricos Táctiles"
+              ? "Dados poliédricos al toque"
               : "Tactile Polyhedral Dice"}
           </h3>
           <p class="text-xs sm:text-sm text-[#1e1714]/80 leading-relaxed">
             {isSpanish
-              ? "Bandeja integrada en el tablero con d4 hasta d100, selector de dados, modificadores, Ventaja/Desventaja y guardado en 1 clic a notas."
+              ? "Bandeja integrada con d4 hasta d100, modificadores, ventaja/desventaja y guardado directo a notas con un clic."
               : "Built-in rack tray with d4 through d100, count steppers, +/- modifiers, Advantage/Disadvantage, and 1-tap logging straight to session notes."}
           </p>
         </div>
@@ -329,11 +328,13 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
         <div class="bg-white border-3 border-[#1e1714] rounded-2xl p-6 shadow-[4px_4px_0px_#1e1714] space-y-3">
           <div class="text-3xl">🌲</div>
           <h3 class="text-lg font-black text-[#1e1714]">
-            {isSpanish ? "Paisajes Sonoros 0 KB" : "0 KB Procedural Audio"}
+            {isSpanish
+              ? "Sonido ambiental sin descargas (0 KB)"
+              : "0 KB Procedural Audio"}
           </h3>
           <p class="text-xs sm:text-sm text-[#1e1714]/80 leading-relaxed">
             {isSpanish
-              ? "Audio ambiental sintetizado al momento en tu navegador sin descargas: chimenea de taberna, viento de cripta, tormentas y bosques arcanos."
+              ? "Audio ambiental sintetizado al momento en tu navegador: chimenea de taberna, viento de cripta, tormentas y bosques arcanos."
               : "Real-time atmospheric Web Audio synthesis with 0 KB assets: tavern hearths, cavern winds, thunderstorm swells, and arcane woods."}
           </p>
         </div>
@@ -344,11 +345,11 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-[#1e1714]/15 pb-3">
           <div>
             <span class="inline-block px-2.5 py-0.5 bg-[#1e1714] text-white text-[10px] font-black uppercase rounded-full tracking-wider mb-1">
-              {isSpanish ? "Nuevo Formato" : "New Export Preset"}
+              {isSpanish ? "Nuevo formato" : "New Export Preset"}
             </span>
             <h2 class="text-xl sm:text-2xl font-black text-[#1e1714]">
               📜 {isSpanish
-                ? "Crónica de Campaña en 1 Clic para Discord y Obsidian"
+                ? "Crónica de campaña en 1 clic para Discord y Obsidian"
                 : "1-Click Campaign Chronicle for Discord & Obsidian"}
             </h2>
           </div>
@@ -360,7 +361,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
         </div>
         <p class="text-xs sm:text-sm text-[#1e1714]/80">
           {isSpanish
-            ? "Olvídate de redactar minutas después de jugar. El preset de Crónica de Campaña organiza automáticamente tus personajes, locaciones, misiones pendientes y botín en un resumen con estructura impecable:"
+            ? "Olvídate de pasar horas redactando resúmenes. Este preset organiza personajes, lugares, misiones pendientes y botín en un solo archivo Markdown impecable:"
             : "Never spend an hour writing post-session recaps again. The Campaign Chronicle preset structures your dramatis personae, locations, active quest hooks, and party loot in one clean Markdown file:"}
         </p>
         <pre class="bg-white border-2 border-[#1e1714] rounded-xl p-4 text-xs font-mono text-[#1e1714] overflow-x-auto leading-relaxed shadow-[2px_2px_0px_#1e1714]">
@@ -380,12 +381,12 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
         <div class="text-center space-y-2">
           <h2 class="text-xl sm:text-3xl font-black text-[#1e1714]">
             {isSpanish
-              ? "ProMapper vs Tomar Notas a Mano en Combate"
+              ? "ProMapper contra tomar notas a mano a mitad de partida"
               : "ProMapper vs Manual Pen-and-Paper Note Taking"}
           </h2>
           <p class="text-xs sm:text-sm text-[#1e1714]/70">
             {isSpanish
-              ? "Por qué los DMs eligen mapeo colaborativo en lugar de libretas perdidas"
+              ? "Por qué los DMs prefieren mapeo visual en vez de libretas caóticas"
               : "Why Game Masters use live conversation mapping over messy notebooks"}
           </p>
         </div>
@@ -395,11 +396,11 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
             <thead>
               <tr class="border-b-2 border-[#1e1714] bg-amber-50">
                 <th class="text-left p-3 font-black text-[#1e1714]">
-                  {isSpanish ? "Característica" : "Feature"}
+                  {isSpanish ? "Detalle" : "Feature"}
                 </th>
                 <th class="text-left p-3 font-black text-gray-500">
                   {isSpanish
-                    ? "Notas Manuales / Notion"
+                    ? "Notas a mano / Notion"
                     : "Manual Notes / Notion"}
                 </th>
                 <th class="text-left p-3 font-black text-emerald-800 bg-emerald-50">
@@ -410,76 +411,78 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
             <tbody class="divide-y divide-[#1e1714]/15">
               <tr>
                 <td class="p-3 font-bold">
-                  {isSpanish ? "Durante la Partida" : "During Live Play"}
+                  {isSpanish ? "Durante la partida" : "During Live Play"}
                 </td>
                 <td class="p-3 text-gray-600">
                   {isSpanish
-                    ? "Escribir interrumpe la narración y el combate"
+                    ? "Escribir o teclear corta el ritmo de la narración"
                     : "Typing or scribbling breaks the storytelling flow"}
                 </td>
                 <td class="p-3 font-bold text-emerald-900 bg-emerald-50/50">
                   {isSpanish
-                    ? "100% manos libres — graba el audio y rolea tranquilo"
+                    ? "100% manos libres: graba el audio y rolea a gusto"
                     : "100% hands-free — record the audio and just roleplay"}
                 </td>
               </tr>
               <tr>
                 <td class="p-3 font-bold">
-                  {isSpanish ? "Conexiones de Lore" : "Lore Relationship Graph"}
+                  {isSpanish
+                    ? "Conexiones de historia"
+                    : "Lore Relationship Graph"}
                 </td>
                 <td class="p-3 text-gray-600">
                   {isSpanish
-                    ? "Páginas de texto plano difíciles de hojear"
+                    ? "Páginas de texto plano imposibles de cruzar"
                     : "Wall of text notes, impossible to cross-reference"}
                 </td>
                 <td class="p-3 font-bold text-emerald-900 bg-emerald-50/50">
                   {isSpanish
-                    ? "Grafo visual interactivo que puedes arrastrar y unir"
+                    ? "Grafo visual interactivo para mover y conectar"
                     : "Interactive force-directed node graph you can drag & merge"}
                 </td>
               </tr>
               <tr>
                 <td class="p-3 font-bold">
-                  {isSpanish ? "Música y Dados" : "Atmosphere & Dice"}
+                  {isSpanish ? "Música y dados" : "Atmosphere & Dice"}
                 </td>
                 <td class="p-3 text-gray-600">
                   {isSpanish
-                    ? "5 pestañas abiertas (Spotify con anuncios, Roll20, bot de Discord, Notion)"
+                    ? "Cinco pestañas abiertas (Spotify con anuncios, Roll20, bots, Notion)"
                     : "5 open browser tabs (Spotify ads, Roll20, Discord bot, Notion)"}
                 </td>
                 <td class="p-3 font-bold text-emerald-900 bg-emerald-50/50">
                   {isSpanish
-                    ? "Todo en un solo tablero — paisajes sonoros procedurales, bandeja de dados y grafo de lore"
+                    ? "Todo en el mismo tablero: sonido ambiental, bandeja de dados y mapa de lore"
                     : "All-in-one board — procedural ambient soundscapes, tactile dice tray & lore graph"}
                 </td>
               </tr>
               <tr>
                 <td class="p-3 font-bold">
-                  {isSpanish ? "Compartir con Jugadores" : "Party Sharing"}
+                  {isSpanish ? "Compartir con el grupo" : "Party Sharing"}
                 </td>
                 <td class="p-3 text-gray-600">
                   {isSpanish
-                    ? "Documentos gigantes que nadie lee"
+                    ? "Documentos pesados que nadie lee"
                     : "Clunky shared documents nobody reads"}
                 </td>
                 <td class="p-3 font-bold text-emerald-900 bg-emerald-50/50">
                   {isSpanish
-                    ? "Enlace comprimido en URL interactivo sin registro"
+                    ? "Enlace directo sin registro: se abre en el cel de cualquiera"
                     : "Compressed URL share link with interactive map + 0 signups"}
                 </td>
               </tr>
               <tr>
                 <td class="p-3 font-bold">
-                  {isSpanish ? "Privacidad de Homebrew" : "Homebrew Privacy"}
+                  {isSpanish ? "Privacidad de tu campaña" : "Homebrew Privacy"}
                 </td>
                 <td class="p-3 text-gray-600">
                   {isSpanish
-                    ? "Almacenado en servidores corporativos para entrenar modelos"
+                    ? "Guardado en servidores ajenos para entrenar modelos de IA"
                     : "Scanned by cloud providers to train AI models"}
                 </td>
                 <td class="p-3 font-bold text-emerald-900 bg-emerald-50/50">
                   {isSpanish
-                    ? "Almacenamiento local en tu navegador con claves privadas"
+                    ? "Se queda en tu navegador, sin guardar nada en la nube"
                     : "100% local-first in browser with BYOK private keys"}
                 </td>
               </tr>
@@ -496,12 +499,12 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
           class="px-8 py-4 bg-[#FF69B4] text-black border-3 border-[#1e1714] rounded-2xl font-black text-lg shadow-[4px_4px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
         >
           {isSpanish
-            ? "Abrir Tablero de Campaña con Dados y Sonido 🎲"
+            ? "Abre el tablero de campaña con dados y sonido 🎲"
             : "Open Campaign Board with Dice & Soundscapes 🎲"}
         </button>
         <p class="text-xs text-[#1e1714]/60">
           {isSpanish
-            ? "Compatible con D&D 5e, Pathfinder 2e, Call of Cthulhu, Cyberpunk RED y cualquier juego de rol."
+            ? "Compatible con D&D 5e, Pathfinder 2e, Call of Cthulhu, Cyberpunk y cualquier juego de rol."
             : "Works seamlessly with D&D 5e, Pathfinder 2e, Call of Cthulhu, Cyberpunk RED, and any homebrew TTRPG."}
         </p>
       </footer>

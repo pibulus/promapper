@@ -5,6 +5,7 @@
 
 import { useSignal } from "@preact/signals";
 import { isSoundMuted, setSoundMuted } from "@utils/sound.ts";
+import { isSpanish } from "@utils/i18n.ts";
 
 export default function SoundToggle() {
   const muted = useSignal(isSoundMuted());
@@ -19,10 +20,14 @@ export default function SoundToggle() {
     <button
       onClick={toggle}
       class="header-icon-btn"
-      data-tip={muted.value ? "Sound off" : "Sound on"}
+      data-tip={isSpanish()
+        ? (muted.value ? "Sin sonido" : "Con sonido")
+        : (muted.value ? "Sound off" : "Sound on")}
       data-tip-align="right"
       aria-pressed={!muted.value}
-      aria-label={muted.value ? "Unmute sound" : "Mute sound"}
+      aria-label={isSpanish()
+        ? (muted.value ? "Activar sonido" : "Silenciar sonido")
+        : (muted.value ? "Unmute sound" : "Mute sound")}
     >
       <i
         class={`fa ${muted.value ? "fa-volume-xmark" : "fa-volume-high"}`}

@@ -4,13 +4,14 @@
  */
 
 import Modal from "../components/Modal.tsx";
+import { isSpanish } from "../utils/i18n.ts";
 
 interface Shortcut {
   keys: string;
   action: string;
 }
 
-const SHORTCUTS: Shortcut[] = [
+const SHORTCUTS_EN: Shortcut[] = [
   { keys: "?", action: "Show this cheat sheet" },
   { keys: "Ctrl+Z / ⌘Z", action: "Undo last map or action-item change" },
   { keys: "Esc", action: "Close panel / cancel edit / exit focus" },
@@ -20,12 +21,25 @@ const SHORTCUTS: Shortcut[] = [
   { keys: "Ctrl+Enter / ⌘Enter", action: "Save inline edit" },
 ];
 
+const SHORTCUTS_ES: Shortcut[] = [
+  { keys: "?", action: "Ver esta lista de atajos" },
+  { keys: "Ctrl+Z / ⌘Z", action: "Deshacer último cambio en mapa o tareas" },
+  { keys: "Esc", action: "Cerrar panel / cancelar edición" },
+  { keys: "E o F2", action: "Editar tarea seleccionada" },
+  { keys: "↑ ↓", action: "Moverte por la lista de tareas" },
+  { keys: "Enter", action: "Marcar o desmarcar tarea" },
+  { keys: "Ctrl+Enter / ⌘Enter", action: "Guardar cambios" },
+];
+
 interface ShortcutsModalProps {
   open: boolean;
   onClose: () => void;
 }
 
 export default function ShortcutsModal({ open, onClose }: ShortcutsModalProps) {
+  const spanish = isSpanish();
+  const shortcuts = spanish ? SHORTCUTS_ES : SHORTCUTS_EN;
+
   return (
     <Modal
       open={open}
@@ -39,10 +53,10 @@ export default function ShortcutsModal({ open, onClose }: ShortcutsModalProps) {
           class="modal-heading"
           style={{ marginBottom: 0 }}
         >
-          Keyboard shortcuts
+          {spanish ? "Atajos de teclado" : "Keyboard shortcuts"}
         </h3>
         <div class="space-y-2">
-          {SHORTCUTS.map((sc) => (
+          {shortcuts.map((sc) => (
             <div
               key={sc.keys}
               class="flex items-center justify-between gap-3"
