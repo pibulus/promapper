@@ -1699,7 +1699,7 @@ h6,
   padding: 0.85rem 1rem;
   border-radius: 12px;
   border: 2px solid var(--line-ink, #1e1714);
-  background: var(--surface-card, #ffffff);
+  background: var(--surface-card, #fbf1e4);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04);
   font-size: 1.05rem;
   line-height: 1.6;
@@ -1766,7 +1766,7 @@ h6,
   padding: 0.9rem 1.25rem;
   border-radius: 13px;
   border: 2.5px solid var(--line-ink);
-  background: var(--surface-card, #ffffff);
+  background: var(--surface-card, #fbf1e4);
   color: var(--soft-black);
   font-size: 0.9rem;
   font-weight: 700;
@@ -3259,6 +3259,219 @@ h6,
     animation: none;
     transform: scaleY(0.55);
   }
+}
+
+/* Dice Module — Tactile tabletop dice tray */
+.dice-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.dice-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.6rem;
+  background: color-mix(in srgb, var(--surface-cream) 85%, var(--color-ground-deep, #000));
+  border: 2px solid var(--border-cream-medium);
+  border-radius: var(--border-radius-sm);
+  box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+}
+.dice-stage.is-rolling {
+  animation: dice-wobble 0.15s ease-in-out infinite;
+}
+.dice-stage.is-nat20 {
+  border-color: #ec4899;
+  background: color-mix(in srgb, #ec4899 10%, var(--surface-cream));
+}
+.dice-stage.is-nat1 {
+  border-color: #f59e0b;
+  background: color-mix(in srgb, #f59e0b 10%, var(--surface-cream));
+}
+@keyframes dice-wobble {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.04) rotate(-2deg); }
+}
+.dice-stage__main {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.dice-stage__total {
+  font-size: 1.55rem;
+  font-weight: 900;
+  line-height: 1.1;
+  color: var(--soft-black);
+  letter-spacing: -0.02em;
+}
+.dice-stage.is-nat20 .dice-stage__total {
+  color: #db2777;
+}
+.dice-nat-badge {
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1.5px solid currentColor;
+}
+.dice-nat-badge.nat20 {
+  color: #db2777;
+  background: #fdf2f8;
+}
+.dice-nat-badge.nat1 {
+  color: #d97706;
+  background: #fffbeb;
+}
+.dice-stage__notation {
+  font-size: var(--tiny-size);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  line-height: 1.2;
+  margin-top: 0.1rem;
+}
+
+/* Dice Picker Buttons */
+.dice-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+}
+.dice-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.1rem;
+  background: var(--surface-cream);
+  border: 1.5px solid var(--border-cream-medium);
+  border-radius: var(--border-radius-sm);
+  color: var(--soft-black);
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 1.5px 1.5px 0 var(--line-ink);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+}
+.dice-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 2px 2px 0 var(--line-ink);
+  background: color-mix(in srgb, var(--color-accent) 15%, var(--surface-cream));
+}
+.dice-btn:active {
+  transform: translateY(0.5px);
+  box-shadow: 0.5px 0.5px 0 var(--line-ink);
+}
+.dice-btn.is-selected {
+  background: var(--header-band);
+  color: var(--header-band-ink);
+  border-color: var(--soft-black);
+}
+
+/* Options / Steppers */
+.dice-options-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.dice-stepper {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface-cream);
+  border: 1.5px solid var(--border-cream-medium);
+  border-radius: var(--border-radius-sm);
+  padding: 0.1rem;
+}
+.dice-stepper button {
+  width: 1.15rem;
+  height: 1.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-weight: 800;
+  font-size: 0.75rem;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.dice-stepper button:hover {
+  color: var(--accent-ink);
+  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+}
+.dice-stepper__val {
+  font-size: var(--tiny-size);
+  font-weight: 800;
+  padding: 0 0.3rem;
+  color: var(--soft-black);
+  min-width: 1.6rem;
+  text-align: center;
+}
+
+/* Advantage Segmented Toggle */
+.dice-mode-toggle {
+  display: flex;
+  flex: 1;
+  gap: 0.15rem;
+  background: var(--surface-cream);
+  border: 1.5px solid var(--border-cream-medium);
+  border-radius: var(--border-radius-sm);
+  padding: 0.1rem;
+}
+.dice-mode-toggle button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 0.18rem 0.25rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.dice-mode-toggle button:hover {
+  color: var(--accent-ink);
+}
+.dice-mode-toggle button.is-active {
+  background: var(--header-band);
+  color: var(--header-band-ink);
+}
+
+/* History Strip */
+.dice-history-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  overflow-x: auto;
+  padding-top: 0.1rem;
+}
+.dice-history-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.15rem 0.35rem;
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--surface-cream));
+  border: 1px solid var(--border-cream-medium);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dice-history-chip:hover {
+  border-color: var(--color-accent);
+  color: var(--accent-ink);
+}
+.dice-history-chip__type {
+  opacity: 0.75;
+}
+.dice-history-chip__val {
+  color: var(--soft-black);
 }
 
 /* Ask — questions in, answers out. */

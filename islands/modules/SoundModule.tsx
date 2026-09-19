@@ -237,7 +237,171 @@ function droplets(ctx: AudioContext, out: GainNode): Teardown[] {
   return [() => clearTimeout(timer)];
 }
 
+/** Crackling campfire / tavern hearth — micro-noise bursts at Poisson intervals. */
+function crackles(ctx: AudioContext, out: GainNode): Teardown[] {
+  const len = Math.floor(ctx.sampleRate * 0.03);
+  const burst = ctx.createBuffer(1, len, ctx.sampleRate);
+  const data = burst.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  let timer: ReturnType<typeof setTimeout>;
+  const pop = () => {
+    const src = ctx.createBufferSource();
+    src.buffer = burst;
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = rand(1200, 4200);
+    bp.Q.value = rand(5, 12);
+    const g = ctx.createGain();
+    const t = ctx.currentTime;
+    g.gain.setValueAtTime(rand(0.02, 0.08), t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + rand(0.015, 0.035));
+    const pan = ctx.createStereoPanner();
+    pan.pan.value = rand(-0.8, 0.8);
+    src.connect(bp).connect(g).connect(pan).connect(out);
+    src.start();
+    src.stop(t + 0.04);
+    src.onended = () => pan.disconnect();
+    timer = setTimeout(pop, rand(35, 240));
+  };
+  timer = setTimeout(pop, 150);
+  return [() => clearTimeout(timer)];
+}
+
+/** Resonant dungeon/cavern wind with wandering resonant bandpass filter. */
+function cavernWind(
+  ctx: AudioContext,
+  out: GainNode,
+  level: number,
+): Teardown[] {
+  const src = noiseSource(ctx, true);
+  const bp = ctx.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.value = 240;
+  bp.Q.value = 4.5;
+  const g = ctx.createGain();
+  g.gain.value = level;
+  src.connect(bp).connect(g).connect(out);
+  src.start();
+  return [
+    src,
+    bp,
+    g,
+    ...slowLfo(ctx, bp.frequency, rand(0.04, 0.08), 160),
+    ...slowLfo(ctx, g.gain, rand(0.05, 0.12), level * 0.4),
+  ];
+}
+
+/** Distant rolling thunder — intermittent sub-bass swells. */
+function thunderSwells(ctx: AudioContext, out: GainNode): Teardown[] {
+  const src = noiseSource(ctx, true);
+  const lp = ctx.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 110;
+  const g = ctx.createGain();
+  g.gain.value = 0.0001;
+  src.connect(lp).connect(g).connect(out);
+  src.start();
+
+  let timer: ReturnType<typeof setTimeout>;
+  const rumble = () => {
+    const t = ctx.currentTime;
+    const dur = rand(3.5, 7.0);
+    g.gain.cancelScheduledValues(t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(rand(0.25, 0.45), t + dur * 0.35);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    timer = setTimeout(rumble, rand(9000, 22000));
+  };
+  timer = setTimeout(rumble, 4000);
+
+  return [src, lp, g, () => clearTimeout(timer)];
+}
+
+/** Subtle nocturnal forest crickets — intermittent high-frequency trills. */
+function crickets(ctx: AudioContext, out: GainNode): Teardown[] {
+  const osc1 = ctx.createOscillator();
+  const osc2 = ctx.createOscillator();
+  osc1.frequency.value = 4600;
+  osc2.frequency.value = 4850;
+  const g = ctx.createGain();
+  g.gain.value = 0.0001;
+  const pan = ctx.createStereoPanner();
+  pan.pan.value = 0.3;
+
+  osc1.connect(g);
+  osc2.connect(g);
+  g.connect(pan).connect(out);
+  osc1.start();
+  osc2.start();
+
+  let timer: ReturnType<typeof setTimeout>;
+  const chirp = () => {
+    const t = ctx.currentTime;
+    const pulseCount = Math.floor(rand(3, 7));
+    for (let i = 0; i < pulseCount; i++) {
+      const pt = t + i * 0.055;
+      g.gain.setValueAtTime(0.012, pt);
+      g.gain.exponentialRampToValueAtTime(0.0001, pt + 0.04);
+    }
+    timer = setTimeout(chirp, rand(1200, 4500));
+  };
+  timer = setTimeout(chirp, 800);
+
+  return [osc1, osc2, g, pan, () => clearTimeout(timer)];
+}
+
 const MOODS: Mood[] = [
+  {
+    id: "tavern",
+    name: "Tavern Hearth",
+    line: "Crackling fireplace, warm embers, and cozy tavern hum.",
+    build: (ctx, out) => [
+      ...noiseBed(ctx, out, true, 30, 320, 0.4),
+      ...crackles(ctx, out),
+      ...drone(ctx, out, [110, 165, 220], "triangle", 400),
+    ],
+  },
+  {
+    id: "dungeon",
+    name: "Underdark Crypt",
+    line: "Echoing stone cavern, distant drips, and deep crypt wind.",
+    build: (ctx, out) => [
+      ...cavernWind(ctx, out, 0.35),
+      ...droplets(ctx, out),
+      ...drone(ctx, out, [55, 55.25, 82.5], "sine", 240),
+    ],
+  },
+  {
+    id: "storm",
+    name: "Wilderness Storm",
+    line: "Heavy rain patter, gusting wind, and rolling thunder.",
+    build: (ctx, out) => [
+      ...noiseBed(ctx, out, false, 450, 4500, 0.16),
+      ...droplets(ctx, out),
+      ...cavernWind(ctx, out, 0.25),
+      ...thunderSwells(ctx, out),
+    ],
+  },
+  {
+    id: "forest",
+    name: "Mystic Woods",
+    line: "Gentle forest breeze, rustling leaves, and nocturnal chorus.",
+    build: (ctx, out) => [
+      ...noiseBed(ctx, out, true, 60, 650, 0.25),
+      ...crickets(ctx, out),
+      ...breathVoice(ctx, out, 220, "sine", 0.025, rand(15, 25)),
+    ],
+  },
+  {
+    id: "arcane",
+    name: "Arcane Sanctum",
+    line: "Shimmering crystal resonance and ethereal planar hum.",
+    build: (ctx, out) => [
+      ...noiseBed(ctx, out, false, 1500, 7500, 0.035),
+      ...drone(ctx, out, [440, 554.37, 659.25, 880], "sine", 1200),
+      ...breathVoice(ctx, out, 1318.51, "sine", 0.012, rand(14, 24)),
+    ],
+  },
   {
     id: "focus",
     name: "Focus",
