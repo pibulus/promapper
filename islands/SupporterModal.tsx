@@ -18,6 +18,7 @@ import {
   getPendingCheckout,
   setPendingCheckout,
 } from "../utils/supporter-pass.ts";
+import { t } from "../utils/i18n.ts";
 
 function stripCheckoutParam() {
   if (typeof window === "undefined") return;
@@ -28,6 +29,7 @@ function stripCheckoutParam() {
 }
 
 export default function SupporterModal() {
+  const i18n = t();
   const isOpen = supporterModalOpen.value;
   const isSupporter = isSupporterSignal.value;
   const expiry = supporterExpirySignal.value;
@@ -203,10 +205,10 @@ export default function SupporterModal() {
             <span class="text-2xl">🗺️</span>
             <div>
               <h2 class="text-xl font-black text-[var(--soft-black)] leading-none">
-                ProMapper Supporter
+                {i18n.supporterTitle}
               </h2>
               <p class="text-xs font-bold text-[var(--color-text-secondary)] mt-0.5">
-                Zero accounts · Zero tracking · High craft
+                {i18n.supporterSubtitle}
               </p>
             </div>
           </div>
@@ -231,7 +233,7 @@ export default function SupporterModal() {
                 : "bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--surface-cream-hover)]"
             }`}
           >
-            💜 Supporter Pass ($49 AUD)
+            {i18n.tabPass}
           </button>
           <button
             type="button"
@@ -242,7 +244,7 @@ export default function SupporterModal() {
                 : "bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--surface-cream-hover)]"
             }`}
           >
-            🔑 Bring Your Own Key
+            {i18n.tabByok}
           </button>
           <button
             type="button"
@@ -253,7 +255,7 @@ export default function SupporterModal() {
                 : "bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--surface-cream-hover)]"
             }`}
           >
-            ❓ FAQ
+            {i18n.tabFaq}
           </button>
         </div>
 
@@ -266,18 +268,18 @@ export default function SupporterModal() {
                 <div class="p-4 bg-[var(--accent-rose-wash-soft)] border-3 border-[var(--line-ink)] rounded-xl shadow-[3px_3px_0px_var(--line-ink)] flex items-center justify-between">
                   <div>
                     <div class="font-black text-sm text-[var(--accent-ink)]">
-                      ✓ Supporter Pass Active
+                      {i18n.activePassBanner}
                     </div>
                     <div class="text-xs text-[var(--color-text-secondary)] font-medium mt-0.5">
                       {expiry
-                        ? `Valid until ${
+                        ? i18n.validUntil(
                           expiry.toLocaleDateString("en-AU", {
                             day: "numeric",
                             month: "short",
                             year: "numeric",
-                          })
-                        }`
-                        : "Lifetime pass active"}
+                          }),
+                        )
+                        : i18n.lifetimePass}
                     </div>
                   </div>
                   <button
@@ -285,7 +287,7 @@ export default function SupporterModal() {
                     onClick={handleCopyPass}
                     class="px-3 py-1.5 bg-[var(--surface-white-warm)] border-2 border-[var(--line-ink)] rounded-lg text-xs font-bold shadow-[2px_2px_0px_var(--line-ink)] hover:bg-[var(--surface-cream-hover)]"
                   >
-                    Copy Token
+                    {i18n.copyToken}
                   </button>
                 </div>
               )}
@@ -295,12 +297,12 @@ export default function SupporterModal() {
                 <div class="flex justify-between items-start">
                   <div>
                     <span class="text-xs font-black uppercase tracking-wider bg-[var(--accent-strong)] text-[var(--surface-white-warm)] px-2.5 py-0.5 rounded-md border-2 border-[var(--line-ink)]">
-                      1-Year Pass
+                      {i18n.pass1Year}
                     </span>
                     <h3 class="text-2xl font-black text-[var(--soft-black)] mt-2">
                       $49 AUD{" "}
                       <span class="text-xs font-bold text-[var(--color-text-secondary)]">
-                        / flat once-off
+                        / {i18n.supporterTerm}
                       </span>
                     </h3>
                   </div>
@@ -341,10 +343,10 @@ export default function SupporterModal() {
                   class="w-full mt-5 py-3.5 px-6 bg-[var(--cta-plate)] hover:bg-[var(--cta-plate-hover)] text-[var(--soft-black)] font-black text-base border-3 border-[var(--line-ink)] rounded-xl shadow-[4px_4px_0px_var(--line-ink)] hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50"
                 >
                   {isStartingCheckout
-                    ? "Opening Square Checkout..."
+                    ? i18n.ctaSquareBusy
                     : isSupporter
-                    ? "Extend Supporter Pass ($49 AUD)"
-                    : "Support ProMapper 💜"}
+                    ? `Extend Supporter Pass ($49 AUD)`
+                    : i18n.ctaSquare}
                 </button>
                 <p class="text-[11px] text-center text-[var(--color-text-secondary)] mt-2 font-bold">
                   Card payment via Square · Zero subscriptions · No auto-renew
@@ -354,7 +356,7 @@ export default function SupporterModal() {
               {/* Restore / Redeem Section */}
               <div class="p-4 bg-[var(--surface-card)] border-3 border-[var(--line-ink)] rounded-xl shadow-[3px_3px_0px_var(--line-ink)] space-y-3">
                 <div class="font-bold text-xs text-[var(--soft-black)]">
-                  Already have a pass or team code?
+                  {i18n.haveCode}
                 </div>
                 <div class="flex gap-2">
                   <input
@@ -371,7 +373,7 @@ export default function SupporterModal() {
                     disabled={isRedeeming || !pastedCode.trim()}
                     class="px-4 py-2 bg-[var(--soft-black)] text-[var(--surface-white-warm)] text-xs font-black rounded-lg border-2 border-[var(--line-ink)] hover:bg-[var(--soft-black)] disabled:opacity-50"
                   >
-                    {isRedeeming ? "..." : "Unlock"}
+                    {isRedeeming ? "..." : i18n.redeemBtn}
                   </button>
                 </div>
                 {redeemStatus && (
