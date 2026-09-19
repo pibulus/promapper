@@ -694,11 +694,11 @@ export default function HomeIsland() {
   // holds its pulse until the real result lands.
   const brewNotes = isSpanish()
     ? [
-      "leyéndolo a fondo…",
-      "extrayendo los acuerdos y tareas…",
-      "trazando el mapa de temas…",
-      "notando las conexiones…",
-      "preparando el tablero…",
+      "leyéndolo con calma…",
+      "sacando pendientes y tareas…",
+      "armando el mapa de temas…",
+      "conectando los puntos…",
+      "acomodando el tablero…",
     ]
     : [
       "reading it through…",
@@ -711,9 +711,9 @@ export default function HomeIsland() {
   // Appending to a live map is a different story than the first brew.
   const appendNotes = isSpanish()
     ? [
-      "escuchando el nuevo fragmento…",
-      "integrándolo al mapa…",
-      "marcando lo que confirmaste que hiciste…",
+      "escuchando lo nuevo…",
+      "sumándolo al mapa…",
+      "tachando lo que ya quedó listo…",
     ]
     : [
       "listening back…",
@@ -1060,6 +1060,22 @@ export default function HomeIsland() {
                       <p class="mapper-hero-caption">
                         {i18n.heroCaption}
                       </p>
+                      <div class="mapper-hero-pills">
+                        <a
+                          href={isSpanish() ? "/es/rol" : "/for/dnd"}
+                          class="mapper-hero-pill"
+                          aria-label={isSpanish()
+                            ? "Ir al Estudio de Campañas para D&D y Rol"
+                            : "Go to Tabletop Campaign Studio for D&D & TTRPGs"}
+                        >
+                          <span aria-hidden="true">🎲</span>
+                          <span>
+                            {isSpanish()
+                              ? "Estudio de Campañas para D&D y Rol →"
+                              : "Tabletop Campaign Studio for D&D & GMs →"}
+                          </span>
+                        </a>
+                      </div>
                     </div>
                     <div class="mapper-card__panel">
                       <UploadIsland />

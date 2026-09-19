@@ -4,9 +4,9 @@ import HomeIsland from "../../islands/HomeIsland.tsx";
 export default function SpanishHome() {
   const canonicalUrl = "https://promapper.app/es";
   const title =
-    "ProMapper en Español — De pláticas caóticas a mapas de proyecto vivos";
+    "ProMapper en Español — De pláticas sueltas a mapas de proyecto vivos";
   const description =
-    "Convierte notas de voz, juntas y pláticas caóticas en memoria de proyecto: transcripción inteligente, acuerdos con responsables, resumen ejecutivo y mapa visual de temas.";
+    "Convierte audios, juntas y pláticas sueltas en memoria de proyecto: transcripción limpia, pendientes claros con responsables, resumen ejecutivo y temas conectados.";
 
   return (
     <>
@@ -58,7 +58,7 @@ export default function SpanishHome() {
             "offers": {
               "@type": "Offer",
               "price": "0",
-              "priceCurrency": "USD",
+              "priceCurrency": "AUD",
               "description":
                 "Mapeo inteligente y colaborativo de pláticas y juntas",
             },

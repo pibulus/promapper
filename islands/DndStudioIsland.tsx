@@ -1,6 +1,7 @@
 import { useSignal } from "@preact/signals";
 import { saveConversation } from "@core/storage/localStorage.ts";
 import type { ConversationData } from "@core/types/conversation-data.ts";
+import { soundBloom, soundTick } from "@utils/sound.ts";
 
 const DND_CID = "campaign-sunken-crypt";
 const DND_NOW = "2026-09-11T06:00:00.000Z";
@@ -128,13 +129,41 @@ export interface DndStudioProps {
 
 export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
   const isSeeding = useSignal(false);
+  const quickRollResult = useSignal<number | null>(null);
+  const isQuickRolling = useSignal(false);
 
   const isSpanish = lang === "es";
 
+  function handleQuickRoll() {
+    isQuickRolling.value = true;
+    soundTick();
+    setTimeout(() => {
+      const roll = Math.floor(Math.random() * 20) + 1;
+      quickRollResult.value = roll;
+      isQuickRolling.value = false;
+      if (roll === 20) {
+        soundBloom();
+      }
+    }, 220);
+  }
+
   function handleLoadDemo() {
     isSeeding.value = true;
+    try {
+      // Ensure tabletop modules (dice tray + soundscapes) are pre-mounted for the demo
+      const currentModules = JSON.parse(
+        localStorage.getItem("promapper-modules") || "[]",
+      );
+      const updatedModules = Array.from(
+        new Set([...currentModules, "dice", "sound"]),
+      );
+      localStorage.setItem("promapper-modules", JSON.stringify(updatedModules));
+    } catch {
+      // best-effort
+    }
+
     if (saveConversation(DND_DEMO)) {
-      globalThis.location.href = "/";
+      globalThis.location.href = isSpanish ? "/es" : "/";
     } else {
       alert(
         isSpanish
@@ -155,12 +184,20 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
         >
           {isSpanish ? "← Volver a ProMapper" : "← Back to ProMapper"}
         </a>
-        <span class="inline-flex items-center gap-1 px-3 py-1 bg-[#1e1714] text-white rounded-full text-xs font-black tracking-wide uppercase">
-          🎲{" "}
-          {isSpanish
-            ? "Juegos de Rol & D&D GMs"
-            : "D&D 5e • Pathfinder • TTRPGs"}
-        </span>
+        <div class="flex items-center gap-2">
+          <a
+            href={isSpanish ? "/for/dnd" : "/es/rol"}
+            class="inline-flex items-center gap-1 px-2.5 py-1 bg-white border-2 border-[#1e1714] rounded-xl text-xs font-bold shadow-[2px_2px_0px_#1e1714] hover:-translate-y-0.5 transition-transform"
+            aria-label={isSpanish ? "Switch to English" : "Cambiar a Español"}
+          >
+            {isSpanish ? "🇬🇧 English" : "🇲🇽 Español"}
+          </a>
+          <span class="inline-flex items-center gap-1 px-3 py-1 bg-[#1e1714] text-white rounded-full text-xs font-black tracking-wide uppercase">
+            🎲 {isSpanish
+              ? "Juegos de Rol & D&D GMs"
+              : "D&D 5e • Pathfinder • TTRPGs"}
+          </span>
+        </div>
       </nav>
 
       {/* Hero Section */}
@@ -177,8 +214,8 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
         </h1>
         <p class="text-base sm:text-xl font-medium text-[#1e1714]/80 leading-relaxed">
           {isSpanish
-            ? "Graba el audio de tu partida. ProMapper extrae PNJs, misiones activas, reparto de botín y teje un mapa visual orgánico para compartir con tus jugadores en Discord."
-            : "Record your session audio. ProMapper automatically extracts NPCs, active quest hooks, party loot, and builds an organic relationship graph to share with your party on Discord."}
+            ? "Graba el audio de tu partida o pega notas sueltas. ProMapper extrae PNJs, facciones, misiones y reparto de botín en un mapa interactivo con dados poliédricos y paisajes sonoros integrados, listo para compartir con tus jugadores en Discord."
+            : "Record your session audio or paste loose notes. ProMapper automatically extracts NPCs, factions, active quest hooks, and party loot into an interactive lore map with built-in polyhedral dice and atmospheric soundscapes, ready to share with your party on Discord."}
         </p>
 
         {/* CTA Banner */}
@@ -206,10 +243,47 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
             <span>{isSpanish ? "Grabar Mi Sesión" : "Map My Own Session"}</span>
           </a>
         </div>
+
+        {/* Quick d20 Tactile Roller Toy on the Landing Page */}
+        <div class="pt-2 flex flex-col items-center justify-center gap-2">
+          <div class="inline-flex items-center gap-3 p-2 bg-[#fbf1e4] border-2 border-[#1e1714] rounded-2xl shadow-[3px_3px_0px_#1e1714]">
+            <span class="text-xs font-black uppercase tracking-wider text-[#1e1714]/70 pl-2">
+              {isSpanish ? "Prueba un tiro táctil:" : "Test a tactile roll:"}
+            </span>
+            <button
+              type="button"
+              onClick={handleQuickRoll}
+              disabled={isQuickRolling.value}
+              class={`px-3 py-1.5 bg-white border-2 border-[#1e1714] rounded-xl text-xs font-black text-[#1e1714] shadow-[2px_2px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer transition-transform flex items-center gap-1.5 ${
+                isQuickRolling.value ? "animate-spin" : ""
+              }`}
+            >
+              <span>🎲</span>
+              <span>{isSpanish ? "Tirar d20" : "Roll d20"}</span>
+            </button>
+            {quickRollResult.value !== null && (
+              <span
+                class={`px-2.5 py-1 rounded-lg text-xs font-black border border-[#1e1714] transition-transform animate-bounce ${
+                  quickRollResult.value === 20
+                    ? "bg-amber-300 text-amber-950 font-black shadow-[2px_2px_0px_#1e1714]"
+                    : quickRollResult.value === 1
+                    ? "bg-rose-200 text-rose-950 shadow-[2px_2px_0px_#1e1714]"
+                    : "bg-white text-[#1e1714]"
+                }`}
+              >
+                {quickRollResult.value === 20
+                  ? "Nat 20! ✨"
+                  : quickRollResult.value === 1
+                  ? "Nat 1! 💥"
+                  : `d20 = ${quickRollResult.value}`}
+              </span>
+            )}
+          </div>
+        </div>
       </header>
 
-      {/* Value Pillars Grid */}
-      <section class="grid sm:grid-cols-3 gap-6 pt-6">
+      {/* Value Pillars Grid (4 Tabletop Superpowers) */}
+      <section class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-6">
         <div class="bg-white border-3 border-[#1e1714] rounded-2xl p-6 shadow-[4px_4px_0px_#1e1714] space-y-3">
           <div class="text-3xl">🦹‍♀️</div>
           <h3 class="text-lg font-black text-[#1e1714]">
@@ -239,18 +313,66 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
         </div>
 
         <div class="bg-white border-3 border-[#1e1714] rounded-2xl p-6 shadow-[4px_4px_0px_#1e1714] space-y-3">
-          <div class="text-3xl">📜</div>
+          <div class="text-3xl">🎲</div>
           <h3 class="text-lg font-black text-[#1e1714]">
             {isSpanish
-              ? "Resumen en 1 Clic para Discord"
-              : "1-Click Discord & Obsidian Recap"}
+              ? "Dados Poliédricos Táctiles"
+              : "Tactile Polyhedral Dice"}
           </h3>
           <p class="text-xs sm:text-sm text-[#1e1714]/80 leading-relaxed">
             {isSpanish
-              ? "Exporta bitácoras de sesión en Markdown listas para pegar en el canal de Discord del grupo o en tu bóveda privada de Obsidian."
-              : "Export formatted 'Previously On...' session logs in clean Markdown, ready to drop into your party's Discord channel or Obsidian vault."}
+              ? "Bandeja integrada en el tablero con d4 hasta d100, selector de dados, modificadores, Ventaja/Desventaja y guardado en 1 clic a notas."
+              : "Built-in rack tray with d4 through d100, count steppers, +/- modifiers, Advantage/Disadvantage, and 1-tap logging straight to session notes."}
           </p>
         </div>
+
+        <div class="bg-white border-3 border-[#1e1714] rounded-2xl p-6 shadow-[4px_4px_0px_#1e1714] space-y-3">
+          <div class="text-3xl">🌲</div>
+          <h3 class="text-lg font-black text-[#1e1714]">
+            {isSpanish ? "Paisajes Sonoros 0 KB" : "0 KB Procedural Audio"}
+          </h3>
+          <p class="text-xs sm:text-sm text-[#1e1714]/80 leading-relaxed">
+            {isSpanish
+              ? "Audio ambiental sintetizado al momento en tu navegador sin descargas: chimenea de taberna, viento de cripta, tormentas y bosques arcanos."
+              : "Real-time atmospheric Web Audio synthesis with 0 KB assets: tavern hearths, cavern winds, thunderstorm swells, and arcane woods."}
+          </p>
+        </div>
+      </section>
+
+      {/* Campaign Chronicle Showcase */}
+      <section class="bg-amber-50/70 border-3 border-[#1e1714] rounded-2xl p-6 sm:p-8 shadow-[4px_4px_0px_#1e1714] space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-[#1e1714]/15 pb-3">
+          <div>
+            <span class="inline-block px-2.5 py-0.5 bg-[#1e1714] text-white text-[10px] font-black uppercase rounded-full tracking-wider mb-1">
+              {isSpanish ? "Nuevo Formato" : "New Export Preset"}
+            </span>
+            <h2 class="text-xl sm:text-2xl font-black text-[#1e1714]">
+              📜 {isSpanish
+                ? "Crónica de Campaña en 1 Clic para Discord y Obsidian"
+                : "1-Click Campaign Chronicle for Discord & Obsidian"}
+            </h2>
+          </div>
+          <span class="text-xs font-bold text-[#1e1714]/70">
+            {isSpanish
+              ? "Exportación limpia en Markdown"
+              : "Clean Markdown output"}
+          </span>
+        </div>
+        <p class="text-xs sm:text-sm text-[#1e1714]/80">
+          {isSpanish
+            ? "Olvídate de redactar minutas después de jugar. El preset de Crónica de Campaña organiza automáticamente tus personajes, locaciones, misiones pendientes y botín en un resumen con estructura impecable:"
+            : "Never spend an hour writing post-session recaps again. The Campaign Chronicle preset structures your dramatis personae, locations, active quest hooks, and party loot in one clean Markdown file:"}
+        </p>
+        <pre class="bg-white border-2 border-[#1e1714] rounded-xl p-4 text-xs font-mono text-[#1e1714] overflow-x-auto leading-relaxed shadow-[2px_2px_0px_#1e1714]">
+{`# The Sunken Crypt of Morzan (Session 14)
+**Dramatis Personae**: Madame Vesper (Crime Broker), Kaela (Wizard), Valen (Rogue), Thorin (Paladin)
+**Locations & Lore**: The Black Raven Tavern, Sunken Crypt of Morzan, Crimson Hand Cultists
+**Active Quests**:
+  - [ ] Head into the marshlands before dawn to locate the Sunken Crypt (The Party)
+  - [x] Pay Madame Vesper 600g from dragon split for the Morzan Seal (Kaela)
+**Party Loot & Artifacts**: The Morzan Seal Tablet (-600g gold split)
+**The Story So Far**: The party confronted Madame Vesper and outbid the cultists before dawn...`}
+        </pre>
       </section>
 
       {/* Comparison Table */}
@@ -318,6 +440,21 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
               </tr>
               <tr>
                 <td class="p-3 font-bold">
+                  {isSpanish ? "Música y Dados" : "Atmosphere & Dice"}
+                </td>
+                <td class="p-3 text-gray-600">
+                  {isSpanish
+                    ? "5 pestañas abiertas (Spotify con anuncios, Roll20, bot de Discord, Notion)"
+                    : "5 open browser tabs (Spotify ads, Roll20, Discord bot, Notion)"}
+                </td>
+                <td class="p-3 font-bold text-emerald-900 bg-emerald-50/50">
+                  {isSpanish
+                    ? "Todo en un solo tablero — paisajes sonoros procedurales, bandeja de dados y grafo de lore"
+                    : "All-in-one board — procedural ambient soundscapes, tactile dice tray & lore graph"}
+                </td>
+              </tr>
+              <tr>
+                <td class="p-3 font-bold">
                   {isSpanish ? "Compartir con Jugadores" : "Party Sharing"}
                 </td>
                 <td class="p-3 text-gray-600">
@@ -359,8 +496,8 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
           class="px-8 py-4 bg-[#FF69B4] text-black border-3 border-[#1e1714] rounded-2xl font-black text-lg shadow-[4px_4px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
         >
           {isSpanish
-            ? "Abrir Mapa de Campaña de Ejemplo 🎲"
-            : "Open Example Campaign Map 🎲"}
+            ? "Abrir Tablero de Campaña con Dados y Sonido 🎲"
+            : "Open Campaign Board with Dice & Soundscapes 🎲"}
         </button>
         <p class="text-xs text-[#1e1714]/60">
           {isSpanish

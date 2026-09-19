@@ -18,14 +18,14 @@ Deno.test("i18n: t() returns English dictionary by default or with explicit loca
 
 Deno.test("i18n: t('es') returns Spanish dictionary", () => {
   const es = t("es");
-  assertEquals(es.btnStartRecording, "Iniciar grabación");
-  assertEquals(es.btnStopAndMap, "Detener y mapear");
+  assertEquals(es.btnStartRecording, "Empezar a grabar");
+  assertEquals(es.btnStopAndMap, "Parar y mapear");
   assertEquals(es.listeningLive, "Escuchando en vivo…");
   assertEquals(es.livePill, "⚡ texto en vivo");
   assertEquals(es.switchLang, "🇦🇺 English");
   assertEquals(es.switchLangUrl, "/");
   assertEquals(
     es.mappedSuccess(3, 5),
-    "¡Mapeado! Se encontraron 3 tareas y 5 temas",
+    "¡Listo el mapa! 3 tareas y 5 temas encontrados",
   );
 });

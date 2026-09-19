@@ -92,12 +92,11 @@ export const TRANSLATIONS = {
   },
   es: {
     // Hero & Landing
-    heroLines: ["Mira lo que estás", "diciendo en verdad"],
-    heroDesc: "Suelta una idea, una junta, una escena o un caso entero.",
+    heroLines: ["Mira lo que estás", "diciendo de verdad"],
+    heroDesc: "Suelta una idea, una junta, una escena o todo un caso.",
     heroCaption:
-      "Un mapa de proyecto amigable al que puedes seguir sumándole, compartirlo y convertirlo en documentos.",
-    dropPrompt:
-      "Platícalo, captúralo en vivo o suelta lo que tengas a la mano.",
+      "Un mapa claro para tus proyectos: agrégale ideas, compártelo y saca tus documentos sin rodeos.",
+    dropPrompt: "Platícalo, grábalo en vivo o pega lo que traigas a la mano.",
     badgeRecord: "grabar",
     badgePaste: "pegar",
     badgeUpload: "subir",
@@ -106,30 +105,30 @@ export const TRANSLATIONS = {
     lastUpload: "Último:",
 
     // Primary action button states
-    btnStartRecording: "Iniciar grabación",
-    btnStopAndMap: "Detener y mapear",
+    btnStartRecording: "Empezar a grabar",
+    btnStopAndMap: "Parar y mapear",
     btnMapIt: "Mapear",
     btnMapAudio: "Mapear audio",
-    btnTryAgain: "Intentar de nuevo",
+    btnTryAgain: "Darle otra vez",
     btnCancel: "Cancelar",
 
     // Live Streaming
     listeningLive: "Escuchando en vivo…",
     listening: "Escuchando…",
     livePill: "⚡ texto en vivo",
-    livePrompt: "Habla con libertad — tus palabras aparecerán aquí en vivo.",
-    timeWarning: "casi llegamos a diez minutos — ve cerrando pronto.",
+    livePrompt: "Tú habla tranquilo — lo que digas va saliendo aquí en vivo.",
+    timeWarning: "ya mero van diez minutos — ve cerrando la idea.",
 
     // Toasts & Feedback
     micError:
-      "No se pudo acceder al micrófono. Por favor permite el acceso e inténtalo de nuevo.",
-    cancelledToast: "Grabación cancelada",
+      "No pudimos conectar el micrófono. Dale permiso en tu navegador y probamos otra vez.",
+    cancelledToast: "Grabación cancelada.",
     noSpeechWarning:
-      "No captamos nada — no se detectó voz clara. Revisa tu micrófono e inténtalo de nuevo.",
+      "No captamos nada — casi no se escuchó voz. Revisa tu micro y dale otra vez.",
     noAudioWarning: "No captamos nada — no se grabó audio.",
     mappedSuccess: (items: number, topics: number) =>
-      `¡Mapeado! Se encontraron ${items} tareas y ${topics} temas`,
-    processFailed: "No se pudo procesar — inténtalo de nuevo.",
+      `¡Listo el mapa! ${items} tareas y ${topics} temas encontrados`,
+    processFailed: "No pasó esa vuelta — dale otra vez.",
 
     // Header & Footer Chrome
     switchLang: "🇦🇺 English",
@@ -142,22 +141,22 @@ export const TRANSLATIONS = {
 
     // Supporter Modal
     supporterBadge: "Pase de Soporte ✨",
-    supporterTitle: "Soporte ProMapper",
-    supporterSubtitle: "Sin cuentas · Sin rastreo · Artesanía pura",
+    supporterTitle: "Apoya a ProMapper",
+    supporterSubtitle: "Sin cuentas obligatorias · Cero rastreo · Hecho a mano",
     tabPass: "💜 Pase de Soporte ($49 AUD)",
-    tabByok: "🔑 Trae Tu Propia Llave (BYOK)",
+    tabByok: "🔑 Pon tu propia llave (BYOK)",
     tabFaq: "❓ Preguntas",
     pass1Year: "Pase de 1 Año",
     supporterPrice: "$49 AUD",
-    supporterTerm: "por año · sin renovación automática",
+    supporterTerm: "un solo pago al año · sin cobros sorpresa",
     supporterPitch:
-      "Desbloquea límites de audio ampliados, salas en vivo colaborativas y mantiene a ProMapper independiente y sin anuncios.",
-    ctaSquare: "Apoyar ProMapper — $49 AUD",
-    ctaSquareBusy: "Abriendo Square Checkout...",
-    haveCode: "¿Tienes un código o token de pase?",
-    redeemBtn: "Canjear",
+      "Desbloquea grabaciones más largas, salas en vivo para colaborar en equipo, y ayuda a que ProMapper siga vivo sin anuncios ni inversionistas.",
+    ctaSquare: "Le entro — $49 AUD",
+    ctaSquareBusy: "Abriendo Square...",
+    haveCode: "¿Ya tienes un código o pase?",
+    redeemBtn: "Desbloquear",
     activePassBanner: "✓ Pase de Soporte Activo",
-    copyToken: "Copiar Token",
+    copyToken: "Copiar pase",
     lifetimePass: "Pase vitalicio activo",
     validUntil: (dateStr: string) => `Válido hasta el ${dateStr}`,
   },

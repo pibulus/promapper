@@ -1226,6 +1226,35 @@ h6,
   opacity: 0.8;
 }
 
+.mapper-hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.mapper-hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.75rem;
+  background: var(--surface-card);
+  border: 1.5px solid var(--border-color);
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--soft-black);
+  text-decoration: none;
+  box-shadow: 2px 2px 0px var(--border-color);
+  transition: transform var(--transition-fast), box-shadow
+    var(--transition-fast);
+}
+
+.mapper-hero-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 3px 3px 0px var(--border-color);
+}
+
 .mapper-card__panel {
   position: relative;
   height: 100%;
