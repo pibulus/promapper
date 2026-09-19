@@ -685,6 +685,7 @@ export default function HomeIsland() {
 
   const i18n = t();
   const heroLines = i18n.heroLines;
+  const homeUrl = isSpanish() ? "/es" : "/";
 
   // While the first process brews, loading lives where the result will land:
   // the dashboard skeleton plus a LEDGER of stages. One rotating line read as
@@ -760,9 +761,9 @@ export default function HomeIsland() {
                 <div class="app-header__lockup flex items-center gap-2 flex-1 min-w-0">
                   {/* ProMapper stays for branding; clicking it returns home. */}
                   <a
-                    href="/"
+                    href={homeUrl}
                     class="app-header__brand"
-                    data-tip="Back to home"
+                    data-tip={isSpanish() ? "Volver al inicio" : "Back to home"}
                     aria-label="ProMapper — back to home"
                     onClick={(e) => {
                       e.preventDefault();
@@ -771,7 +772,7 @@ export default function HomeIsland() {
                       flushPendingSave();
                       conversationData.value = null;
                       stopLiveMode();
-                      window.history.pushState({}, "", "/");
+                      window.history.pushState({}, "", homeUrl);
                     }}
                   >
                     ProMapper<span class="app-header__brand-dot">.</span>
@@ -917,7 +918,7 @@ export default function HomeIsland() {
               // Default header — wordmark, plus history only when something
               // is saved (an icon with nothing behind it is a mystery door).
               <>
-                <a href="/" class="app-header__brand flex-1">
+                <a href={homeUrl} class="app-header__brand flex-1">
                   ProMapper<span class="app-header__brand-dot">.</span>
                 </a>
                 <div class="app-header__actions">
