@@ -140,7 +140,8 @@ export const handler: Handlers = {
       return new Response(
         JSON.stringify({
           elements,
-          error: "AI whiteboard agent unavailable — your scene is unchanged.",
+          error:
+            "The board could not be redrawn just now — the scene is untouched.",
         }),
         {
           status: 502,
