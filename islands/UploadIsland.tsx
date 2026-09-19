@@ -638,7 +638,9 @@ export default function UploadIsland() {
                   <div class="mapper-record-status-group">
                     <span class="mapper-record-dot" aria-hidden="true"></span>
                     <span class="mapper-record-label">
-                      {isLiveConnected.value ? "Listening live…" : "Listening…"}
+                      {isLiveConnected.value
+                        ? i18n.listeningLive
+                        : i18n.listening}
                     </span>
                     <span class="mapper-record-timer">
                       {formatTime(recordingTime.value)}
@@ -648,7 +650,7 @@ export default function UploadIsland() {
                         class="mapper-live-pill"
                         title="Live text stream active"
                       >
-                        ⚡ live text
+                        {i18n.livePill}
                       </span>
                     )}
                   </div>
@@ -689,7 +691,7 @@ export default function UploadIsland() {
                           🎙️
                         </span>
                         <span>
-                          Speak freely — your words will stream in here live.
+                          {i18n.livePrompt}
                         </span>
                       </div>
                     )}
@@ -697,7 +699,7 @@ export default function UploadIsland() {
 
                 {showTimeWarning.value && (
                   <p class="mapper-record-warning">
-                    coming up on ten minutes — wrap it up soon.
+                    {i18n.timeWarning}
                   </p>
                 )}
               </div>
@@ -706,20 +708,20 @@ export default function UploadIsland() {
               <>
                 <div class="mapper-capture-badge-row" aria-hidden="true">
                   <span class="mapper-capture-badge" data-tone="0">
-                    record
+                    {i18n.badgeRecord}
                   </span>
                   <span class="mapper-capture-badge" data-tone="1">
-                    paste
+                    {i18n.badgePaste}
                   </span>
                   <span class="mapper-capture-badge" data-tone="2">
-                    upload
+                    {i18n.badgeUpload}
                   </span>
                 </div>
                 <textarea
                   ref={textAreaRef}
                   class="mapper-textarea w-full resize-none"
                   rows={6}
-                  placeholder="Talk it out, catch it live, or drop in what you've got."
+                  placeholder={i18n.dropPrompt}
                   aria-label="Conversation content or transcription input"
                   value={textInput.value}
                   onInput={(e) => {
@@ -767,7 +769,7 @@ export default function UploadIsland() {
                   }}
                 >
                   <span aria-hidden="true">+</span>
-                  <span>file</span>
+                  <span>{i18n.addFile}</span>
                 </button>
               </>
             )}
@@ -782,7 +784,7 @@ export default function UploadIsland() {
                   class="mapper-cancel-btn"
                   onClick={cancelRecording}
                 >
-                  Cancel
+                  {i18n.btnCancel}
                 </button>
                 <button
                   class="mapper-slab-button mapper-slab-button--record flex-1"
@@ -795,7 +797,7 @@ export default function UploadIsland() {
                     style={{ marginRight: "0.45rem" }}
                   >
                   </i>
-                  Stop & Map
+                  {i18n.btnStopAndMap}
                 </button>
               </div>
             )
@@ -806,7 +808,7 @@ export default function UploadIsland() {
                   disabled={primaryDisabled.value}
                   onClick={handlePrimaryAction}
                 >
-                  {primaryLabel.value === "Start recording" && (
+                  {primaryLabel.value === i18n.btnStartRecording && (
                     <i
                       class="fa fa-microphone"
                       aria-hidden="true"
@@ -821,7 +823,7 @@ export default function UploadIsland() {
                   !isRecording.value &&
                   !hasText.value && (
                   <span class="mapper-block-meta">
-                    Last: {lastUploadName.value}
+                    {i18n.lastUpload} {lastUploadName.value}
                   </span>
                 )}
 
@@ -832,7 +834,7 @@ export default function UploadIsland() {
                     href="/example"
                     class="mapper-block-meta mapper-example-link"
                   >
-                    or open one someone already made
+                    {i18n.exampleLink}
                   </a>
                 )}
               </>
