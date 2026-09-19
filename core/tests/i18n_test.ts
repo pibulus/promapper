@@ -20,12 +20,13 @@ Deno.test("i18n: t('es') returns Spanish dictionary", () => {
   const es = t("es");
   assertEquals(es.btnStartRecording, "Empezar a grabar");
   assertEquals(es.btnStopAndMap, "Parar y mapear");
+  assertEquals(es.btnTryAgain, "Inténtalo otra vez");
   assertEquals(es.listeningLive, "Escuchando en vivo…");
-  assertEquals(es.livePill, "⚡ texto en vivo");
+  assertEquals(es.livePill, "⚡ en vivo");
   assertEquals(es.switchLang, "🇦🇺 English");
   assertEquals(es.switchLangUrl, "/");
   assertEquals(
     es.mappedSuccess(3, 5),
-    "¡Listo el mapa! 3 tareas y 5 temas encontrados",
+    "¡Listo el mapa! 3 tareas y 5 temas",
   );
 });

@@ -695,10 +695,10 @@ export default function HomeIsland() {
   // holds its pulse until the real result lands.
   const brewNotes = isSpanish()
     ? [
-      "leyéndolo con calma…",
-      "sacando pendientes y tareas…",
+      "leyendo el texto…",
+      "buscando tareas y pendientes…",
       "armando el mapa de temas…",
-      "conectando los puntos…",
+      "conectando ideas…",
       "acomodando el tablero…",
     ]
     : [
@@ -712,9 +712,9 @@ export default function HomeIsland() {
   // Appending to a live map is a different story than the first brew.
   const appendNotes = isSpanish()
     ? [
-      "escuchando lo nuevo…",
+      "escuchando el nuevo audio…",
       "sumándolo al mapa…",
-      "tachando lo que ya quedó listo…",
+      "actualizando pendientes…",
     ]
     : [
       "listening back…",

@@ -92,11 +92,11 @@ export const TRANSLATIONS = {
   },
   es: {
     // Hero & Landing
-    heroLines: ["Mira lo que estás", "diciendo de verdad"],
-    heroDesc: "Suelta una idea, una junta, una escena o todo un caso.",
+    heroLines: ["Mira lo que estás", "diciendo en verdad"],
+    heroDesc: "Pega un texto, graba una junta o suelta una idea.",
     heroCaption:
-      "Un mapa claro para tus proyectos: agrégale ideas, compártelo y saca tus documentos sin rodeos.",
-    dropPrompt: "Platícalo, grábalo en vivo o pega lo que traigas a la mano.",
+      "Un mapa claro para tus proyectos: agrégale ideas, compártelo y saca tus documentos sin rollos.",
+    dropPrompt: "Platícalo, grábalo o pega tu texto aquí.",
     badgeRecord: "grabar",
     badgePaste: "pegar",
     badgeUpload: "subir",
@@ -109,26 +109,26 @@ export const TRANSLATIONS = {
     btnStopAndMap: "Parar y mapear",
     btnMapIt: "Mapear",
     btnMapAudio: "Mapear audio",
-    btnTryAgain: "Darle otra vez",
+    btnTryAgain: "Inténtalo otra vez",
     btnCancel: "Cancelar",
 
     // Live Streaming
     listeningLive: "Escuchando en vivo…",
     listening: "Escuchando…",
-    livePill: "⚡ texto en vivo",
-    livePrompt: "Tú habla tranquilo — lo que digas va saliendo aquí en vivo.",
-    timeWarning: "ya mero van diez minutos — ve cerrando la idea.",
+    livePill: "⚡ en vivo",
+    livePrompt: "Habla directo, el texto sale aquí en tiempo real.",
+    timeWarning: "Cerca de los 10 minutos — ve cerrando la idea.",
 
     // Toasts & Feedback
     micError:
-      "No pudimos conectar el micrófono. Dale permiso en tu navegador y probamos otra vez.",
+      "No se conectó el mic. Dale permiso en tu navegador e inténtalo otra vez.",
     cancelledToast: "Grabación cancelada.",
     noSpeechWarning:
-      "No captamos nada — casi no se escuchó voz. Revisa tu micro y dale otra vez.",
-    noAudioWarning: "No captamos nada — no se grabó audio.",
+      "No se escuchó nada claro. Checa tu mic e inténtalo otra vez.",
+    noAudioWarning: "No se grabó audio. Inténtalo otra vez.",
     mappedSuccess: (items: number, topics: number) =>
-      `¡Listo el mapa! ${items} tareas y ${topics} temas encontrados`,
-    processFailed: "No pasó esa vuelta — dale otra vez.",
+      `¡Listo el mapa! ${items} tareas y ${topics} temas`,
+    processFailed: "Hubo un error al procesar, inténtalo otra vez.",
 
     // Header & Footer Chrome
     switchLang: "🇦🇺 English",
@@ -144,16 +144,16 @@ export const TRANSLATIONS = {
     supporterTitle: "Apoya a ProMapper",
     supporterSubtitle: "Sin cuentas obligatorias · Cero rastreo · Hecho a mano",
     tabPass: "💜 Pase de Soporte ($49 AUD)",
-    tabByok: "🔑 Pon tu propia llave (BYOK)",
+    tabByok: "🔑 Pon tu propia API key (BYOK)",
     tabFaq: "❓ Preguntas",
     pass1Year: "Pase de 1 Año",
     supporterPrice: "$49 AUD",
-    supporterTerm: "un solo pago al año · sin cobros sorpresa",
+    supporterTerm: "un solo pago al año · sin cobros automáticos",
     supporterPitch:
-      "Desbloquea grabaciones más largas, salas en vivo para colaborar en equipo, y ayuda a que ProMapper siga vivo sin anuncios ni inversionistas.",
-    ctaSquare: "Le entro — $49 AUD",
+      "Desbloquea grabaciones más largas, salas en vivo para colaborar en equipo, y ayuda a mantener ProMapper independiente y sin anuncios.",
+    ctaSquare: "Apoya a ProMapper — $49 AUD",
     ctaSquareBusy: "Abriendo Square...",
-    haveCode: "¿Ya tienes un código o pase?",
+    haveCode: "¿Tienes un código o pase?",
     redeemBtn: "Desbloquear",
     activePassBanner: "✓ Pase de Soporte Activo",
     copyToken: "Copiar pase",
