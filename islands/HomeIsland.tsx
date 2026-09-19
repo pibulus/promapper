@@ -73,6 +73,7 @@ import {
 } from "@signals/supporterStore.ts";
 import AuthModalIsland from "./AuthModalIsland.tsx";
 import VoicePanel from "./VoicePanel.tsx";
+import { isSpanish, t } from "@utils/i18n.ts";
 
 const SILENCE_FLUSH_MS = 2_000;
 const MAX_CHUNK_MS = 30_000;
@@ -682,7 +683,8 @@ export default function HomeIsland() {
 
   const transcript = conversationData.value?.transcript?.text || "";
 
-  const heroLines = ["See what you're", "really saying"];
+  const i18n = t();
+  const heroLines = i18n.heroLines;
 
   // While the first process brews, loading lives where the result will land:
   // the dashboard skeleton plus a LEDGER of stages. One rotating line read as
@@ -690,19 +692,34 @@ export default function HomeIsland() {
   // now stay on screen with a tick, so progress visibly ACCUMULATES. The
   // pacing is time-based (like the rotating line always was); the last stage
   // holds its pulse until the real result lands.
-  const brewNotes = [
-    "reading it through…",
-    "pulling out the to-dos…",
-    "sketching the topic map…",
-    "noticing what connects…",
-    "setting the table…",
-  ];
+  const brewNotes = isSpanish()
+    ? [
+      "leyéndolo a fondo…",
+      "extrayendo los acuerdos y tareas…",
+      "trazando el mapa de temas…",
+      "notando las conexiones…",
+      "preparando el tablero…",
+    ]
+    : [
+      "reading it through…",
+      "pulling out the to-dos…",
+      "sketching the topic map…",
+      "noticing what connects…",
+      "setting the table…",
+    ];
+
   // Appending to a live map is a different story than the first brew.
-  const appendNotes = [
-    "listening back…",
-    "weaving it into the map…",
-    "checking off what you said you did…",
-  ];
+  const appendNotes = isSpanish()
+    ? [
+      "escuchando el nuevo fragmento…",
+      "integrándolo al mapa…",
+      "marcando lo que confirmaste que hiciste…",
+    ]
+    : [
+      "listening back…",
+      "weaving it into the map…",
+      "checking off what you said you did…",
+    ];
   const isBrewing = processingConversation.value && !conversationData.value
     ? 1
     : 0;
@@ -1038,12 +1055,10 @@ export default function HomeIsland() {
                         ))}
                       </h1>
                       <p class="mapper-hero-desc">
-                        Drop in a thought, a meeting, a scene, or a whole court
-                        case.
+                        {i18n.heroDesc}
                       </p>
                       <p class="mapper-hero-caption">
-                        A friendly project map you can keep adding to, share
-                        around, and turn into documents.
+                        {i18n.heroCaption}
                       </p>
                     </div>
                     <div class="mapper-card__panel">
@@ -1114,12 +1129,20 @@ export default function HomeIsland() {
               </span>
             )
             : (
-              <span class="app-footer__brand">
-                © 2026 ProMapper
+              <span class="app-footer__brand flex items-center gap-2">
+                <span>© 2026 ProMapper</span>
                 <i class="fa fa-heart" aria-hidden="true"></i>
                 <span class="app-footer__tagline">
-                  made in Melbourne
+                  {isSpanish() ? "hecho en Melbourne" : "made in Melbourne"}
                 </span>
+                <a
+                  href={i18n.switchLangUrl}
+                  class="ml-2 text-xs font-bold px-2 py-0.5 rounded-full border border-[var(--color-border)] hover:border-[var(--accent-ink)] transition-colors text-[var(--color-text-secondary)] hover:text-[var(--accent-ink)]"
+                  style={{ textDecoration: "none" }}
+                  title="Switch language"
+                >
+                  {i18n.switchLang}
+                </a>
               </span>
             )}
           {
