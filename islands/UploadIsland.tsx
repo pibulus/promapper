@@ -16,6 +16,7 @@ import {
   createDeepgramLiveClient,
   type DeepgramLiveClient,
 } from "../utils/deepgramLive.ts";
+import { t } from "../utils/i18n.ts";
 
 // Module-level so pasted text survives the hero unmounting during processing
 // (an error remounts the hero — losing the paste would sting).
@@ -28,6 +29,7 @@ const textInput = signal("");
 const pendingAudio = signal<Blob | null>(null);
 
 export default function UploadIsland() {
+  const i18n = t();
   const isProcessing = processingConversation;
   const isRecording = useSignal(false);
   const recordingTime = useSignal(0);
@@ -61,11 +63,11 @@ export default function UploadIsland() {
   );
   const hasText = useComputed(() => textInput.value.trim().length > 0);
   const primaryLabel = useComputed(() => {
-    if (isRecording.value) return "Stop & Map";
-    if (hasText.value) return "Map it";
-    if (selectedFile.value) return "Map audio";
-    if (pendingAudio.value) return "Try that again";
-    return "Start recording";
+    if (isRecording.value) return i18n.btnStopAndMap;
+    if (hasText.value) return i18n.btnMapIt;
+    if (selectedFile.value) return i18n.btnMapAudio;
+    if (pendingAudio.value) return i18n.btnTryAgain;
+    return i18n.btnStartRecording;
   });
   const primaryDisabled = useComputed(() =>
     isProcessing.value && !isRecording.value
@@ -183,10 +185,7 @@ export default function UploadIsland() {
       }, 1000) as unknown as number;
     } catch (error) {
       console.error("Error starting recording:", error);
-      showToast(
-        "Could not access microphone. Please grant permission and try again.",
-        "error",
-      );
+      showToast(i18n.micError, "error");
     }
   }
 
@@ -230,10 +229,7 @@ export default function UploadIsland() {
         } else if (audioBlob.size > 0) {
           await processRecordedAudio(audioBlob);
         } else {
-          showToast(
-            "Didn't catch that — no clear speech detected. Check your mic and give it another go.",
-            "warning",
-          );
+          showToast(i18n.noSpeechWarning, "warning");
         }
         resolve();
       };
@@ -253,7 +249,7 @@ export default function UploadIsland() {
     isLiveConnected.value = false;
     audioChunksRef.current = [];
     cleanup();
-    showToast("Recording cancelled", "info");
+    showToast(i18n.cancelledToast, "info");
   }
 
   function cleanup() {
@@ -313,10 +309,7 @@ export default function UploadIsland() {
 
       // If no speech/topics came out of the text
       if (!flowResult.transcript?.text && flowResult.nodes.length === 0) {
-        showToast(
-          "Didn't catch that — no clear speech detected. Check your mic and give it another go.",
-          "warning",
-        );
+        showToast(i18n.noSpeechWarning, "warning");
         pendingAudio.value = null;
         return;
       }
@@ -334,12 +327,15 @@ export default function UploadIsland() {
       }
       soundBloom();
       showToast(
-        `Mapped! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
+        i18n.mappedSuccess(
+          flowResult.actionItems.length,
+          flowResult.nodes.length,
+        ),
         "success",
       );
     } catch (error) {
       console.error("❌ Error processing live transcript:", error);
-      showErrorToast(error, "That didn't go through — give it another go.");
+      showErrorToast(error, i18n.processFailed);
     } finally {
       isProcessing.value = false;
     }
@@ -378,10 +374,7 @@ export default function UploadIsland() {
 
       // Check if it was empty / silence
       if (!flowResult.transcript?.text && flowResult.nodes.length === 0) {
-        showToast(
-          "Didn't catch that — no clear speech detected. Check your mic and give it another go.",
-          "warning",
-        );
+        showToast(i18n.noSpeechWarning, "warning");
         pendingAudio.value = null;
         return;
       }
@@ -396,12 +389,15 @@ export default function UploadIsland() {
       }
       soundBloom();
       showToast(
-        `Mapped! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
+        i18n.mappedSuccess(
+          flowResult.actionItems.length,
+          flowResult.nodes.length,
+        ),
         "success",
       );
     } catch (error) {
       console.error("❌ Error processing audio:", error);
-      showErrorToast(error, "That didn't go through — give it another go.");
+      showErrorToast(error, i18n.processFailed);
     } finally {
       isProcessing.value = false;
     }

@@ -117,8 +117,7 @@ export const TRANSLATIONS = {
     listeningLive: "Escuchando en vivo…",
     listening: "Escuchando…",
     livePill: "⚡ texto en vivo",
-    livePrompt:
-      "Habla con libertad — tus palabras aparecerán aquí en vivo.",
+    livePrompt: "Habla con libertad — tus palabras aparecerán aquí en vivo.",
     timeWarning: "casi llegamos a diez minutos — ve cerrando pronto.",
 
     // Toasts & Feedback
