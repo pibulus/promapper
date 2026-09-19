@@ -62,6 +62,7 @@ import * as $UploadIsland from "./islands/UploadIsland.tsx";
 import * as $VisualizationSelector from "./islands/VisualizationSelector.tsx";
 import * as $VoicePanel from "./islands/VoicePanel.tsx";
 import * as $modules_AskModule from "./islands/modules/AskModule.tsx";
+import * as $modules_DiceModule from "./islands/modules/DiceModule.tsx";
 import * as $modules_MagpieModule from "./islands/modules/MagpieModule.tsx";
 import * as $modules_NotesModule from "./islands/modules/NotesModule.tsx";
 import * as $modules_SoundModule from "./islands/modules/SoundModule.tsx";
@@ -136,6 +137,7 @@ const manifest = {
     "./islands/VisualizationSelector.tsx": $VisualizationSelector,
     "./islands/VoicePanel.tsx": $VoicePanel,
     "./islands/modules/AskModule.tsx": $modules_AskModule,
+    "./islands/modules/DiceModule.tsx": $modules_DiceModule,
     "./islands/modules/MagpieModule.tsx": $modules_MagpieModule,
     "./islands/modules/NotesModule.tsx": $modules_NotesModule,
     "./islands/modules/SoundModule.tsx": $modules_SoundModule,

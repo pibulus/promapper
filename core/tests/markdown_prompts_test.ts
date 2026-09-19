@@ -105,6 +105,26 @@ Deno.test("picker: always exactly six, unique, real formats", () => {
   for (const p of picked) assert(ids.has(p.id));
 });
 
+Deno.test("picker: campaign chronicle format is available for multi-speaker long gaming sessions", () => {
+  const chronicle = markdownPrompts.find((p) => p.id === "campaign-chronicle");
+  assert(chronicle !== undefined, "campaign-chronicle preset exists");
+  assert(chronicle!.prompt.includes("Dramatis Personae"));
+  assert(chronicle!.prompt.includes("Active Quests"));
+  assert(chronicle!.prompt.includes("Loot"));
+
+  const picked = pickExportFormats({
+    actionItemCount: 4,
+    completedActionCount: 1,
+    topicCount: 7,
+    transcriptLength: 1500,
+    speakerCount: 4,
+  }).map((p) => p.id);
+  assert(
+    picked.includes("campaign-chronicle"),
+    "campaign chronicle included in multiplayer session exports",
+  );
+});
+
 // ===================================================================
 // FORMAT-MISMATCH PARSING
 // The construction side was tested; the PARSE side wasn't. A model that

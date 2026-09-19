@@ -3273,11 +3273,13 @@ h6,
   align-items: center;
   justify-content: center;
   padding: 0.45rem 0.6rem;
-  background: color-mix(in srgb, var(--surface-cream) 85%, var(--color-ground-deep, #000));
+  background: color-mix(in srgb, var(--surface-cream) 85%,
+    var(--color-ground-deep, #000));
   border: 2px solid var(--border-cream-medium);
   border-radius: var(--border-radius-sm);
   box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.05);
-  transition: transform var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+  transition: transform var(--transition-fast), border-color
+    var(--transition-fast), background var(--transition-fast);
 }
 .dice-stage.is-rolling {
   animation: dice-wobble 0.15s ease-in-out infinite;
@@ -3291,8 +3293,13 @@ h6,
   background: color-mix(in srgb, #f59e0b 10%, var(--surface-cream));
 }
 @keyframes dice-wobble {
-  0%, 100% { transform: scale(1) rotate(0deg); }
-  50% { transform: scale(1.04) rotate(-2deg); }
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.04) rotate(-2deg);
+  }
 }
 .dice-stage__main {
   display: flex;
@@ -3353,7 +3360,8 @@ h6,
   font-weight: 800;
   cursor: pointer;
   box-shadow: 1.5px 1.5px 0 var(--line-ink);
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+  transition: transform var(--transition-fast), box-shadow
+    var(--transition-fast), background var(--transition-fast);
 }
 .dice-btn:hover {
   transform: translateY(-1px);

@@ -208,6 +208,21 @@ RULES:
 - This is a presentation, not a dump — pick what matters and give it an arc.`,
   },
   {
+    id: "campaign-chronicle",
+    label: "Chronicle",
+    icon: "fa-dice-five",
+    description: "TTRPG campaign log: NPCs, locations, quests, loot & recap",
+    short: "Campaign recap",
+    prompt:
+      `Transform this tabletop gaming / roleplay session into a structured, atmospheric Campaign Chronicle formatted in clean Markdown for Discord or Obsidian:
+• 🛡️ **Dramatis Personae**: Key NPCs encountered, factions, and their motives/deals.
+• 🗺️ **Locations & Lore**: Places visited, ruins explored, and world secrets uncovered.
+• ⚔️ **Active Quests & Plot Hooks**: Outstanding objectives with party assignees and deadlines.
+• 💰 **Loot, Coin & Artifacts**: Items found, gold splits, and magical gear.
+• 📖 **The Story So Far**: A tight 2-3 paragraph narrative recap capturing the drama, humor, and pivotal decisions of the session.`,
+    suggestInstead: ["summary-report", "meeting-minutes"],
+  },
+  {
     id: "haiku",
     label: "Haiku",
     icon: "fa-leaf",
@@ -281,6 +296,11 @@ export function pickExportFormats(
     "research-notes": topicCount >= 6 ? 75 : 15,
     "summary-report": 70,
     "unasked": transcriptLength >= 600 ? 60 : 8,
+    "campaign-chronicle": speakerCount >= 3 && transcriptLength >= 600
+      ? 72
+      : speakerCount >= 2 && transcriptLength >= 400
+      ? 64
+      : 10,
     "haiku": transcriptLength > 0 && transcriptLength < 600 ? 65 : 30,
     // The party trick: below Summary, above the situational tail — visible
     // whenever there's real content to present.

@@ -8,9 +8,17 @@
  */
 
 import { useSignal } from "@preact/signals";
-import { soundBloom, soundHover, soundSettle, soundTick } from "../../utils/sound.ts";
-import { conversationData, isViewingShared } from "@signals/conversationStore.ts";
-import { copyToClipboard, showToast } from "@utils/toast.ts";
+import {
+  soundBloom,
+  soundHover,
+  soundSettle,
+  soundTick,
+} from "../../utils/sound.ts";
+import {
+  conversationData,
+  isViewingShared,
+} from "@signals/conversationStore.ts";
+import { showToast } from "@utils/toast.ts";
 
 export type DieType = "d4" | "d6" | "d8" | "d10" | "d12" | "d20" | "d100";
 export type RollMode = "norm" | "adv" | "dis";
@@ -112,7 +120,9 @@ export default function DiceModule() {
 
       let notation = `${n > 1 ? n : ""}${dieType}`;
       if (discarded !== undefined) {
-        notation += ` (${mode === "adv" ? "Adv" : "Dis"}: ${rolls[0]}, [${discarded}])`;
+        notation += ` (${mode === "adv" ? "Adv" : "Dis"}: ${
+          rolls[0]
+        }, [${discarded}])`;
       } else if (rolls.length > 1) {
         notation += ` [${rolls.join(", ")}]`;
       }
@@ -122,7 +132,11 @@ export default function DiceModule() {
 
       const result: RollResult = {
         id: `roll-${Date.now()}`,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
         type: dieType,
         count: n,
         modifier: mod,
@@ -206,12 +220,18 @@ export default function DiceModule() {
 
       <div class="dashboard-card-body dice-body">
         {/* Active Roll Showcase Stage */}
-        <div class={`dice-stage${isRolling.value ? " is-rolling" : ""}${roll?.isNat20 ? " is-nat20" : ""}${roll?.isNat1 ? " is-nat1" : ""}`}>
+        <div
+          class={`dice-stage${isRolling.value ? " is-rolling" : ""}${
+            roll?.isNat20 ? " is-nat20" : ""
+          }${roll?.isNat1 ? " is-nat1" : ""}`}
+        >
           <div class="dice-stage__main">
             <span class="dice-stage__total">
               {isRolling.value ? "…" : roll ? roll.total : "Roll"}
             </span>
-            {roll?.isNat20 && <span class="dice-nat-badge nat20">NAT 20 ✨</span>}
+            {roll?.isNat20 && (
+              <span class="dice-nat-badge nat20">NAT 20 ✨</span>
+            )}
             {roll?.isNat1 && <span class="dice-nat-badge nat1">NAT 1 💥</span>}
           </div>
           <div class="dice-stage__notation">
@@ -294,7 +314,11 @@ export default function DiceModule() {
           </div>
 
           {/* Advantage / Disadvantage Mode (for d20) */}
-          <div class="dice-mode-toggle" role="group" aria-label="Advantage toggle">
+          <div
+            class="dice-mode-toggle"
+            role="group"
+            aria-label="Advantage toggle"
+          >
             <button
               type="button"
               class={rollMode.value === "norm" ? "is-active" : ""}
