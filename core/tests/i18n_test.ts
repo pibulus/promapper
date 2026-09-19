@@ -18,8 +18,10 @@ Deno.test("i18n: t() returns English dictionary by default or with explicit loca
 
 Deno.test("i18n: t('es') returns Spanish dictionary", () => {
   const es = t("es");
-  assertEquals(es.btnStartRecording, "Empezar a grabar");
-  assertEquals(es.btnStopAndMap, "Parar y mapear");
+  assertEquals(es.heroLines, ["Dale forma a", "lo que dices"]);
+  assertEquals(es.btnStartRecording, "Empieza a grabar");
+  assertEquals(es.btnStopAndMap, "Para y mapea");
+  assertEquals(es.btnMapIt, "Mapea");
   assertEquals(es.btnTryAgain, "Inténtalo otra vez");
   assertEquals(es.listeningLive, "Escuchando en vivo…");
   assertEquals(es.livePill, "⚡ en vivo");

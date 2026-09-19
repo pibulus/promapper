@@ -92,7 +92,7 @@ export const TRANSLATIONS = {
   },
   es: {
     // Hero & Landing
-    heroLines: ["Mira lo que estás", "diciendo en verdad"],
+    heroLines: ["Dale forma a", "lo que dices"],
     heroDesc: "Pega un texto, graba una junta o suelta una idea.",
     heroCaption:
       "Un mapa claro para tus proyectos: agrégale ideas, compártelo y saca tus documentos sin rollos.",
@@ -105,10 +105,10 @@ export const TRANSLATIONS = {
     lastUpload: "Último:",
 
     // Primary action button states
-    btnStartRecording: "Empezar a grabar",
-    btnStopAndMap: "Parar y mapear",
-    btnMapIt: "Mapear",
-    btnMapAudio: "Mapear audio",
+    btnStartRecording: "Empieza a grabar",
+    btnStopAndMap: "Para y mapea",
+    btnMapIt: "Mapea",
+    btnMapAudio: "Mapea el audio",
     btnTryAgain: "Inténtalo otra vez",
     btnCancel: "Cancelar",
 
