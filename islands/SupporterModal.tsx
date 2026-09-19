@@ -231,7 +231,7 @@ export default function SupporterModal() {
                 : "bg-transparent text-[#726559] hover:bg-[#ece2d3]"
             }`}
           >
-            💜 Supporter Pass ($49)
+            💜 Supporter Pass ($49 AUD)
           </button>
           <button
             type="button"
@@ -343,7 +343,7 @@ export default function SupporterModal() {
                   {isStartingCheckout
                     ? "Opening Square Checkout..."
                     : isSupporter
-                    ? "Extend Supporter Pass ($49)"
+                    ? "Extend Supporter Pass ($49 AUD)"
                     : "Support ProMapper 💜"}
                 </button>
                 <p class="text-[11px] text-center text-[#726559] mt-2 font-bold">
@@ -452,8 +452,16 @@ export default function SupporterModal() {
                 <strong class="text-[#181411] block mb-1">
                   Is this a recurring subscription?
                 </strong>
-                No. It is a single $49 flat payment for 365 days. No cards
+                No. It is a single $49 AUD flat payment for 365 days. No cards
                 stored, no surprises.
+              </div>
+              <div class="p-3 bg-[#fdfaf3] border-2 border-[#181411] rounded-lg">
+                <strong class="text-[#181411] block mb-1">
+                  Paying from outside Australia?
+                </strong>
+                Fine — the price is in Australian dollars, which lands lower
+                than it reads almost everywhere else. Card issuers handle the
+                conversion at their own rate.
               </div>
               <div class="p-3 bg-[#fdfaf3] border-2 border-[#181411] rounded-lg">
                 <strong class="text-[#181411] block mb-1">
