@@ -22,21 +22,34 @@ export const handler: Handlers = {
     const notificationUrl = Deno.env.get("SQUARE_WEBHOOK_NOTIFICATION_URL") ||
       `${new URL(req.url).origin}/api/square/webhook`;
 
-    // Only verify signature if webhook key is configured
-    if (config.webhookSignatureKey) {
-      const isValid = await verifySquareWebhookSignature({
-        rawBody,
-        signature,
-        notificationUrl,
-      });
+    // FAIL CLOSED. This used to read "only verify signature if webhook key is
+    // configured", which meant an UNSET key skipped verification entirely —
+    // so any anonymous POST of a forged `payment.created` with
+    // status:"COMPLETED" would mint a supporter pass. An unconfigured
+    // verifier must refuse to verify, never wave traffic through.
+    if (!config.webhookSignatureKey) {
+      console.error(
+        "[SquareWebhook] SQUARE_WEBHOOK_SIGNATURE_KEY is not set — refusing " +
+          "the webhook rather than trusting an unsigned payload.",
+      );
+      return new Response(
+        JSON.stringify({ error: "Webhook verification is not configured" }),
+        { status: 503, headers: { "Content-Type": "application/json" } },
+      );
+    }
 
-      if (!isValid) {
-        console.warn("[SquareWebhook] Invalid signature received");
-        return new Response(JSON.stringify({ error: "Invalid signature" }), {
-          status: 401,
-          headers: { "Content-Type": "application/json" },
-        });
-      }
+    const isValid = await verifySquareWebhookSignature({
+      rawBody,
+      signature,
+      notificationUrl,
+    });
+
+    if (!isValid) {
+      console.warn("[SquareWebhook] Invalid signature received");
+      return new Response(JSON.stringify({ error: "Invalid signature" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     try {
