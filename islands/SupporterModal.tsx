@@ -194,18 +194,18 @@ export default function SupporterModal() {
       }}
     >
       <div
-        class="w-full max-w-xl bg-[#fffcf4] border-4 border-[#181411] rounded-2xl shadow-[6px_6px_0px_#181411] overflow-hidden flex flex-col max-h-[90vh]"
+        class="w-full max-w-xl bg-[var(--surface-card)] border-4 border-[var(--line-ink)] rounded-2xl shadow-[6px_6px_0px_var(--line-ink)] overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar */}
-        <div class="px-6 py-4 bg-gradient-to-r from-[#ffe5f1] via-[#f7d6ff] to-[#e4e1ff] border-b-3 border-[#181411] flex items-center justify-between">
+        <div class="px-6 py-4 bg-gradient-to-r from-[var(--accent-rose-wash)] via-[var(--accent-rose-wash-soft)] to-[var(--surface-card)] border-b-3 border-[var(--line-ink)] flex items-center justify-between">
           <div class="flex items-center gap-2">
             <span class="text-2xl">🗺️</span>
             <div>
-              <h2 class="text-xl font-black text-[#181411] leading-none">
+              <h2 class="text-xl font-black text-[var(--soft-black)] leading-none">
                 ProMapper Supporter
               </h2>
-              <p class="text-xs font-bold text-[#625348] mt-0.5">
+              <p class="text-xs font-bold text-[var(--color-text-secondary)] mt-0.5">
                 Zero accounts · Zero tracking · High craft
               </p>
             </div>
@@ -213,7 +213,7 @@ export default function SupporterModal() {
           <button
             type="button"
             onClick={closeSupporterModal}
-            class="w-8 h-8 rounded-lg border-2 border-[#181411] bg-white text-[#181411] font-black text-sm hover:bg-[#ff6ac2] hover:text-white transition-colors flex items-center justify-center shadow-[2px_2px_0px_#181411]"
+            class="w-8 h-8 rounded-lg border-2 border-[var(--line-ink)] bg-[var(--surface-white-warm)] text-[var(--soft-black)] font-black text-sm hover:bg-[var(--accent-strong)] hover:text-[var(--surface-white-warm)] transition-colors flex items-center justify-center shadow-[2px_2px_0px_var(--line-ink)]"
             aria-label="Close"
           >
             ✕
@@ -221,14 +221,14 @@ export default function SupporterModal() {
         </div>
 
         {/* Tab Navigation */}
-        <div class="flex border-b-3 border-[#181411] bg-[#f5ede0]">
+        <div class="flex border-b-3 border-[var(--line-ink)] bg-[var(--surface-cream-hover)]">
           <button
             type="button"
             onClick={() => setTab("pass")}
-            class={`flex-1 py-2.5 text-xs sm:text-sm font-black border-r-2 border-[#181411] transition-colors ${
+            class={`flex-1 py-2.5 text-xs sm:text-sm font-black border-r-2 border-[var(--line-ink)] transition-colors ${
               tab === "pass"
-                ? "bg-[#fffcf4] text-[#181411]"
-                : "bg-transparent text-[#726559] hover:bg-[#ece2d3]"
+                ? "bg-[var(--surface-card)] text-[var(--soft-black)]"
+                : "bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--surface-cream-hover)]"
             }`}
           >
             💜 Supporter Pass ($49 AUD)
@@ -236,10 +236,10 @@ export default function SupporterModal() {
           <button
             type="button"
             onClick={() => setTab("byok")}
-            class={`flex-1 py-2.5 text-xs sm:text-sm font-black border-r-2 border-[#181411] transition-colors ${
+            class={`flex-1 py-2.5 text-xs sm:text-sm font-black border-r-2 border-[var(--line-ink)] transition-colors ${
               tab === "byok"
-                ? "bg-[#fffcf4] text-[#181411]"
-                : "bg-transparent text-[#726559] hover:bg-[#ece2d3]"
+                ? "bg-[var(--surface-card)] text-[var(--soft-black)]"
+                : "bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--surface-cream-hover)]"
             }`}
           >
             🔑 Bring Your Own Key
@@ -249,8 +249,8 @@ export default function SupporterModal() {
             onClick={() => setTab("faq")}
             class={`py-2.5 px-4 text-xs sm:text-sm font-black transition-colors ${
               tab === "faq"
-                ? "bg-[#fffcf4] text-[#181411]"
-                : "bg-transparent text-[#726559] hover:bg-[#ece2d3]"
+                ? "bg-[var(--surface-card)] text-[var(--soft-black)]"
+                : "bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--surface-cream-hover)]"
             }`}
           >
             ❓ FAQ
@@ -263,12 +263,12 @@ export default function SupporterModal() {
             <div class="space-y-6">
               {/* Active Pass Banner */}
               {isSupporter && (
-                <div class="p-4 bg-[#e8ffe6] border-3 border-[#181411] rounded-xl shadow-[3px_3px_0px_#181411] flex items-center justify-between">
+                <div class="p-4 bg-[var(--accent-rose-wash-soft)] border-3 border-[var(--line-ink)] rounded-xl shadow-[3px_3px_0px_var(--line-ink)] flex items-center justify-between">
                   <div>
-                    <div class="font-black text-sm text-[#185215]">
+                    <div class="font-black text-sm text-[var(--accent-ink)]">
                       ✓ Supporter Pass Active
                     </div>
-                    <div class="text-xs text-[#2e6d2b] font-medium mt-0.5">
+                    <div class="text-xs text-[var(--color-text-secondary)] font-medium mt-0.5">
                       {expiry
                         ? `Valid until ${
                           expiry.toLocaleDateString("en-AU", {
@@ -283,7 +283,7 @@ export default function SupporterModal() {
                   <button
                     type="button"
                     onClick={handleCopyPass}
-                    class="px-3 py-1.5 bg-white border-2 border-[#181411] rounded-lg text-xs font-bold shadow-[2px_2px_0px_#181411] hover:bg-[#f0eae1]"
+                    class="px-3 py-1.5 bg-[var(--surface-white-warm)] border-2 border-[var(--line-ink)] rounded-lg text-xs font-bold shadow-[2px_2px_0px_var(--line-ink)] hover:bg-[var(--surface-cream-hover)]"
                   >
                     Copy Token
                   </button>
@@ -291,15 +291,15 @@ export default function SupporterModal() {
               )}
 
               {/* Price & Pitch */}
-              <div class="p-5 bg-gradient-to-br from-[#fff0f7] to-[#f2ecff] border-3 border-[#181411] rounded-xl shadow-[4px_4px_0px_#181411] relative">
+              <div class="p-5 bg-gradient-to-br from-[var(--accent-rose-wash-soft)] to-[var(--surface-card)] border-3 border-[var(--line-ink)] rounded-xl shadow-[4px_4px_0px_var(--line-ink)] relative">
                 <div class="flex justify-between items-start">
                   <div>
-                    <span class="text-xs font-black uppercase tracking-wider bg-[#ff6ac2] text-white px-2.5 py-0.5 rounded-md border-2 border-[#181411]">
+                    <span class="text-xs font-black uppercase tracking-wider bg-[var(--accent-strong)] text-[var(--surface-white-warm)] px-2.5 py-0.5 rounded-md border-2 border-[var(--line-ink)]">
                       1-Year Pass
                     </span>
-                    <h3 class="text-2xl font-black text-[#181411] mt-2">
+                    <h3 class="text-2xl font-black text-[var(--soft-black)] mt-2">
                       $49 AUD{" "}
-                      <span class="text-xs font-bold text-[#625348]">
+                      <span class="text-xs font-bold text-[var(--color-text-secondary)]">
                         / flat once-off
                       </span>
                     </h3>
@@ -307,29 +307,29 @@ export default function SupporterModal() {
                   <div class="text-3xl">✨</div>
                 </div>
 
-                <ul class="mt-4 space-y-2 text-xs sm:text-sm font-medium text-[#2d241e]">
+                <ul class="mt-4 space-y-2 text-xs sm:text-sm font-medium text-[var(--color-text)]">
                   <li class="flex items-center gap-2">
-                    <span class="text-[#9333ea] font-black">✓</span>
+                    <span class="text-[var(--accent-ink)] font-black">✓</span>
                     <strong>Unlimited Audio Takes</strong>{" "}
                     (no daily recording cap)
                   </li>
                   <li class="flex items-center gap-2">
-                    <span class="text-[#9333ea] font-black">✓</span>
+                    <span class="text-[var(--accent-ink)] font-black">✓</span>
                     <strong>Live Collab Rooms</strong>{" "}
                     (PartyKit multiplayer + WebRTC voice relay)
                   </li>
                   <li class="flex items-center gap-2">
-                    <span class="text-[#9333ea] font-black">✓</span>
+                    <span class="text-[var(--accent-ink)] font-black">✓</span>
                     <strong>All 8 Export Decks</strong>{" "}
                     (Plan, Research, Haiku, Unasked, Custom)
                   </li>
                   <li class="flex items-center gap-2">
-                    <span class="text-[#9333ea] font-black">✓</span>
+                    <span class="text-[var(--accent-ink)] font-black">✓</span>
                     <strong>Ask Panel Deep Queries</strong>{" "}
                     (unlimited conversational Q&A)
                   </li>
                   <li class="flex items-center gap-2">
-                    <span class="text-[#9333ea] font-black">✓</span>
+                    <span class="text-[var(--accent-ink)] font-black">✓</span>
                     <strong>Permanent Cloud Share Links</strong>
                   </li>
                 </ul>
@@ -338,7 +338,7 @@ export default function SupporterModal() {
                   type="button"
                   onClick={handleStartCheckout}
                   disabled={isStartingCheckout}
-                  class="w-full mt-5 py-3.5 px-6 bg-[#ff6ac2] hover:bg-[#ff52b6] text-white font-black text-base border-3 border-[#181411] rounded-xl shadow-[4px_4px_0px_#181411] hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50"
+                  class="w-full mt-5 py-3.5 px-6 bg-[var(--cta-plate)] hover:bg-[var(--cta-plate-hover)] text-[var(--soft-black)] font-black text-base border-3 border-[var(--line-ink)] rounded-xl shadow-[4px_4px_0px_var(--line-ink)] hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50"
                 >
                   {isStartingCheckout
                     ? "Opening Square Checkout..."
@@ -346,14 +346,14 @@ export default function SupporterModal() {
                     ? "Extend Supporter Pass ($49 AUD)"
                     : "Support ProMapper 💜"}
                 </button>
-                <p class="text-[11px] text-center text-[#726559] mt-2 font-bold">
+                <p class="text-[11px] text-center text-[var(--color-text-secondary)] mt-2 font-bold">
                   Card payment via Square · Zero subscriptions · No auto-renew
                 </p>
               </div>
 
               {/* Restore / Redeem Section */}
-              <div class="p-4 bg-[#fbf6ee] border-3 border-[#181411] rounded-xl shadow-[3px_3px_0px_#181411] space-y-3">
-                <div class="font-bold text-xs text-[#181411]">
+              <div class="p-4 bg-[var(--surface-card)] border-3 border-[var(--line-ink)] rounded-xl shadow-[3px_3px_0px_var(--line-ink)] space-y-3">
+                <div class="font-bold text-xs text-[var(--soft-black)]">
                   Already have a pass or team code?
                 </div>
                 <div class="flex gap-2">
@@ -363,19 +363,21 @@ export default function SupporterModal() {
                     onInput={(e) =>
                       setPastedCode((e.target as HTMLInputElement).value)}
                     placeholder="Paste pass token or master code"
-                    class="flex-1 px-3 py-2 text-xs font-mono bg-white border-2 border-[#181411] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff6ac2]"
+                    class="flex-1 px-3 py-2 text-xs font-mono bg-[var(--surface-white-warm)] border-2 border-[var(--line-ink)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                   />
                   <button
                     type="button"
                     onClick={handleRedeemCode}
                     disabled={isRedeeming || !pastedCode.trim()}
-                    class="px-4 py-2 bg-[#181411] text-white text-xs font-black rounded-lg border-2 border-[#181411] hover:bg-[#38302b] disabled:opacity-50"
+                    class="px-4 py-2 bg-[var(--soft-black)] text-[var(--surface-white-warm)] text-xs font-black rounded-lg border-2 border-[var(--line-ink)] hover:bg-[var(--soft-black)] disabled:opacity-50"
                   >
                     {isRedeeming ? "..." : "Unlock"}
                   </button>
                 </div>
                 {redeemStatus && (
-                  <p class="text-xs font-bold text-[#9333ea]">{redeemStatus}</p>
+                  <p class="text-xs font-bold text-[var(--accent-ink)]">
+                    {redeemStatus}
+                  </p>
                 )}
               </div>
             </div>
@@ -383,11 +385,11 @@ export default function SupporterModal() {
 
           {tab === "byok" && (
             <div class="space-y-4">
-              <div class="p-4 bg-[#f7f2ea] border-3 border-[#181411] rounded-xl shadow-[3px_3px_0px_#181411]">
-                <h4 class="font-black text-sm text-[#181411]">
+              <div class="p-4 bg-[var(--surface-cream-hover)] border-3 border-[var(--line-ink)] rounded-xl shadow-[3px_3px_0px_var(--line-ink)]">
+                <h4 class="font-black text-sm text-[var(--soft-black)]">
                   Bring Your Own OpenRouter Key
                 </h4>
-                <p class="text-xs text-[#625348] mt-1 leading-relaxed">
+                <p class="text-xs text-[var(--color-text-secondary)] mt-1 leading-relaxed">
                   If you already have an OpenRouter or Gemini key, plug it here.
                   ProMapper will route all transcription and analysis calls
                   directly through your key.
@@ -395,7 +397,7 @@ export default function SupporterModal() {
               </div>
 
               <div class="space-y-2">
-                <label class="block text-xs font-bold text-[#181411]">
+                <label class="block text-xs font-bold text-[var(--soft-black)]">
                   OpenRouter API Key:
                 </label>
                 <input
@@ -404,7 +406,7 @@ export default function SupporterModal() {
                   onInput={(e) =>
                     setByoInput((e.target as HTMLInputElement).value)}
                   placeholder="sk-or-v1-..."
-                  class="w-full px-3 py-2 text-xs font-mono bg-white border-2 border-[#181411] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9333ea]"
+                  class="w-full px-3 py-2 text-xs font-mono bg-[var(--surface-white-warm)] border-2 border-[var(--line-ink)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                 />
               </div>
 
@@ -413,7 +415,7 @@ export default function SupporterModal() {
                   type="button"
                   onClick={handleSaveByoKey}
                   disabled={isTestingByo}
-                  class="flex-1 py-2.5 px-4 bg-[#181411] hover:bg-[#38302b] text-white font-black text-xs rounded-xl border-2 border-[#181411] shadow-[3px_3px_0px_#181411] disabled:opacity-50"
+                  class="flex-1 py-2.5 px-4 bg-[var(--soft-black)] hover:bg-[var(--soft-black)] text-[var(--surface-white-warm)] font-black text-xs rounded-xl border-2 border-[var(--line-ink)] shadow-[3px_3px_0px_var(--line-ink)] disabled:opacity-50"
                 >
                   {isTestingByo ? "Verifying..." : "Save Key"}
                 </button>
@@ -425,7 +427,7 @@ export default function SupporterModal() {
                       setByoInput("");
                       setByoTestStatus("Key removed.");
                     }}
-                    class="py-2.5 px-4 bg-white hover:bg-[#ffe6e6] text-[#b91c1c] font-black text-xs rounded-xl border-2 border-[#181411] shadow-[3px_3px_0px_#181411]"
+                    class="py-2.5 px-4 bg-[var(--surface-white-warm)] hover:bg-[var(--surface-cream-hover)] text-[var(--color-text-secondary)] font-black text-xs rounded-xl border-2 border-[var(--line-ink)] shadow-[3px_3px_0px_var(--line-ink)]"
                   >
                     Clear
                   </button>
@@ -433,10 +435,12 @@ export default function SupporterModal() {
               </div>
 
               {byoTestStatus && (
-                <p class="text-xs font-bold text-[#9333ea]">{byoTestStatus}</p>
+                <p class="text-xs font-bold text-[var(--accent-ink)]">
+                  {byoTestStatus}
+                </p>
               )}
 
-              <div class="text-[11px] text-[#726559] space-y-1 pt-2">
+              <div class="text-[11px] text-[var(--color-text-secondary)] space-y-1 pt-2">
                 <p>
                   🔒 <strong>Privacy:</strong>{" "}
                   Your key stays in your browser cookie (`pm_byok`). It is never
@@ -447,39 +451,39 @@ export default function SupporterModal() {
           )}
 
           {tab === "faq" && (
-            <div class="space-y-3 text-xs text-[#3a322c]">
-              <div class="p-3 bg-[#fdfaf3] border-2 border-[#181411] rounded-lg">
-                <strong class="text-[#181411] block mb-1">
+            <div class="space-y-3 text-xs text-[var(--color-text)]">
+              <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
+                <strong class="text-[var(--soft-black)] block mb-1">
                   Is this a recurring subscription?
                 </strong>
                 No. It is a single $49 AUD flat payment for 365 days. No cards
                 stored, no surprises.
               </div>
-              <div class="p-3 bg-[#fdfaf3] border-2 border-[#181411] rounded-lg">
-                <strong class="text-[#181411] block mb-1">
+              <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
+                <strong class="text-[var(--soft-black)] block mb-1">
                   Paying from outside Australia?
                 </strong>
                 Fine — the price is in Australian dollars, which lands lower
                 than it reads almost everywhere else. Card issuers handle the
                 conversion at their own rate.
               </div>
-              <div class="p-3 bg-[#fdfaf3] border-2 border-[#181411] rounded-lg">
-                <strong class="text-[#181411] block mb-1">
+              <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
+                <strong class="text-[var(--soft-black)] block mb-1">
                   How do I use it on another laptop/phone?
                 </strong>
                 Copy your pass token (under the Supporter tab) and paste it into
                 the "Already have a pass?" box on your other devices.
               </div>
-              <div class="p-3 bg-[#fdfaf3] border-2 border-[#181411] rounded-lg">
-                <strong class="text-[#181411] block mb-1">
+              <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
+                <strong class="text-[var(--soft-black)] block mb-1">
                   What is the Free Tier limit?
                 </strong>
                 Free tier gives you 10 minutes of audio processing per day and 3
                 saved maps with full AI intelligence. The Supporter Pass unlocks
                 infinite audio and multiplayer live rooms.
               </div>
-              <div class="p-3 bg-[#fdfaf3] border-2 border-[#181411] rounded-lg">
-                <strong class="text-[#181411] block mb-1">
+              <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
+                <strong class="text-[var(--soft-black)] block mb-1">
                   Refund policy?
                 </strong>
                 30 days, no questions asked. Email hello@promapper.app.
