@@ -80,6 +80,28 @@ export default function UploadIsland() {
     }
   }, [liveTranscript.value, liveInterim.value]);
 
+  // Read incoming transcript text passed via URL query parameter (e.g. from TalkType)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const incomingText = params.get("text") || params.get("transcript");
+      if (incomingText && !textInput.value) {
+        textInput.value = incomingText;
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete("text");
+        cleanUrl.searchParams.delete("transcript");
+        window.history.replaceState(
+          {},
+          "",
+          cleanUrl.pathname + (cleanUrl.search ? cleanUrl.search : "") + cleanUrl.hash,
+        );
+      }
+    } catch {
+      // Ignore URL parsing errors
+    }
+  }, []);
+
   async function startRecording() {
     if (deepgramClientRef.current) {
       deepgramClientRef.current.disconnect();
