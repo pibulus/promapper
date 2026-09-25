@@ -62,12 +62,24 @@ export default function SupporterModal() {
 
     let cancelled = false;
     let attempts = 0;
+    // Square only sends people back to ?checkout= after they've paid, so a
+    // poll that times out THEN means the webhook is late, not that the money
+    // isn't there. This used to clear the pending checkout after ~37s either
+    // way — a slow webhook meant money taken and no pass, with no email to
+    // fall back on. Now it's kept and asked about once per later visit until
+    // it pays out or the server forgets it (404).
+    const maxAttempts = fromUrl ? 15 : 1;
 
     const poll = async () => {
       if (cancelled) return;
       attempts++;
       try {
         const res = await fetch(`/api/supporter/checkout/${checkoutId}`);
+        if (res.status === 404) {
+          clearPendingCheckout();
+          if (fromUrl) stripCheckoutParam();
+          return;
+        }
         if (res.ok) {
           const data = await res.json();
           if (data.status === "paid" && data.license) {
@@ -82,11 +94,11 @@ export default function SupporterModal() {
         console.error("Poller error:", err);
       }
 
-      if (attempts < 15) {
+      if (attempts < maxAttempts) {
         setTimeout(poll, 2500);
-      } else {
-        clearPendingCheckout();
-        if (fromUrl) stripCheckoutParam();
+      } else if (fromUrl) {
+        setPendingCheckout(fromUrl);
+        stripCheckoutParam();
       }
     };
 
