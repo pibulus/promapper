@@ -281,12 +281,14 @@ Adding a tool should be drop-a-file + register-a-line:
    and the history star/backup flow also want real-device QA.
 3. **Filtered action-item sharing (queued)**: share one assignee's subset with
    filter metadata (from the `action-items-filtered-sharing` branch).
-4. **Mid-take crash recovery (canonical Pass 4.6, not built)**: both batch
-   recorders hold chunks in memory until stop, so a crashed tab or dead battery
-   loses the take (capped at 10 min). The fleet pattern journals each
-   `ondataavailable` chunk to IndexedDB and offers a one-tap recovery on the
-   next mount — `~/Projects/active/_shared-modules/crash-recovery/`. Needs a
-   recovery-banner design and a real iPhone pass (fragmented mp4 on Safari).
+4. **Mid-take crash recovery — BUILT Sept 25, still needs a real iPhone.**
+   `core/storage/takeJournal.ts` journals each take chunk by chunk, keyed per
+   take, holding a Web Lock while it records (the browser drops it when a tab
+   dies — that's how recovery tells crashed from still-recording).
+   `utils/takeRecovery.ts` hands takes back on load: an added take goes to
+   recordingsDB under its map (the "not mapped yet" nudge offers it), a first
+   take becomes the home table's pending audio. Proven in Chromium only — iOS
+   Safari records fragmented mp4. Test: start a take, force-quit Safari, reopen.
 5. **No receipt email in prod** (`RESEND_API_KEY` unset): the checkout poll is
    the ONLY way a paid pass reaches its buyer. Until receipts send, don't port
    TalkType's single-use claim token — a claim mismatch (other browser, private
