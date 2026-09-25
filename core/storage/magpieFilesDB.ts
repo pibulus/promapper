@@ -146,11 +146,16 @@ function getAllMeta(
   });
 }
 
-/** Save a file, then trim the oldest until the caps hold. */
+/**
+ * Save a file, then trim the oldest until the caps hold. Returns how many
+ * older files were let go to make room (null when nothing was saved), so the
+ * shelf can say so — the caps span EVERY map, and a silent trim reads later
+ * as a file that vanished from some other map for no reason.
+ */
 export async function saveMagpieFile(
   rec: StoredMagpieFile,
-): Promise<boolean> {
-  if (!idbAvailable()) return false;
+): Promise<{ evicted: number } | null> {
+  if (!idbAvailable()) return null;
   try {
     const db = await openDB();
     const tx = db.transaction(STORE, "readwrite");
@@ -163,10 +168,10 @@ export async function saveMagpieFile(
     const drop = planEviction(await getAllMeta(db), MAGPIE_FILE_CAPS)
       .filter((id) => id !== rec.id);
     for (const id of drop) await deleteMagpieFile(id);
-    return true;
+    return { evicted: drop.length };
   } catch (err) {
     console.warn("magpieFilesDB: save failed", err);
-    return false;
+    return null;
   }
 }
 

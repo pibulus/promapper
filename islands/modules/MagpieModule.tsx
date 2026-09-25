@@ -160,6 +160,7 @@ export default function MagpieModule() {
     // while the bytes still claim the old one.
     const owner = conversationData.value?.conversation?.id ?? "";
     const tooBig: string[] = [];
+    let evicted = 0;
 
     for (const file of files) {
       if (!canAdd()) break;
@@ -194,6 +195,7 @@ export default function MagpieModule() {
         );
         return;
       }
+      evicted += stored.evicted;
       push({
         id: crypto.randomUUID(),
         kind: "file",
@@ -217,6 +219,15 @@ export default function MagpieModule() {
           } is a bit big for the shelf — keep a link to it instead`
           : `${tooBig.length} of those are too big for the shelf — links keep better`,
         "warning",
+        5000,
+      );
+    }
+    if (evicted) {
+      showToast(
+        evicted === 1
+          ? "Shelf made room — the oldest file let go"
+          : `Shelf made room — the ${evicted} oldest files let go`,
+        "info",
         5000,
       );
     }
