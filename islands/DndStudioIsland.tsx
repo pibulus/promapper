@@ -163,7 +163,9 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
     }
 
     if (saveConversation(DND_DEMO)) {
-      globalThis.location.href = isSpanish ? "/es" : "/";
+      // Opened by name — "/" never auto-restores, so a bare "/" landed on
+      // the empty porch (same fix as DemoSeedIsland).
+      globalThis.location.href = `${isSpanish ? "/es" : "/"}?open=${DND_CID}`;
     } else {
       alert(
         isSpanish

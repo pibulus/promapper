@@ -1,5 +1,6 @@
 /**
- * Demo seeder — dev-only.
+ * Example seeder — behind /example (public since Aug 6, the porch's
+ * "open the whole board" door).
  *
  * Writes a fully-formed conversation straight into localStorage and bounces to
  * the dashboard, so screenshots and demos don't need a live AI round-trip (or
@@ -155,7 +156,10 @@ export default function DemoSeedIsland() {
   useEffect(() => {
     if (saveConversation(DEMO)) {
       status.value = "Seeded — opening the dashboard…";
-      globalThis.location.href = "/";
+      // Opened by name: "/" never auto-restores (it always starts on the
+      // porch), so a bare "/" landed right back on the empty porch. replace,
+      // not href — Back from the board must not re-enter this seeder.
+      globalThis.location.replace(`/?open=${CID}`);
     } else {
       status.value = "Storage write failed (full?). Nothing was seeded.";
     }

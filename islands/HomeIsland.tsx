@@ -12,6 +12,7 @@ import {
   canUndo,
   conversationData,
   historyDrawerOpen,
+  openStoredConversation,
   undoLastMutation,
 } from "@signals/conversationStore.ts";
 import {
@@ -120,10 +121,24 @@ export default function HomeIsland() {
     }
   }, []);
 
-  // Restore last conversation on mount
+  // Page-load housekeeping. "/" never auto-restores — it always starts on the
+  // porch — so a board opens only when asked for by name: /?open=<id> is how
+  // the example door (/example → DemoSeedIsland) lands on its board.
   useEffect(() => {
     const conversationIds = Object.keys(getAllConversations());
     hasHistory.value = conversationIds.length > 0;
+
+    const url = new URL(window.location.href);
+    const openId = url.searchParams.get("open");
+    if (openId) {
+      url.searchParams.delete("open");
+      window.history.replaceState(
+        window.history.state,
+        "",
+        url.pathname + url.search + url.hash,
+      );
+      if (!liveSession.value) openStoredConversation(openId);
+    }
 
     // Orphan sweeps, once per page load. Both were strays: the takes sweep
     // lived in AudioRecorder, which only mounts once a conversation is OPEN —

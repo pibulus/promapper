@@ -10,12 +10,14 @@ import {
   cancelPendingSave,
   CONVERSATIONS_KEY,
   debouncedSave,
+  flushPendingSave,
   getActiveConversationId,
   loadConversation,
 } from "../core/storage/localStorage.ts";
 import type { ConversationData } from "../core/types/conversation-data.ts";
 import { showActionToast, showToast } from "../utils/toast.ts";
 import { liveSession } from "@signals/liveSessionStore.ts";
+import { isModuleEnabled, toggleModule } from "@signals/moduleStore.ts";
 
 export type { ConversationData };
 
@@ -91,6 +93,29 @@ export function applyRemoteConversation(data: ConversationData): void {
       applyingRemoteUpdate.current = false;
     });
   }
+}
+
+/**
+ * Open a saved conversation by id — the ONE way in, shared by the History
+ * drawer and /example. The example used to rely on "/" restoring the active
+ * conversation, which "/" stopped doing on Aug 26 (always start on the porch),
+ * so the example link seeded a board and landed back on the empty porch.
+ * Returns false when the id isn't in storage.
+ */
+export function openStoredConversation(id: string): boolean {
+  const conv = loadConversation(id);
+  if (!conv) return false;
+  // Land the outgoing conversation's pending edit BEFORE the signal moves:
+  // the assignment below re-arms the autosave debounce with the NEW data,
+  // clearing the timer that was holding the old one's last change.
+  flushPendingSave();
+  // A map with notes/clippings opens with those modules showing.
+  if (conv.notes?.trim() && !isModuleEnabled("notes")) toggleModule("notes");
+  if (conv.magpie?.length && !isModuleEnabled("magpie")) {
+    toggleModule("magpie");
+  }
+  conversationData.value = conv;
+  return true;
 }
 
 // ===================================================================
