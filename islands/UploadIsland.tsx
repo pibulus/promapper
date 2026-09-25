@@ -2,8 +2,11 @@ import { signal, useComputed, useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import {
   conversationData,
+  pendingAudio,
   processingConversation,
 } from "@signals/conversationStore.ts";
+import { clearJournal, journalChunk } from "@core/storage/takeJournal.ts";
+import { letGoOfPendingAudio } from "@utils/takeRecovery.ts";
 import { resetModules } from "@signals/moduleStore.ts";
 import { ensureApiSession } from "../utils/apiAuth.ts";
 import { enqueueApiRequest } from "../utils/requestQueue.ts";
@@ -21,12 +24,6 @@ import { t } from "../utils/i18n.ts";
 // Module-level so pasted text survives the hero unmounting during processing
 // (an error remounts the hero — losing the paste would sting).
 const textInput = signal("");
-// Same reason, for the FIRST recording. The append path persists every take to
-// IndexedDB before the AI runs ("the audio must survive a failed AI pipeline")
-// — but the first one had no such net: it was POSTed straight from memory, so
-// a failed process meant the recording was simply gone and the only option was
-// to say the whole thing again.
-const pendingAudio = signal<Blob | null>(null);
 
 export default function UploadIsland() {
   const i18n = t();
@@ -165,6 +162,7 @@ export default function UploadIsland() {
       mediaRecorder.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
           audioChunksRef.current.push(event.data);
+          journalChunk(audioChunksRef.current.length - 1, event.data);
           liveClient.send(event.data);
         }
       };
@@ -252,6 +250,7 @@ export default function UploadIsland() {
         } else if (audioBlob.size > 0) {
           await processRecordedAudio(audioBlob);
         } else {
+          void clearJournal();
           showToast(i18n.noSpeechWarning, "warning");
         }
         resolve();
@@ -271,6 +270,7 @@ export default function UploadIsland() {
     liveInterim.value = "";
     isLiveConnected.value = false;
     audioChunksRef.current = [];
+    void clearJournal();
     cleanup();
     showToast(i18n.cancelledToast, "info");
   }
@@ -333,13 +333,13 @@ export default function UploadIsland() {
       // If no speech/topics came out of the text
       if (!flowResult.transcript?.text && flowResult.nodes.length === 0) {
         showToast(i18n.noSpeechWarning, "warning");
-        pendingAudio.value = null;
+        letGoOfPendingAudio();
         return;
       }
 
       resetModules();
       conversationData.value = flowResult;
-      pendingAudio.value = null;
+      letGoOfPendingAudio();
       liveTranscript.value = "";
       liveInterim.value = "";
 
@@ -398,13 +398,13 @@ export default function UploadIsland() {
       // Check if it was empty / silence
       if (!flowResult.transcript?.text && flowResult.nodes.length === 0) {
         showToast(i18n.noSpeechWarning, "warning");
-        pendingAudio.value = null;
+        letGoOfPendingAudio();
         return;
       }
 
       resetModules();
       conversationData.value = flowResult;
-      pendingAudio.value = null; // it landed — the net can let go
+      letGoOfPendingAudio(); // it landed — the net can let go
       if (flowResult.warnings.length) {
         for (const warning of flowResult.warnings) {
           showToast(warning, "warning");

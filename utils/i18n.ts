@@ -53,6 +53,14 @@ export const TRANSLATIONS = {
     // Toasts & Feedback
     micError:
       "Could not access microphone. Please grant permission and try again.",
+    recoveredFirstTake:
+      "A recording from last time never made it into a map — it's still here. “Try that again” maps it.",
+    recoveredAddedTake: (title: string) =>
+      title
+        ? `A take for “${title}” got cut short last time — it's waiting in that map.`
+        : "A take got cut short last time — it's waiting in its map.",
+    recoveredLetGo: "Let it go",
+    recoveredTakeName: "Recovered take",
     micBlocked: (app: string | null) =>
       app
         ? `${app}'s built-in browser keeps the mic locked — its ••• menu opens this page in Safari or Chrome.`
@@ -154,6 +162,14 @@ export const TRANSLATIONS = {
     // Toasts & Feedback
     micError:
       "No se conectó el mic. Dale permiso en tu navegador e inténtalo otra vez.",
+    recoveredFirstTake:
+      "Una grabación de la última vez no llegó a un mapa — sigue aquí. «Inténtalo otra vez» la mapea.",
+    recoveredAddedTake: (title: string) =>
+      title
+        ? `Una toma de “${title}” se cortó la última vez — te espera en ese mapa.`
+        : "Una toma se cortó la última vez — te espera en su mapa.",
+    recoveredLetGo: "Déjala ir",
+    recoveredTakeName: "Toma recuperada",
     micBlocked: (app: string | null) =>
       app
         ? `El navegador de ${app} bloquea el mic — desde su menú ••• abre esta página en Safari o Chrome.`

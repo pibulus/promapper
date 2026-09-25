@@ -27,6 +27,14 @@ export const conversationData = signal<ConversationData | null>(null);
 // result will land, not behind a blocking modal.
 export const processingConversation = signal<boolean>(false);
 
+// The home table's first recording, until it's in a map. The append path
+// persists every take to IndexedDB before the AI runs ("the audio must survive
+// a failed AI pipeline") — but the first one had no such net: it was POSTed
+// straight from memory, so a failed process meant saying the whole thing
+// again. Lives here, not in UploadIsland, so a take recovered from the journal
+// (utils/takeRecovery.ts) can be handed back to the home table.
+export const pendingAudio = signal<Blob | null>(null);
+
 // Global UI signal for history drawer open state
 export const historyDrawerOpen = signal<boolean>(false);
 

@@ -40,6 +40,7 @@ import { enqueueApiRequest } from "../utils/requestQueue.ts";
 import { coerceFlowResult } from "../utils/coerceFlowResult.ts";
 import { soundBloom } from "@utils/sound.ts";
 import { formatTime, useRecorder } from "./useRecorder.ts";
+import { clearJournal, journalChunk } from "@core/storage/takeJournal.ts";
 
 interface AudioRecorderProps {
   conversationId: string;
@@ -102,6 +103,13 @@ export default function AudioRecorder(
     // Matches the server's MIN_AUDIO_SIZE — blink-taps bail kindly without
     // the upload round-trip.
     minBlobBytes: 1024,
+    // Every chunk to the take journal as it lands, so a crash mid-take
+    // leaves something to hand back (utils/takeRecovery.ts).
+    onChunk: (chunk, index) =>
+      journalChunk(index, chunk, {
+        conversationId,
+        title: conversationData.value?.conversation?.title,
+      }),
     onStop: async (blob) => {
       lastRecordingBlobRef.current = blob;
       retryRecordingReady.value = true;
@@ -123,6 +131,8 @@ export default function AudioRecorder(
       };
       lastTakeIdRef.current = take.id;
       const persisted = await saveRecording(take);
+      // Safe as a take now — the journal's copy has done its job.
+      if (persisted) void clearJournal();
       takes.value = [...takes.value, take];
       if (!persisted && recordingTime.value >= MIN_BACKUP_DURATION) {
         // No IndexedDB (private mode) — long takes still get a file backup.

@@ -22,6 +22,7 @@ import {
 } from "../core/storage/localStorage.ts";
 import { sweepOrphanSnapshots } from "@core/storage/exportSnapshots.ts";
 import { sweepOrphans } from "@core/storage/recordingsDB.ts";
+import { recoverUnfinishedTake } from "@utils/takeRecovery.ts";
 import { sweepOrphanTints } from "@utils/actionTags.ts";
 import { showActionToast, showToast } from "@utils/toast.ts";
 import {
@@ -134,6 +135,9 @@ export default function HomeIsland() {
     sweepOrphans(conversationIds).catch(() => {/* best-effort */});
     sweepOrphanSnapshots(liveIds);
     sweepOrphanTints(liveIds);
+    // A take cut short last time comes back — unless this load is a guest
+    // arriving in a live room, where the home table isn't in reach.
+    if (!liveSession.value) void recoverUnfinishedTake();
   }, []);
 
   // Cmd/Ctrl+Z → undo the last destructive map/action-item mutation. Skipped
