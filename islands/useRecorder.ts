@@ -20,9 +20,11 @@ export interface RecorderOptions {
   mimeTypes?: string[];
   /** Called before getUserMedia (e.g., ensureApiSession). */
   onBeforeStart?: () => Promise<void>;
-  /** Called on every dataavailable chunk, with its index in the take (0 =
-   * the take's first chunk; a rotation starts a new take at 0). */
-  onChunk?: (blob: Blob, index: number) => void;
+  /** Called on every dataavailable chunk. */
+  onChunk?: (blob: Blob) => void;
+  /** Called with each take's MediaRecorder just before it starts (not for
+   * rotations) — e.g. to journal it with startJournal(). */
+  onTakeStart?: (recorder: MediaRecorder) => void;
   /** Called when recording stops, with the accumulated blob. */
   onStop?: (blob: Blob) => Promise<void>;
   /** Called after stream/recorder teardown (per-stop, not unmount). */
@@ -167,6 +169,7 @@ export function useRecorder(opts: RecorderOptions = {}): RecorderHandle {
     ],
     onBeforeStart,
     onChunk,
+    onTakeStart,
     onStop,
     onCleanup,
     maxDurationSeconds = 0,
@@ -269,10 +272,11 @@ export function useRecorder(opts: RecorderOptions = {}): RecorderHandle {
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
           chunksRef.current.push(e.data);
-          onChunk?.(e.data, chunksRef.current.length - 1);
+          onChunk?.(e.data);
         }
       };
 
+      onTakeStart?.(recorder);
       recorder.start(timesliceMs);
 
       isRecording.value = true;
@@ -411,7 +415,7 @@ export function useRecorder(opts: RecorderOptions = {}): RecorderHandle {
     next.ondataavailable = (e) => {
       if (e.data.size > 0) {
         chunksRef.current.push(e.data);
-        onChunk?.(e.data, chunksRef.current.length - 1);
+        onChunk?.(e.data);
       }
     };
     next.start(timesliceMs);

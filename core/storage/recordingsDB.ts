@@ -170,6 +170,19 @@ export async function saveRecording(rec: StoredRecording): Promise<boolean> {
   }
 }
 
+/** Whether a take with this id is kept — a key lookup, no Blob is read. */
+export async function hasRecording(id: string): Promise<boolean> {
+  if (!idbAvailable()) return false;
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE, "readonly");
+    const key = await requestToPromise(tx.objectStore(STORE).getKey(id));
+    return key !== undefined;
+  } catch {
+    return false;
+  }
+}
+
 /** All takes for one conversation, oldest first. */
 export async function listRecordings(
   conversationId: string,

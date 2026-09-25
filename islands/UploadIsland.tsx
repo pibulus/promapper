@@ -5,8 +5,12 @@ import {
   pendingAudio,
   processingConversation,
 } from "@signals/conversationStore.ts";
-import { clearJournal, journalChunk } from "@core/storage/takeJournal.ts";
-import { letGoOfPendingAudio } from "@utils/takeRecovery.ts";
+import { startJournal, type TakeJournal } from "@core/storage/takeJournal.ts";
+import {
+  letGoOfPendingAudio,
+  linkPendingJournal,
+  showPendingAudioFailure,
+} from "@utils/takeRecovery.ts";
 import { resetModules } from "@signals/moduleStore.ts";
 import { ensureApiSession } from "../utils/apiAuth.ts";
 import { enqueueApiRequest } from "../utils/requestQueue.ts";
@@ -50,6 +54,7 @@ export default function UploadIsland() {
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const streamBoxRef = useRef<HTMLDivElement | null>(null);
   const deepgramClientRef = useRef<DeepgramLiveClient | null>(null);
+  const journalRef = useRef<TakeJournal | null>(null);
   const unsubsRef = useRef<Array<() => void>>([]);
 
   const MAX_RECORDING_TIME = 10 * 60;
@@ -157,12 +162,12 @@ export default function UploadIsland() {
       });
 
       const mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
+      journalRef.current = startJournal(mediaRecorder);
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
           audioChunksRef.current.push(event.data);
-          journalChunk(audioChunksRef.current.length - 1, event.data);
           liveClient.send(event.data);
         }
       };
@@ -239,6 +244,9 @@ export default function UploadIsland() {
         const audioBlob = new Blob(audioChunksRef.current, {
           type: mediaRecorder.mimeType || "audio/webm",
         });
+        if (journalRef.current) {
+          linkPendingJournal(audioBlob, journalRef.current.takeId);
+        }
 
         // If we captured live transcript words AND client was healthy throughout, process directly via text for instant mapping!
         // If connection dropped mid-way or errored, fall back to the full recorded audio blob so no words are lost.
@@ -250,7 +258,7 @@ export default function UploadIsland() {
         } else if (audioBlob.size > 0) {
           await processRecordedAudio(audioBlob);
         } else {
-          void clearJournal();
+          journalRef.current?.discard();
           showToast(i18n.noSpeechWarning, "warning");
         }
         resolve();
@@ -270,7 +278,7 @@ export default function UploadIsland() {
     liveInterim.value = "";
     isLiveConnected.value = false;
     audioChunksRef.current = [];
-    void clearJournal();
+    journalRef.current?.discard();
     cleanup();
     showToast(i18n.cancelledToast, "info");
   }
@@ -358,7 +366,7 @@ export default function UploadIsland() {
       );
     } catch (error) {
       console.error("❌ Error processing live transcript:", error);
-      showErrorToast(error, i18n.processFailed);
+      showPendingAudioFailure(error, i18n.processFailed);
     } finally {
       isProcessing.value = false;
     }
@@ -420,7 +428,7 @@ export default function UploadIsland() {
       );
     } catch (error) {
       console.error("❌ Error processing audio:", error);
-      showErrorToast(error, i18n.processFailed);
+      showPendingAudioFailure(error, i18n.processFailed);
     } finally {
       isProcessing.value = false;
     }

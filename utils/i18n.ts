@@ -166,8 +166,8 @@ export const TRANSLATIONS = {
       "Una grabación de la última vez no llegó a un mapa — sigue aquí. «Inténtalo otra vez» la mapea.",
     recoveredAddedTake: (title: string) =>
       title
-        ? `Una toma de “${title}” se cortó la última vez — te espera en ese mapa.`
-        : "Una toma se cortó la última vez — te espera en su mapa.",
+        ? `Una toma de “${title}” se cortó la última vez — espera en ese mapa.`
+        : "Una toma se cortó la última vez — espera en su mapa.",
     recoveredLetGo: "Déjala ir",
     recoveredTakeName: "Toma recuperada",
     micBlocked: (app: string | null) =>

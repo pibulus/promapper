@@ -40,7 +40,11 @@ import { enqueueApiRequest } from "../utils/requestQueue.ts";
 import { coerceFlowResult } from "../utils/coerceFlowResult.ts";
 import { soundBloom } from "@utils/sound.ts";
 import { formatTime, useRecorder } from "./useRecorder.ts";
-import { clearJournal, journalChunk } from "@core/storage/takeJournal.ts";
+import {
+  clearTake,
+  startJournal,
+  type TakeJournal,
+} from "@core/storage/takeJournal.ts";
 
 interface AudioRecorderProps {
   conversationId: string;
@@ -70,6 +74,7 @@ export default function AudioRecorder(
 
   const lastRecordingBlobRef = useRef<Blob | null>(null);
   const lastTakeIdRef = useRef<string | null>(null);
+  const journalRef = useRef<TakeJournal | null>(null);
   // Re-entry guard for processAudioAppend — see the note at its definition.
   const appendingRef = useRef(false);
 
@@ -103,13 +108,15 @@ export default function AudioRecorder(
     // Matches the server's MIN_AUDIO_SIZE — blink-taps bail kindly without
     // the upload round-trip.
     minBlobBytes: 1024,
-    // Every chunk to the take journal as it lands, so a crash mid-take
-    // leaves something to hand back (utils/takeRecovery.ts).
-    onChunk: (chunk, index) =>
-      journalChunk(index, chunk, {
+    // Journal the take as it records, so a crash mid-take leaves something
+    // to hand back (utils/takeRecovery.ts). The take keeps the journal's id
+    // below, which is what lets recovery tell a saved take from a lost one.
+    onTakeStart: (recorder) => {
+      journalRef.current = startJournal(recorder, {
         conversationId,
         title: conversationData.value?.conversation?.title,
-      }),
+      });
+    },
     onStop: async (blob) => {
       lastRecordingBlobRef.current = blob;
       retryRecordingReady.value = true;
@@ -121,7 +128,7 @@ export default function AudioRecorder(
       }, 0) + 1;
       // Persist the take FIRST — the audio must survive a failed AI pipeline.
       const take: StoredRecording = {
-        id: crypto.randomUUID(),
+        id: journalRef.current?.takeId ?? crypto.randomUUID(),
         conversationId,
         data: blob,
         mimeType: blob.type || "audio/webm",
@@ -132,7 +139,7 @@ export default function AudioRecorder(
       lastTakeIdRef.current = take.id;
       const persisted = await saveRecording(take);
       // Safe as a take now — the journal's copy has done its job.
-      if (persisted) void clearJournal();
+      if (persisted) void clearTake(take.id);
       takes.value = [...takes.value, take];
       if (!persisted && recordingTime.value >= MIN_BACKUP_DURATION) {
         // No IndexedDB (private mode) — long takes still get a file backup.
