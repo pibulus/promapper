@@ -58,3 +58,12 @@ Deno.test("markCheckoutPaid generates signed license token and transitions statu
   assertEquals(verified?.tier, "supporter");
   assertEquals(verified?.checkoutId, checkoutId);
 });
+
+Deno.test("a repeated COMPLETED webhook keeps the first pass", async () => {
+  const checkoutId = `twice-chk-${Date.now()}`;
+  await savePendingCheckout({ checkoutId, amount: 4900, currency: "AUD" });
+  const first = await markCheckoutPaid({ checkoutId, paymentId: "sq-1" });
+  const again = await markCheckoutPaid({ checkoutId, paymentId: "sq-1" });
+  assertEquals(again?.licenseToken, first?.licenseToken);
+  assertEquals(again?.paidAt, first?.paidAt);
+});

@@ -117,6 +117,10 @@ export async function markCheckoutPaid(options: {
   email?: string;
 }): Promise<CheckoutRecord | null> {
   const existing = await getCheckout(options.checkoutId);
+  // Square sends payment.created AND payment.updated, and retries anything
+  // that hiccups. The second COMPLETED must not mint a second pass or send a
+  // second receipt — the first one already did the job.
+  if (existing?.status === "paid" && existing.licenseToken) return existing;
   const now = Date.now();
 
   const licenseToken = await signSupporterPass({
