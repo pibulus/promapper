@@ -545,7 +545,8 @@ once"; neither was ever built. What actually ships:
   precedent: "Supporter" (talktype), "Contributor" (ziplist).
 - **Supporter security (Sept 25 2026)**: a pass is a 3x daily rail on the house
   key, NEVER no rail, and still counts toward the global ceiling. Master codes
-  come ONLY from `SUPPORTER_UNLOCK_CODES` (unset in prod = none work) — five
+  come ONLY from `SUPPORTER_UNLOCK_CODES` (a secret in prod holding Pablo's own
+  code; the value never goes in the repo, chat logs or memory) — five
   codes sat in plaintext in this public repo Aug 26–Sept 25, so the licence
   secret was rotated and those five must never come back. The secret throws on
   Deno Deploy rather than falling back to the dev literal.
