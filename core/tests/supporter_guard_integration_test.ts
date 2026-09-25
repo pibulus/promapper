@@ -21,10 +21,12 @@ Deno.test("isSupporterRequest returns true for valid x-promapper-pass header", a
   });
   assertEquals(await isSupporterRequest(reqWithCookie), true);
 
+  Deno.env.set("SUPPORTER_UNLOCK_CODES", "GUARD-TEST-CODE");
   const reqWithMasterCode = new Request("http://localhost:8003/api/process", {
-    headers: { "x-promapper-pass": "PIBULUS" },
+    headers: { "x-promapper-pass": "GUARD-TEST-CODE" },
   });
   assertEquals(await isSupporterRequest(reqWithMasterCode), true);
+  Deno.env.delete("SUPPORTER_UNLOCK_CODES");
 
   const plainReq = new Request("http://localhost:8003/api/process");
   assertEquals(await isSupporterRequest(plainReq), false);
