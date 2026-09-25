@@ -94,7 +94,8 @@ export default function UploadIsland() {
         window.history.replaceState(
           {},
           "",
-          cleanUrl.pathname + (cleanUrl.search ? cleanUrl.search : "") + cleanUrl.hash,
+          cleanUrl.pathname + (cleanUrl.search ? cleanUrl.search : "") +
+            cleanUrl.hash,
         );
       }
     } catch {
