@@ -6,7 +6,7 @@
 import { copyToClipboard } from "../utils/toast.ts";
 import { formatMarkdownSafe } from "../utils/sanitize.ts";
 import { paragraphizeSummary } from "../utils/summaryFormat.ts";
-import { openReader } from "../signals/readerStore.ts";
+import { openReader } from "@signals/readerStore.ts";
 
 interface SummaryCardProps {
   summary: string | null;

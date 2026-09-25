@@ -6,7 +6,7 @@
 import { copyToClipboard } from "../utils/toast.ts";
 import { formatTranscriptSafe } from "../utils/sanitize.ts";
 import { useSignal } from "@preact/signals";
-import { openReader } from "../signals/readerStore.ts";
+import { openReader } from "@signals/readerStore.ts";
 import Modal from "./Modal.tsx";
 
 interface TranscriptCardProps {
