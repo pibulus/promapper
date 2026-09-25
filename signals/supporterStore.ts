@@ -28,6 +28,27 @@ export function refreshSupporterState() {
   byokKeySignal.value = byo;
 }
 
+/**
+ * A stored pass is only a claim; the server is the judge. A rotated secret or
+ * a dropped code otherwise leaves the badge lit while every request quietly
+ * rides the free rail. Asked once per load, and forgotten only on a clear
+ * "no" (400) — a network blip or a 429 proves nothing.
+ */
+export async function confirmStoredPass(): Promise<void> {
+  const pass = getSupporterPass();
+  if (!pass) return;
+  try {
+    const res = await fetch("/api/supporter/redeem", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: pass }),
+    });
+    if (res.status === 400) deactivatePass();
+  } catch {
+    // offline — keep the pass; the next load asks again
+  }
+}
+
 export function openSupporterModal() {
   supporterModalOpen.value = true;
 }

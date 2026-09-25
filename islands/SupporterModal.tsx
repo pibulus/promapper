@@ -6,13 +6,14 @@ import {
   activatePass,
   byokKeySignal,
   closeSupporterModal,
+  confirmStoredPass,
   isSupporterSignal,
   refreshSupporterState,
   removeByoKey,
   saveByoKey,
   supporterExpirySignal,
   supporterModalOpen,
-} from "../signals/supporterStore.ts";
+} from "@signals/supporterStore.ts";
 import {
   clearPendingCheckout,
   getPendingCheckout,
@@ -45,6 +46,10 @@ export default function SupporterModal() {
   const [byoInput, setByoInput] = useState(activeByoKey || "");
   const [byoTestStatus, setByoTestStatus] = useState<string | null>(null);
   const [isTestingByo, setIsTestingByo] = useState(false);
+
+  useEffect(() => {
+    void confirmStoredPass();
+  }, []);
 
   // Initial sync on mount
   useEffect(() => {
