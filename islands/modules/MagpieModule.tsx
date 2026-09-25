@@ -3,7 +3,6 @@ import { useEffect, useRef } from "preact/hooks";
 import {
   conversationData,
   isViewingShared,
-  processingConversation,
 } from "@signals/conversationStore.ts";
 import {
   classifyMagpie,
@@ -21,22 +20,10 @@ import {
   magpieFilesAvailable,
   saveMagpieFile,
 } from "@core/storage/magpieFilesDB.ts";
-import { flushPendingSave } from "@core/storage/localStorage.ts";
-import {
-  isModuleEnabled,
-  resetModules,
-  toggleModule,
-} from "@signals/moduleStore.ts";
-import { ensureApiSession } from "../../utils/apiAuth.ts";
-import { enqueueApiRequest } from "../../utils/requestQueue.ts";
-import { coerceFlowResult } from "../../utils/coerceFlowResult.ts";
+import { isModuleEnabled, toggleModule } from "@signals/moduleStore.ts";
+import { resampleIntoFreshMap } from "@utils/resample.ts";
 import { soundBloom, soundTick } from "@utils/sound.ts";
-import {
-  copyToClipboard,
-  showErrorToast,
-  showToast,
-  showUndoToast,
-} from "@utils/toast.ts";
+import { copyToClipboard, showToast, showUndoToast } from "@utils/toast.ts";
 import BodyPortal from "../../components/BodyPortal.tsx";
 
 /** Matches showUndoToast's default visible duration — the deferred delete
@@ -266,45 +253,11 @@ export default function MagpieModule() {
     showToast("Copied to clipboard!", "success");
   }
 
-  async function resampleScrap(text: string) {
-    if (!text.trim()) return;
-    flushPendingSave();
-    resetModules();
-    conversationData.value = null;
-    processingConversation.value = true;
-    showToast("Resampling scrap into a fresh map…", "info");
-    try {
-      await ensureApiSession();
-      const result = await enqueueApiRequest(async ({ signal }) => {
-        const response = await fetch("/api/process", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: text.trim() }),
-          signal,
-        });
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Processing failed");
-        }
-        return response.json();
-      });
-      const flowResult = coerceFlowResult(result);
-      if (!flowResult) {
-        throw new Error("Server returned an unexpected response.");
-      }
-      resetModules();
-      conversationData.value = flowResult;
-      soundBloom();
-      showToast(
-        `Resampled! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
-        "success",
-      );
-    } catch (err) {
-      console.error("❌ Resample error:", err);
-      showErrorToast(err, "Couldn't resample that scrap.");
-    } finally {
-      processingConversation.value = false;
-    }
+  function resampleScrap(text: string) {
+    void resampleIntoFreshMap(text, {
+      start: "Resampling scrap into a fresh map…",
+      failed: "Couldn't resample that scrap.",
+    });
   }
 
   function remove(id: string) {

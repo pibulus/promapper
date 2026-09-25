@@ -20,15 +20,10 @@ import { useEffect, useRef } from "preact/hooks";
 import {
   conversationData,
   isViewingShared,
-  processingConversation,
 } from "@signals/conversationStore.ts";
 import { flushPendingSave } from "@core/storage/localStorage.ts";
-import { resetModules } from "@signals/moduleStore.ts";
-import { ensureApiSession } from "../../utils/apiAuth.ts";
-import { enqueueApiRequest } from "../../utils/requestQueue.ts";
-import { coerceFlowResult } from "../../utils/coerceFlowResult.ts";
-import { copyToClipboard, showErrorToast, showToast } from "@utils/toast.ts";
-import { soundBloom } from "@utils/sound.ts";
+import { copyToClipboard } from "@utils/toast.ts";
+import { resampleIntoFreshMap } from "@utils/resample.ts";
 
 const SAVE_DEBOUNCE_MS = 800;
 
@@ -102,47 +97,12 @@ export default function NotesModule() {
     };
   }, []);
 
-  async function resampleNotes() {
+  function resampleNotes() {
     commit();
-    const text = (taRef.current?.value ?? notes).trim();
-    if (!text) return;
-    flushPendingSave();
-    resetModules();
-    conversationData.value = null;
-    processingConversation.value = true;
-    showToast("Resampling notes into a fresh map…", "info");
-    try {
-      await ensureApiSession();
-      const result = await enqueueApiRequest(async ({ signal }) => {
-        const response = await fetch("/api/process", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text }),
-          signal,
-        });
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Processing failed");
-        }
-        return response.json();
-      });
-      const flowResult = coerceFlowResult(result);
-      if (!flowResult) {
-        throw new Error("Server returned an unexpected response.");
-      }
-      resetModules();
-      conversationData.value = flowResult;
-      soundBloom();
-      showToast(
-        `Resampled! Found ${flowResult.actionItems.length} action items, ${flowResult.nodes.length} topics`,
-        "success",
-      );
-    } catch (err) {
-      console.error("❌ Resample error:", err);
-      showErrorToast(err, "Couldn't resample notes.");
-    } finally {
-      processingConversation.value = false;
-    }
+    void resampleIntoFreshMap(taRef.current?.value ?? notes, {
+      start: "Resampling notes into a fresh map…",
+      failed: "Couldn't resample notes.",
+    });
   }
 
   return (
