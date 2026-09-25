@@ -225,7 +225,7 @@ truth:
 
 - `deno task check` passes (fmt + lint + typecheck; **run this, not just tests**
   — an Aug 19 session left `check` RED while `test` was green)
-- `deno task test` passes (397 tests)
+- `deno task test` passes (437 tests, Sept 25 2026)
 - `deno task build` passes
 - OpenRouter text, markdown export, and a generated audio smoke test have worked
   locally with `google/gemini-2.5-flash-lite`
@@ -281,6 +281,16 @@ Adding a tool should be drop-a-file + register-a-line:
    and the history star/backup flow also want real-device QA.
 3. **Filtered action-item sharing (queued)**: share one assignee's subset with
    filter metadata (from the `action-items-filtered-sharing` branch).
+4. **Mid-take crash recovery (canonical Pass 4.6, not built)**: both batch
+   recorders hold chunks in memory until stop, so a crashed tab or dead battery
+   loses the take (capped at 10 min). The fleet pattern journals each
+   `ondataavailable` chunk to IndexedDB and offers a one-tap recovery on the
+   next mount — `~/Projects/active/_shared-modules/crash-recovery/`. Needs a
+   recovery-banner design and a real iPhone pass (fragmented mp4 on Safari).
+5. **No receipt email in prod** (`RESEND_API_KEY` unset): the checkout poll is
+   the ONLY way a paid pass reaches its buyer. Until receipts send, don't port
+   TalkType's single-use claim token — a claim mismatch (other browser, private
+   tab) would strand a paid buyer with nothing.
 
 ## Live Collaboration (Cloudflare Durable Objects)
 
@@ -528,9 +538,17 @@ once"; neither was ever built. What actually ships:
 - Rails already exist in `services/requestGuard.ts`: burst 60/min, 1000
   calls/day, and `AUDIO_BYTES_PER_DAY` audio metering built but disabled —
   flipping tiers on is config, not code.
-- Payment rig: emulate TalkType/ziplist — Square checkout → paymentStore (claim
-  tokens) → license store (hashed supporter codes, no accounts). Family naming
+- Payment rig (BUILT, and simpler than TalkType's): Square checkout →
+  `services/checkoutStore.ts` (Deno KV) → the webhook mints a stateless
+  HMAC-signed pass (`services/supporterPass.ts`, no licence DB, no accounts) →
+  the client polls `/api/supporter/checkout/[id]` on return. Family naming
   precedent: "Supporter" (talktype), "Contributor" (ziplist).
+- **Supporter security (Sept 25 2026)**: a pass is a 3x daily rail on the house
+  key, NEVER no rail, and still counts toward the global ceiling. Master codes
+  come ONLY from `SUPPORTER_UNLOCK_CODES` (unset in prod = none work) — five
+  codes sat in plaintext in this public repo Aug 26–Sept 25, so the licence
+  secret was rotated and those five must never come back. The secret throws on
+  Deno Deploy rather than falling back to the dev literal.
 - Sync (supporter perk): TalkType's Vault pattern — the supporter code IS the
   identity; conversations encrypted client-side, vault keyed by SHA-256 of the
   code, any device with the code pulls + decrypts. No accounts ever. Storage can
