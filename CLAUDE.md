@@ -546,10 +546,10 @@ once"; neither was ever built. What actually ships:
 - **Supporter security (Sept 25 2026)**: a pass is a 3x daily rail on the house
   key, NEVER no rail, and still counts toward the global ceiling. Master codes
   come ONLY from `SUPPORTER_UNLOCK_CODES` (a secret in prod holding Pablo's own
-  code; the value never goes in the repo, chat logs or memory) — five
-  codes sat in plaintext in this public repo Aug 26–Sept 25, so the licence
-  secret was rotated and those five must never come back. The secret throws on
-  Deno Deploy rather than falling back to the dev literal.
+  code; the value never goes in the repo, chat logs or memory) — five codes sat
+  in plaintext in this public repo Aug 26–Sept 25, so the licence secret was
+  rotated and those five must never come back. The secret throws on Deno Deploy
+  rather than falling back to the dev literal.
 - Sync (supporter perk): TalkType's Vault pattern — the supporter code IS the
   identity; conversations encrypted client-side, vault keyed by SHA-256 of the
   code, any device with the code pulls + decrypts. No accounts ever. Storage can
