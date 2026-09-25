@@ -11,7 +11,7 @@ import { coerceFlowResult } from "../utils/coerceFlowResult.ts";
 import { soundBloom } from "@utils/sound.ts";
 import AudioVisualizer from "./AudioVisualizer.tsx";
 import { showErrorToast, showToast } from "../utils/toast.ts";
-import { formatTime } from "./useRecorder.ts";
+import { blockedMicMessage, formatTime } from "./useRecorder.ts";
 import {
   createDeepgramLiveClient,
   type DeepgramLiveClient,
@@ -208,7 +208,7 @@ export default function UploadIsland() {
       }, 1000) as unknown as number;
     } catch (error) {
       console.error("Error starting recording:", error);
-      showToast(i18n.micError, "error");
+      showToast(blockedMicMessage(error) ?? i18n.micError, "error");
     }
   }
 

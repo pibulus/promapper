@@ -53,6 +53,10 @@ export const TRANSLATIONS = {
     // Toasts & Feedback
     micError:
       "Could not access microphone. Please grant permission and try again.",
+    micBlocked: (app: string | null) =>
+      app
+        ? `${app}'s built-in browser keeps the mic locked — its ••• menu opens this page in Safari or Chrome.`
+        : "This browser can't reach a microphone — Safari or Chrome can.",
     cancelledToast: "Recording cancelled",
     noSpeechWarning:
       "Didn't catch that — no clear speech detected. Check your mic and give it another go.",
@@ -150,6 +154,10 @@ export const TRANSLATIONS = {
     // Toasts & Feedback
     micError:
       "No se conectó el mic. Dale permiso en tu navegador e inténtalo otra vez.",
+    micBlocked: (app: string | null) =>
+      app
+        ? `El navegador de ${app} bloquea el mic — desde su menú ••• abre esta página en Safari o Chrome.`
+        : "Este navegador no tiene acceso al mic — Safari o Chrome sí.",
     cancelledToast: "Grabación cancelada.",
     noSpeechWarning:
       "No se escuchó nada claro. Checa tu mic e inténtalo otra vez.",

@@ -9,6 +9,7 @@ import { useEffect, useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import { IS_BROWSER } from "$fresh/runtime.ts";
 import { showToast } from "@utils/toast.ts";
+import { t } from "@utils/i18n.ts";
 
 export interface RecorderOptions {
   /** Audio constraints passed to getUserMedia. */
@@ -72,12 +73,62 @@ export function formatTime(seconds: number): string {
   return `${m}:${s < 10 ? "0" : ""}${s}`;
 }
 
+// In-app webviews (Instagram, Messenger, TikTok…) block the mic without
+// saying so, and the plain "denied" copy then sends people to a settings
+// page that can't help. UA sniffing is the only tell there is — used ONLY to
+// point the message at the right menu, never to gate recording. Most
+// specific first: Messenger and Instagram UAs also carry Facebook's tokens.
+// (Table from _shared-modules/in-app-browser, the fleet's shared copy.)
+const IN_APP_BROWSERS: [RegExp, string][] = [
+  [/FB_IAB\/MESSENGER|Messenger/i, "Messenger"],
+  [/Instagram/i, "Instagram"],
+  [/FBAN|FBAV|FB_IAB/i, "Facebook"],
+  [/TikTok|musical_ly|BytedanceWebview/i, "TikTok"],
+  [/Threads|Barcelona/i, "Threads"],
+  [/Discord/i, "Discord"],
+  [/LinkedInApp/i, "LinkedIn"],
+  [/Snapchat/i, "Snapchat"],
+  [/\bLine\//i, "LINE"],
+  [/Twitter/i, "X"],
+  [/Pinterest/i, "Pinterest"],
+  [/Reddit/i, "Reddit"],
+];
+
+type MicEnv = { ua: string; hasMic: boolean };
+const browserMicEnv = (): MicEnv => ({
+  ua: globalThis.navigator?.userAgent ?? "",
+  hasMic: Boolean(globalThis.navigator?.mediaDevices?.getUserMedia),
+});
+
+/**
+ * The "this browser can't record here" message, or null when the failure is
+ * an ordinary one. Shared by both recorders (this hook and UploadIsland's
+ * own), localised. `env` is injectable so the table can be tested without a
+ * browser.
+ */
+export function blockedMicMessage(
+  err: unknown,
+  env: MicEnv = browserMicEnv(),
+): string | null {
+  const denied = err instanceof DOMException &&
+    (err.name === "NotAllowedError" || err.name === "SecurityError");
+  const app = IN_APP_BROWSERS.find(([pattern]) => pattern.test(env.ua))?.[1];
+  if (app && (denied || !env.hasMic)) return t().micBlocked(app);
+  if (!env.hasMic) return t().micBlocked(null);
+  return null;
+}
+
 /**
  * Turn a getUserMedia (or onBeforeStart) rejection into something the user
- * can act on — "grant permission", "close the other app", and "you're
- * offline" are three very different problems.
+ * can act on — "grant permission", "close the other app", "you're offline"
+ * and "this browser can't record at all" are four very different problems.
  */
-export function describeMicError(err: unknown): string {
+export function describeMicError(
+  err: unknown,
+  env: MicEnv = browserMicEnv(),
+): string {
+  const blocked = blockedMicMessage(err, env);
+  if (blocked) return blocked;
   if (err instanceof DOMException) {
     switch (err.name) {
       case "NotAllowedError":
@@ -383,6 +434,18 @@ export function useRecorder(opts: RecorderOptions = {}): RecorderHandle {
   // Teardown on unmount — even if component unmounts during recording.
   useEffect(() => {
     return () => cleanup();
+  }, []);
+
+  // The browser drops the wake lock whenever the tab hides and never hands it
+  // back, so one glance at another app mid-meeting left the screen free to
+  // sleep for the rest of the take. Re-arm on the way back in.
+  useEffect(() => {
+    if (!IS_BROWSER) return;
+    const onVisible = () => {
+      if (isRecording.value) void requestWakeLock();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
 
   // Block tab-close during active recording.
