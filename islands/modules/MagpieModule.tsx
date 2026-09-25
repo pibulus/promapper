@@ -263,6 +263,7 @@ export default function MagpieModule() {
   function remove(id: string) {
     const current = conversationData.value;
     if (!current || isViewingShared.value) return;
+    const targetConversationId = current.conversation?.id;
     const gone = (current.magpie ?? []).find((i) => i.id === id);
     conversationData.value = {
       ...current,
@@ -271,8 +272,19 @@ export default function MagpieModule() {
     soundTick();
     if (!gone) return;
 
+    // Undo lands only on the map the scrap was tossed from. The toast
+    // outlives a map switch, and push() writes to whatever map is open — so
+    // Undo after switching used to drop the scrap onto the wrong map.
+    const restore = (): boolean => {
+      if (conversationData.value?.conversation?.id !== targetConversationId) {
+        return false;
+      }
+      push(gone);
+      return true;
+    };
+
     if (gone.kind !== "file") {
-      showUndoToast("Tossed", () => push(gone));
+      showUndoToast("Tossed", restore);
       return;
     }
     // The X is a small glyph in a scrolling list and the bytes are the only
@@ -281,8 +293,9 @@ export default function MagpieModule() {
     // immediately would leave undo restoring a row that can never open.
     let undone = false;
     showUndoToast("Tossed", () => {
-      undone = true;
-      push(gone);
+      // A refused undo still lets the delete run — otherwise the bytes are
+      // orphaned in IndexedDB with no row pointing at them.
+      undone = restore();
     });
     setTimeout(() => {
       if (!undone) deleteMagpieFile(gone.value);
@@ -298,6 +311,20 @@ export default function MagpieModule() {
         class={`dashboard-card action-items-card${
           isDragging.value ? " magpie-card--dropping" : ""
         }`}
+        onPaste={(e) => {
+          // A pasted screenshot is the single best thing this shelf can
+          // catch, and it arrives as a clipboard FILE, not as text. Caught on
+          // the card so focus anywhere inside it counts. Keep it the ONLY
+          // paste handler in here: paste bubbles, and a second one on the
+          // input runs addFiles twice before either has pushed a row, so the
+          // name+size dedupe sees nothing and every paste lands double.
+          if (readOnly) return;
+          const pasted = Array.from(e.clipboardData?.files ?? []);
+          if (pasted.length) {
+            e.preventDefault();
+            addFiles(pasted);
+          }
+        }}
         onDragOver={(e) => {
           // preventDefault FIRST, guard second. The other order leaves a
           // read-only shared map as a non-target, so the browser handles the
@@ -570,15 +597,6 @@ export default function MagpieModule() {
             class="action-quickadd-input"
             value={draft.value}
             onInput={(e) => draft.value = (e.target as HTMLInputElement).value}
-            onPaste={(e) => {
-              // A pasted screenshot is the single best thing this shelf can
-              // catch, and it arrives as a clipboard FILE, not as text.
-              const pasted = Array.from(e.clipboardData?.files ?? []);
-              if (pasted.length) {
-                e.preventDefault();
-                addFiles(pasted);
-              }
-            }}
             placeholder="keep a link, a picture, a scrap…"
             aria-label="Add to the Magpie shelf — a link, an image URL, or any text"
             maxLength={MAGPIE_MAX_LENGTH}
