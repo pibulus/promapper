@@ -259,6 +259,18 @@ Adding a tool should be drop-a-file + register-a-line:
   rule does NOT cover the header wordmark or footer title — those are `<a>`/
   `<span>` and are named explicitly in the same rule. Add any new title class
   there.
+- **The porch speaks Inter; mono is for the MATERIAL only** (Pablo, Sept 25
+  2026: "only text outputs should be monofont, not subtitles or headings or
+  info"). `.porch` sets Inter; mono comes back only for typed/pasted text, the
+  live transcript, and the specimens' own words. Placeholders, buttons,
+  captions, footer line: Inter.
+- **The porch is two screens with a membrane** (Sept 25): screen one is
+  hit-record-and-go in open air (no card at any width, mic above the paste
+  tray); screen two is `components/PorchTable.tsx`, the /example board laid out
+  as fun-size specimens that reuse the REAL card classes. The membrane is native
+  CSS scroll snap scoped by `html:has(.porch)`; no JS, no reveal animations. `/`
+  never auto-restores, so /example opens its board via `/?open=<id>` →
+  `openStoredConversation()`.
 - **Colour is law, and it lives in `docs/COLOR-SYSTEM.md`.** Six source files
   cite it. The live theme knobs are in `core/theme/randomTheme.ts`, NOT
   `themes.ts` — the app auto-rolls a SHUFFLE theme on mount, so the named themes

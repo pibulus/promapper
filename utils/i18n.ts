@@ -27,13 +27,28 @@ export const TRANSLATIONS = {
     heroDesc: "Drop in a thought, a meeting, a scene, or a whole court case.",
     heroCaption:
       "A friendly project map you can keep adding to, share around, and turn into documents.",
-    dropPrompt: "Talk it out, catch it live, or drop in what you've got.",
-    badgeRecord: "record",
-    badgePaste: "paste",
-    badgeUpload: "upload",
+    dropPrompt:
+      "Or paste notes, a transcript, a whole rant. Files drop in too.",
     addFile: "file",
-    exampleLink: "or open one someone already made",
     lastUpload: "Last:",
+
+    // The porch's second screen — one finished board, laid out
+    porchCue: "What it makes",
+    tableTitle: "One rambling take, laid out",
+    tableLede:
+      "A sheriff's third callout this week: a biting, a sinkhole, and bloodwork that came back better than clean.",
+    tableTranscriptNote: "Who said what, the way they said it.",
+    tableActionsNote:
+      "The to-dos, with who and when. Say it's done in a later take and it ticks itself off.",
+    tableMapNote: "The threads, and how they tangle.",
+    tableLoopAdd: "Next week's take folds into the same map.",
+    tableLoopInvite: "A live room puts everyone on one board.",
+    tableLoopExport:
+      "Out the other side: meeting notes, a plan, a deck, even a haiku.",
+    tableOpen: "Open the whole board",
+    tableBack: "Back to the mic",
+    tableMapLabel:
+      "Map of seven threads around Marge Halloran: the biting, the sinkhole, bloodwork, the alpacas, Cormac's curse theory and Terry's ticket stand.",
 
     // Primary action button states
     btnStartRecording: "Start recording",
@@ -74,8 +89,7 @@ export const TRANSLATIONS = {
     processFailed: "That didn't go through — give it another go.",
 
     // Header & Footer Chrome
-    switchLang: "🇲🇽 Español",
-    switchLangUrl: "/es",
+    tabletopLink: "Tabletop campaigns",
     madeBy: "Made by Pablo • Melbourne • Anti-scale software with personality.",
     history: "History",
     voice: "Voice",
@@ -136,13 +150,28 @@ export const TRANSLATIONS = {
     heroDesc: "Pega un texto, graba una junta o suelta una idea.",
     heroCaption:
       "Un mapa claro para tus proyectos: agrégale ideas, compártelo y saca tus documentos sin rollos.",
-    dropPrompt: "Platícalo, grábalo o pega tu texto aquí.",
-    badgeRecord: "grabar",
-    badgePaste: "pegar",
-    badgeUpload: "subir",
+    dropPrompt:
+      "O pega notas, una transcripción, un rollo largo. También acepta archivos.",
     addFile: "archivo",
-    exampleLink: "o abre un ejemplo ya armado",
     lastUpload: "Último:",
+
+    // La segunda pantalla del porche — un tablero terminado, bien acomodado
+    porchCue: "Lo que arma",
+    tableTitle: "Una plática enredada, bien acomodada",
+    tableLede:
+      "La tercera llamada de la semana para un sheriff de pueblo: una mordida, un socavón y unos análisis de sangre que salieron demasiado bien.",
+    tableTranscriptNote: "Quién dijo qué, tal cual lo dijo.",
+    tableActionsNote:
+      "Los pendientes, con quién y para cuándo. Si en otra grabación se dice que ya quedó, se palomea solo.",
+    tableMapNote: "Los hilos, y cómo se enredan.",
+    tableLoopAdd: "La grabación de la próxima semana se suma al mismo mapa.",
+    tableLoopInvite: "Una sala en vivo pone a todos en el mismo tablero.",
+    tableLoopExport:
+      "Y de ahí sale lo que haga falta: minuta, plan, presentación, hasta un haiku.",
+    tableOpen: "Abrir el tablero completo",
+    tableBack: "Volver al micrófono",
+    tableMapLabel:
+      "Mapa de siete hilos alrededor de Marge Halloran: la mordida, el socavón, los análisis, las alpacas, la maldición según Cormac y los boletos de Terry.",
 
     // Primary action button states
     btnStartRecording: "Empieza a grabar",
@@ -183,8 +212,7 @@ export const TRANSLATIONS = {
     processFailed: "Hubo un error al procesar, inténtalo otra vez.",
 
     // Header & Footer Chrome
-    switchLang: "🇦🇺 English",
-    switchLangUrl: "/",
+    tabletopLink: "Partidas de rol",
     madeBy:
       "Hecho por Pablo • Mexicano-Australiano • Software anti-escala con personalidad.",
     history: "Historial",

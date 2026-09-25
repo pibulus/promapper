@@ -645,9 +645,69 @@ export default function UploadIsland() {
   return (
     <div class="mapper-input-lab">
       <section
-        class="mapper-capture-block mapper-capture-unified"
+        class="mapper-capture-block"
         aria-label="Conversation input"
       >
+        {
+          /* The mic comes FIRST — hit record and go. The paste tray under it
+            is the other door, not the headline act. This is still ONE morphing
+            button (Map it / Map audio / Try that again), just above the tray
+            instead of under it. */
+        }
+        <div class="mapper-capture-actions">
+          {isRecording.value
+            ? (
+              <div class="mapper-record-actions-row">
+                <button
+                  type="button"
+                  class="mapper-cancel-btn"
+                  onClick={cancelRecording}
+                >
+                  {i18n.btnCancel}
+                </button>
+                <button
+                  class="mapper-slab-button mapper-slab-button--record flex-1"
+                  disabled={primaryDisabled.value}
+                  onClick={handlePrimaryAction}
+                >
+                  <i
+                    class="fa fa-check"
+                    aria-hidden="true"
+                    style={{ marginRight: "0.45rem" }}
+                  >
+                  </i>
+                  {i18n.btnStopAndMap}
+                </button>
+              </div>
+            )
+            : (
+              <>
+                <button
+                  class="mapper-slab-button mapper-slab-button--record"
+                  disabled={primaryDisabled.value}
+                  onClick={handlePrimaryAction}
+                >
+                  {primaryLabel.value === i18n.btnStartRecording && (
+                    <i
+                      class="fa fa-microphone"
+                      aria-hidden="true"
+                      style={{ marginRight: "0.5rem" }}
+                    >
+                    </i>
+                  )}
+                  {primaryLabel.value}
+                </button>
+
+                {lastUploadName.value && !selectedFile.value &&
+                  !hasText.value && (
+                  <span class="mapper-block-meta">
+                    {i18n.lastUpload} {lastUploadName.value}
+                  </span>
+                )}
+              </>
+            )}
+        </div>
+
         <div
           data-dropzone
           class={`mapper-unified-input${isDragActive.value ? " is-drop" : ""}${
@@ -712,12 +772,11 @@ export default function UploadIsland() {
                     )
                     : (
                       <div class="mapper-live-empty-prompt">
-                        <span
-                          class="mapper-live-empty-icon"
+                        <i
+                          class="fa fa-microphone mapper-live-empty-icon"
                           aria-hidden="true"
                         >
-                          🎙️
-                        </span>
+                        </i>
                         <span>
                           {i18n.livePrompt}
                         </span>
@@ -734,21 +793,10 @@ export default function UploadIsland() {
             )
             : (
               <>
-                <div class="mapper-capture-badge-row" aria-hidden="true">
-                  <span class="mapper-capture-badge" data-tone="0">
-                    {i18n.badgeRecord}
-                  </span>
-                  <span class="mapper-capture-badge" data-tone="1">
-                    {i18n.badgePaste}
-                  </span>
-                  <span class="mapper-capture-badge" data-tone="2">
-                    {i18n.badgeUpload}
-                  </span>
-                </div>
                 <textarea
                   ref={textAreaRef}
                   class="mapper-textarea w-full resize-none"
-                  rows={6}
+                  rows={3}
                   placeholder={i18n.dropPrompt}
                   aria-label="Conversation content or transcription input"
                   value={textInput.value}
@@ -799,72 +847,6 @@ export default function UploadIsland() {
                   <span aria-hidden="true">+</span>
                   <span>{i18n.addFile}</span>
                 </button>
-              </>
-            )}
-        </div>
-
-        <div class="mapper-capture-actions">
-          {isRecording.value
-            ? (
-              <div class="mapper-record-actions-row">
-                <button
-                  type="button"
-                  class="mapper-cancel-btn"
-                  onClick={cancelRecording}
-                >
-                  {i18n.btnCancel}
-                </button>
-                <button
-                  class="mapper-slab-button mapper-slab-button--record flex-1"
-                  disabled={primaryDisabled.value}
-                  onClick={handlePrimaryAction}
-                >
-                  <i
-                    class="fa fa-check"
-                    aria-hidden="true"
-                    style={{ marginRight: "0.45rem" }}
-                  >
-                  </i>
-                  {i18n.btnStopAndMap}
-                </button>
-              </div>
-            )
-            : (
-              <>
-                <button
-                  class="mapper-slab-button mapper-slab-button--record"
-                  disabled={primaryDisabled.value}
-                  onClick={handlePrimaryAction}
-                >
-                  {primaryLabel.value === i18n.btnStartRecording && (
-                    <i
-                      class="fa fa-microphone"
-                      aria-hidden="true"
-                      style={{ marginRight: "0.45rem" }}
-                    >
-                    </i>
-                  )}
-                  {primaryLabel.value}
-                </button>
-
-                {lastUploadName.value && !selectedFile.value &&
-                  !isRecording.value &&
-                  !hasText.value && (
-                  <span class="mapper-block-meta">
-                    {i18n.lastUpload} {lastUploadName.value}
-                  </span>
-                )}
-
-                {!lastUploadName.value && !selectedFile.value &&
-                  !isRecording.value &&
-                  !hasText.value && (
-                  <a
-                    href="/example"
-                    class="mapper-block-meta mapper-example-link"
-                  >
-                    {i18n.exampleLink}
-                  </a>
-                )}
               </>
             )}
         </div>

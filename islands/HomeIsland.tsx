@@ -68,6 +68,7 @@ import AudioRecorder from "./AudioRecorder.tsx";
 import ThemeSwitcher from "./ThemeSwitcher.tsx";
 import SoundToggle from "./SoundToggle.tsx";
 import ShortcutsModal from "../components/ShortcutsModal.tsx";
+import PorchTable from "../components/PorchTable.tsx";
 import SupporterModal from "./SupporterModal.tsx";
 import {
   isSupporterSignal,
@@ -1058,55 +1059,51 @@ export default function HomeIsland() {
         <main class="app-scroll flex-1 overflow-y-auto px-4 pt-4 sm:px-6">
           <div
             class={`max-w-7xl mx-auto grid gap-4 sm:gap-6 ${
-              conversationData.value ? "pb-28" : "pb-8"
+              conversationData.value
+                ? "pb-28"
+                : processingConversation.value
+                ? "pb-8"
+                : ""
             }`}
           >
-            {/* Hero Section - Only show when NO data and nothing brewing */}
+            {
+              /* THE PORCH — two screens with a membrane between them (scroll
+                snap, styles.css). Screen one is hit-record-and-go, standing
+                straight on the sky; screen two is one finished board laid out
+                on the table. The stage's bottom lip is the table's own edge
+                peeking up, so the second screen announces itself without a
+                word. Only while there's no data and nothing brewing. */
+            }
             {!conversationData.value && !processingConversation.value && (
-              <section class="mapper-stage">
-                <div class="mapper-card" data-tilt>
-                  <div class="mapper-card__inner">
-                    <div class="mapper-hero-copy">
-                      <h1 class="mapper-hero-title">
-                        {heroLines.map((line, lineIndex) => (
-                          <span
-                            class="mapper-hero-line"
-                            key={line}
-                            style={{ animationDelay: `${lineIndex * 140}ms` }}
-                          >
-                            {line}
-                          </span>
-                        ))}
-                      </h1>
-                      <p class="mapper-hero-desc">
-                        {i18n.heroDesc}
-                      </p>
-                      <p class="mapper-hero-caption">
-                        {i18n.heroCaption}
-                      </p>
-                      <div class="mapper-hero-pills">
-                        <a
-                          href={isSpanish() ? "/es/rol" : "/for/dnd"}
-                          class="mapper-hero-pill"
-                          aria-label={isSpanish()
-                            ? "Mapeo de partidas de rol y D&D"
-                            : "Go to Tabletop Campaign Studio for D&D & TTRPGs"}
+              <div class="porch">
+                <section class="mapper-stage" id="porch">
+                  <div class="mapper-hero">
+                    <h1 class="mapper-hero-title">
+                      {heroLines.map((line, lineIndex) => (
+                        <span
+                          class="mapper-hero-line"
+                          key={line}
+                          style={{ animationDelay: `${lineIndex * 140}ms` }}
                         >
-                          <span aria-hidden="true">🎲</span>
-                          <span>
-                            {isSpanish()
-                              ? "Mapeo de partidas de rol y D&D →"
-                              : "Tabletop Campaign Studio for D&D & GMs →"}
-                          </span>
-                        </a>
-                      </div>
-                    </div>
-                    <div class="mapper-card__panel">
-                      <UploadIsland />
-                    </div>
+                          {line}
+                        </span>
+                      ))}
+                    </h1>
+                    <p class="mapper-hero-desc">
+                      {i18n.heroDesc}
+                    </p>
+                    <p class="mapper-hero-caption">
+                      {i18n.heroCaption}
+                    </p>
+                    <UploadIsland />
                   </div>
-                </div>
-              </section>
+                  <a href="#table" class="porch-cue">
+                    {i18n.porchCue}
+                    <i class="fa fa-chevron-down" aria-hidden="true"></i>
+                  </a>
+                </section>
+                <PorchTable />
+              </div>
             )}
 
             {
@@ -1169,21 +1166,33 @@ export default function HomeIsland() {
               </span>
             )
             : (
-              <span class="app-footer__brand flex items-center gap-2">
-                <span>© 2026 ProMapper</span>
-                <i class="fa fa-heart" aria-hidden="true"></i>
-                <span class="app-footer__tagline">
-                  {isSpanish() ? "hecho en Melbourne" : "made in Melbourne"}
+              <>
+                <span class="app-footer__brand app-footer__brand--porch flex items-center gap-2">
+                  <span>© 2026 ProMapper</span>
+                  <i class="fa fa-heart" aria-hidden="true"></i>
+                  <span class="app-footer__tagline">
+                    {isSpanish() ? "hecho en Melbourne" : "made in Melbourne"}
+                  </span>
                 </span>
-                <a
-                  href={i18n.switchLangUrl}
-                  class="ml-2 text-xs font-bold px-2 py-0.5 rounded-full border border-[var(--color-border)] hover:border-[var(--accent-ink)] transition-colors text-[var(--color-text-secondary)] hover:text-[var(--accent-ink)]"
-                  style={{ textDecoration: "none" }}
-                  title="Switch language"
-                >
-                  {i18n.switchLang}
-                </a>
-              </span>
+                {
+                  /* The tabletop studio is a sister app, not a porch feature —
+                    so it's a quiet die down here, not a pill in the hero. (The
+                    theme die only exists with a dashboard, so these never
+                    meet.) The language toggle is gone: /es and the browser's
+                    own language still pick Spanish. */
+                }
+                <span class="app-footer__controls">
+                  <a
+                    href={isSpanish() ? "/es/rol" : "/for/dnd"}
+                    class="header-icon-btn"
+                    aria-label={i18n.tabletopLink}
+                    data-tip={i18n.tabletopLink}
+                    data-tip-align="right"
+                  >
+                    <i class="fa fa-dice-five" aria-hidden="true"></i>
+                  </a>
+                </span>
+              </>
             )}
           {
             /* The dials are workshop tools — they appear with the dashboard.
