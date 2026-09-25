@@ -102,3 +102,44 @@ Deno.test("redeemSupporterCode mints a signed token for master codes", async () 
   assertNotEquals(verified, null);
   assertEquals(verified?.tier, "lifetime");
 });
+
+Deno.test("verifySupporterPass refuses lifetime tokens minted before the leak mark", async () => {
+  // Byte-for-byte what the pre-fix redeem minted from a (public) master code:
+  // a validly SIGNED lifetime payload with no `v`.
+  const b64 = (bytes: Uint8Array) =>
+    btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(
+      /\//g,
+      "_",
+    ).replace(/=+$/, "");
+  const now = Math.floor(Date.now() / 1000);
+  const body = b64(
+    new TextEncoder().encode(
+      JSON.stringify({ tier: "lifetime", exp: now + 86400, iat: now }),
+    ),
+  );
+  const data = `promapper-pass-v1.${body}`;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(TEST_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = new Uint8Array(
+    await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data)),
+  );
+  assertEquals(
+    await verifySupporterPass(`${data}.${b64(sig)}`, TEST_SECRET),
+    null,
+  );
+
+  // A lifetime token minted now carries the mark and still verifies.
+  const fresh = await signSupporterPass({
+    tier: "lifetime",
+    secret: TEST_SECRET,
+  });
+  assertEquals(
+    (await verifySupporterPass(fresh, TEST_SECRET))?.tier,
+    "lifetime",
+  );
+});

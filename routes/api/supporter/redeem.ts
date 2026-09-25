@@ -3,9 +3,13 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { redeemSupporterCode } from "@services/supporterPass.ts";
+import { guardPublicRequest } from "@services/requestGuard.ts";
 
 export const handler: Handlers = {
   async POST(req) {
+    // Master codes are guessable words, so guessing must cost something.
+    const limited = guardPublicRequest(req);
+    if (limited) return limited;
     try {
       const body = await req.json().catch(() => ({}));
       const code = typeof body.code === "string" ? body.code.trim() : "";

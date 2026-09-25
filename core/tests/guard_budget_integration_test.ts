@@ -109,3 +109,26 @@ Deno.test("the global ceiling blocks a client whose own budget is untouched", as
     );
   });
 });
+
+Deno.test("a supporter pass raises the daily budget — it does not remove it", async () => {
+  const { signSupporterPass } = await import("../../services/supporterPass.ts");
+  const pass = await signSupporterPass({ checkoutId: "budget-supporter-1" });
+  await withEnv({
+    API_DAILY_LIMIT: "2", // supporters get 3x → 6
+    API_GLOBAL_DAILY_LIMIT: "0",
+    API_RATE_LIMIT: "0",
+    API_AUTH_TOKEN: "",
+  }, async () => {
+    const supporterReq = () => {
+      const r = req("203.0.113.201");
+      r.headers.set("x-promapper-pass", pass);
+      return r;
+    };
+    for (let i = 1; i <= 6; i++) {
+      assertEquals(await guardRequest(supporterReq()), null, `call ${i}`);
+    }
+    // A pass is a bearer token that can be shared; the house key still needs
+    // a floor under it.
+    assertEquals((await guardRequest(supporterReq()))?.status, 429);
+  });
+});

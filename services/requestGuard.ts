@@ -218,27 +218,35 @@ export async function guardRequest(req: Request): Promise<Response | null> {
   const rateBlock = enforceRateLimit(req);
   if (rateBlock) return rateBlock;
 
-  // Active Supporter pass: full access, house budgets waived
-  const isSupporter = await isSupporterRequest(req);
-  if (isSupporter) return null;
-
   // Their key, their costs — no bill rails. But verify the key once: without
   // this, a wrong key 401s inside every AI stage, graceful degradation
   // swallows it all, and the user gets a hollow map that looks broken.
   const byoKey = getByoKey(req);
   if (byoKey) return await verifyByoKey(byoKey);
 
-  return await enforceDailyBudgets(req);
+  // Supporter pass: a taller daily rail on the house key, never NO rail. It
+  // used to waive both budgets — and a pass is a bearer token (and, until
+  // Sept 25, anyone could mint one from the master codes in this public
+  // repo), so the house wallet had no floor at all. The global ceiling still
+  // counts supporter traffic.
+  const limit = apiDailyLimit();
+  return await enforceDailyBudgets(
+    req,
+    await isSupporterRequest(req) ? limit * 3 : limit,
+  );
 }
 
 /**
  * The per-client daily budget and the global daily ceiling, charged together in
  * one KV commit. Previously two separate in-memory checks and two Maps.
  */
-async function enforceDailyBudgets(req: Request): Promise<Response | null> {
+async function enforceDailyBudgets(
+  req: Request,
+  clientLimit: number,
+): Promise<Response | null> {
   const verdict = await consumeCallBudgets(
     getClientToken(req),
-    apiDailyLimit(),
+    clientLimit,
     apiGlobalDailyLimit(),
     Date.now(),
   );

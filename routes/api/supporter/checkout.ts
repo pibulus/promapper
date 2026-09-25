@@ -8,9 +8,13 @@ import {
   isSquareConfigured,
 } from "@services/square.ts";
 import { savePendingCheckout } from "@services/checkoutStore.ts";
+import { guardPublicRequest } from "@services/requestGuard.ts";
 
 export const handler: Handlers = {
   async POST(req) {
+    // Every call mints a real Square payment link and two KV rows.
+    const limited = guardPublicRequest(req);
+    if (limited) return limited;
     if (!isSquareConfigured()) {
       return new Response(
         JSON.stringify({

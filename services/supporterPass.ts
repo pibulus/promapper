@@ -6,13 +6,35 @@
 
 const TOKEN_PREFIX = "promapper-pass-v1";
 const DEFAULT_EXPIRY_DAYS = 365;
-const MASTER_CODES = [
-  "PIBULUS",
-  "MAESTRO",
-  "PROMAPPER-CREW",
-  "MEXICO-WARMTH",
-  "SOFTSTACK-FOREVER",
-];
+
+// Every lifetime token minted before this mark came from a master code that
+// sat in plaintext in this PUBLIC repo (Aug 26 – Sept 25 2026), so none of
+// them can be told apart from a stranger's. Master codes are the only thing
+// that mints lifetime tokens, so refusing unmarked ones revokes exactly that
+// set — paid supporter passes carry no mark and are untouched.
+const LIFETIME_MARK = 2;
+
+function getMasterCodes(): string[] {
+  const envCodes = (
+    Deno.env.get("SUPPORTER_UNLOCK_CODES") ||
+    Deno.env.get("PROMAPPER_UNLOCK_CODES") ||
+    ""
+  )
+    .split(",")
+    .map((c) => c.trim().toUpperCase())
+    .filter(Boolean);
+  if (envCodes.length > 0) return envCodes;
+  // Local dev only. These five are PUBLIC (git history keeps them forever) —
+  // never reuse one in SUPPORTER_UNLOCK_CODES.
+  if (Deno.env.get("DENO_DEPLOYMENT_ID")) return [];
+  return [
+    "PIBULUS",
+    "MAESTRO",
+    "PROMAPPER-CREW",
+    "MEXICO-WARMTH",
+    "SOFTSTACK-FOREVER",
+  ];
+}
 
 export interface SupporterPayload {
   tier: "supporter" | "lifetime";
@@ -21,14 +43,20 @@ export interface SupporterPayload {
   email?: string;
   code?: string;
   iat: number;
+  /** LIFETIME_MARK on lifetime tokens minted after the master-code leak. */
+  v?: number;
 }
 
 export function getSupporterSecret(): string {
-  return (
-    Deno.env.get("PROMAPPER_LICENSE_SECRET")?.trim() ||
-    Deno.env.get("SUPPORTER_LICENSE_SECRET")?.trim() ||
-    "promapper-dev-secret-change-in-production-2026"
-  );
+  const secret = Deno.env.get("PROMAPPER_LICENSE_SECRET")?.trim() ||
+    Deno.env.get("SUPPORTER_LICENSE_SECRET")?.trim();
+  if (secret) return secret;
+  if (Deno.env.get("DENO_DEPLOYMENT_ID")) {
+    throw new Error(
+      "PROMAPPER_LICENSE_SECRET or SUPPORTER_LICENSE_SECRET must be configured in production",
+    );
+  }
+  return "promapper-dev-secret-change-in-production-2026";
 }
 
 function base64UrlEncode(bytes: Uint8Array): string {
@@ -91,6 +119,7 @@ export async function signSupporterPass(
     tier: options.tier ?? "supporter",
     exp,
     iat: now,
+    ...(options.tier === "lifetime" ? { v: LIFETIME_MARK } : {}),
     ...(options.checkoutId ? { checkoutId: options.checkoutId } : {}),
     ...(options.email ? { email: options.email } : {}),
   };
@@ -124,7 +153,7 @@ export async function verifySupporterPass(
 
   // 1. Check Master Codes (never expire)
   const upper = trimmed.toUpperCase();
-  if (MASTER_CODES.includes(upper)) {
+  if (getMasterCodes().includes(upper)) {
     return {
       tier: "lifetime",
       exp: Math.floor(Date.now() / 1000) + 100 * 365 * 24 * 60 * 60, // 100 years
@@ -164,6 +193,9 @@ export async function verifySupporterPass(
     ) as SupporterPayload;
     if (payload.tier !== "supporter" && payload.tier !== "lifetime") {
       return null;
+    }
+    if (payload.tier === "lifetime" && payload.v !== LIFETIME_MARK) {
+      return null; // minted from a leaked public code — see LIFETIME_MARK
     }
     const now = Math.floor(Date.now() / 1000);
     if (!Number.isFinite(payload.exp) || payload.exp < now) {
