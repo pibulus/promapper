@@ -208,7 +208,7 @@ export default function ForceDirectedGraph(
         collisionRadius: collisionRadius.value,
         // Inked wiring, not a spiderweb: full carbon at 2.5px.
         linkStrokeWidth: 2.5,
-        linkOpacity: 0.9,
+        linkOpacity: 1,
         onClickNode: (_event: MouseEvent, node: { id: string }) => {
           selectedNodeId.value = node.id;
           selectedEdgeId.value = null;

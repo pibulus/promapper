@@ -751,7 +751,7 @@ export default function SoundModule() {
     <FlipCard
       label="Sound dial"
       front={
-        <div class="dashboard-card sound-card">
+        <div class="dashboard-card">
           <div class="dashboard-card-header">
             <div class="inline-flex items-center gap-2">
               <span class="stamped-tab stamped-tab--orange">04 // SOUND</span>
@@ -844,7 +844,7 @@ export default function SoundModule() {
         </div>
       }
       back={
-        <div class="dashboard-card sound-card">
+        <div class="dashboard-card">
           <div class="dashboard-card-header">
             <div class="inline-flex items-center gap-2">
               <span class="stamped-tab stamped-tab--orange">04 // DIAL</span>

@@ -63,14 +63,14 @@
      tax law), the softness is all in the long falloff. The board on top
      stays opaque paper, so the haze lives only outside it. */
   --surface-desk: radial-gradient(
-    ellipse 70% 55% at 90% 0%,
-    rgba(255, 94, 54, 0.12),
+    ellipse 80% 60% at 68% 0%,
+    rgba(255, 94, 54, 0.16),
     transparent 70%
   ), radial-gradient(
-    ellipse 55% 45% at 0% 100%,
-    rgba(255, 94, 54, 0.06),
-    transparent 70%
-  ), linear-gradient(170deg, #FFF4EC 0%, #FFF7DB 55%, #FFF4EC 100%);
+    ellipse 95% 75% at 50% 40%,
+    rgba(255, 235, 170, 0.22),
+    transparent 80%
+  ), #FFF3EA;
   --surface-board: #fffef7; /* warm near-white, never #fff (house law) */
   --surface-paper: #FCFBF9;
   --surface-vellum: rgba(250, 249, 246, 0.90);
@@ -89,9 +89,9 @@
   --spot-riso-pink: #FF2A6D;
   --spot-electric-cyan: #00E5FF;
 
-  /* Kraft — unbleached chipboard (Midori envelopes, Traveler's inserts). The
-     earthy bridge between paper wells and spot ink, so neon never reads as
-     plastic. Utility modules wear it; -deep is the recessed dice tray. */
+  /* Kraft — unbleached chipboard (Midori envelopes, Traveler's inserts). An
+     ACCENT material only: the recessed dice tray, blank tabs, placeholder
+     bars. Never a flat wash behind text (it read as packaging tape). */
   --ink-kraft: #EADCC9;
   --ink-kraft-deep: #DFD1BD;
 
@@ -940,8 +940,8 @@ h6,
 }
 /* Recording state — warm rose wash + accent icon (never alarm red). */
 .header-icon-btn.is-recording {
-  background: var(--accent-rose-wash);
-  color: var(--accent-ink);
+  background: var(--ink-spritz);
+  color: var(--ink-carbon);
   width: auto;
   padding: 0 0.6rem;
   gap: 0.4rem;
@@ -3194,9 +3194,9 @@ h6,
   box-shadow: 0.5px 0.5px 0 var(--line-ink);
 }
 .dice-btn.is-selected {
-  background: var(--header-band);
-  color: var(--header-band-ink);
-  border-color: var(--line-ink);
+  background: var(--spot-riso-pink);
+  color: var(--ink-carbon);
+  border-color: var(--ink-carbon);
 }
 
 /* Options / Steppers */
@@ -3266,8 +3266,8 @@ h6,
   color: var(--accent-ink);
 }
 .dice-mode-toggle button.is-active {
-  background: var(--header-band);
-  color: var(--header-band-ink);
+  background: var(--spot-riso-pink);
+  color: var(--ink-carbon);
 }
 
 /* History Strip */
@@ -3781,13 +3781,6 @@ h6,
   box-shadow: var(--shadow-card, 3px 3px 0px #121212);
   height: 100%;
   overflow: hidden;
-}
-
-/* Utility modules are cut from kraft stock, not memo paper — material weight
-   without another neon. Their scraps and wells stay paper on top of it. */
-:is(.sound-card, .magpie-card, .dice-card),
-:is(.sound-card, .magpie-card, .dice-card) .dashboard-card-header {
-  background: var(--ink-kraft);
 }
 
 /* ===================================================================
@@ -4993,13 +4986,12 @@ h6,
    Both states share the amber so they read as "status"; the label differentiates. */
 .action-status-pill {
   font-size: var(--tiny-size);
-  font-weight: 600;
+  font-weight: 700;
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  background: var(--status-amber);
-  border: 1px solid
-    color-mix(in srgb, var(--color-accent) 18%, var(--color-border));
-  color: var(--status-amber-ink);
+  background: var(--ink-spritz);
+  border: 1.5px solid var(--ink-carbon);
+  color: var(--ink-carbon);
 }
 
 /* Clear-date pill: recessive ghost (it just nulls a due date — one-tap,
@@ -5492,10 +5484,10 @@ h6,
      svg is what hid this grid and left the map on "an empty white desert". */
   background-color: var(--surface-paper);
   background-image: radial-gradient(
-    color-mix(in srgb, var(--ink-carbon) 12%, transparent) 1px,
-    transparent 1.5px
+    color-mix(in srgb, var(--ink-carbon) 16%, transparent) 1.5px,
+    transparent 2px
   );
-  background-size: 20px 20px;
+  background-size: 22px 22px;
 }
 
 .topic-map-canvas svg {
@@ -6069,12 +6061,12 @@ h6,
   width: fit-content;
   max-width: min(28rem, 90vw);
   margin: 0;
-  /* A printed readout slip on kraft: carbon rim, hard shadow, mono ticker.
-     Opaque, so no backdrop blur (paint-tax law). */
+  /* A printed readout slip: carbon rim, hard shadow, mono ticker. Opaque,
+     so no backdrop blur (paint-tax law). */
   padding: 0.8rem 1.1rem;
   border: 2px solid var(--ink-carbon);
   border-radius: 4px;
-  background: var(--ink-kraft);
+  background: var(--surface-board);
   box-shadow: var(--shadow-card);
   font-family: var(--font-mono);
   display: flex;
@@ -6478,7 +6470,7 @@ a:focus-visible {
 .node-disc {
   fill: var(--surface-white-warm, #fffef7);
   stroke: var(--ink-carbon);
-  stroke-width: 1.5;
+  stroke-width: 2;
   transition: stroke 0.22s ease;
 }
 
@@ -6494,8 +6486,11 @@ a:focus-visible {
    pill carries the ground now, so the old cream text halo is gone. The shadow
    is a second rect, not a filter: filters re-rasterize on every sim tick. */
 .node-group .label {
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   fill: var(--ink-carbon);
   pointer-events: none;
   user-select: none;
@@ -6504,11 +6499,12 @@ a:focus-visible {
 .node-label-pill {
   fill: var(--surface-board);
   stroke: var(--ink-carbon);
-  stroke-width: 1.5;
+  stroke-width: 2;
   transition: fill 0.22s ease;
 }
 
-.node-label-shadow {
+.node-label-shadow,
+.node-disc-shadow {
   fill: var(--ink-carbon);
 }
 
@@ -8161,9 +8157,10 @@ a:focus-visible {
   overflow: hidden;
   top: 0;
   border-left: 3px solid var(--ink-carbon);
-  background: rgba(250, 249, 246, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  /* Frosted vellum. Only paints while open (modal-only blur is allowed). */
+  background: rgba(250, 249, 246, 0.85);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
   box-shadow: -10px 0 24px rgba(18, 18, 18, 0.15), -4px 0 0 rgba(18, 18, 18,
     0.08);
   transform: translateX(100%);
@@ -8381,10 +8378,11 @@ a:focus-visible {
   line-height: 1.3;
   color: var(--color-text-secondary);
 }
+/* Hover and selected are the highlighter pass: fluro fill, hard 3px slab. */
 .export-chip:hover:not(:disabled) {
   transform: translate(-1px, -1px);
   box-shadow: 3px 3px 0 var(--ink-carbon);
-  background: #FCFBF9;
+  background: var(--spot-fluro-yellow);
 }
 .export-chip:active:not(:disabled) {
   transform: translate(1px, 1px);
@@ -8397,8 +8395,8 @@ a:focus-visible {
 }
 .export-chip.is-selected {
   border-color: var(--ink-carbon);
-  background: #FFF9D2;
-  box-shadow: 2px 2px 0 var(--ink-carbon);
+  background: var(--spot-fluro-yellow);
+  box-shadow: 3px 3px 0 var(--ink-carbon);
 }
 .export-chip.is-selected .export-chip__icon {
   opacity: 1;
@@ -8784,17 +8782,17 @@ label {
   gap: 0.5rem;
   padding: 0 1.15rem;
   height: 2.7rem;
-  border: 2px solid var(--cta-plate-border);
+  border: 2px solid var(--ink-carbon);
   border-radius: 999px;
-  /* CANDY PLATE (COLOR-SYSTEM.md): the mic is the loudest promise on the
-     dashboard — bright accent candy, warm-black ink. */
-  background: var(--cta-plate);
-  color: var(--soft-black);
+  /* The mic is the loudest promise on the dashboard: a spritz recording pin
+     in carbon ink, same orange as every play control. */
+  background: var(--ink-spritz);
+  color: var(--ink-carbon);
   font-weight: 800;
   font-size: var(--small-size);
   letter-spacing: 0.02em;
   cursor: pointer;
-  box-shadow: 2px 2px 0 var(--line-ink);
+  box-shadow: 2px 2px 0 var(--ink-carbon);
   transition:
     transform var(--transition-fast),
     box-shadow var(--transition-fast);
@@ -8802,13 +8800,12 @@ label {
 
 .recording-dock__record:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--line-ink);
-  background: var(--cta-plate-hover);
+  box-shadow: 3px 3px 0 var(--ink-carbon);
 }
 
 .recording-dock__record:active {
   transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 var(--line-ink);
+  box-shadow: 1px 1px 0 var(--ink-carbon);
 }
 
 .recording-dock__record-dot {

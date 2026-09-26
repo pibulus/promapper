@@ -165,6 +165,14 @@ export function createNodeGroup(
   // emoji its own solid ground so edges don't run visibly through the glyph, and
   // it reads as a tidy chip rather than a fuzzy blob. r=20 fully clears the 28px
   // emoji (which renders past center) so the glyph doesn't clip below the chip.
+  // Hard offset shadow under the disc, so the emoji sits in a stamped badge
+  // like its label does. A shape, not a filter (filters re-raster per tick).
+  inner
+    .append("circle")
+    .attr("class", "node-disc-shadow")
+    .attr("r", 20)
+    .attr("cx", BADGE_SHADOW)
+    .attr("cy", BADGE_SHADOW);
   inner
     .append("circle")
     .attr("class", "node-disc")
