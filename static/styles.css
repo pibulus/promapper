@@ -8058,7 +8058,7 @@ a:focus-visible {
   right: 0;
   bottom: 0;
   top: 0;
-  z-index: calc(var(--z-drawer) - 10);
+  z-index: calc(var(--z-header) + 5);
   background: rgba(18, 18, 18, 0.25);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -8076,7 +8076,7 @@ a:focus-visible {
   position: fixed;
   bottom: 0;
   right: 0;
-  z-index: var(--z-drawer);
+  z-index: calc(var(--z-header) + 10);
   display: flex;
   width: 26rem;
   max-width: 100vw;
