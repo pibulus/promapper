@@ -189,7 +189,9 @@ export default function DiceModule() {
   return (
     <div class="dashboard-card dice-card">
       <div class="dashboard-card-header">
-        <h3>Dice</h3>
+        <div class="inline-flex items-center gap-2">
+          <span class="stamped-tab stamped-tab--pink">06 // DICE</span>
+        </div>
         <div class="card-header-actions">
           {roll && !isViewingShared.value && (
             <button

@@ -732,7 +732,9 @@ export default function ActionItemsCard(
       <div class="w-full h-full">
         <div class="dashboard-card action-items-card">
           <div class="dashboard-card-header">
-            <h3>Actions</h3>
+            <div class="inline-flex items-center gap-2">
+              <span class="stamped-tab stamped-tab--pink">03 // ACTIONS</span>
+            </div>
             {
               /* card-header-actions like every other card — this header used
                 its own btn--ghost cluster and read as a different species. */

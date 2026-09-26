@@ -97,7 +97,11 @@ export default function PorchTable() {
         <figure class="porch-specimen" style={{ "--tilt": "-1deg" }}>
           <div class="dashboard-card porch-card">
             <div class="dashboard-card-header">
-              <h3>Transcript</h3>
+              <div class="inline-flex items-center gap-2">
+                <span class="stamped-tab stamped-tab--yellow">
+                  01 // TRANSCRIPT
+                </span>
+              </div>
             </div>
             <div
               class="porch-card__body transcript-content"
@@ -112,7 +116,9 @@ export default function PorchTable() {
         <figure class="porch-specimen" style={{ "--tilt": "0.7deg" }}>
           <div class="dashboard-card porch-card">
             <div class="dashboard-card-header">
-              <h3>Actions</h3>
+              <div class="inline-flex items-center gap-2">
+                <span class="stamped-tab stamped-tab--pink">03 // ACTIONS</span>
+              </div>
             </div>
             <ul class="porch-card__body porch-actions">
               {ACTIONS.map((item) => (
@@ -173,7 +179,9 @@ export default function PorchTable() {
         <figure class="porch-specimen" style={{ "--tilt": "-0.5deg" }}>
           <div class="dashboard-card porch-card">
             <div class="dashboard-card-header">
-              <h3>Map</h3>
+              <div class="inline-flex items-center gap-2">
+                <span class="stamped-tab stamped-tab--yellow">10 // MAP</span>
+              </div>
             </div>
             <svg
               class="porch-card__body porch-map"

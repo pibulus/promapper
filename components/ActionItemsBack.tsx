@@ -168,7 +168,9 @@ export default function ActionItemsBack(
   return (
     <div class="dashboard-card">
       <div class="dashboard-card-header">
-        <h3>Overview</h3>
+        <div class="inline-flex items-center gap-2">
+          <span class="stamped-tab stamped-tab--pink">03 // OVERVIEW</span>
+        </div>
         <div class="card-header-actions">
           <button
             onClick={onMarkAllDone}

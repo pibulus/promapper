@@ -29,7 +29,9 @@ export default function TranscriptBack(
   return (
     <div class="dashboard-card">
       <div class="dashboard-card-header">
-        <h3>Voices</h3>
+        <div class="inline-flex items-center gap-2">
+          <span class="stamped-tab stamped-tab--yellow">01 // VOICES</span>
+        </div>
         <div class="card-header-actions">
           <button
             onClick={() => text && copyToClipboard(text)}

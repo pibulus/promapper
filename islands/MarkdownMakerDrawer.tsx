@@ -747,7 +747,11 @@ export default function MarkdownMakerDrawer(
       >
         {/* Header — same band grammar as every dashboard card */}
         <div class="dashboard-card-header">
-          <h3>Export</h3>
+          <div class="inline-flex items-center gap-2">
+            <span class="stamped-tab stamped-tab--pink">
+              EXPORT // ARTIFACT
+            </span>
+          </div>
           <div class="card-header-actions">
             <button
               onClick={onClose}

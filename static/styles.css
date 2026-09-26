@@ -55,6 +55,32 @@
   ), linear-gradient(168deg, #ff9a5c 0%, #ffc296 38%, #ffe8d0 78%);
 
   /* ===================================================================
+     TOKYO HI-FI FUNCTIONALISM TOKENS
+     The Tactile Desk Archetype · Japanese Stationery & Swiss Typography
+     ================================================================ */
+  --surface-desk: #F5F2EB;
+  --surface-board: #FFFFFF;
+  --surface-paper: #FCFBF9;
+  --surface-vellum: rgba(250, 249, 246, 0.90);
+  --scrim-smoke: rgba(18, 18, 18, 0.22);
+
+  --ink-carbon: #121212;
+  --ink-muted: #6B6860;
+  --ink-border-heavy: 3px solid #121212;
+  --ink-border-thin: 2px solid #121212;
+  --ink-border-hairline: 1px solid #121212;
+
+  --spot-fluro-yellow: #FFE600;
+  --spot-safety-orange: #FF5500;
+  --spot-riso-pink: #FF2A6D;
+  --spot-electric-cyan: #00E5FF;
+
+  --shadow-board: 5px 5px 0px #121212;
+  --shadow-card: 3px 3px 0px #121212;
+  --shadow-button: 2px 2px 0px #121212;
+  --shadow-button-active: 0px 0px 0px #121212;
+
+  /* ===================================================================
      DESIGN TOKENS - Consistent styling across components
      ================================================================ */
 
@@ -823,12 +849,12 @@ h6,
   flex-shrink: 0;
 }
 
-/* Project title — sits beside the brand, truncates, recedes vs the wordmark. */
+/* Project title — sits beside the brand, truncates, confident Swiss typography. */
 .app-header__title {
   font-size: var(--small-size);
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  color: var(--ink-carbon);
+  letter-spacing: -0.015em;
   /* 1.35, not 1: with overflow:hidden a 1.0 line box CLIPS descenders
      ("Dusty Gulch" lost the tail of its g/y). */
   line-height: 1.35;
@@ -1030,6 +1056,16 @@ h6,
      every page (typed @property animations run on the main thread). The
      living-light motion now rides sceneDrift's transform below — the
      compositor moves the painted wash for free. */
+}
+
+/* Layer 0 (The Architectural Drafting Desk) — grounded archival surface */
+.mapper-scene--dashboard {
+  background: var(--surface-desk, #F5F2EB) !important;
+}
+
+.mapper-scene--dashboard::before,
+.mapper-scene--dashboard::after {
+  display: none !important;
 }
 
 .mapper-scene::before {
@@ -2411,31 +2447,26 @@ h6,
    DASHBOARD CARD SYSTEM - Reusable card components
    ================================================================ */
 
-/* The SHELL — one container holding ALL the components, so the dashboard
-   feels like a held composition instead of cards floating loose on the sky.
-   A soft accent-tinted plane between ground and cards. */
+/* The SHELL — The Melamine Drafting Board (Tokyo Hi-Fi Layer 1)
+   A commanding, crisp white melamine drafting board holding all modules.
+   Sharp 3px carbon border and hard 5px drop shadow. */
 .dashboard-shell {
-  background: color-mix(
-    in srgb,
-    var(--color-accent) 11%,
-    rgba(255, 252, 247, 0.72)
-  );
-  border: 2px solid var(--line-ink);
-  border-radius: 28px;
-  padding: clamp(0.8rem, 1.8vw, 1.4rem);
-  /* FLAT on purpose (Sept 12). The shell wore the same slab as every card
-     inside it, so the offset read twice at two levels and turned to mush.
-     The shell is a container; the cards are the objects. Only objects lift. */
-  box-shadow: none;
+  background: var(--surface-board, #FFFFFF);
+  border: 3px solid var(--ink-carbon, #121212);
+  border-radius: 10px;
+  padding: clamp(1rem, 2vw, 1.6rem);
+  box-shadow: var(--shadow-board, 5px 5px 0px #121212);
+  position: relative;
 }
 
-/* Mobile: let the modules float free — no nested container chrome */
+/* Mobile: clean tactile container with compact padding */
 @media (max-width: 768px) {
   .dashboard-shell {
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    padding: 0;
+    background: var(--surface-board, #FFFFFF);
+    border: 2px solid var(--ink-carbon, #121212);
+    border-radius: 8px;
+    box-shadow: 3px 3px 0px #121212;
+    padding: 0.6rem;
   }
 }
 
@@ -3717,20 +3748,12 @@ h6,
 }
 
 .dashboard-card {
-  /* SOLID themed surface — glass let the ground bleed through and the cards
-     read as having "no background colour". A whisper of the accent keeps
-     each card in relation to the theme; no backdrop-filter (opaque needs
-     none, and dropping it kills the per-card stacking-context traps). */
-  background: color-mix(in srgb, var(--color-accent) 5%, #fffdf8);
-  border-radius: var(--border-radius-lg);
-  /* project_mapper's chunky soul: a 2px warm-BLACK border (never brown) + a flat
-     warm slab shadow (no blur). Gives the card a confident toy-brut edge
-     that reads as ours, not corporate. 24px radius keeps it a touch refined.
-     OPAQUE ink, not the 25%-alpha slab: a hard offset at low alpha reads as
-     a soft grey smudge — the one thing a neo-brutalist shadow must not do.
-     Matching --line-ink makes the offset look like the border's own cast. */
-  border: 2px solid var(--line-ink);
-  box-shadow: 4px 4px 0 var(--line-ink);
+  /* Tokyo Hi-Fi Layer 2: Modular Index Stock
+     Resting cleanly on the melamine board with crisp carbon line work. */
+  background: var(--surface-paper, #FCFBF9);
+  border-radius: var(--border-radius-sm, 8px);
+  border: 2px solid var(--ink-carbon, #121212);
+  box-shadow: var(--shadow-card, 3px 3px 0px #121212);
   height: 100%;
   overflow: hidden;
 }
@@ -3787,39 +3810,36 @@ h6,
   transform: rotateY(180deg);
 }
 
-/* Corner flip button — sits in the card's top-right, clear of the header
-   title. Soft, on-theme, unobtrusive until hovered. */
+/* Corner flip button — tactile mechanical latch sitting in card top-right */
 .flip-card-btn {
   position: absolute;
-  /* EXACTLY the .card-header-actions button metrics (2rem square at the
-     header's own padding coordinates) — a 1.9rem button at hand-picked
-     offsets sat a few px off its siblings on every card. */
-  /* +2px = the .dashboard-card border: this button positions against the
-     FACE while the header row lives inside the card's border box. Without
-     the offset it sat 2px high and 2px right of its siblings. */
   top: calc(var(--header-pad-y) + 2px);
   right: calc(var(--header-pad-x) + 2px);
   z-index: 2;
-  width: 2rem;
-  height: 2rem;
+  width: 1.85rem;
+  height: 1.85rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--border-radius-sm);
-  /* GHOST like its header-action siblings — the cream slab version read as
-     a different button species sitting in the same row. */
-  border: none;
-  background: transparent;
-  color: var(--header-band-ink);
+  border-radius: 3px;
+  border: 1.5px solid var(--ink-carbon, #121212);
+  background: #FFFFFF;
+  color: var(--ink-carbon, #121212);
+  box-shadow: 1.5px 1.5px 0px var(--ink-carbon, #121212);
   cursor: pointer;
-  transition:
-    background var(--transition-fast),
-    color var(--transition-fast);
+  transition: transform 80ms ease, box-shadow 80ms ease, background 120ms ease;
 }
 
 .flip-card-btn:hover {
-  background: var(--surface-cream-hover);
-  color: var(--accent-ink);
+  background: var(--spot-riso-pink, #FF2A6D);
+  color: #121212;
+  transform: translate(-0.5px, -0.5px);
+  box-shadow: 2px 2px 0px var(--ink-carbon, #121212);
+}
+
+.flip-card-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 0px 0px 0px var(--ink-carbon, #121212);
 }
 
 .flip-card-btn:focus-visible {
@@ -3874,36 +3894,84 @@ h6,
 }
 
 .dashboard-card-header {
-  /* LIGHT header: title on the card surface, dark text, a slim accent left-rule
-     as the only pop. Compact. Thin divider separates it from the body. */
-  background: var(--header-band);
-  color: var(--header-band-ink);
+  /* Tokyo Hi-Fi: Clean white card header with crisp carbon rule.
+     No edge-to-edge color flood. Color lives strictly in the stamped index tabs. */
+  background: #FFFFFF;
+  color: var(--ink-carbon, #121212);
   padding: var(--header-pad-y) var(--header-pad-x);
-  border-bottom: 1px solid var(--color-border);
-  border-left: 3px solid var(--color-accent);
+  border-bottom: 2px solid var(--ink-carbon, #121212);
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
-  /* EVERY band is the same height: 2rem control row + the paddings. Headers
-     without action icons (Ask/Takes/Sound) used to collapse to title
-     height, so the absolutely-placed flip button hung below the band. */
   min-height: calc(2rem + 2 * var(--header-pad-y));
 }
 
 .dashboard-card-header h3 {
-  /* Inter 700, SENTENCE CASE — all-caps is banned everywhere (July 9
-     decree: "nobody likes all capitals"). */
+  font-family: var(--font-mono);
   font-size: var(--small-size);
   font-weight: 700;
-  letter-spacing: 0.01em;
-  color: var(--header-band-ink);
+  letter-spacing: 0.04em;
+  color: var(--ink-carbon, #121212);
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-/* Sub-text in the header (e.g. "1 of 4 done") rides on the band too. */
+/* Sub-text in the header (e.g. "1 of 4 done") */
 .dashboard-card-header :is(span, small, p) {
-  color: var(--header-band-sub);
+  color: var(--ink-muted, #6B6860);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+/* ===================================================================
+   TOKYO HI-FI — STAMPED INDEX TABS
+   Precision Japanese stationery indexing with high-voltage spot ink
+   ================================================================ */
+.stamped-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  padding: 0.22rem 0.5rem;
+  border-radius: 3px;
+  border: 1.5px solid var(--ink-carbon, #121212);
+  color: var(--ink-carbon, #121212);
+  background: #FFFFFF;
+  box-shadow: 1px 1px 0px var(--ink-carbon, #121212);
+  user-select: none;
+}
+
+.stamped-tab--sm {
+  font-size: 10px;
+  padding: 0.15rem 0.4rem;
+  letter-spacing: 0.08em;
+}
+
+.stamped-tab--yellow {
+  background: var(--spot-fluro-yellow, #FFE600);
+}
+
+.stamped-tab--pink {
+  background: var(--spot-riso-pink, #FF2A6D);
+  color: #121212;
+}
+
+.stamped-tab--orange {
+  background: var(--spot-safety-orange, #FF5500);
+  color: #121212;
+}
+
+.stamped-tab--cyan {
+  background: var(--spot-electric-cyan, #00E5FF);
+  color: #121212;
 }
 
 .dashboard-card-body {
@@ -3949,12 +4017,17 @@ h6,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 1.85rem;
+  height: 1.85rem;
   flex-shrink: 0;
   position: relative;
-  border-radius: var(--border-radius-sm);
-  transition: color var(--transition-fast), background var(--transition-fast);
+  border-radius: 3px;
+  border: 1.5px solid var(--ink-carbon, #121212);
+  background: #FFFFFF;
+  color: var(--ink-carbon, #121212);
+  box-shadow: 1.5px 1.5px 0px var(--ink-carbon, #121212);
+  cursor: pointer;
+  transition: transform 80ms ease, box-shadow 80ms ease, background 120ms ease;
 }
 
 .card-header-actions button::after {
@@ -3967,18 +4040,26 @@ h6,
 }
 
 .card-header-actions button:hover:not(:disabled) {
-  color: var(--accent-ink);
-  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  background: var(--spot-fluro-yellow, #FFE600);
+  color: #121212;
+  transform: translate(-0.5px, -0.5px);
+  box-shadow: 2px 2px 0px var(--ink-carbon, #121212);
+}
+
+.card-header-actions button:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 0px 0px 0px var(--ink-carbon, #121212);
 }
 
 .card-header-actions button:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--ink-carbon, #121212);
   outline-offset: 2px;
 }
 
 .card-header-actions button:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: default;
+  box-shadow: none;
 }
 
 /* ── READER MODAL ───────────────────────────────────────────────────
@@ -5217,39 +5298,46 @@ h6,
   box-shadow: 3px 3px 0 rgba(30, 23, 20, 0.1);
 }
 
-/* Bottom-right control cluster — FontAwesome icon buttons, on-brand chunky
-   chips (cream, 2px border, hard shadow) to match the add-topic button instead
-   of the old plain white-70% floating circles. */
+/* Bottom-right control cluster — Frosted Drafting Pill Casing */
 .topic-map-ctrls {
   position: absolute;
   bottom: 1rem;
   right: 1rem;
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.45rem;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 2px solid var(--ink-carbon);
+  border-radius: 9999px;
+  box-shadow: 3px 3px 0 var(--ink-carbon);
+  z-index: 10;
 }
 
 .topic-map-ctrl {
-  width: 2.4rem;
-  height: 2.4rem;
+  width: 2.2rem;
+  height: 2.2rem;
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--color-border);
-  border-radius: var(--border-radius-sm);
-  background: var(--surface-white-warm, #fffef7);
-  box-shadow: 2px 2px 0 rgba(30, 23, 20, 0.08);
-  color: var(--color-text);
+  border: 1.5px solid transparent;
+  border-radius: 9999px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink-carbon);
   font-size: var(--small-size);
   cursor: pointer;
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
-    border-color 160ms ease,
-    color 160ms ease;
+    background 160ms ease,
+    border-color 160ms ease;
 }
 
-/* 44px tap target on touch devices — the 38px visual stays compact. */
+/* 44px tap target on touch devices — the 35px visual stays compact. */
 @media (pointer: coarse) {
   .topic-map-ctrl::before {
     content: "";
@@ -5264,33 +5352,29 @@ h6,
 .topic-map-ctrl:hover,
 .topic-map-ctrl:focus-visible {
   outline: none;
-  border-color: var(--accent-ink);
-  color: var(--accent-ink);
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 rgba(30, 23, 20, 0.1);
+  border-color: var(--ink-carbon);
+  background: #FCFBF9;
+  color: var(--ink-carbon);
+  transform: translateY(-1px);
 }
 
-/* Add-topic leads the cluster as the primary action — wider, with a label
-   on roomy screens. INK PLATE (docs/COLOR-SYSTEM.md CTA law): warm-black
-   slab + white label + the band color peeking as a hard offset shadow —
-   riso misregistration, not a saturated slab shouting over the map. */
+/* Add-topic leads the cluster as the primary action — styled with spot fluro yellow */
 .topic-map-ctrl--add {
   width: auto;
   gap: 0.4rem;
-  padding: 0 0.7rem;
+  padding: 0 0.8rem;
   font-weight: 700;
-  border-color: var(--cta-plate-border);
-  background: var(--cta-plate);
-  color: var(--soft-black);
-  box-shadow: 2.5px 2.5px 0 var(--line-ink);
+  border: 1.5px solid var(--ink-carbon);
+  background: var(--spot-fluro-yellow);
+  color: var(--ink-carbon);
+  box-shadow: 1.5px 1.5px 0 var(--ink-carbon);
 }
 
 .topic-map-ctrl--add:hover,
 .topic-map-ctrl--add:focus-visible {
-  color: var(--soft-black);
-  background: var(--cta-plate-hover);
-  border-color: var(--cta-plate-border);
-  box-shadow: 3.5px 3.5px 0 var(--line-ink);
+  color: var(--ink-carbon);
+  background: #FFEE33;
+  transform: translateY(-1px);
 }
 
 /* Viz switcher — floats on the map's top-left, above the canvas. */
@@ -5370,23 +5454,11 @@ h6,
 }
 
 .topic-map-canvas {
-  /* Theme-aware tint: follows the active --color-accent instead of a baked
-     PEACH wash, so the map matches the rest of the app on every theme.
-     NOT transparent — the flip-card face it sits on is itself transparent,
-     so "inherit the card" (Aug 19) actually inherited the board container
-     and left the map a different colour from its sibling cards. */
-  background:
-    radial-gradient(
-    circle at 18% 15%,
-    color-mix(in srgb, var(--color-accent) 13%, transparent),
-    transparent 28%
-  ),
-    radial-gradient(
-    circle at 82% 28%,
-    color-mix(in srgb, var(--color-accent) 14%, transparent),
-    transparent 30%
-  ),
-    var(--surface-card);
+  /* Architectural Drafting Dot-Grid on Paper Stock */
+  background-color: var(--surface-paper);
+  background-image: radial-gradient(rgba(18, 18, 18, 0.12) 1.2px, transparent
+    1.2px);
+  background-size: 16px 16px;
 }
 
 .topic-map-canvas svg {
@@ -5780,11 +5852,11 @@ h6,
   gap: 1rem;
 }
 .board-skeleton__card {
-  border: var(--card-border-width, 2px) solid var(--color-border);
-  border-radius: var(--border-radius-lg, 18px);
-  background: var(--surface-cream, #fbf1e4);
+  border: 2px solid var(--ink-carbon);
+  border-radius: 8px;
+  background: var(--surface-paper);
   overflow: hidden;
-  box-shadow: var(--shadow-soft);
+  box-shadow: 3px 3px 0 var(--ink-carbon);
   /* Each card lands a beat after the one before — the board being set,
      not four things blinking in unison. */
   opacity: 0;
@@ -5792,9 +5864,10 @@ h6,
   animation-delay: calc(var(--i, 0) * 90ms);
 }
 .board-skeleton__band {
-  height: 2.5rem;
-  background: var(--header-band);
-  opacity: 0.72;
+  height: 2.2rem;
+  background: #FFFFFF;
+  border-bottom: 2px solid var(--ink-carbon);
+  opacity: 0.9;
   animation: board-skeleton-breathe 2.4s ease-in-out infinite;
   animation-delay: calc(var(--i, 0) * 120ms);
 }
@@ -7709,31 +7782,33 @@ a:focus-visible {
 }
 
 .summary-key-points {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  border-radius: var(--border-radius-sm);
-  background: color-mix(in srgb, var(--color-accent) 7%, transparent);
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--color-border);
+  background: transparent;
 }
 
 .key-points-title {
-  font-size: var(--small-size);
+  font-family: var(--font-family-mono);
+  font-size: 0.65rem;
   font-weight: 700;
-  color: var(--accent-ink);
+  color: var(--ink-carbon);
   margin-bottom: 0.5rem;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .key-point-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--border-radius-sm);
-  min-width: 1.125rem;
-  height: 1.125rem;
-  background: var(--accent-fill);
-  color: var(--surface-white-warm);
-  font-size: 0.6rem;
-  margin-top: 0.15rem;
+  border-radius: 2px;
+  min-width: 1rem;
+  height: 1rem;
+  background: var(--ink-carbon);
+  color: #FFFFFF;
+  font-size: 0.55rem;
+  margin-top: 0.2rem;
 }
 
 .key-point-text {
@@ -7976,20 +8051,20 @@ a:focus-visible {
   flex-shrink: 0;
 }
 
-/* Export drawer backdrop & container */
+/* Export drawer backdrop & container — Frosted Vellum Architectural Sidecar */
 .export-drawer-backdrop {
   position: fixed;
-  /* left/right, not the Tailwind-ism `inset-x` — that isn't CSS, so the
-     backdrop rendered 0px wide (never dimmed, never click-closable) */
   left: 0;
   right: 0;
   bottom: 0;
+  top: 0;
   z-index: calc(var(--z-drawer) - 10);
-  top: var(--header-height);
-  background: var(--scrim);
+  background: rgba(18, 18, 18, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 400ms ease-out;
+  transition: opacity 300ms ease-out;
 }
 
 .export-drawer-backdrop.is-visible {
@@ -8003,19 +8078,19 @@ a:focus-visible {
   right: 0;
   z-index: var(--z-drawer);
   display: flex;
-  width: 24rem; /* w-96 */
-  max-width: 100vw; /* the history drawer caps at 85vw via Tailwind; this one
-  had no cap at all and would overflow the viewport under 384px (iPhone SE) */
+  width: 26rem;
+  max-width: 100vw;
   flex-direction: column;
   overflow: hidden;
-  top: var(--header-height);
-  border-left: var(--border-width) solid var(--color-border);
-  /* SOLID paper, not glass — the dashboard bleeding through read as "no
-     background colour" (same law as cards, July 9 contract). */
-  background: var(--soft-cream);
-  box-shadow: var(--shadow-lifted);
+  top: 0;
+  border-left: 3px solid var(--ink-carbon);
+  background: rgba(250, 249, 246, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: -10px 0 24px rgba(18, 18, 18, 0.15), -4px 0 0 rgba(18, 18, 18,
+    0.08);
   transform: translateX(100%);
-  transition: transform 400ms cubic-bezier(0.4, 0, 1, 1);
+  transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .export-drawer.is-open {
@@ -8193,25 +8268,25 @@ a:focus-visible {
     "icon desc";
   align-items: center;
   gap: 0 0.5rem;
-  padding: 0.6rem 0.7rem;
+  padding: 0.6rem 0.75rem;
   min-height: 3.5rem;
   text-align: left;
-  border: 2px solid var(--border-cream-medium);
-  border-radius: var(--border-radius-md);
-  background: var(--surface-cream);
-  color: var(--color-text);
+  border: 2px solid var(--ink-carbon);
+  border-radius: 6px;
+  background: #FFFFFF;
+  box-shadow: 2px 2px 0 var(--ink-carbon);
+  color: var(--ink-carbon);
   font-family: var(--font-family);
   cursor: pointer;
   transition:
-    border-color var(--transition-fast),
-    background var(--transition-fast),
     transform var(--transition-fast),
+    background var(--transition-fast),
     box-shadow var(--transition-fast);
 }
 .export-chip__icon {
   grid-area: icon;
   font-size: 1rem;
-  color: var(--accent-ink);
+  color: var(--ink-carbon);
   opacity: 0.85;
 }
 .export-chip__label {
@@ -8230,21 +8305,23 @@ a:focus-visible {
   color: var(--color-text-secondary);
 }
 .export-chip:hover:not(:disabled) {
-  border-color: color-mix(
-    in srgb,
-    var(--color-accent) 55%,
-    var(--border-cream-medium)
-  );
-  transform: translateY(-1px);
-  box-shadow: 2px 2px 0 0 var(--soft-black);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink-carbon);
+  background: #FCFBF9;
+}
+.export-chip:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--ink-carbon);
 }
 .export-chip:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: default;
+  box-shadow: none;
 }
 .export-chip.is-selected {
-  border-color: var(--accent-strong);
-  background: color-mix(in srgb, var(--color-accent) 10%, var(--surface-cream));
+  border-color: var(--ink-carbon);
+  background: #FFF9D2;
+  box-shadow: 2px 2px 0 var(--ink-carbon);
 }
 .export-chip.is-selected .export-chip__icon {
   opacity: 1;
@@ -8284,12 +8361,13 @@ a:focus-visible {
   color: var(--accent-ink);
 }
 
-/* Preview frame — themed bar the ghost icon buttons read white against */
+/* Preview frame — crisp archival swatch box */
 .export-preview {
-  border: 2px solid var(--color-border);
-  border-radius: 16px;
-  box-shadow: var(--shadow-sm);
+  border: 2px solid var(--ink-carbon);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 var(--ink-carbon);
   overflow: hidden;
+  background: #FFFFFF;
 }
 .export-preview-bar {
   display: flex;
@@ -8297,12 +8375,9 @@ a:focus-visible {
   align-items: center;
   gap: 0.5rem;
   padding: 0.45rem 0.75rem 0.45rem 1rem;
-  /* The same solved band every card header wears — bright, with the ink
-     solved against it. It used to be --accent-strong, which on a warm roll
-     is a deep espresso: a big slab of it read as maroon. Bands are fills,
-     inks are ink. */
-  background: var(--header-band);
-  color: var(--header-band-ink);
+  background: #FFFFFF;
+  color: var(--ink-carbon);
+  border-bottom: 2px solid var(--ink-carbon);
   font-weight: 700;
   font-size: var(--font-size-sm);
 }

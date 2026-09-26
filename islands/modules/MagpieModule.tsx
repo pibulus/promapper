@@ -376,9 +376,14 @@ export default function MagpieModule() {
         }}
       >
         <div class="dashboard-card-header">
-          <h3 data-tip="A shelf for shiny things — drop files, links, scraps">
-            Magpie
-          </h3>
+          <div class="inline-flex items-center gap-2">
+            <span
+              class="stamped-tab stamped-tab--cyan"
+              data-tip="A shelf for shiny things — drop files, links, scraps"
+            >
+              05 // MAGPIE
+            </span>
+          </div>
           {!readOnly && (
             <div class="card-header-actions">
               <button

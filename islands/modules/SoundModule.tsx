@@ -753,7 +753,9 @@ export default function SoundModule() {
       front={
         <div class="dashboard-card">
           <div class="dashboard-card-header">
-            <h3>Sound</h3>
+            <div class="inline-flex items-center gap-2">
+              <span class="stamped-tab stamped-tab--orange">04 // SOUND</span>
+            </div>
             {playing.value && (
               <span
                 ref={meterElRef}
@@ -844,7 +846,9 @@ export default function SoundModule() {
       back={
         <div class="dashboard-card">
           <div class="dashboard-card-header">
-            <h3>Dial</h3>
+            <div class="inline-flex items-center gap-2">
+              <span class="stamped-tab stamped-tab--orange">04 // DIAL</span>
+            </div>
           </div>
           <div class="dashboard-card-body radio-stations">
             {SOURCES.map((s, i) => {

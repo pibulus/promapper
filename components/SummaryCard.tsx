@@ -54,7 +54,9 @@ export default function SummaryCard(
     <div class="w-full h-full">
       <div class="dashboard-card">
         <div class="dashboard-card-header">
-          <h3>Summary</h3>
+          <div class="inline-flex items-center gap-2">
+            <span class="stamped-tab stamped-tab--pink">02 // SUMMARY</span>
+          </div>
           <div class="card-header-actions">
             <button
               onClick={() =>

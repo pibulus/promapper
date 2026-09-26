@@ -768,7 +768,11 @@ export default function HomeIsland() {
   }, [isBrewing, isAppending]);
 
   return (
-    <div class="mapper-scene flex min-h-screen flex-col">
+    <div
+      class={`mapper-scene flex min-h-screen flex-col ${
+        conversationData.value ? "mapper-scene--dashboard" : ""
+      }`}
+    >
       {/* Top Bar - Brand presence */}
       <header class="app-header-glass">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 w-full app-header__container">
@@ -1158,10 +1162,9 @@ export default function HomeIsland() {
           }
           {conversationData.value?.conversation.title
             ? (
-              <span class="app-footer__brand app-footer__brand--project">
-                <i class="fa fa-note-sticky" aria-hidden="true"></i>
-                <span class="app-footer__project" aria-hidden="true">
-                  {conversationData.value.conversation.title}
+              <span class="app-footer__brand app-footer__brand--project flex items-center gap-2">
+                <span class="stamped-tab stamped-tab--yellow stamped-tab--sm">
+                  SESSION // ACTIVE
                 </span>
               </span>
             )

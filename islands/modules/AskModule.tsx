@@ -129,9 +129,14 @@ export default function AskModule() {
     <div class="w-full h-full">
       <div class="dashboard-card">
         <div class="dashboard-card-header">
-          <h3 data-tip="Ask anything — it answers from this conversation only">
-            Ask
-          </h3>
+          <div class="inline-flex items-center gap-2">
+            <span
+              class="stamped-tab stamped-tab--yellow"
+              data-tip="Ask anything — it answers from this conversation only"
+            >
+              08 // ASK
+            </span>
+          </div>
         </div>
         <div class="dashboard-card-body ask-body" ref={logRef}>
           <div class="ask-log">

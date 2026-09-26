@@ -109,7 +109,9 @@ export default function NotesModule() {
     <div class="w-full h-full">
       <div class="dashboard-card">
         <div class="dashboard-card-header">
-          <h3>Notes</h3>
+          <div class="inline-flex items-center gap-2">
+            <span class="stamped-tab stamped-tab--yellow">07 // NOTES</span>
+          </div>
           <div class="card-header-actions">
             <button
               onClick={() => {

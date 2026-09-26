@@ -145,7 +145,9 @@ export default function TakesModule() {
     <div class="w-full h-full">
       <div class="dashboard-card">
         <div class="dashboard-card-header">
-          <h3>Takes</h3>
+          <div class="inline-flex items-center gap-2">
+            <span class="stamped-tab stamped-tab--orange">09 // TAKES</span>
+          </div>
         </div>
         <div class="dashboard-card-body takes-module-body">
           {takes.value.length === 0
