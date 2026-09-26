@@ -319,7 +319,7 @@ export default function MagpieModule() {
     <div class="w-full h-full">
       <div
         data-dropzone
-        class={`dashboard-card action-items-card${
+        class={`dashboard-card magpie-card action-items-card${
           isDragging.value ? " magpie-card--dropping" : ""
         }`}
         onPaste={(e) => {

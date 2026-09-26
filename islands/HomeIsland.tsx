@@ -715,31 +715,31 @@ export default function HomeIsland() {
   // holds its pulse until the real result lands.
   const brewNotes = isSpanish()
     ? [
-      "leyendo el texto…",
-      "buscando tareas y pendientes…",
-      "armando el mapa de temas…",
-      "conectando ideas…",
-      "acomodando el tablero…",
+      "01 // LEYENDO EL TEXTO…",
+      "02 // BUSCANDO PENDIENTES…",
+      "03 // TRAZANDO EL MAPA DE TEMAS…",
+      "04 // ENTINTANDO LO QUE CONECTA…",
+      "05 // ACOMODANDO LA MESA…",
     ]
     : [
-      "reading it through…",
-      "pulling out the to-dos…",
-      "sketching the topic map…",
-      "noticing what connects…",
-      "setting the table…",
+      "01 // READING IT THROUGH…",
+      "02 // PULLING OUT THE TO-DOS…",
+      "03 // SKETCHING THE TOPIC MAP…",
+      "04 // INKING WHAT CONNECTS…",
+      "05 // SETTING THE TABLE…",
     ];
 
   // Appending to a live map is a different story than the first brew.
   const appendNotes = isSpanish()
     ? [
-      "escuchando el nuevo audio…",
-      "sumándolo al mapa…",
-      "actualizando pendientes…",
+      "01 // ESCUCHANDO DE NUEVO…",
+      "02 // SUMÁNDOLO AL MAPA…",
+      "03 // ACTUALIZANDO PENDIENTES…",
     ]
     : [
-      "listening back…",
-      "weaving it into the map…",
-      "checking off what you said you did…",
+      "01 // LISTENING BACK…",
+      "02 // WEAVING IT INTO THE MAP…",
+      "03 // CHECKING OFF WHAT GOT DONE…",
     ];
   const isBrewing = processingConversation.value && !conversationData.value
     ? 1
@@ -770,7 +770,9 @@ export default function HomeIsland() {
   return (
     <div
       class={`mapper-scene flex min-h-screen flex-col ${
-        conversationData.value ? "mapper-scene--dashboard" : ""
+        conversationData.value || processingConversation.value
+          ? "mapper-scene--dashboard"
+          : ""
       }`}
     >
       {/* Top Bar - Brand presence */}

@@ -43,9 +43,9 @@ interface ForceDirectedGraphProps {
   loading?: boolean;
 }
 
-// Default edge color: warm soft-black at high opacity, never grey. Reads as a
-// confident dark line on the cream canvas — connections you can actually see.
-const EDGE_INK = "rgba(30, 23, 20, 0.8)";
+// Default edge color: carbon ink (--ink-carbon), never grey — connections you
+// can actually see on the paper grid.
+const EDGE_INK = "#121212";
 
 export default function ForceDirectedGraph(
   { loading = false }: ForceDirectedGraphProps,
@@ -199,19 +199,16 @@ export default function ForceDirectedGraph(
       config: {
         width,
         height,
-        // The map is its OWN plane — a warm near-white that separates it
-        // cleanly from the creamy cards around it. Sept 12: reverted the
-        // "one material with the whiteboard" call; sharing the cream made
-        // the map read as more card rather than as a distinct surface, and
-        // the 0.6 alpha let the ground bleed through so it landed tan.
-        // Opaque on purpose. Warm near-white, never #fff (house law).
-        backgroundColor: "#fffef7",
+        // Transparent so .topic-map-canvas shows through: the paper plane and
+        // its drafting dot-grid live in CSS. An opaque svg here is what buried
+        // the grid.
+        backgroundColor: "transparent",
         linkDistance: linkDistance.value,
         chargeStrength: chargeStrength.value,
         collisionRadius: collisionRadius.value,
-        // Thinner + darker than before (was 3.5/grey). A slim warm-dark line.
+        // Inked wiring, not a spiderweb: full carbon at 2.5px.
         linkStrokeWidth: 2.5,
-        linkOpacity: 0.7,
+        linkOpacity: 0.9,
         onClickNode: (_event: MouseEvent, node: { id: string }) => {
           selectedNodeId.value = node.id;
           selectedEdgeId.value = null;

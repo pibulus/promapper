@@ -59,7 +59,7 @@
      The Tactile Desk Archetype · Japanese Stationery & Swiss Typography
      ================================================================ */
   --surface-desk: #F5F2EB;
-  --surface-board: #FFFFFF;
+  --surface-board: #fffef7; /* warm near-white, never #fff (house law) */
   --surface-paper: #FCFBF9;
   --surface-vellum: rgba(250, 249, 246, 0.90);
   --scrim-smoke: rgba(18, 18, 18, 0.22);
@@ -74,6 +74,12 @@
   --spot-safety-orange: #FF5500;
   --spot-riso-pink: #FF2A6D;
   --spot-electric-cyan: #00E5FF;
+
+  /* Kraft — unbleached chipboard (Midori envelopes, Traveler's inserts). The
+     earthy bridge between paper wells and spot ink, so neon never reads as
+     plastic. Utility modules wear it; -deep is the recessed dice tray. */
+  --ink-kraft: #EADCC9;
+  --ink-kraft-deep: #DFD1BD;
 
   --shadow-board: 5px 5px 0px #121212;
   --shadow-card: 3px 3px 0px #121212;
@@ -2451,7 +2457,7 @@ h6,
    A commanding, crisp white melamine drafting board holding all modules.
    Sharp 3px carbon border and hard 5px drop shadow. */
 .dashboard-shell {
-  background: var(--surface-board, #FFFFFF);
+  background: var(--surface-board);
   border: 3px solid var(--ink-carbon, #121212);
   border-radius: 10px;
   padding: clamp(1rem, 2vw, 1.6rem);
@@ -2462,7 +2468,7 @@ h6,
 /* Mobile: clean tactile container with compact padding */
 @media (max-width: 768px) {
   .dashboard-shell {
-    background: var(--surface-board, #FFFFFF);
+    background: var(--surface-board);
     border: 2px solid var(--ink-carbon, #121212);
     border-radius: 8px;
     box-shadow: 3px 3px 0px #121212;
@@ -3069,10 +3075,12 @@ h6,
   align-items: center;
   justify-content: center;
   padding: 0.35rem 0.5rem;
-  background: color-mix(in srgb, var(--surface-cream) 92%, var(--soft-black));
-  border: 2px solid var(--border-cream-medium);
+  /* The rolling box: a recessed well of deeper kraft, carbon-rimmed, with a
+     hard inset lip instead of a soft blur. */
+  background: var(--ink-kraft-deep);
+  border: 2px solid var(--ink-carbon);
   border-radius: var(--border-radius-sm);
-  box-shadow: inset 1px 1px 3px color-mix(in srgb, var(--soft-black) 8%,
+  box-shadow: inset 3px 3px 0 color-mix(in srgb, var(--ink-carbon) 14%,
     transparent);
   transition: transform var(--transition-fast), border-color
     var(--transition-fast), background var(--transition-fast);
@@ -3758,6 +3766,13 @@ h6,
   overflow: hidden;
 }
 
+/* Utility modules are cut from kraft stock, not memo paper — material weight
+   without another neon. Their scraps and wells stay paper on top of it. */
+:is(.sound-card, .magpie-card, .dice-card),
+:is(.sound-card, .magpie-card, .dice-card) .dashboard-card-header {
+  background: var(--ink-kraft);
+}
+
 /* ===================================================================
    FLIP CARD — 3D front/back for dashboard components
    The perspective + faces live OUTSIDE .dashboard-card (which clips), so each
@@ -3823,7 +3838,7 @@ h6,
   justify-content: center;
   border-radius: 3px;
   border: 1.5px solid var(--ink-carbon, #121212);
-  background: #FFFFFF;
+  background: var(--surface-board);
   color: var(--ink-carbon, #121212);
   box-shadow: 1.5px 1.5px 0px var(--ink-carbon, #121212);
   cursor: pointer;
@@ -3896,7 +3911,7 @@ h6,
 .dashboard-card-header {
   /* Tokyo Hi-Fi: Clean white card header with crisp carbon rule.
      No edge-to-edge color flood. Color lives strictly in the stamped index tabs. */
-  background: #FFFFFF;
+  background: var(--surface-board);
   color: var(--ink-carbon, #121212);
   padding: var(--header-pad-y) var(--header-pad-x);
   border-bottom: 2px solid var(--ink-carbon, #121212);
@@ -3920,7 +3935,7 @@ h6,
 }
 
 /* Sub-text in the header (e.g. "1 of 4 done") */
-.dashboard-card-header :is(span, small, p) {
+.dashboard-card-header :is(span, small, p):not(.stamped-tab) {
   color: var(--ink-muted, #6B6860);
   font-family: var(--font-mono);
   font-size: 0.78rem;
@@ -3944,7 +3959,7 @@ h6,
   border-radius: 3px;
   border: 1.5px solid var(--ink-carbon, #121212);
   color: var(--ink-carbon, #121212);
-  background: #FFFFFF;
+  background: var(--surface-board);
   box-shadow: 1px 1px 0px var(--ink-carbon, #121212);
   user-select: none;
 }
@@ -4023,7 +4038,7 @@ h6,
   position: relative;
   border-radius: 3px;
   border: 1.5px solid var(--ink-carbon, #121212);
-  background: #FFFFFF;
+  background: var(--surface-board);
   color: var(--ink-carbon, #121212);
   box-shadow: 1.5px 1.5px 0px var(--ink-carbon, #121212);
   cursor: pointer;
@@ -5453,12 +5468,17 @@ h6,
   font-weight: 700;
 }
 
-.topic-map-canvas {
-  /* Architectural Drafting Dot-Grid on Paper Stock */
+.topic-map-canvas,
+.board-skeleton__map {
+  /* Engineering dot-grid on paper stock. The D3 svg above it is transparent
+     (ForceDirectedGraph passes backgroundColor: "transparent") — an opaque
+     svg is what hid this grid and left the map on "an empty white desert". */
   background-color: var(--surface-paper);
-  background-image: radial-gradient(rgba(18, 18, 18, 0.12) 1.2px, transparent
-    1.2px);
-  background-size: 16px 16px;
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--ink-carbon) 12%, transparent) 1px,
+    transparent 1.5px
+  );
+  background-size: 20px 20px;
 }
 
 .topic-map-canvas svg {
@@ -5482,9 +5502,10 @@ h6,
   );
 }
 
-.topic-map-canvas .node-group.is-selected .label,
-.topic-map-canvas .node-group.is-connected .label {
-  font-weight: 800;
+/* Selection highlights the badge instead of bolding the label — bold text
+   would outgrow a pill that was measured at regular weight. */
+.topic-map-canvas .node-group.is-selected .node-label-pill {
+  fill: var(--spot-fluro-yellow);
 }
 
 .topic-node-detail {
@@ -5854,7 +5875,8 @@ h6,
 .board-skeleton__card {
   border: 2px solid var(--ink-carbon);
   border-radius: 8px;
-  background: var(--surface-paper);
+  /* -color, not the shorthand: the map card's dot-grid image must survive. */
+  background-color: var(--surface-paper);
   overflow: hidden;
   box-shadow: 3px 3px 0 var(--ink-carbon);
   /* Each card lands a beat after the one before — the board being set,
@@ -5865,11 +5887,24 @@ h6,
 }
 .board-skeleton__band {
   height: 2.2rem;
-  background: #FFFFFF;
+  background: var(--surface-board);
   border-bottom: 2px solid var(--ink-carbon);
   opacity: 0.9;
   animation: board-skeleton-breathe 2.4s ease-in-out infinite;
   animation-delay: calc(var(--i, 0) * 120ms);
+  position: relative;
+}
+/* A blank kraft index tab where the card's stamp will land. */
+.board-skeleton__band::before {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  width: 5.5rem;
+  height: 1.1rem;
+  transform: translateY(-50%);
+  background: var(--ink-kraft);
+  border: 1.5px solid var(--ink-carbon);
 }
 .board-skeleton__lines {
   display: flex;
@@ -5879,8 +5914,8 @@ h6,
 }
 .board-skeleton__lines span {
   height: 0.6rem;
-  border-radius: 999px;
-  background: var(--color-border);
+  border-radius: 2px;
+  background: var(--ink-kraft);
   opacity: 0.6;
   animation: board-line-breathe 2.4s ease-in-out infinite;
 }
@@ -5919,7 +5954,9 @@ h6,
 /* Nodes pop in one after another and then hold, bobbing very slightly —
    the shape of a map assembling itself. */
 .board-skeleton__node {
-  fill: var(--color-accent);
+  fill: var(--surface-board);
+  stroke: var(--ink-carbon);
+  stroke-width: 1;
   opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
@@ -5930,8 +5967,8 @@ h6,
     calc(900ms + var(--i) * 180ms);
 }
 .board-skeleton__edge {
-  stroke: var(--accent-ink);
-  stroke-width: 1.5;
+  stroke: var(--ink-carbon);
+  stroke-width: 1;
   stroke-linecap: round;
   opacity: 0;
   animation: board-edge-in 600ms ease-out forwards;
@@ -5962,7 +5999,7 @@ h6,
     transform: scale(0.2);
   }
   to {
-    opacity: 0.9;
+    opacity: 1;
     transform: scale(1);
   }
 }
@@ -5975,12 +6012,16 @@ h6,
     transform: translateY(-2.5px) scale(1);
   }
 }
+/* The hub (second circle) is the one highlighted on the finished map. */
+.board-skeleton__node:nth-of-type(2) {
+  fill: var(--spot-fluro-yellow);
+}
 @keyframes board-edge-in {
   from {
     opacity: 0;
   }
   to {
-    opacity: 0.28;
+    opacity: 0.85;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -5993,10 +6034,10 @@ h6,
     opacity: 1;
   }
   .board-skeleton__node {
-    opacity: 0.9;
+    opacity: 1;
   }
   .board-skeleton__edge {
-    opacity: 0.28;
+    opacity: 0.85;
   }
 }
 
@@ -6012,13 +6053,14 @@ h6,
   width: fit-content;
   max-width: min(28rem, 90vw);
   margin: 0;
-  padding: 0.85rem 1.35rem;
-  border: 2.5px solid var(--color-border);
-  border-radius: var(--border-radius-lg, 18px);
-  background: var(--surface-cream, #fbf1e4);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14), var(--shadow-chunky, 0 4px 0
-    var(--color-border));
-  backdrop-filter: blur(8px);
+  /* A printed readout slip on kraft: carbon rim, hard shadow, mono ticker.
+     Opaque, so no backdrop blur (paint-tax law). */
+  padding: 0.8rem 1.1rem;
+  border: 2px solid var(--ink-carbon);
+  border-radius: 4px;
+  background: var(--ink-kraft);
+  box-shadow: var(--shadow-card);
+  font-family: var(--font-mono);
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -6037,14 +6079,22 @@ h6,
   }
 }
 
+/* The live line is the highlighter pass: a fluro stamp in carbon ink. */
 .brew-ledger .dashboard-brew-note {
-  padding-top: 0;
+  align-self: flex-start;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-carbon);
+  background: var(--spot-fluro-yellow);
+  border: 1.5px solid var(--ink-carbon);
 }
 
 .brew-ledger__done {
-  font-size: 0.9rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  color: var(--color-text-secondary);
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
   opacity: 0.8;
   display: flex;
   align-items: center;
@@ -6053,7 +6103,7 @@ h6,
 }
 
 .brew-ledger__done .fa-check {
-  color: var(--accent-ink);
+  color: var(--ink-carbon);
   font-size: 0.75rem;
 }
 
@@ -6411,8 +6461,8 @@ a:focus-visible {
    "ground" that replaces the old fuzzy-blob look. */
 .node-disc {
   fill: var(--surface-white-warm, #fffef7);
-  stroke: color-mix(in srgb, var(--color-accent) 18%, transparent);
-  stroke-width: 1.25;
+  stroke: var(--ink-carbon);
+  stroke-width: 1.5;
   transition: stroke 0.22s ease;
 }
 
@@ -6424,15 +6474,26 @@ a:focus-visible {
   user-select: none;
 }
 
+/* Labels ride on paper badges — physical tokens on the drafting board. The
+   pill carries the ground now, so the old cream text halo is gone. The shadow
+   is a second rect, not a filter: filters re-rasterize on every sim tick. */
 .node-group .label {
   font-weight: 600;
   letter-spacing: 0.01em;
+  fill: var(--ink-carbon);
   pointer-events: none;
   user-select: none;
-  paint-order: stroke;
-  stroke: var(--surface-cream, #fff7ef);
-  stroke-width: 3px;
-  stroke-linejoin: round;
+}
+
+.node-label-pill {
+  fill: var(--surface-board);
+  stroke: var(--ink-carbon);
+  stroke-width: 1.5;
+  transition: fill 0.22s ease;
+}
+
+.node-label-shadow {
+  fill: var(--ink-carbon);
 }
 
 /* Inner wrapper carries the spring. transform-box/origin so scale pivots on the
@@ -7806,7 +7867,7 @@ a:focus-visible {
   min-width: 1rem;
   height: 1rem;
   background: var(--ink-carbon);
-  color: #FFFFFF;
+  color: var(--surface-white-warm);
   font-size: 0.55rem;
   margin-top: 0.2rem;
 }
@@ -8273,7 +8334,7 @@ a:focus-visible {
   text-align: left;
   border: 2px solid var(--ink-carbon);
   border-radius: 6px;
-  background: #FFFFFF;
+  background: var(--surface-board);
   box-shadow: 2px 2px 0 var(--ink-carbon);
   color: var(--ink-carbon);
   font-family: var(--font-family);
@@ -8367,7 +8428,7 @@ a:focus-visible {
   border-radius: 8px;
   box-shadow: 2px 2px 0 var(--ink-carbon);
   overflow: hidden;
-  background: #FFFFFF;
+  background: var(--surface-board);
 }
 .export-preview-bar {
   display: flex;
@@ -8375,7 +8436,7 @@ a:focus-visible {
   align-items: center;
   gap: 0.5rem;
   padding: 0.45rem 0.75rem 0.45rem 1rem;
-  background: #FFFFFF;
+  background: var(--surface-board);
   color: var(--ink-carbon);
   border-bottom: 2px solid var(--ink-carbon);
   font-weight: 700;
@@ -9805,17 +9866,33 @@ html:has(.porch) {
 
 .porch-loop li {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 0.6rem;
   font-size: 0.92rem;
   line-height: 1.45;
   color: var(--soft-black);
 }
 
+/* Bullets are stamped stationery badges, one spot ink each — highlighter,
+   riso, kraft — never the rolled theme accent. */
 .porch-loop .fa {
   flex-shrink: 0;
-  width: 1rem;
-  color: var(--accent-ink);
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  font-size: 0.72rem;
+  color: var(--ink-carbon);
+  background: var(--spot-fluro-yellow);
+  border: 1.5px solid var(--ink-carbon);
+  border-radius: 3px;
+  box-shadow: var(--shadow-button);
+}
+.porch-loop li:nth-child(2) .fa {
+  background: var(--spot-riso-pink);
+}
+.porch-loop li:nth-child(3) .fa {
+  background: var(--ink-kraft);
 }
 
 /* Desktop: the way in sits beside the heading, so it's on screen the moment
@@ -9830,20 +9907,21 @@ html:has(.porch) {
   gap: 1rem 1.75rem;
 }
 
-/* The table's own way in — the same candy plate as the mic upstairs. */
+/* The table's own way in — a fluro highlighter slab, never the rolled theme
+   accent (a cold blue roll put corporate primary on the warm table). */
 .porch-door {
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
   padding: 0.8rem 1.4rem;
-  border-radius: 12px;
-  border: 2px solid var(--cta-plate-border);
-  background: var(--cta-plate);
-  color: var(--soft-black);
+  border-radius: 6px;
+  border: 3px solid var(--ink-carbon);
+  background: var(--spot-fluro-yellow);
+  color: var(--ink-carbon);
   font-size: 0.95rem;
   font-weight: 800;
   text-decoration: none;
-  box-shadow: 3px 3px 0 0 var(--line-ink);
+  box-shadow: 4px 4px 0 0 var(--ink-carbon);
   transition:
     transform var(--transition-fast),
     box-shadow var(--transition-fast),
@@ -9852,14 +9930,13 @@ html:has(.porch) {
 
 .porch-door:hover,
 .porch-door:focus-visible {
-  background: var(--cta-plate-hover);
   transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 0 var(--line-ink);
+  box-shadow: 5px 5px 0 0 var(--ink-carbon);
 }
 
 .porch-door:active {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 0 var(--line-ink);
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 0 var(--ink-carbon);
 }
 
 .porch-back {
