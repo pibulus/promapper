@@ -1165,7 +1165,7 @@ export default function HomeIsland() {
           {conversationData.value?.conversation.title
             ? (
               <span class="app-footer__brand app-footer__brand--project flex items-center gap-2">
-                <span class="stamped-tab stamped-tab--yellow stamped-tab--sm">
+                <span class="stamped-tab stamped-tab--orange stamped-tab--sm">
                   SESSION // ACTIVE
                 </span>
               </span>

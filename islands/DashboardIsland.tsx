@@ -477,7 +477,9 @@ export default function DashboardIsland() {
     ];
     const EDGES = [[0, 1], [1, 2], [0, 3], [2, 4]];
     return (
-      <div class="board-skeleton" aria-hidden="true">
+      // Same drafting board as the loaded dashboard, so nothing jumps when
+      // the result lands.
+      <div class="dashboard-shell board-skeleton" aria-hidden="true">
         <div class="board-skeleton__row">
           {[0, 1, 2].map((i) => (
             <div class="board-skeleton__card" key={i} style={`--i:${i}`}>

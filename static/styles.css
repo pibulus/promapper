@@ -58,7 +58,19 @@
      TOKYO HI-FI FUNCTIONALISM TOKENS
      The Tactile Desk Archetype · Japanese Stationery & Swiss Typography
      ================================================================ */
-  --surface-desk: #F5F2EB;
+  /* Layer 0, the Aperol sunset desk: sun-washed peach into prosecco light
+     under a bitter-orange haze. Low chroma so it never bands; static (paint
+     tax law), the softness is all in the long falloff. The board on top
+     stays opaque paper, so the haze lives only outside it. */
+  --surface-desk: radial-gradient(
+    ellipse 70% 55% at 90% 0%,
+    rgba(255, 94, 54, 0.12),
+    transparent 70%
+  ), radial-gradient(
+    ellipse 55% 45% at 0% 100%,
+    rgba(255, 94, 54, 0.06),
+    transparent 70%
+  ), linear-gradient(170deg, #FFF4EC 0%, #FFF7DB 55%, #FFF4EC 100%);
   --surface-board: #fffef7; /* warm near-white, never #fff (house law) */
   --surface-paper: #FCFBF9;
   --surface-vellum: rgba(250, 249, 246, 0.90);
@@ -71,7 +83,9 @@
   --ink-border-hairline: 1px solid #121212;
 
   --spot-fluro-yellow: #FFE600;
-  --spot-safety-orange: #FF5500;
+  /* Olivetti / Aperol bitter orange: the map's hero pins, play controls
+     and the live-session stamp. */
+  --ink-spritz: #FF5522;
   --spot-riso-pink: #FF2A6D;
   --spot-electric-cyan: #00E5FF;
 
@@ -1066,7 +1080,7 @@ h6,
 
 /* Layer 0 (The Architectural Drafting Desk) — grounded archival surface */
 .mapper-scene--dashboard {
-  background: var(--surface-desk, #F5F2EB) !important;
+  background: var(--surface-desk) !important;
 }
 
 .mapper-scene--dashboard::before,
@@ -2876,11 +2890,11 @@ h6,
   font-size: 0.8rem;
   /* CTA plate (COLOR-SYSTEM.md): hued ink, compact — icon slabs stay
      small and juicy, never big dark pucks. */
-  border: 2px solid var(--cta-plate-border);
+  border: 2px solid var(--ink-carbon);
   border-radius: 50%;
-  background: var(--cta-plate);
-  color: var(--soft-black);
-  box-shadow: 2px 2px 0 var(--line-ink);
+  background: var(--ink-spritz);
+  color: var(--ink-carbon);
+  box-shadow: 2px 2px 0 var(--ink-carbon);
   cursor: pointer;
   transition:
     transform var(--transition-fast),
@@ -2889,12 +2903,15 @@ h6,
 }
 .radio-play:hover {
   transform: translateY(-1.5px);
-  box-shadow: 3px 3px 0 var(--line-ink);
-  background: var(--cta-plate-hover);
+  box-shadow: 3px 3px 0 var(--ink-carbon);
 }
 .radio-play:active {
   transform: translateY(0.5px);
-  box-shadow: 1px 1px 0 var(--line-ink);
+  box-shadow: 1px 1px 0 var(--ink-carbon);
+}
+/* A take that's playing wears the same orange. */
+.recording-dock__take-actions .fa-pause {
+  color: var(--ink-spritz);
 }
 /* 44px tap target on touch — the compact visual stays. */
 @media (pointer: coarse) {
@@ -3980,7 +3997,7 @@ h6,
 }
 
 .stamped-tab--orange {
-  background: var(--spot-safety-orange, #FF5500);
+  background: var(--ink-spritz);
   color: #121212;
 }
 
@@ -5498,7 +5515,7 @@ h6,
     0
     0
     5px
-    color-mix(in srgb, var(--color-accent) 42%, transparent)
+    color-mix(in srgb, var(--ink-spritz) 42%, transparent)
   );
 }
 
@@ -5865,7 +5882,6 @@ h6,
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 1.25rem 0;
 }
 .board-skeleton__row {
   display: grid;
@@ -6450,7 +6466,7 @@ a:focus-visible {
    pulse read as the whole map drifting/restless, so it's gone — a settled map
    stays still. Hover/select brighten it as a clear, deliberate response. */
 .node-pad {
-  fill: var(--color-accent);
+  fill: var(--ink-spritz);
   opacity: 0.14;
   filter: blur(5px);
   transition: opacity 0.22s ease, r 0.22s ease;
@@ -6545,7 +6561,7 @@ a:focus-visible {
 /* On hover the chip's ring picks up more of the theme accent + the emoji lifts
    with a deeper shadow — a clear, deliberate "leaning toward you" beat. */
 .node-group:hover .node-disc {
-  stroke: color-mix(in srgb, var(--color-accent) 55%, transparent);
+  stroke: color-mix(in srgb, var(--ink-spritz) 55%, transparent);
 }
 
 .node-group:hover .emoji {
@@ -6562,8 +6578,8 @@ a:focus-visible {
 }
 
 .node-group.is-selected .node-disc {
-  stroke: var(--color-accent);
-  stroke-width: 2;
+  stroke: var(--ink-spritz);
+  stroke-width: 2.5;
 }
 
 .node-group.is-selected .node-inner {
@@ -6576,7 +6592,7 @@ a:focus-visible {
 
 /* A node connected to the selection picks up a soft accent ring too. */
 .node-group.is-connected .node-disc {
-  stroke: color-mix(in srgb, var(--color-accent) 45%, transparent);
+  stroke: color-mix(in srgb, var(--ink-spritz) 45%, transparent);
 }
 
 /* ── FOCUS MODE ─────────────────────────────────────────────────────
@@ -6607,7 +6623,7 @@ a:focus-visible {
 }
 
 .node-group.is-merge-target .node-disc {
-  stroke: var(--color-accent);
+  stroke: var(--ink-spritz);
   stroke-width: 2.5;
 }
 
@@ -6636,7 +6652,7 @@ a:focus-visible {
 }
 
 .node-group.is-merging .node-disc {
-  stroke: var(--color-accent);
+  stroke: var(--ink-spritz);
   stroke-dasharray: 3 3;
 }
 
