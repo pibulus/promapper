@@ -72,7 +72,19 @@
     transparent 80%
   ), #FFF3EA;
   --surface-board: #fffef7; /* warm near-white, never #fff (house law) */
-  --surface-paper: #FCFBF9;
+  /* Layer 1 is a warm mat and the modules are cream paper with a shaded
+     header: TalkType's page cream (#fff6e6) carried one layer deeper, so the
+     board reads as material, not a white void (Sept 27). Near-white
+     --surface-board is kept for chips, pills and badges, so they pop off
+     the cream like white stationery. */
+  --surface-mat: radial-gradient(
+    circle at 50% 30%,
+    #fff3e4 0%,
+    #fdebd8 60%,
+    #fbe4cd 100%
+  );
+  --surface-paper: #fff9f0;
+  --surface-header: #fdefdd;
   --surface-vellum: rgba(250, 249, 246, 0.90);
   --scrim-smoke: rgba(18, 18, 18, 0.22);
 
@@ -86,7 +98,9 @@
   /* Olivetti / Aperol bitter orange: the map's hero pins, play controls
      and the live-session stamp. */
   --ink-spritz: #FF5522;
-  --spot-riso-pink: #FF2A6D;
+  /* TalkType's action pink: candy, not riso-red (#FF2A6D read too hot).
+     Carbon ink on it is ~6.8:1. */
+  --spot-riso-pink: #ff6ac2;
   --spot-electric-cyan: #00E5FF;
 
   /* Kraft — unbleached chipboard (Midori envelopes, Traveler's inserts). An
@@ -2471,7 +2485,7 @@ h6,
    A commanding, crisp white melamine drafting board holding all modules.
    Sharp 3px carbon border and hard 5px drop shadow. */
 .dashboard-shell {
-  background: var(--surface-board);
+  background: var(--surface-mat);
   border: 3px solid var(--ink-carbon, #121212);
   border-radius: 10px;
   padding: clamp(1rem, 2vw, 1.6rem);
@@ -2482,7 +2496,7 @@ h6,
 /* Mobile: clean tactile container with compact padding */
 @media (max-width: 768px) {
   .dashboard-shell {
-    background: var(--surface-board);
+    background: var(--surface-mat);
     border: 2px solid var(--ink-carbon, #121212);
     border-radius: 8px;
     box-shadow: 3px 3px 0px #121212;
@@ -3919,9 +3933,9 @@ h6,
 }
 
 .dashboard-card-header {
-  /* Tokyo Hi-Fi: Clean white card header with crisp carbon rule.
+  /* Tokyo Hi-Fi: shaded cream header with a crisp carbon rule.
      No edge-to-edge color flood. Color lives strictly in the stamped index tabs. */
-  background: var(--surface-board);
+  background: var(--surface-header);
   color: var(--ink-carbon, #121212);
   padding: var(--header-pad-y) var(--header-pad-x);
   border-bottom: 2px solid var(--ink-carbon, #121212);
@@ -5895,7 +5909,7 @@ h6,
 }
 .board-skeleton__band {
   height: 2.2rem;
-  background: var(--surface-board);
+  background: var(--surface-header);
   border-bottom: 2px solid var(--ink-carbon);
   opacity: 0.9;
   animation: board-skeleton-breathe 2.4s ease-in-out infinite;
