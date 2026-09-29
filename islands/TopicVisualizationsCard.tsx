@@ -50,6 +50,7 @@ export default function TopicVisualizationsCard() {
             10 // MAP
           </span>
         </div>
+        <div class="card-header-actions"></div>
       </div>
       <div class="topic-visualizations-shell">
         {isVisible.value ? <VisualizationSelector /> : (

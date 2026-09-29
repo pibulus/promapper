@@ -137,6 +137,20 @@ export default function AskModule() {
               08 // ASK
             </span>
           </div>
+          <div class="card-header-actions">
+            {exchanges.value.length > 0 && (
+              <button
+                type="button"
+                onClick={() => exchanges.value = []}
+                class="cursor-pointer"
+                data-tip="Clear exchanges"
+                data-tip-align="right"
+                aria-label="Clear exchanges"
+              >
+                <i class="fa fa-broom text-sm"></i>
+              </button>
+            )}
+          </div>
         </div>
         <div class="dashboard-card-body ask-body" ref={logRef}>
           <div class="ask-log">

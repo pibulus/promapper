@@ -169,10 +169,11 @@ export default function ActionItemsBack(
     <div class="dashboard-card">
       <div class="dashboard-card-header">
         <div class="inline-flex items-center gap-2">
-          <span class="stamped-tab stamped-tab--pink">03 // OVERVIEW</span>
+          <span class="stamped-tab stamped-tab--orange">03 // OVERVIEW</span>
         </div>
         <div class="card-header-actions">
           <button
+            type="button"
             onClick={onMarkAllDone}
             class="cursor-pointer"
             data-tip="Mark all done"
@@ -182,6 +183,7 @@ export default function ActionItemsBack(
             <i class="fa fa-check-double text-sm"></i>
           </button>
           <button
+            type="button"
             onClick={() => copyToClipboard(buildSummary(items))}
             class="cursor-pointer"
             data-tip="Copy summary"
@@ -191,6 +193,7 @@ export default function ActionItemsBack(
             <i class="fa fa-copy text-sm"></i>
           </button>
           <button
+            type="button"
             onClick={() => sendToZipList(items)}
             class="cursor-pointer"
             data-tip="Send to ZipList"
@@ -200,6 +203,7 @@ export default function ActionItemsBack(
             <i class="fa fa-paper-plane text-sm"></i>
           </button>
           <button
+            type="button"
             onClick={onClearDone}
             class="cursor-pointer"
             data-tip="Clear done"

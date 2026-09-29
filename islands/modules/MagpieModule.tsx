@@ -407,11 +407,11 @@ export default function MagpieModule() {
               05 // MAGPIE
             </span>
           </div>
-          {!readOnly && (
-            <div class="card-header-actions">
+          <div class="card-header-actions">
+            {!readOnly && (
               <button
                 type="button"
-                class="header-icon-btn"
+                class="cursor-pointer"
                 onClick={() => fileInputRef.current?.click()}
                 data-tip="Keep a file"
                 data-tip-align="right"
@@ -419,8 +419,8 @@ export default function MagpieModule() {
               >
                 <i class="fa fa-paperclip" aria-hidden="true"></i>
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
         <div class="action-items-scroll overflow-y-auto magpie-body">
           {items.length === 0

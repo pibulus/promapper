@@ -704,6 +704,7 @@ export default function DashboardIsland() {
                         type="button"
                         onClick={toggleCanvasExpand}
                         data-tip="Draw big"
+                        data-tip-align="right"
                         aria-label="Expand the board fullscreen"
                       >
                         <i class="fa fa-maximize" aria-hidden="true"></i>

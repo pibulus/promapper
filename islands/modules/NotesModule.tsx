@@ -114,6 +114,7 @@ export default function NotesModule() {
           </div>
           <div class="card-header-actions">
             <button
+              type="button"
               onClick={() => {
                 const value = taRef.current?.value ?? "";
                 if (value) copyToClipboard(value);
@@ -126,9 +127,11 @@ export default function NotesModule() {
             </button>
             {!isViewingShared.value && (
               <button
+                type="button"
                 onClick={resampleNotes}
                 class="cursor-pointer"
                 data-tip="Resample notes as a new map"
+                data-tip-align="right"
                 aria-label="Resample notes as new map"
                 disabled={!notes.trim()}
               >

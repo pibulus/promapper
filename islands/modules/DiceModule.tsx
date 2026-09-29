@@ -212,6 +212,7 @@ export default function DiceModule() {
               onMouseEnter={soundHover}
               class="cursor-pointer"
               data-tip="Clear history"
+              data-tip-align="right"
               aria-label="Clear history"
             >
               <i class="fa fa-broom text-xs"></i>

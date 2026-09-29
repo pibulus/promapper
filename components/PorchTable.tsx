@@ -120,7 +120,9 @@ export default function PorchTable() {
           <div class="dashboard-card porch-card">
             <div class="dashboard-card-header">
               <div class="inline-flex items-center gap-2">
-                <span class="stamped-tab stamped-tab--pink">03 // ACTIONS</span>
+                <span class="stamped-tab stamped-tab--orange">
+                  03 // ACTIONS
+                </span>
               </div>
             </div>
             <ul class="porch-card__body porch-actions">
