@@ -91,7 +91,7 @@ export function formatTranscriptSafe(
       html +=
         `<div class="transcript-utterance" style="margin-bottom: 1.25rem; border-left: 3px solid ${currentColor}; padding-left: 0.85rem;">`;
       html +=
-        `<div class="transcript-speaker" data-speaker="${currentSpeaker}" style="font-weight: 700; font-size: 0.8rem; letter-spacing: 0.02em; color: ${currentColor}; margin-bottom: 0.2rem; cursor: pointer; text-transform: uppercase;">${currentSpeaker}</div>`;
+        `<div class="transcript-speaker" data-speaker="${currentSpeaker}" style="font-weight: 700; font-size: 0.8rem; letter-spacing: 0.02em; color: ${currentColor}; margin-bottom: 0.2rem; cursor: pointer;">${currentSpeaker}</div>`;
       html +=
         `<div class="transcript-text" style="color: var(--color-text); line-height: 1.6;">`;
       if (restOfLine.trim()) {

@@ -1261,9 +1261,9 @@ export default function ActionItemsCard(
                                             : item.id}
                                       title="This updated itself from the conversation — tap for why"
                                     >
-                                      ✨ {item.status === "completed"
-                                        ? "checked off for you"
-                                        : "reopened for you"}
+                                      {item.status === "completed"
+                                        ? "ticked itself off"
+                                        : "reopened itself"}
                                     </button>
                                     {expandedReasonId.value === item.id &&
                                       (item as AIFlaggedItem)
