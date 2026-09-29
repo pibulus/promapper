@@ -4,7 +4,7 @@
  * Each preset is a fully formed, hilarious, and recognizable board:
  * 1. Terminator 2: Cyberdyne Raid & Zero Casualties Debrief
  * 2. Sailor Moon: Tokyo District Defense & English Exam Prep
- * 3. Mushroom Kingdom: World 1-2 Pipe Audit & Castle Security
+ * 3. Evil Wizard: Obsidian Spire Logistics & Blood Moon Alignment
  * 4. Dusty Gulch: The Prize Pig Biting Incident (Classic Pablo)
  *
  * Every preset provides:
@@ -23,17 +23,17 @@ const NOW = "2026-09-29T01:00:00.000Z";
    1. TERMINATOR 2: CYBERDYNE RAID
    =================================================================== */
 const T2_TRANSCRIPT =
-  `John Connor: Alright, Dyson's agreed to destroy all the research at Cyberdyne. Let's start from the top.
-Sarah Connor: No loose ends. We melt the chip, we melt the arm, and we destroy the central server room with remote thermite.
-Miles Dyson: Wait, the processor in the vault is company property—
+  `John: Alright, Dyson's agreed to destroy all the research at Cyberdyne. Let's start from the top.
+Sarah: No loose ends. We melt the chip, we melt the arm, and we destroy the central server room with remote thermite.
+Dyson: Wait, the processor in the vault is company property—
 T-800: It must be destroyed. My CPU is a neural-net processor; a learning computer. The microchip at Cyberdyne was recovered from the 1984 unit.
-John Connor: And what about you? What happens to you when the lab is rubble?
+John: And what about you? What happens to you when the lab is rubble?
 T-800: I cannot self-terminate. Someone must lower me into the steel vat.
-Sarah Connor: I'll do it. But first we need the master keys from Dyson's desk, and someone has to keep the LAPD off our tail.
+Sarah: I'll do it. But first we need the master keys from Dyson's desk, and someone has to keep the LAPD off our tail.
 T-800: I have procured the minigun and 40mm tear gas canisters. Casualties will be zero.
-John Connor: Promise? No killing?
+John: Promise? No killing?
 T-800: I swear.
-Sarah Connor: Good. Grab the duffel bags. Judgement Day was supposed to be August 29th; we're running out of timeline.`;
+Sarah: Good. Grab the duffel bags. Judgement Day was supposed to be August 29th; we're running out of timeline.`;
 
 export const DEMO_T2: ConversationData = {
   conversation: {
@@ -45,7 +45,7 @@ export const DEMO_T2: ConversationData = {
   },
   transcript: {
     text: T2_TRANSCRIPT,
-    speakers: ["John Connor", "Sarah Connor", "Miles Dyson", "T-800"],
+    speakers: ["John", "Sarah", "Dyson", "T-800"],
   },
   nodes: [
     { id: "t2_n1", label: "The 1984 Microchip", emoji: "💾", color: "#00E5FF" },
@@ -177,16 +177,16 @@ export const DEMO_T2: ConversationData = {
    =================================================================== */
 const MOON_TRANSCRIPT =
   `Luna: Usagi, you were forty minutes late again. The Dark Kingdom was siphoning human energy at the Crown Arcade.
-Usagi (Sailor Moon): I was studying! Okay, I was napping, but I was dreaming about English irregular verbs! Luna, my mid-term is tomorrow at 8:00 AM!
-Ami (Sailor Mercury): I calculated your passing probability at 14.2%, Usagi. I prepared color-coded grammar flashcards.
-Usagi (Sailor Moon): Ami-chan, you're an angel! Did Tuxedo Mask show up at the arcade?
+Usagi: I was studying! Okay, I was napping, but I was dreaming about English irregular verbs! Luna, my mid-term is tomorrow at 8:00 AM!
+Ami: I calculated your passing probability at 14.2%, Usagi. I prepared color-coded grammar flashcards.
+Usagi: Ami-chan, you're an angel! Did Tuxedo Mask show up at the arcade?
 Tuxedo Mask: (from the balcony) A rose has already been dispatched to distract Jadeite's shadow fiends.
-Usagi (Sailor Moon): Mamoru! I mean... mysterious rose stranger!
+Usagi: Mamoru! I mean... mysterious rose stranger!
 Luna: Focus! The Silver Crystal is still missing, Queen Beryl is mobilizing general Nephrite, and we have an English exam before lunch.
-Ami (Sailor Mercury): I will analyze the crystal's energy frequency using the Mercury pocket computer. Usagi, Moon Tiara Action takes care of the arcade fiends.
-Usagi (Sailor Moon): Moon Prism Power, and then straight to bed with three pork buns.
+Ami: I will analyze the crystal's energy frequency using the Mercury pocket computer. Usagi, Moon Tiara Action takes care of the arcade fiends.
+Usagi: Moon Prism Power, and then straight to bed with three pork buns.
 Luna: Only after you finish the grammar flashcards.
-Usagi (Sailor Moon): Deal. Moon Tiara first, irregular verbs second.`;
+Usagi: Deal. Moon Tiara first, irregular verbs second.`;
 
 export const DEMO_SAILOR_MOON: ConversationData = {
   conversation: {
@@ -200,8 +200,8 @@ export const DEMO_SAILOR_MOON: ConversationData = {
     text: MOON_TRANSCRIPT,
     speakers: [
       "Luna",
-      "Usagi (Sailor Moon)",
-      "Ami (Sailor Mercury)",
+      "Usagi",
+      "Ami",
       "Tuxedo Mask",
     ],
   },
@@ -354,17 +354,17 @@ export const DEMO_SAILOR_MOON: ConversationData = {
    3. EVIL WIZARD: OBSIDIAN SPIRE LOGISTICS & BLOOD MOON ALIGNMENT
    =================================================================== */
 const WIZARD_TRANSCRIPT =
-  `Lord Malakor: Silence, fools! Tonight the blood moon crests over Mount Brimstone! Why is the Doom Ray not calibrated? Gorg, I explicitly ordered green obsidian crystal for the central focus array!
-Gorg (Goblin Contractor): Boss, the quarry in the Shadow Realm was backordered on green obsidian. We got you mauve quartz instead. It still shoots a death beam, it's just more pastel.
-Barnaby (Apprentice): Master, also, the dark raven arrived from the Nether Council. They're auditing our minion health insurance again. Apparently skeletons don't qualify for dental because they don't have gums.
-Lord Malakor: Skeletons don't need dental, Barnaby! They are literally just teeth and bone! What about the pit of despair? Has the moat been stocked with carnivorous abyss eels?
-Gorg (Goblin Contractor): We ordered two crates from the trench, but the courier swapped the labels. Right now the moat has forty-eight domestic goldfish.
-Sir Roland (Captive Paladin): (from hanging iron cage) If I may interject, the goldfish are remarkably soothing. Although the dungeon humidity is doing terrible things to my plate armor.
-Lord Malakor: Why is the prisoner offering ergonomic feedback?!
-Barnaby (Apprentice): He makes valid points, Master. Also, did you banish the village of Oakhaven yet?
-Lord Malakor: I turned their mayor into an organic turnip thirty minutes ago. That's handled. But who left their cursed cauldron bubbling on medium-high in the east wing?
-Gorg (Goblin Contractor): That's the goblin stew. It needs to simmer.
-Lord Malakor: Fine. Gorg, reinforce the drawbridge spikes. Barnaby, file the necromancy tax exemption. Roland, quiet down or you're getting turned into a parsnip to keep the mayor company.`;
+  `Lord Malbad: Silence, fools! Tonight the blood moon crests over Mount Brimstone! Why is the Doom Ray not calibrated? Jorge, I explicitly ordered green obsidian crystal for the central focus array!
+Jorge: Boss, the quarry in the Shadow Realm was backordered on green obsidian. We got you mauve quartz instead. It still shoots a death beam, it's just more pastel.
+Darf: Master, also, the dark raven arrived from the Nether Council. They're auditing our minion health insurance again. Apparently skeletons don't qualify for dental because they don't have gums.
+Lord Malbad: Skeletons don't need dental, Darf! They are literally just teeth and bone! What about the pit of despair? Has the moat been stocked with carnivorous abyss eels?
+Jorge: We ordered two crates from the trench, but the courier swapped the labels. Right now the moat has forty-eight domestic goldfish.
+Sir Keith: (from hanging iron cage) If I may interject, the goldfish are remarkably soothing. Although the dungeon humidity is doing terrible things to my holy greaves.
+Lord Malbad: Why is the prisoner offering ergonomic feedback?!
+Darf: He makes valid points, Master. Also, did you banish the village of Oakhaven yet?
+Lord Malbad: I turned their mayor into an organic turnip thirty minutes ago. That's handled. But who left their cursed cauldron bubbling on medium-high in the east wing?
+Jorge: That's the goblin stew. It needs to simmer.
+Lord Malbad: Fine. Jorge, reinforce the drawbridge spikes and swap the goldfish. Darf, file the skeleton dental appeal. Keith, quiet down or you're getting turned into a parsnip to keep the mayor company.`;
 
 export const DEMO_EVIL_WIZARD: ConversationData = {
   conversation: {
@@ -377,10 +377,10 @@ export const DEMO_EVIL_WIZARD: ConversationData = {
   transcript: {
     text: WIZARD_TRANSCRIPT,
     speakers: [
-      "Lord Malakor",
-      "Gorg (Goblin Contractor)",
-      "Barnaby (Apprentice)",
-      "Sir Roland (Captive Paladin)",
+      "Lord Malbad",
+      "Jorge",
+      "Darf",
+      "Sir Keith",
     ],
   },
   nodes: [
@@ -471,20 +471,20 @@ export const DEMO_EVIL_WIZARD: ConversationData = {
       conversation_id: "demo-evil-wizard",
       description:
         "Transfigure village mayor of Oakhaven into an organic turnip",
-      assignee: "Lord Malakor",
+      assignee: "Lord Malbad",
       due_date: "before dusk",
       status: "completed",
       created_at: NOW,
       updated_at: NOW,
       ai_checked: true,
       checked_reason:
-        "Lord Malakor confirmed he turned the mayor into a turnip thirty minutes ago.",
+        "Lord Malbad confirmed he turned the mayor into a turnip thirty minutes ago.",
     },
     {
       id: "wiz_a2",
       conversation_id: "demo-evil-wizard",
       description: "Replace moat goldfish with flesh-eating abyss eels",
-      assignee: "Gorg",
+      assignee: "Jorge",
       due_date: "tomorrow",
       status: "pending",
       created_at: NOW,
@@ -495,7 +495,7 @@ export const DEMO_EVIL_WIZARD: ConversationData = {
       conversation_id: "demo-evil-wizard",
       description:
         "Dispute Nether Council skeleton dental denial with anatomical proof",
-      assignee: "Barnaby",
+      assignee: "Darf",
       due_date: "this week",
       status: "pending",
       created_at: NOW,
@@ -505,7 +505,7 @@ export const DEMO_EVIL_WIZARD: ConversationData = {
       id: "wiz_a4",
       conversation_id: "demo-evil-wizard",
       description: "Calibrate mauve quartz focus prism for pastel death beam",
-      assignee: "Gorg",
+      assignee: "Jorge",
       due_date: "tonight",
       status: "pending",
       created_at: NOW,
@@ -515,8 +515,8 @@ export const DEMO_EVIL_WIZARD: ConversationData = {
       id: "wiz_a5",
       conversation_id: "demo-evil-wizard",
       description:
-        "Provide anti-rust buffing wax to captive paladin in iron cage",
-      assignee: "Barnaby",
+        "Deliver anti-rust greave polish to Sir Keith in hanging iron cage",
+      assignee: "Darf",
       due_date: "whenever",
       status: "pending",
       created_at: NOW,
@@ -530,13 +530,13 @@ export const DEMO_EVIL_WIZARD: ConversationData = {
         "Transfigure village mayor of Oakhaven into an organic turnip",
       status: "completed",
       reason:
-        "Lord Malakor confirmed he turned the mayor into a turnip thirty minutes ago.",
+        "Lord Malbad confirmed he turned the mayor into a turnip thirty minutes ago.",
     },
   ],
   summary:
-    "Lord Malakor convenes an emergency tower sync in the Obsidian Spire ahead of tonight's blood moon alignment. Hardware compromises were forced across the lair: the Doom Ray has been fitted with mauve quartz due to supply shortages in the Shadow Realm, and the moat is currently populated by forty-eight domestic goldfish instead of abyss eels. Sir Roland continues to critique dungeon acoustics and humidity from his suspended iron cage, while the mayor of Oakhaven has already been neutralized via root-vegetable transfiguration.",
+    "Lord Malbad convenes an emergency lair sync in the Obsidian Spire ahead of tonight's blood moon alignment. Hardware compromises were forced across the lair: the Doom Ray has been fitted with mauve quartz due to supply shortages in the Shadow Realm, and the moat is currently populated by forty-eight domestic goldfish instead of abyss eels. Sir Keith continues to critique dungeon acoustics and cage humidity from his suspended iron perch, while the mayor of Oakhaven has already been neutralized via root-vegetable transfiguration.",
   notes:
-    "Nether Council claims skeleton legions ineligible for dental coverage due to lack of gums. East wing cursed goblin stew left unattended on medium-high.",
+    "Nether Council claims skeleton legions ineligible for dental coverage due to lack of gums. Darf to draft anatomical appeal. East wing goblin stew left simmering on medium-high.",
 };
 
 /* ===================================================================
