@@ -25,15 +25,16 @@ const NOW = "2026-09-29T01:00:00.000Z";
 const T2_TRANSCRIPT =
   `John: Alright, Dyson's agreed to destroy all the research at Cyberdyne. Let's start from the top.
 Sarah: No loose ends. We melt the chip, we melt the arm, and we destroy the central server room with remote thermite.
-Dyson: Wait, the processor in the vault is company property—
-T-800: It must be destroyed. My CPU is a neural-net processor; a learning computer. The microchip at Cyberdyne was recovered from the 1984 unit.
-John: And what about you? What happens to you when the lab is rubble?
-T-800: I cannot self-terminate. Someone must lower me into the steel vat.
-Sarah: I'll do it. But first we need the master keys from Dyson's desk, and someone has to keep the LAPD off our tail.
-T-800: I have procured the minigun and 40mm tear gas canisters. Casualties will be zero.
-John: Promise? No killing?
-T-800: I swear.
-Sarah: Good. Grab the duffel bags. Judgement Day was supposed to be August 29th; we're running out of timeline.`;
+Dyson: Wait, before we burn the vault, did anyone bring quarters for the breakroom vending machine? There's one bag of Funyuns left and the world is ending anyway.
+Sarah: Miles, focus! What about the getaway car?
+T-800: I have hotwired a 1987 station wagon. I also affixed a 'Baby On Board' suction sign to the rear windshield.
+John: Why did you do that?!
+T-800: John Connor is technically ten years old. Defensive driving protocols state traffic awareness increases by 14%. Casualties will be zero.
+Sarah: Did you get the crowd dispersal gear?
+T-800: I have procured the minigun and 40mm tear gas canisters. No human targets will be terminated.
+John: And what happens to you when the lab is rubble?
+T-800: I cannot self-terminate. Someone must lower me into the molten steel vat.
+Sarah: I'll do it. Grab the duffel bags and the Funyuns. Judgement Day was supposed to be August 29th; we're running out of timeline.`;
 
 export const DEMO_T2: ConversationData = {
   conversation: {
@@ -53,12 +54,12 @@ export const DEMO_T2: ConversationData = {
     { id: "t2_n3", label: "Molten Steel Vat", emoji: "🌋", color: "#FF8A4C" },
     {
       id: "t2_n4",
-      label: "Zero Casualties Rule",
-      emoji: "🕊️",
-      color: "#5B9E8F",
+      label: "Baby On Board Sign",
+      emoji: "🚼",
+      color: "#FFE600",
     },
-    { id: "t2_n5", label: "Minigun & Tear Gas", emoji: "💥", color: "#FFE600" },
-    { id: "t2_n6", label: "Remote Thermite", emoji: "🧨", color: "#ff6ac2" },
+    { id: "t2_n5", label: "Minigun & Tear Gas", emoji: "💥", color: "#5B9E8F" },
+    { id: "t2_n6", label: "Breakroom Funyuns", emoji: "🧅", color: "#ff6ac2" },
     { id: "t2_n7", label: "Thumbs-Up Protocol", emoji: "👍", color: "#EADCC9" },
   ],
   edges: [
@@ -117,9 +118,9 @@ export const DEMO_T2: ConversationData = {
       id: "t2_a2",
       conversation_id: "demo-t2-cyberdyne",
       description:
-        "Destroy all neural-net prototypes and backup disks in Cyberdyne lab",
+        "Raid breakroom vending machine for final pre-apocalypse Funyuns",
       assignee: "Dyson",
-      due_date: "before dawn",
+      due_date: "before the thermite",
       status: "pending",
       created_at: NOW,
       updated_at: NOW,
@@ -149,7 +150,7 @@ export const DEMO_T2: ConversationData = {
       id: "t2_a5",
       conversation_id: "demo-t2-cyberdyne",
       description:
-        "Teach T-800 how to do a proper high-five and smile without looking terrifying",
+        "Teach T-800 how to do a high-five without fracturing human metacarpals",
       assignee: "John",
       due_date: "whenever",
       status: "pending",
@@ -167,26 +168,27 @@ export const DEMO_T2: ConversationData = {
     },
   ],
   summary:
-    "Sarah Connor, John Connor, and the reprogrammed T-800 coordinate an emergency covert strike on Cyberdyne Systems with Miles Dyson to avert Judgement Day. Dyson has agreed to liquidate all company neural-net research, but total timeline safety requires incinerating the 1984 processor artifact and the T-800 unit itself in molten industrial steel. The T-800 has pledged zero human fatalities, deploying non-lethal crowd-control ordinance for the exfiltration.",
+    "Sarah Connor, John Connor, and the reprogrammed T-800 coordinate an emergency covert strike on Cyberdyne Systems with Miles Dyson to avert Judgement Day. Dyson has agreed to liquidate all company neural-net research after securing the final breakroom Funyuns, while the T-800 has secured a station wagon with a 'Baby On Board' sign to optimize getaway safety. Total timeline survival requires incinerating the 1984 processor artifact and the T-800 unit itself in molten industrial steel.",
   notes:
-    "T-800 confirmed hardcoded architectural inability to self-terminate. Thumbs-up gesture logged in motor memory buffer.",
+    "T-800 confirmed hardcoded architectural inability to self-terminate. Defensive driving protocol projected to reduce civilian casualties by 14%.",
 };
 
 /* ===================================================================
    2. SAILOR MOON: TOKYO DISTRICT DEFENSE & ENGLISH EXAM
    =================================================================== */
 const MOON_TRANSCRIPT =
-  `Luna: Usagi, you were forty minutes late again. The Dark Kingdom was siphoning human energy at the Crown Arcade.
-Usagi: I was studying! Okay, I was napping, but I was dreaming about English irregular verbs! Luna, my mid-term is tomorrow at 8:00 AM!
-Ami: I calculated your passing probability at 14.2%, Usagi. I prepared color-coded grammar flashcards.
-Usagi: Ami-chan, you're an angel! Did Tuxedo Mask show up at the arcade?
-Tuxedo Mask: (from the balcony) A rose has already been dispatched to distract Jadeite's shadow fiends.
-Usagi: Mamoru! I mean... mysterious rose stranger!
-Luna: Focus! The Silver Crystal is still missing, Queen Beryl is mobilizing general Nephrite, and we have an English exam before lunch.
-Ami: I will analyze the crystal's energy frequency using the Mercury pocket computer. Usagi, Moon Tiara Action takes care of the arcade fiends.
-Usagi: Moon Prism Power, and then straight to bed with three pork buns.
-Luna: Only after you finish the grammar flashcards.
-Usagi: Deal. Moon Tiara first, irregular verbs second.`;
+  `Luna: Usagi, you were forty minutes late again! The Dark Kingdom was siphoning human energy at the Crown Arcade!
+Usagi: I was studying! Okay, I was sleeping, but I fell asleep with the English textbook open on my face, which is basically osmosis!
+Ami: I calculated your passing probability at 11.4%, Usagi. I color-coded seventy-two irregular verb flashcards.
+Usagi: Ami-chan, you're ruining my mood! Did Tuxedo Mask show up to help?
+Tuxedo Mask: (from the second-story balcony) I hurled a single crimson rose into the fountain and delivered a dramatic thirty-second monologue. My work here is done.
+Usagi: You hit an empty soda can! The shadow fiends didn't even notice you!
+Tuxedo Mask: The dramatic resonance was impeccable. Farewell! (leaps off balcony into bushes)
+Luna: He does this every single Tuesday. Usagi, Queen Beryl is mobilizing, and your exam starts at 8:00 AM.
+Ami: Statistically, his rose had 0% tactical combat impact, but Usagi's heart rate spiked 40%.
+Usagi: See?! Love conquers all! Now who is buying the custard pork buns?
+Luna: Nobody until you memorize the past participle of 'to freeze'.
+Usagi: Moon Prism Power first, past participles second.`;
 
 export const DEMO_SAILOR_MOON: ConversationData = {
   conversation: {
@@ -214,8 +216,8 @@ export const DEMO_SAILOR_MOON: ConversationData = {
     },
     {
       id: "moon_n2",
-      label: "The Silver Crystal",
-      emoji: "🔮",
+      label: "Textbook Osmosis Sleep",
+      emoji: "📖",
       color: "#ff6ac2",
     },
     {
@@ -226,23 +228,28 @@ export const DEMO_SAILOR_MOON: ConversationData = {
     },
     {
       id: "moon_n4",
-      label: "Tuxedo Rose Dispatch",
+      label: "Rose Hits Soda Can",
       emoji: "🌹",
       color: "#FF8A4C",
     },
     {
       id: "moon_n5",
-      label: "Mercury Supercomputer",
-      emoji: "💻",
+      label: "0% Tactical Combat Impact",
+      emoji: "📉",
       color: "#00E5FF",
     },
     {
       id: "moon_n6",
-      label: "Moon Tiara Action",
-      emoji: "🌙",
-      color: "#ff6ac2",
+      label: "Balcony Bush Leap",
+      emoji: "🌳",
+      color: "#5B9E8F",
     },
-    { id: "moon_n7", label: "Pork Bun Stash", emoji: "🥟", color: "#EADCC9" },
+    {
+      id: "moon_n7",
+      label: "Custard Pork Buns",
+      emoji: "🥟",
+      color: "#EADCC9",
+    },
   ],
   edges: [
     {
@@ -253,26 +260,26 @@ export const DEMO_SAILOR_MOON: ConversationData = {
     },
     {
       id: "moon_e2",
-      source_topic_id: "moon_n1",
-      target_topic_id: "moon_n6",
-      color: "",
-    },
-    {
-      id: "moon_e3",
-      source_topic_id: "moon_n2",
+      source_topic_id: "moon_n4",
       target_topic_id: "moon_n5",
       color: "",
     },
     {
+      id: "moon_e3",
+      source_topic_id: "moon_n4",
+      target_topic_id: "moon_n6",
+      color: "",
+    },
+    {
       id: "moon_e4",
-      source_topic_id: "moon_n3",
-      target_topic_id: "moon_n7",
+      source_topic_id: "moon_n2",
+      target_topic_id: "moon_n3",
       color: "",
     },
     {
       id: "moon_e5",
-      source_topic_id: "moon_n5",
-      target_topic_id: "moon_n3",
+      source_topic_id: "moon_n3",
+      target_topic_id: "moon_n7",
       color: "",
     },
   ],
@@ -281,7 +288,7 @@ export const DEMO_SAILOR_MOON: ConversationData = {
       id: "moon_a1",
       conversation_id: "demo-sailor-moon",
       description:
-        "Dispatch signature red rose to disrupt Crown Arcade energy drain",
+        "Hurl crimson rose at fountain and declare work finished from balcony",
       assignee: "Tuxedo Mask",
       due_date: "tonight",
       status: "completed",
@@ -289,12 +296,12 @@ export const DEMO_SAILOR_MOON: ConversationData = {
       updated_at: NOW,
       ai_checked: true,
       checked_reason:
-        "Tuxedo Mask confirmed a rose has already been dispatched from the balcony.",
+        "Tuxedo Mask confirmed he hurled the rose, delivered the monologue, and leapt into the bushes.",
     },
     {
       id: "moon_a2",
       conversation_id: "demo-sailor-moon",
-      description: "Deploy Moon Tiara Action against Jadeite's shadow fiends",
+      description: "Deploy Moon Tiara Action against arcade shadow fiends",
       assignee: "Usagi",
       due_date: "immediately",
       status: "pending",
@@ -316,7 +323,7 @@ export const DEMO_SAILOR_MOON: ConversationData = {
       id: "moon_a4",
       conversation_id: "demo-sailor-moon",
       description:
-        "Drill English irregular verbs until Usagi's passing probability hits 60%",
+        "Drill past participle of 'to freeze' until passing probability hits 50%",
       assignee: "Luna",
       due_date: "tonight",
       status: "pending",
@@ -326,9 +333,10 @@ export const DEMO_SAILOR_MOON: ConversationData = {
     {
       id: "moon_a5",
       conversation_id: "demo-sailor-moon",
-      description: "Keep Usagi away from the bakery until homework is signed",
+      description:
+        "Buy custard pork buns only after homework flashcards are signed",
       assignee: "Luna",
-      due_date: "ongoing",
+      due_date: "after battle",
       status: "pending",
       created_at: NOW,
       updated_at: NOW,
@@ -338,33 +346,35 @@ export const DEMO_SAILOR_MOON: ConversationData = {
     {
       id: "moon_a1",
       description:
-        "Dispatch signature red rose to disrupt Crown Arcade energy drain",
+        "Hurl crimson rose at fountain and declare work finished from balcony",
       status: "completed",
       reason:
-        "Tuxedo Mask confirmed a rose has already been dispatched from the balcony.",
+        "Tuxedo Mask confirmed he hurled the rose, delivered the monologue, and leapt into the bushes.",
     },
   ],
   summary:
-    "The Sailor Guardians hold a high-friction strategy session balancing a Dark Kingdom energy siphon at the Crown Arcade against Usagi's perilous 14.2% projected passing rate on her 8:00 AM English exam. Ami has supplied color-coded grammar aids and frequency analysis, while Tuxedo Mask has satisfied his tactical obligations with a single balcony-thrown rose. The protocol mandates immediate Moon Tiara deployment followed by mandatory homework quarantine.",
+    "The Sailor Guardians hold an emergency strategy session balancing a Dark Kingdom energy siphon at the Crown Arcade against Usagi's perilous 11.4% projected passing rate on her 8:00 AM English exam. Tuxedo Mask satisfied his tactical obligations by hitting an empty soda can with a rose, declaring his work finished, and leaping into the bushes. The protocol mandates immediate Moon Tiara deployment followed by rigorous irregular verb drills.",
   notes:
-    "Queen Beryl mobilizing General Nephrite. Usagi's motivation remains strictly conditional on post-battle pork buns.",
+    "Tuxedo Mask rose confirmed to have 0% tactical combat efficacy and 94% aesthetic drama. Usagi's battle willingness remains strictly contingent on post-fight custard buns.",
 };
 
 /* ===================================================================
    3. EVIL WIZARD: OBSIDIAN SPIRE LOGISTICS & BLOOD MOON ALIGNMENT
    =================================================================== */
 const WIZARD_TRANSCRIPT =
-  `Lord Malbad: Silence, fools! Tonight the blood moon crests over Mount Brimstone! Why is the Doom Ray not calibrated? Jorge, I explicitly ordered green obsidian crystal for the central focus array!
+  `Lord Malbad: Silence, minions! Tonight the blood moon crests over Mount Brimstone! Why is the Doom Ray not calibrated? Jorge, I explicitly ordered green obsidian crystal for the central focus array!
 Jorge: Boss, the quarry in the Shadow Realm was backordered on green obsidian. We got you mauve quartz instead. It still shoots a death beam, it's just more pastel.
 Darf: Master, also, the dark raven arrived from the Nether Council. They're auditing our minion health insurance again. Apparently skeletons don't qualify for dental because they don't have gums.
 Lord Malbad: Skeletons don't need dental, Darf! They are literally just teeth and bone! What about the pit of despair? Has the moat been stocked with carnivorous abyss eels?
 Jorge: We ordered two crates from the trench, but the courier swapped the labels. Right now the moat has forty-eight domestic goldfish.
-Sir Keith: (from hanging iron cage) If I may interject, the goldfish are remarkably soothing. Although the dungeon humidity is doing terrible things to my holy greaves.
-Lord Malbad: Why is the prisoner offering ergonomic feedback?!
-Darf: He makes valid points, Master. Also, did you banish the village of Oakhaven yet?
+Sir Keith: (from hanging iron cage) If I may interject, the goldfish are remarkably soothing. Though I must ask: who hung the motivational kitten poster in the torture corridor?
+Lord Malbad: The what?!
+Darf: It says 'Hang In There', Master. With a little tabby on a branch. We felt the torture corridor lacked warmth.
+Sir Keith: Honestly, it lifts the spirits. Though the dungeon humidity is doing terrible things to my holy greaves.
+Lord Malbad: Why is the prisoner doing an interior design review?! Did you banish the village of Oakhaven yet?
 Lord Malbad: I turned their mayor into an organic turnip thirty minutes ago. That's handled. But who left their cursed cauldron bubbling on medium-high in the east wing?
 Jorge: That's the goblin stew. It needs to simmer.
-Lord Malbad: Fine. Jorge, reinforce the drawbridge spikes and swap the goldfish. Darf, file the skeleton dental appeal. Keith, quiet down or you're getting turned into a parsnip to keep the mayor company.`;
+Lord Malbad: Fine. Jorge, reinforce the drawbridge spikes and swap the goldfish. Darf, file the skeleton dental appeal and take down that kitten poster. Keith, quiet down or you're getting turned into a parsnip to keep the mayor company.`;
 
 export const DEMO_EVIL_WIZARD: ConversationData = {
   conversation: {
@@ -416,8 +426,8 @@ export const DEMO_EVIL_WIZARD: ConversationData = {
     },
     {
       id: "wiz_n6",
-      label: "Paladin Armor Rust",
-      emoji: "⛓️",
+      label: "Torture Kitten Poster",
+      emoji: "🐱",
       color: "#EADCC9",
     },
     {
@@ -515,9 +525,9 @@ export const DEMO_EVIL_WIZARD: ConversationData = {
       id: "wiz_a5",
       conversation_id: "demo-evil-wizard",
       description:
-        "Deliver anti-rust greave polish to Sir Keith in hanging iron cage",
+        "Tear down 'Hang In There' kitten poster from torture corridor",
       assignee: "Darf",
-      due_date: "whenever",
+      due_date: "immediately",
       status: "pending",
       created_at: NOW,
       updated_at: NOW,
@@ -534,7 +544,7 @@ export const DEMO_EVIL_WIZARD: ConversationData = {
     },
   ],
   summary:
-    "Lord Malbad convenes an emergency lair sync in the Obsidian Spire ahead of tonight's blood moon alignment. Hardware compromises were forced across the lair: the Doom Ray has been fitted with mauve quartz due to supply shortages in the Shadow Realm, and the moat is currently populated by forty-eight domestic goldfish instead of abyss eels. Sir Keith continues to critique dungeon acoustics and cage humidity from his suspended iron perch, while the mayor of Oakhaven has already been neutralized via root-vegetable transfiguration.",
+    "Lord Malbad convenes an emergency lair sync in the Obsidian Spire ahead of tonight's blood moon alignment. Hardware compromises were forced across the lair: the Doom Ray has been fitted with mauve quartz due to supply shortages in the Shadow Realm, and the moat is currently populated by forty-eight domestic goldfish instead of abyss eels. Sir Keith praised the soothing ambience of the goldfish and a new 'Hang In There' kitten poster in the torture corridor, while the mayor of Oakhaven has already been neutralized via root-vegetable transfiguration.",
   notes:
     "Nether Council claims skeleton legions ineligible for dental coverage due to lack of gums. Darf to draft anatomical appeal. East wing goblin stew left simmering on medium-high.",
 };
