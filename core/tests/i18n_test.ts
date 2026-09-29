@@ -22,7 +22,7 @@ Deno.test("i18n: t('es') returns Spanish dictionary", () => {
   assertEquals(es.btnMapIt, "Mapea");
   assertEquals(es.btnTryAgain, "Inténtalo otra vez");
   assertEquals(es.listeningLive, "Escuchando en vivo…");
-  assertEquals(es.livePill, "⚡ en vivo");
+  assertEquals(es.livePill, "En vivo");
   assertEquals(
     es.mappedSuccess(3, 5),
     "¡Listo el mapa! 3 tareas y 5 temas",

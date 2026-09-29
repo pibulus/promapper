@@ -50,9 +50,14 @@ export default function TranscriptCard(
     <div class="w-full h-full">
       <div class="dashboard-card">
         <div class="dashboard-card-header">
-          <h3>Transcript</h3>
+          <div class="inline-flex items-center gap-2">
+            <span class="stamped-tab stamped-tab--yellow">
+              01 // TRANSCRIPT
+            </span>
+          </div>
           <div class="card-header-actions">
             <button
+              type="button"
               onClick={() =>
                 transcript?.text && openReader({
                   title: "Transcript",
@@ -70,6 +75,7 @@ export default function TranscriptCard(
               <i class="fa fa-up-right-and-down-left-from-center text-sm"></i>
             </button>
             <button
+              type="button"
               onClick={() =>
                 transcript?.text && copyToClipboard(transcript.text)}
               class="cursor-pointer"

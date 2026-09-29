@@ -83,8 +83,12 @@ export default function App({ Component }: PageProps) {
           href="/apple-touch-icon.png"
         />
 
-        {/* Theme Color */}
-        <meta name="theme-color" content="#ffb98a" />
+        {
+          /* Theme Color — the header's warm near-white, so a phone's browser
+            bar joins the page instead of sitting over the airy desk as a
+            saturated peach stripe. */
+        }
+        <meta name="theme-color" content="#fffaf5" />
 
         {
           /* Inter (headers) + IBM Plex Mono (body) — as <link>s so the font

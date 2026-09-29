@@ -264,13 +264,24 @@ Adding a tool should be drop-a-file + register-a-line:
   info"). `.porch` sets Inter; mono comes back only for typed/pasted text, the
   live transcript, and the specimens' own words. Placeholders, buttons,
   captions, footer line: Inter.
-- **The porch is two screens with a membrane** (Sept 25): screen one is
-  hit-record-and-go in open air (no card at any width, mic above the paste
-  tray); screen two is `components/PorchTable.tsx`, the /example board laid out
-  as fun-size specimens that reuse the REAL card classes. The membrane is native
-  CSS scroll snap scoped by `html:has(.porch)`; no JS, no reveal animations. `/`
-  never auto-restores, so /example opens its board via `/?open=<id>` →
+- **The porch is two screens with a membrane** (Sept 25, Tokyo pass Sept 28):
+  screen one is hit-record-and-go under its own warm SUNRISE (`--surface-dawn`;
+  no card at any width; the gist with the mandarin mic — `--ink-mandarin`,
+  spritz's softer cousin — level on its right, the paste tray under both);
+  screen two is `components/PorchTable.tsx`, the /example board laid out under
+  an airy aqua SKY (`--surface-sky`, full-bleed below a 3px carbon rim; Pablo's
+  pick, Sept 28) as fun-size specimens that reuse the REAL card classes. The
+  porch sits OUTSIDE `<main>`'s centred grid so that sky can bleed edge to edge
+  via negative margins (never 100vw). The membrane is native CSS scroll snap
+  scoped by `html:has(.porch)`; no JS, no reveal animations. `/` never
+  auto-restores, so /example opens its board via `/?open=<id>` →
   `openStoredConversation()`.
+- **The ground is NOT theme-driven** (Sept 28): `.mapper-scene` paints the
+  static Tokyo desk (`--surface-desk`) on every page, except the porch, which
+  swaps in `--surface-dawn` (and `--surface-sky` below its membrane). All three
+  are static tokens in styles.css `:root`. SHUFFLE rolls tint accents, plates
+  and hearts only; `--gradient-bg` now feeds nothing but `/dev/colors`. Tuning
+  ground knobs changes nothing on screen.
 - **Colour is law, and it lives in `docs/COLOR-SYSTEM.md`.** Six source files
   cite it. The live theme knobs are in `core/theme/randomTheme.ts`, NOT
   `themes.ts` — the app auto-rolls a SHUFFLE theme on mount, so the named themes

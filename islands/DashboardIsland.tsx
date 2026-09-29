@@ -477,7 +477,9 @@ export default function DashboardIsland() {
     ];
     const EDGES = [[0, 1], [1, 2], [0, 3], [2, 4]];
     return (
-      <div class="board-skeleton" aria-hidden="true">
+      // Same drafting board as the loaded dashboard, so nothing jumps when
+      // the result lands.
+      <div class="dashboard-shell board-skeleton" aria-hidden="true">
         <div class="board-skeleton__row">
           {[0, 1, 2].map((i) => (
             <div class="board-skeleton__card" key={i} style={`--i:${i}`}>
@@ -662,13 +664,16 @@ export default function DashboardIsland() {
               back={
                 <div class="dashboard-card">
                   <div class="dashboard-card-header">
-                    <h3
-                      data-tip={liveSession.value
-                        ? "Drawing live with the room"
-                        : "Draw alongside the map — it remembers"}
-                    >
-                      Canvas
-                    </h3>
+                    <div class="inline-flex items-center gap-2">
+                      <span
+                        class="stamped-tab stamped-tab--yellow"
+                        data-tip={liveSession.value
+                          ? "Drawing live with the room"
+                          : "Draw alongside the map — it remembers"}
+                      >
+                        11 // CANVAS
+                      </span>
+                    </div>
                     <div class="card-header-actions">
                       <button
                         type="button"
@@ -699,6 +704,7 @@ export default function DashboardIsland() {
                         type="button"
                         onClick={toggleCanvasExpand}
                         data-tip="Draw big"
+                        data-tip-align="right"
                         aria-label="Expand the board fullscreen"
                       >
                         <i class="fa fa-maximize" aria-hidden="true"></i>

@@ -25,6 +25,7 @@ import { conversationData } from "@signals/conversationStore.ts";
 import { markdownService } from "../utils/markdownService.ts";
 import { showToast, showUndoToast } from "../utils/toast.ts";
 import { resampleIntoFreshMap } from "@utils/resample.ts";
+import ChonkyQrCard from "../components/ChonkyQrCard.tsx";
 import {
   deriveSnapshotTitle,
   type ExportSnapshot,
@@ -747,7 +748,11 @@ export default function MarkdownMakerDrawer(
       >
         {/* Header — same band grammar as every dashboard card */}
         <div class="dashboard-card-header">
-          <h3>Export</h3>
+          <div class="inline-flex items-center gap-2">
+            <span class="stamped-tab stamped-tab--pink">
+              EXPORT // ARTIFACT
+            </span>
+          </div>
           <div class="card-header-actions">
             <button
               onClick={onClose}
@@ -904,15 +909,24 @@ export default function MarkdownMakerDrawer(
 
           {/* Fresh deck — one tap opens it in Slideomatic */}
           {deckUrl.value && (
-            <a
-              href={deckUrl.value}
-              target="_blank"
-              rel="noopener"
-              class="btn btn--accent w-full mb-4"
-            >
-              <i class="fa fa-display" aria-hidden="true"></i>
-              <span>Open the deck</span>
-            </a>
+            <div class="mb-4 space-y-2">
+              <a
+                href={deckUrl.value}
+                target="_blank"
+                rel="noopener"
+                class="btn btn--accent w-full"
+              >
+                <i class="fa fa-display" aria-hidden="true"></i>
+                <span>Open the deck</span>
+              </a>
+              <ChonkyQrCard
+                url={deckUrl.value}
+                title="Scan to open deck on phone"
+                subtitle="Beam presentation directly to your device"
+                badge="SLIDEOMATIC PASS"
+                compact
+              />
+            </div>
           )}
 
           {/* Markdown Preview */}

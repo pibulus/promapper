@@ -732,7 +732,9 @@ export default function ActionItemsCard(
       <div class="w-full h-full">
         <div class="dashboard-card action-items-card">
           <div class="dashboard-card-header">
-            <h3>Actions</h3>
+            <div class="inline-flex items-center gap-2">
+              <span class="stamped-tab stamped-tab--orange">03 // ACTIONS</span>
+            </div>
             {
               /* card-header-actions like every other card — this header used
                 its own btn--ghost cluster and read as a different species. */
@@ -743,7 +745,6 @@ export default function ActionItemsCard(
                 onClick={() => sendToZipList(visibleItems.value)}
                 onMouseEnter={soundHover}
                 data-tip="Send to ZipList"
-                data-tip-align="right"
                 aria-label="Send action items to ZipList"
                 disabled={visibleItems.value.length === 0}
               >
@@ -751,16 +752,17 @@ export default function ActionItemsCard(
               </button>
               {!readOnly && (
                 <button
+                  type="button"
                   onClick={cycleSort}
                   onMouseEnter={soundHover}
                   aria-label="Reorder tasks — newest, oldest, or shuffled"
                   data-tip="Sort: newest / oldest / shuffle"
-                  data-tip-align="right"
                 >
                   <i class="fa fa-arrow-down-wide-short" aria-hidden="true"></i>
                 </button>
               )}
               <button
+                type="button"
                 onClick={toggleSearch}
                 onMouseEnter={soundHover}
                 aria-label={searchOpen.value ? "Close search" : "Search tasks"}
@@ -1071,7 +1073,7 @@ export default function ActionItemsCard(
                             </div>
                           )}
                           {!isEditing && (
-                            <div class="grid grid-cols-[auto_1fr_auto] gap-2.5 items-start relative z-[2]">
+                            <div class="grid grid-cols-[auto_auto_1fr] gap-2.5 items-start relative z-[2]">
                               {/* Drag Handle (mouse/pen: press to grab; touch: long-press the row) */}
                               <div class="flex items-center pt-1">
                                 {canDrag
@@ -1087,8 +1089,71 @@ export default function ActionItemsCard(
                                   : <div class="drag-handle-placeholder"></div>}
                               </div>
 
+                              {/* Checkbox (affordance left-aligned right after drag handle) */}
+                              <div class="flex items-center pt-1">
+                                <button
+                                  type="button"
+                                  onMouseEnter={soundHover}
+                                  disabled={readOnly}
+                                  onPointerDown={(event) => {
+                                    event.stopPropagation();
+                                    if (event.pointerType === "mouse") {
+                                      event.preventDefault();
+                                      checkboxHandledByPointer.current = true;
+                                      toggleActionItem(item.id);
+                                    }
+                                  }}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    if (checkboxHandledByPointer.current) {
+                                      checkboxHandledByPointer.current = false;
+                                      return;
+                                    }
+                                    toggleActionItem(item.id);
+                                  }}
+                                  onKeyDown={(event) => {
+                                    if (
+                                      event.key !== "Enter" &&
+                                      event.key !== " "
+                                    ) {
+                                      return;
+                                    }
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    toggleActionItem(item.id);
+                                  }}
+                                  class={`action-item-checkbox-button${
+                                    item.status === "completed"
+                                      ? " is-checked"
+                                      : ""
+                                  }${
+                                    poppingId.value === item.id
+                                      ? " is-popping"
+                                      : ""
+                                  }`}
+                                  title={item.assignee
+                                    ? `Assigned to ${item.assignee}`
+                                    : undefined}
+                                  role="checkbox"
+                                  aria-checked={item.status === "completed"}
+                                  aria-label={`Mark ${item.description} as ${
+                                    item.status === "completed"
+                                      ? "pending"
+                                      : "completed"
+                                  }`}
+                                >
+                                  {item.status === "completed" && (
+                                    <i
+                                      class="fa fa-check"
+                                      aria-hidden="true"
+                                    >
+                                    </i>
+                                  )}
+                                </button>
+                              </div>
+
                               {/* Content */}
-                              <div class="flex flex-col gap-2 min-w-0 w-full">
+                              <div class="flex flex-col gap-2 min-w-0 w-full pr-12">
                                 {
                                   /* Two-line clamp keeps every row the same
                                           shape. Desktop: click the words to
@@ -1259,9 +1324,9 @@ export default function ActionItemsCard(
                                             : item.id}
                                       title="This updated itself from the conversation — tap for why"
                                     >
-                                      ✨ {item.status === "completed"
-                                        ? "checked off for you"
-                                        : "reopened for you"}
+                                      {item.status === "completed"
+                                        ? "ticked itself off"
+                                        : "reopened itself"}
                                     </button>
                                     {expandedReasonId.value === item.id &&
                                       (item as AIFlaggedItem)
@@ -1343,78 +1408,6 @@ export default function ActionItemsCard(
                                   >
                                   </i>
                                 </button>
-                              </div>
-
-                              {/* Checkbox */}
-                              <div class="flex items-center pt-1">
-                                {
-                                  <button
-                                    type="button"
-                                    onMouseEnter={soundHover}
-                                    // `disabled` (not a hidden handler) so the
-                                    // snapshot reads as a photo to a mouse, a
-                                    // thumb AND a screen reader at once.
-                                    disabled={readOnly}
-                                    // Mouse toggles on pointerdown (snappy);
-                                    // touch/pen wait for the click so a scroll
-                                    // flick that lands here can't check it.
-                                    onPointerDown={(event) => {
-                                      event.stopPropagation();
-                                      if (event.pointerType === "mouse") {
-                                        event.preventDefault();
-                                        checkboxHandledByPointer.current = true;
-                                        toggleActionItem(item.id);
-                                      }
-                                    }}
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      if (checkboxHandledByPointer.current) {
-                                        checkboxHandledByPointer.current =
-                                          false;
-                                        return;
-                                      }
-                                      toggleActionItem(item.id);
-                                    }}
-                                    onKeyDown={(event) => {
-                                      if (
-                                        event.key !== "Enter" &&
-                                        event.key !== " "
-                                      ) {
-                                        return;
-                                      }
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                      toggleActionItem(item.id);
-                                    }}
-                                    class={`action-item-checkbox-button${
-                                      item.status === "completed"
-                                        ? " is-checked"
-                                        : ""
-                                    }${
-                                      poppingId.value === item.id
-                                        ? " is-popping"
-                                        : ""
-                                    }`}
-                                    title={item.assignee
-                                      ? `Assigned to ${item.assignee}`
-                                      : undefined}
-                                    role="checkbox"
-                                    aria-checked={item.status === "completed"}
-                                    aria-label={`Mark ${item.description} as ${
-                                      item.status === "completed"
-                                        ? "pending"
-                                        : "completed"
-                                    }`}
-                                  >
-                                    {item.status === "completed" && (
-                                      <i
-                                        class="fa fa-check"
-                                        aria-hidden="true"
-                                      >
-                                      </i>
-                                    )}
-                                  </button>
-                                }
                               </div>
                             </div>
                           )}

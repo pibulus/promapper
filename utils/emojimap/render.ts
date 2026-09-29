@@ -165,6 +165,14 @@ export function createNodeGroup(
   // emoji its own solid ground so edges don't run visibly through the glyph, and
   // it reads as a tidy chip rather than a fuzzy blob. r=20 fully clears the 28px
   // emoji (which renders past center) so the glyph doesn't clip below the chip.
+  // Hard offset shadow under the disc, so the emoji sits in a stamped badge
+  // like its label does. A shape, not a filter (filters re-raster per tick).
+  inner
+    .append("circle")
+    .attr("class", "node-disc-shadow")
+    .attr("r", 20)
+    .attr("cx", BADGE_SHADOW)
+    .attr("cy", BADGE_SHADOW);
   inner
     .append("circle")
     .attr("class", "node-disc")
@@ -183,17 +191,79 @@ export function createNodeGroup(
     .attr("dominant-baseline", "middle")
     .attr("font-size", config.emojiFontSize);
 
-  // Add label
-  inner
+  // The label rides on a paper badge with a hard offset shadow — a physical
+  // token on the board. Shadow rect first so it paints under the pill; both
+  // are sized to the text by fitLabelBadge. Colours live in styles.css.
+  const badge = inner
+    .append("g")
+    .attr("class", "node-label-group")
+    .attr("transform", `translate(0, ${LABEL_BADGE_Y})`);
+  badge.append("rect").attr("class", "node-label-shadow").attr("rx", 4);
+  badge.append("rect").attr("class", "node-label-pill").attr("rx", 4);
+  badge
     .append("text")
     .attr("class", "label")
-    .text((d) => d.label)
+    .text((d) => d.label || "")
     .attr("text-anchor", "middle")
-    .attr("y", 28)
-    .attr("font-size", config.labelFontSize)
-    .attr("fill", config.labelColor);
+    .attr("dominant-baseline", "central")
+    .attr("font-size", config.labelFontSize);
+  badge.each(function () {
+    fitLabelBadge(this);
+  });
 
   return selection;
+}
+
+// Badge geometry. LABEL_BADGE_Y clears the r=20 disc; fitAllIcons'
+// NODE_EXTENT_DOWN must cover it plus half a badge plus the shadow.
+const LABEL_BADGE_Y = 32;
+const BADGE_PAD_X = 7;
+const BADGE_PAD_Y = 3;
+const BADGE_SHADOW = 2;
+
+/** Calculate the horizontal half-extent of a node, covering both the emoji disc and the label pill. */
+export function nodeHalfWidth(d: NodeData): number {
+  const label = d.label || "";
+  const textWidth = Math.max(30, label.length * 7.5);
+  return Math.max(26, (textWidth / 2) + BADGE_PAD_X + BADGE_SHADOW + 4);
+}
+
+/** Calculate dynamic collision radius so wide text pills never overlap or collide. */
+export function getNodeCollisionRadius(
+  d: NodeData,
+  baseRadius: number = 38,
+): number {
+  const label = d.label || "";
+  const textWidth = Math.max(28, label.length * 7.5);
+  const pillRadius = (textWidth / 2) + BADGE_PAD_X + 14;
+  return Math.max(baseRadius, pillRadius);
+}
+
+/** Wrap the badge rects around the label's real ink. getBBox reads 0 while the
+ *  map is hidden (flip-card back) and throws in some engines for unrendered
+ *  SVG, so fall back to a per-character estimate until the next update
+ *  re-measures. */
+function fitLabelBadge(badge: SVGGElement) {
+  const text = badge.querySelector<SVGTextElement>("text.label");
+  if (!text) return;
+  let box: { x: number; y: number; width: number; height: number } | null =
+    null;
+  try {
+    box = text.getBBox();
+  } catch { /* unrendered */ }
+  if (!box || box.width === 0) {
+    const width = (text.textContent || "").length * 7.5;
+    box = { x: -width / 2, y: -8, width, height: 16 };
+  }
+  const w = String(box.width + BADGE_PAD_X * 2);
+  const h = String(box.height + BADGE_PAD_Y * 2);
+  for (const rect of badge.querySelectorAll<SVGRectElement>("rect")) {
+    const off = rect.classList.contains("node-label-shadow") ? BADGE_SHADOW : 0;
+    rect.setAttribute("x", String(box.x - BADGE_PAD_X + off));
+    rect.setAttribute("y", String(box.y - BADGE_PAD_Y + off));
+    rect.setAttribute("width", w);
+    rect.setAttribute("height", h);
+  }
 }
 
 /**
@@ -314,7 +384,14 @@ export function updateElements({
         });
         return g;
       },
-      (update) => update,
+      // Renames land here: refresh the text, then re-fit its badge.
+      (update) => {
+        update.select(".label").text((d) => d.label || "");
+        update.select(".node-label-group").each(function () {
+          fitLabelBadge(this);
+        });
+        return update;
+      },
       // Shrink + fade on the way out instead of vanishing — gentler than a
       // hard remove when a topic is deleted or merged away. CSS owns the tween
       // via .is-leaving; we remove the element after it plays.
@@ -414,15 +491,14 @@ export function fitAllIcons(
   const fillFactor = 0.8;
 
   // A node is not a point: the disc is r=20 (glow pad r=23) and the label sits
-  // at y=28 below center. Measuring bare x/y centers made the bbox symmetric
-  // around the glyphs while the real ink hangs BELOW them, so bottom-row labels
-  // clipped while the top had spare room. Grow the box by the actual extents.
-  const NODE_EXTENT_X = 23;
+  // at y=28 below center. Label pills have dynamic width based on text length;
+  // using nodeHalfWidth guarantees long labels like SKELETON DENTAL AUDIT are
+  // never clipped on the viewport edges.
   const NODE_EXTENT_UP = 23;
-  const NODE_EXTENT_DOWN = 38; // label baseline (28) + its descenders
+  const NODE_EXTENT_DOWN = 46; // badge centre (32) + half its height + shadow
 
-  const minX = (d3.min(nodes, (d) => d.x || 0) || 0) - NODE_EXTENT_X;
-  const maxX = (d3.max(nodes, (d) => d.x || 0) || 0) + NODE_EXTENT_X;
+  const minX = d3.min(nodes, (d) => (d.x ?? 0) - nodeHalfWidth(d)) ?? -26;
+  const maxX = d3.max(nodes, (d) => (d.x ?? 0) + nodeHalfWidth(d)) ?? 26;
   const minY = (d3.min(nodes, (d) => d.y || 0) || 0) - NODE_EXTENT_UP;
   const maxY = (d3.max(nodes, (d) => d.y || 0) || 0) + NODE_EXTENT_DOWN;
 

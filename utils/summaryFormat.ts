@@ -13,21 +13,27 @@ const SENTENCES_PER_PARA = 2;
  * talk about each other in transcripts, so honorifics show up constantly. */
 const NON_TERMINAL = /\b(Mr|Mrs|Ms|Dr|Prof|St|Sr|Jr|vs|etc|e\.g|i\.e)\.$/i;
 
-/** Split prose into sentences, keeping each sentence's terminator, then
- * re-join chunks that ended on an abbreviation dot ("...bit Mrs." +
- * "Patterson..."). */
-function splitSentences(text: string): string[] {
+/** Split prose into sentences, keeping each sentence's terminator, re-joining
+ * chunks that ended on an abbreviation dot ("...bit Mrs." + "Patterson...")
+ * or a decimal number ("11." + "4%"). */
+export function splitSentences(text: string): string[] {
   const raw = text.match(/[^.!?]+[.!?]+(?:["')\]]+)?(?:\s+|$)|[^.!?]+$/g)?.map(
     (s) => s.trim(),
   ).filter((s) => s.length > 0) ?? [];
   const merged: string[] = [];
   for (const chunk of raw) {
     const prev = merged[merged.length - 1];
-    if (prev !== undefined && NON_TERMINAL.test(prev)) {
-      merged[merged.length - 1] = `${prev} ${chunk}`;
-    } else {
-      merged.push(chunk);
+    if (prev !== undefined) {
+      if (/\b\d+\.$/.test(prev) && /^\d/.test(chunk)) {
+        merged[merged.length - 1] = `${prev}${chunk}`;
+        continue;
+      }
+      if (NON_TERMINAL.test(prev)) {
+        merged[merged.length - 1] = `${prev} ${chunk}`;
+        continue;
+      }
     }
+    merged.push(chunk);
   }
   return merged;
 }

@@ -397,7 +397,7 @@ export default function MobileHistoryMenu() {
           order and screen-reader tree while invisible. */
       }
       <div
-        class={`history-drawer history-drawer-panel fixed inset-y-0 right-0 w-96 max-w-[85vw] z-40 ${
+        class={`history-drawer history-drawer-panel fixed inset-y-0 right-0 w-[420px] max-w-full z-40 ${
           isOpen.value ? "is-open" : "is-closed"
         }`}
         aria-hidden={!isOpen.value}
@@ -406,14 +406,21 @@ export default function MobileHistoryMenu() {
       >
         {/* Header */}
         <div class="history-drawer-header">
-          <h2 class="history-drawer-title">Your Conversations</h2>
-          <button
-            onClick={() => (isOpen.value = false)}
-            class="history-drawer-close"
-            aria-label="Close history"
-          >
-            <i class="fa fa-xmark" aria-hidden="true"></i>
-          </button>
+          <div class="inline-flex items-center gap-2">
+            <span class="stamped-tab stamped-tab--yellow">
+              HISTORY // SAVED
+            </span>
+          </div>
+          <div class="card-header-actions">
+            <button
+              type="button"
+              onClick={() => (isOpen.value = false)}
+              class="history-drawer-close"
+              aria-label="Close history"
+            >
+              <i class="fa fa-xmark" aria-hidden="true"></i>
+            </button>
+          </div>
         </div>
 
         {/* New Conversation Button */}

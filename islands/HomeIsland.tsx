@@ -10,6 +10,7 @@ import { useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import {
   canUndo,
+  type ConversationData,
   conversationData,
   historyDrawerOpen,
   openStoredConversation,
@@ -20,6 +21,7 @@ import {
   flushPendingSave,
   getActiveConversationId,
   getAllConversations,
+  saveConversation,
 } from "../core/storage/localStorage.ts";
 import { sweepOrphanSnapshots } from "@core/storage/exportSnapshots.ts";
 import { sweepOrphans } from "@core/storage/recordingsDB.ts";
@@ -44,6 +46,7 @@ import {
   stopLiveSync,
 } from "@signals/liveSync.ts";
 import ChatPanel from "../components/ChatPanel.tsx";
+import TactileLoader from "../components/TactileLoader.tsx";
 import { sendTranscriptChunk } from "@signals/partyService.ts";
 import {
   flushLiveAnalysis,
@@ -139,6 +142,56 @@ export default function HomeIsland() {
         url.pathname + url.search + url.hash,
       );
       if (!liveSession.value) openStoredConversation(openId);
+    }
+
+    // Import link handling: #import= or ?import= (e.g. from StageType thermal receipt)
+    const importParam = url.searchParams.get("import") ||
+      (window.location.hash.startsWith("#import=")
+        ? window.location.hash.slice(8)
+        : null);
+    if (importParam && !liveSession.value) {
+      try {
+        const rawJson = decodeURIComponent(escape(atob(importParam)));
+        const imported = JSON.parse(rawJson);
+        if (imported?.transcript) {
+          const id = crypto.randomUUID();
+          const title = imported.title || "StageType Session";
+          const newConv: ConversationData = {
+            conversation: {
+              id,
+              title,
+              source: "import",
+              transcript: imported.transcript,
+              created_at: imported.timestamp || new Date().toISOString(),
+            },
+            transcript: {
+              text: imported.transcript,
+              speakers: Array.isArray(imported.speakers)
+                ? imported.speakers
+                : [],
+            },
+            nodes: [],
+            edges: [],
+            actionItems: [],
+            statusUpdates: [],
+            summary: "",
+          };
+          conversationData.value = newConv;
+          saveConversation(newConv);
+          showToast(`Imported "${title}" into ProMapper!`, "success", 4000);
+        }
+      } catch (e) {
+        console.warn("Failed to parse import payload:", e);
+      }
+      url.searchParams.delete("import");
+      const cleanHash = window.location.hash.startsWith("#import=")
+        ? ""
+        : window.location.hash;
+      window.history.replaceState(
+        window.history.state,
+        "",
+        url.pathname + (url.search ? url.search : "") + cleanHash,
+      );
     }
 
     // Orphan sweeps, once per page load. Both were strays: the takes sweep
@@ -715,31 +768,31 @@ export default function HomeIsland() {
   // holds its pulse until the real result lands.
   const brewNotes = isSpanish()
     ? [
-      "leyendo el texto…",
-      "buscando tareas y pendientes…",
-      "armando el mapa de temas…",
-      "conectando ideas…",
-      "acomodando el tablero…",
+      "01 // LEYENDO EL TEXTO…",
+      "02 // BUSCANDO PENDIENTES…",
+      "03 // TRAZANDO EL MAPA DE TEMAS…",
+      "04 // ENTINTANDO LO QUE CONECTA…",
+      "05 // ACOMODANDO LA MESA…",
     ]
     : [
-      "reading it through…",
-      "pulling out the to-dos…",
-      "sketching the topic map…",
-      "noticing what connects…",
-      "setting the table…",
+      "01 // READING IT THROUGH…",
+      "02 // PULLING OUT THE TO-DOS…",
+      "03 // SKETCHING THE TOPIC MAP…",
+      "04 // INKING WHAT CONNECTS…",
+      "05 // SETTING THE TABLE…",
     ];
 
   // Appending to a live map is a different story than the first brew.
   const appendNotes = isSpanish()
     ? [
-      "escuchando el nuevo audio…",
-      "sumándolo al mapa…",
-      "actualizando pendientes…",
+      "01 // ESCUCHANDO DE NUEVO…",
+      "02 // SUMÁNDOLO AL MAPA…",
+      "03 // ACTUALIZANDO PENDIENTES…",
     ]
     : [
-      "listening back…",
-      "weaving it into the map…",
-      "checking off what you said you did…",
+      "01 // LISTENING BACK…",
+      "02 // WEAVING IT INTO THE MAP…",
+      "03 // CHECKING OFF WHAT GOT DONE…",
     ];
   const isBrewing = processingConversation.value && !conversationData.value
     ? 1
@@ -1057,6 +1110,52 @@ export default function HomeIsland() {
             while header/footer chrome sat at ~24px. */
         }
         <main class="app-scroll flex-1 overflow-y-auto px-4 pt-4 sm:px-6">
+          {
+            /* THE PORCH — two screens with a membrane between them (scroll
+              snap, styles.css). Screen one is hit-record-and-go on the desk;
+              screen two is one finished board laid out under an aqua sky. It
+              lives OUTSIDE the centred grid so the second screen's sky can
+              bleed edge to edge (negative margins into <main>'s gutter — no
+              100vw, so no stray horizontal scrollbar). The stage's lip is the
+              second screen's own edge peeking up, so it announces itself
+              without a word. Only while there's no data and nothing brewing. */
+          }
+          {!conversationData.value && !processingConversation.value && (
+            <div class="porch">
+              <section class="mapper-stage" id="porch">
+                <div class="mapper-hero">
+                  <h1 class="mapper-hero-title">
+                    {heroLines.map((line, lineIndex) => (
+                      <span
+                        class="mapper-hero-line"
+                        key={line}
+                        style={{ animationDelay: `${lineIndex * 140}ms` }}
+                      >
+                        {line}
+                      </span>
+                    ))}
+                  </h1>
+                  {
+                    /* The two subtitle lines ride INTO the capture row, so
+                      the mic sits on their right, level with them. */
+                  }
+                  <UploadIsland>
+                    <p class="mapper-hero-desc">
+                      {i18n.heroDesc}
+                    </p>
+                    <p class="mapper-hero-caption">
+                      {i18n.heroCaption}
+                    </p>
+                  </UploadIsland>
+                </div>
+                <a href="#table" class="porch-cue">
+                  {i18n.porchCue}
+                  <i class="fa fa-chevron-down" aria-hidden="true"></i>
+                </a>
+              </section>
+              <PorchTable />
+            </div>
+          )}
           <div
             class={`max-w-7xl mx-auto grid gap-4 sm:gap-6 ${
               conversationData.value
@@ -1066,46 +1165,6 @@ export default function HomeIsland() {
                 : ""
             }`}
           >
-            {
-              /* THE PORCH — two screens with a membrane between them (scroll
-                snap, styles.css). Screen one is hit-record-and-go, standing
-                straight on the sky; screen two is one finished board laid out
-                on the table. The stage's bottom lip is the table's own edge
-                peeking up, so the second screen announces itself without a
-                word. Only while there's no data and nothing brewing. */
-            }
-            {!conversationData.value && !processingConversation.value && (
-              <div class="porch">
-                <section class="mapper-stage" id="porch">
-                  <div class="mapper-hero">
-                    <h1 class="mapper-hero-title">
-                      {heroLines.map((line, lineIndex) => (
-                        <span
-                          class="mapper-hero-line"
-                          key={line}
-                          style={{ animationDelay: `${lineIndex * 140}ms` }}
-                        >
-                          {line}
-                        </span>
-                      ))}
-                    </h1>
-                    <p class="mapper-hero-desc">
-                      {i18n.heroDesc}
-                    </p>
-                    <p class="mapper-hero-caption">
-                      {i18n.heroCaption}
-                    </p>
-                    <UploadIsland />
-                  </div>
-                  <a href="#table" class="porch-cue">
-                    {i18n.porchCue}
-                    <i class="fa fa-chevron-down" aria-hidden="true"></i>
-                  </a>
-                </section>
-                <PorchTable />
-              </div>
-            )}
-
             {
               /* Dashboard — also rendered while the first process brews:
               DashboardIsland's no-data branch is the skeleton, so loading
@@ -1158,10 +1217,9 @@ export default function HomeIsland() {
           }
           {conversationData.value?.conversation.title
             ? (
-              <span class="app-footer__brand app-footer__brand--project">
-                <i class="fa fa-note-sticky" aria-hidden="true"></i>
-                <span class="app-footer__project" aria-hidden="true">
-                  {conversationData.value.conversation.title}
+              <span class="app-footer__brand app-footer__brand--project flex items-center gap-2">
+                <span class="stamped-tab stamped-tab--orange stamped-tab--sm">
+                  SESSION // ACTIVE
                 </span>
               </span>
             )
@@ -1287,6 +1345,11 @@ export default function HomeIsland() {
 
       {/* Supporter & Pricing Modal */}
       <SupporterModal />
+
+      {/* Tactile In-Between Loader for subsequent takes */}
+      <TactileLoader
+        isOpen={processingConversation.value && !!conversationData.value}
+      />
     </div>
   );
 }

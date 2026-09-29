@@ -19,10 +19,9 @@ interface SharedWhiteboardProps {
   onSceneChange?: (scene: string) => void;
 }
 
-// The drawing paper is the house cream, never absolute white (Pablo's decree —
-// docs/COLOR-SYSTEM.md). Scrubbed onto restored scenes too, because older
-// saves carry Excalidraw's stock #ffffff.
-const WARM_PAPER = "#fbf1e4";
+// The drawing surface is pure drafting white (#ffffff) resting inside the
+// recessed desk pad (#ECE5D8).
+const WARM_PAPER = "#ffffff";
 
 // 80/20 the properties panel: power-user sections a scratch board doesn't
 // need. Excalidraw's section fieldsets carry no classes or testids — only

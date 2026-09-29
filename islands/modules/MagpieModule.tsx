@@ -24,6 +24,11 @@ import { isModuleEnabled, toggleModule } from "@signals/moduleStore.ts";
 import { resampleIntoFreshMap } from "@utils/resample.ts";
 import { soundBloom, soundTick } from "@utils/sound.ts";
 import { copyToClipboard, showToast, showUndoToast } from "@utils/toast.ts";
+import {
+  formatBytes,
+  isShrinkableImage,
+  shrinkImageFile,
+} from "@utils/drShrink.ts";
 import BodyPortal from "../../components/BodyPortal.tsx";
 
 /** Matches showUndoToast's default visible duration — the deferred delete
@@ -165,15 +170,33 @@ export default function MagpieModule() {
     for (const file of files) {
       if (!canAdd()) break;
       if (file.size === 0) continue; // nothing to keep
-      if (file.size > MAGPIE_MAX_FILE_BYTES) {
-        tooBig.push(file.name);
+
+      // Dr. Shrink Cartridge Node: downscale and compress heavy phone photos client-side
+      let workingFile = file;
+      if (isShrinkableImage(file)) {
+        const shrinkRes = await shrinkImageFile(file);
+        if (shrinkRes.didShrink) {
+          workingFile = shrinkRes.file;
+          showToast(
+            `Dr. Shrink crushed ${file.name} (${
+              formatBytes(shrinkRes.originalSize)
+            } → ${formatBytes(shrinkRes.shrunkSize)})`,
+            "info",
+            4000,
+          );
+        }
+      }
+
+      if (workingFile.size > MAGPIE_MAX_FILE_BYTES) {
+        tooBig.push(workingFile.name);
         continue;
       }
       // Drag-and-drop is the least reliable gesture there is, so "did that
       // work? let me do it again" is a normal thing to do. Don't punish it
       // with a double row and double the storage.
       const already = (conversationData.value?.magpie ?? []).some((i) =>
-        i.kind === "file" && i.name === file.name && i.size === file.size
+        i.kind === "file" && i.name === workingFile.name &&
+        i.size === workingFile.size
       );
       if (already) continue;
 
@@ -181,9 +204,9 @@ export default function MagpieModule() {
       const stored = await saveMagpieFile({
         id: fileId,
         conversationId: owner,
-        name: file.name,
-        mimeType: file.type || "application/octet-stream",
-        data: file,
+        name: workingFile.name,
+        mimeType: workingFile.type || "application/octet-stream",
+        data: workingFile,
         createdAt: new Date().toISOString(),
       });
       if (conversationData.value?.conversation?.id !== owner) return; // moved on
@@ -200,9 +223,9 @@ export default function MagpieModule() {
         id: crypto.randomUUID(),
         kind: "file",
         value: fileId,
-        name: file.name,
-        size: file.size,
-        mime: file.type || "application/octet-stream",
+        name: workingFile.name,
+        size: workingFile.size,
+        mime: workingFile.type || "application/octet-stream",
         addedAt: new Date().toISOString(),
       });
       soundBloom();
@@ -376,14 +399,19 @@ export default function MagpieModule() {
         }}
       >
         <div class="dashboard-card-header">
-          <h3 data-tip="A shelf for shiny things — drop files, links, scraps">
-            Magpie
-          </h3>
-          {!readOnly && (
-            <div class="card-header-actions">
+          <div class="inline-flex items-center gap-2">
+            <span
+              class="stamped-tab stamped-tab--cyan"
+              data-tip="A shelf for shiny things — drop files, links, scraps"
+            >
+              05 // MAGPIE
+            </span>
+          </div>
+          <div class="card-header-actions">
+            {!readOnly && (
               <button
                 type="button"
-                class="header-icon-btn"
+                class="cursor-pointer"
                 onClick={() => fileInputRef.current?.click()}
                 data-tip="Keep a file"
                 data-tip-align="right"
@@ -391,8 +419,8 @@ export default function MagpieModule() {
               >
                 <i class="fa fa-paperclip" aria-hidden="true"></i>
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
         <div class="action-items-scroll overflow-y-auto magpie-body">
           {items.length === 0

@@ -1,10 +1,15 @@
 import { signal, useComputed, useSignal } from "@preact/signals";
+import type { ComponentChildren } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import {
   conversationData,
+  openStoredConversation,
   pendingAudio,
   processingConversation,
 } from "@signals/conversationStore.ts";
+import { saveConversation } from "@core/storage/localStorage.ts";
+import { getRandomDemo } from "../utils/demoPresets.ts";
+import TactileLoader from "../components/TactileLoader.tsx";
 import { startJournal, type TakeJournal } from "@core/storage/takeJournal.ts";
 import {
   letGoOfPendingAudio,
@@ -29,7 +34,9 @@ import { t } from "../utils/i18n.ts";
 // (an error remounts the hero — losing the paste would sting).
 const textInput = signal("");
 
-export default function UploadIsland() {
+export default function UploadIsland(
+  { children }: { children?: ComponentChildren },
+) {
   const i18n = t();
   const isProcessing = processingConversation;
   const isRecording = useSignal(false);
@@ -38,6 +45,7 @@ export default function UploadIsland() {
   const lastUploadName = useSignal("");
   const selectedFile = useSignal<File | null>(null);
   const isDragActive = useSignal(false);
+  const isRollingDemo = useSignal(false);
 
   // Live Deepgram transcription signals
   const liveTranscript = useSignal("");
@@ -307,6 +315,19 @@ export default function UploadIsland() {
     analyserRef.current = null;
     unsubsRef.current.forEach((fn) => fn());
     unsubsRef.current = [];
+  }
+
+  function handleRollDemo() {
+    if (isRollingDemo.value || isProcessing.value) return;
+    isRollingDemo.value = true;
+    soundBloom();
+    const demo = getRandomDemo();
+    saveConversation(demo);
+    setTimeout(() => {
+      openStoredConversation(demo.conversation.id);
+      isRollingDemo.value = false;
+      showToast(`🎲 Rolled: ${demo.conversation.title}`);
+    }, 1200);
   }
 
   async function processLiveTranscript(text: string, audioBlob?: Blob) {
@@ -649,63 +670,82 @@ export default function UploadIsland() {
         aria-label="Conversation input"
       >
         {
-          /* The mic comes FIRST — hit record and go. The paste tray under it
-            is the other door, not the headline act. This is still ONE morphing
-            button (Map it / Map audio / Try that again), just above the tray
-            instead of under it. */
+          /* The mic comes FIRST — hit record and go — level with the hero's
+            two subtitle lines (passed in as children), with the paste tray
+            under both as the other door. Still ONE morphing button (Map it /
+            Map audio / Try that again). */
         }
         <div class="mapper-capture-actions">
-          {isRecording.value
-            ? (
-              <div class="mapper-record-actions-row">
-                <button
-                  type="button"
-                  class="mapper-cancel-btn"
-                  onClick={cancelRecording}
-                >
-                  {i18n.btnCancel}
-                </button>
-                <button
-                  class="mapper-slab-button mapper-slab-button--record flex-1"
-                  disabled={primaryDisabled.value}
-                  onClick={handlePrimaryAction}
-                >
-                  <i
-                    class="fa fa-check"
-                    aria-hidden="true"
-                    style={{ marginRight: "0.45rem" }}
+          {children && <div class="mapper-hero-lede">{children}</div>}
+          <div class="mapper-capture-controls">
+            {isRecording.value
+              ? (
+                // Stop lands exactly where Start was (same slab, same spot),
+                // with a quiet Cancel tucked under it — the row never reflows
+                // when a take starts.
+                <div class="mapper-record-actions-row">
+                  <button
+                    class="mapper-slab-button mapper-slab-button--record"
+                    disabled={primaryDisabled.value}
+                    onClick={handlePrimaryAction}
                   >
-                  </i>
-                  {i18n.btnStopAndMap}
-                </button>
-              </div>
-            )
-            : (
-              <>
-                <button
-                  class="mapper-slab-button mapper-slab-button--record"
-                  disabled={primaryDisabled.value}
-                  onClick={handlePrimaryAction}
-                >
-                  {primaryLabel.value === i18n.btnStartRecording && (
                     <i
-                      class="fa fa-microphone"
+                      class="fa fa-check"
                       aria-hidden="true"
-                      style={{ marginRight: "0.5rem" }}
+                      style={{ marginRight: "0.45rem" }}
                     >
                     </i>
-                  )}
-                  {primaryLabel.value}
-                </button>
+                    {i18n.btnStopAndMap}
+                  </button>
+                  <button
+                    type="button"
+                    class="mapper-cancel-btn"
+                    onClick={cancelRecording}
+                  >
+                    {i18n.btnCancel}
+                  </button>
+                </div>
+              )
+              : (
+                <>
+                  <button
+                    class="mapper-slab-button mapper-slab-button--record"
+                    disabled={primaryDisabled.value}
+                    onClick={handlePrimaryAction}
+                  >
+                    {primaryLabel.value === i18n.btnStartRecording && (
+                      <i
+                        class="fa fa-microphone"
+                        aria-hidden="true"
+                        style={{ marginRight: "0.5rem" }}
+                      >
+                      </i>
+                    )}
+                    {primaryLabel.value}
+                  </button>
 
-                {lastUploadName.value && !selectedFile.value &&
-                  !hasText.value && (
-                  <span class="mapper-block-meta">
-                    {i18n.lastUpload} {lastUploadName.value}
-                  </span>
-                )}
-              </>
-            )}
+                  {lastUploadName.value && !selectedFile.value &&
+                    !hasText.value && (
+                    <span class="mapper-block-meta">
+                      {i18n.lastUpload} {lastUploadName.value}
+                    </span>
+                  )}
+
+                  {!selectedFile.value && !hasText.value && (
+                    <button
+                      type="button"
+                      class="mapper-sample-take-btn"
+                      onClick={handleRollDemo}
+                      disabled={primaryDisabled.value || isRollingDemo.value}
+                      title="Roll a random pop-culture board: Terminator 2, Sailor Moon, Evil Wizard, or Dusty Gulch"
+                    >
+                      <span class="sample-icon" aria-hidden="true">🎲</span>
+                      <span>Roll a sample take</span>
+                    </button>
+                  )}
+                </>
+              )}
+          </div>
         </div>
 
         <div
@@ -735,7 +775,7 @@ export default function UploadIsland() {
                     </span>
                     {isLiveConnected.value && (
                       <span
-                        class="mapper-live-pill"
+                        class="mapper-live-pill stamped-tab stamped-tab--orange stamped-tab--sm"
                         title="Live text stream active"
                       >
                         {i18n.livePill}
@@ -858,6 +898,11 @@ export default function UploadIsland() {
         ref={fileInputRef}
         onChange={handleAudioUpload}
         style={{ display: "none" }}
+      />
+
+      <TactileLoader
+        isOpen={isProcessing.value || isRollingDemo.value}
+        demoMode={isRollingDemo.value}
       />
     </div>
   );

@@ -753,19 +753,22 @@ export default function SoundModule() {
       front={
         <div class="dashboard-card">
           <div class="dashboard-card-header">
-            <h3>Sound</h3>
-            {playing.value && (
-              <span
-                ref={meterElRef}
-                class={`sound-meter${meterLive.value ? "" : " is-idle"}`}
-                aria-label="Playing"
-              >
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-              </span>
-            )}
+            <div class="inline-flex items-center gap-2">
+              <span class="stamped-tab stamped-tab--orange">04 // SOUND</span>
+              {playing.value && (
+                <span
+                  ref={meterElRef}
+                  class={`sound-meter${meterLive.value ? "" : " is-idle"}`}
+                  aria-label="Playing"
+                >
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </span>
+              )}
+            </div>
+            <div class="card-header-actions"></div>
           </div>
           <div class="dashboard-card-body radio-body">
             {
@@ -844,7 +847,10 @@ export default function SoundModule() {
       back={
         <div class="dashboard-card">
           <div class="dashboard-card-header">
-            <h3>Dial</h3>
+            <div class="inline-flex items-center gap-2">
+              <span class="stamped-tab stamped-tab--orange">04 // DIAL</span>
+            </div>
+            <div class="card-header-actions"></div>
           </div>
           <div class="dashboard-card-body radio-stations">
             {SOURCES.map((s, i) => {

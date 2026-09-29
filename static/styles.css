@@ -55,6 +55,139 @@
   ), linear-gradient(168deg, #ff9a5c 0%, #ffc296 38%, #ffe8d0 78%);
 
   /* ===================================================================
+     TOKYO HI-FI FUNCTIONALISM TOKENS
+     The Tactile Desk Archetype · Japanese Stationery & Swiss Typography
+     ================================================================ */
+  /* Layer 0, the Aperol sunset desk: sun-washed peach into prosecco light
+     under a bitter-orange haze. Low chroma so it never bands; static (paint
+     tax law), the softness is all in the long falloff. The board on top
+     stays opaque paper, so the haze lives only outside it. */
+  --surface-desk: radial-gradient(
+    ellipse 80% 60% at 68% 0%,
+    rgba(255, 94, 54, 0.16),
+    transparent 70%
+  ), radial-gradient(
+    ellipse 95% 75% at 50% 40%,
+    rgba(255, 235, 170, 0.22),
+    transparent 80%
+  ), #FFF3EA;
+  --surface-board: #fffef7; /* warm near-white, never #fff (house law) */
+  /* Layer 1 is a warm mat and the modules are cream paper with a shaded
+     header: TalkType's page cream (#fff6e6) carried one layer deeper, so the
+     board reads as material, not a white void (Sept 27). Near-white
+     --surface-board is kept for chips, pills and badges, so they pop off
+     the cream like white stationery. */
+  /* The mat's stops as tokens so a full-bleed surface (the porch's second
+     screen) can wear the same mat as a linear sheet. */
+  --mat-light: #fff3e4;
+  --mat-mid: #fdebd8;
+  --mat-deep: #fbe4cd;
+  --surface-mat: radial-gradient(
+    circle at 50% 30%,
+    var(--mat-light) 0%,
+    var(--mat-mid) 60%,
+    var(--mat-deep) 100%
+  );
+  /* Below the porch's membrane: an airy aqua SKY (Pablo, Sept 28 — "an airy,
+     lush aqua sky kinda fade", sampled from the aqua roll he pointed at).
+     Mint from the top-left, cyan leaning in from the top-right, thinning to
+     pale sky at the floor. The warm desk above + this cool sky below makes
+     crossing the membrane a hue flip, with the cream index cards floating on
+     it. */
+  /* Sept 28, pass two: "gradientier" and "fade a tad more to white" — lusher
+     mint and cyan pooling in the top corners, thinning to a near-white floor
+     (never #fff) by about three-quarters of the way down. */
+  --sky-mint: #bfe9e3;
+  --sky-cyan: #bfe6f6;
+  --sky-mist: #d6f0f3;
+  --sky-haze: #eef9fa;
+  --sky-floor: #fafdfc;
+  --surface-sky: radial-gradient(
+    ellipse 75% 65% at 96% -4%,
+    var(--sky-cyan) 0%,
+    transparent 72%
+  ), radial-gradient(
+    ellipse 65% 55% at 0% -2%,
+    #b2e6dc 0%,
+    transparent 70%
+  ), linear-gradient(
+    180deg,
+    var(--sky-mint) 0%,
+    var(--sky-mist) 40%,
+    var(--sky-haze) 72%,
+    var(--sky-floor) 100%
+  );
+  /* Above the membrane, the porch's own SUNRISE — warmer and more of a
+     gradient than the dashboard's Aperol desk (which keeps its own tuning):
+     an apricot sun from the top-right, a peach-rose wash top-left, a honey
+     haze through the middle, all on a peach-to-cream fall. Still airy: the
+     floor is warm near-white. */
+  --surface-dawn: radial-gradient(
+    ellipse 80% 70% at 85% -10%,
+    rgba(255, 140, 80, 0.3),
+    transparent 70%
+  ), radial-gradient(
+    ellipse 70% 60% at 5% 0%,
+    rgba(255, 178, 150, 0.3),
+    transparent 70%
+  ), radial-gradient(
+    ellipse 110% 60% at 50% 65%,
+    rgba(255, 214, 160, 0.24),
+    transparent 78%
+  ), linear-gradient(180deg, #ffe6d6 0%, #ffefe3 55%, #fff8f1 100%);
+  /* ===================================================================
+     STRICT 3-LAYER SURFACE ELEVATION & CONTRAST SYSTEM
+     ================================================================ */
+  --surface-base: #F4EFE6; /* Desktop background */
+  --surface-card: #FDFBF7; /* Modules / panels */
+  --surface-item: #FFFFFF; /* Interactive child cards (Action items, input rows) */
+  --surface-item-hover: #F8F5EE;
+
+  /* Borders & Lines */
+  --border-strong: #1A1A1A; /* 1.5px or 2px solid for module boundaries */
+  --border-subtle: #E2DCD2; /* 1px solid for internal dividers/rows */
+
+  /* Ink / Text */
+  --ink-primary: #18181B; /* Body text, titles */
+  --ink-secondary: #52525B; /* Timestamps, word counts, metadata */
+  --ink-muted: #71717A; /* Placeholder text */
+
+  --surface-paper: var(--surface-card);
+  --surface-header: #F0EAE1;
+  --surface-vellum: rgba(250, 249, 246, 0.90);
+  --scrim-smoke: rgba(18, 18, 18, 0.22);
+
+  --ink-carbon: #121212;
+  --ink-muted: #6B6860;
+  --ink-border-heavy: 3px solid #121212;
+  --ink-border-thin: 2px solid #121212;
+  --ink-border-hairline: 1px solid #121212;
+
+  --spot-fluro-yellow: #FFE600;
+  /* Olivetti / Aperol bitter orange: the map's hero pins, play controls
+     and the live-session stamp. */
+  --ink-spritz: #FF5522;
+  /* The porch mic's softer cousin (Pablo, Sept 28: spritz read "too heavy an
+     orange" on the landing page — "a tad more mandariney"). Same Aperol
+     family; carbon ink on it is ~8:1. The dashboard keeps spritz. */
+  --ink-mandarin: #FF8A4C;
+  /* TalkType's action pink: candy, not riso-red (#FF2A6D read too hot).
+     Carbon ink on it is ~6.8:1. */
+  --spot-riso-pink: #ff6ac2;
+  --spot-electric-cyan: #00E5FF;
+
+  /* Kraft — unbleached chipboard (Midori envelopes, Traveler's inserts). An
+     ACCENT material only: the recessed dice tray, blank tabs, placeholder
+     bars. Never a flat wash behind text (it read as packaging tape). */
+  --ink-kraft: #EADCC9;
+  --ink-kraft-deep: #DFD1BD;
+
+  --shadow-board: 5px 5px 0px #121212;
+  --shadow-card: 3px 3px 0px #121212;
+  --shadow-button: 2px 2px 0px #121212;
+  --shadow-button-active: 0px 0px 0px #121212;
+
+  /* ===================================================================
      DESIGN TOKENS - Consistent styling across components
      ================================================================ */
 
@@ -471,7 +604,7 @@ h6,
 .action-item-actions {
   position: absolute;
   z-index: 3;
-  right: 3.1rem;
+  right: 0.6rem;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
@@ -823,12 +956,12 @@ h6,
   flex-shrink: 0;
 }
 
-/* Project title — sits beside the brand, truncates, recedes vs the wordmark. */
+/* Project title — sits beside the brand, truncates, confident Swiss typography. */
 .app-header__title {
   font-size: var(--small-size);
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  color: var(--ink-carbon);
+  letter-spacing: -0.015em;
   /* 1.35, not 1: with overflow:hidden a 1.0 line box CLIPS descenders
      ("Dusty Gulch" lost the tail of its g/y). */
   line-height: 1.35;
@@ -894,8 +1027,8 @@ h6,
 }
 /* Recording state — warm rose wash + accent icon (never alarm red). */
 .header-icon-btn.is-recording {
-  background: var(--accent-rose-wash);
-  color: var(--accent-ink);
+  background: var(--ink-spritz);
+  color: var(--ink-carbon);
   width: auto;
   padding: 0 0.6rem;
   gap: 0.4rem;
@@ -1017,67 +1150,22 @@ h6,
   min-height: 100vh;
   min-height: 100dvh;
   position: relative;
-  /* Risograph-style pastel splashes, driven by the active theme so the
-     theme switcher actually repaints the canvas. --gradient-bg is defined
-     per-theme in core/theme/themes.ts (and the FOUC script in _app.tsx). */
-  background: var(--gradient-bg);
+  /* Layer 0, THE DESK, on every page — porch, dashboard, shared, 404. It
+     used to be the rolled theme's --gradient-bg here (saturated sky blobs +
+     a drifting sweep + grain) while the Tokyo pass gave only the dashboard
+     the Aperol desk, so the porch was the one heavy, un-airy room (Pablo,
+     Sept 28: "airier and lighter, more elegant"). The theme dice still roll
+     accents and plates; the ground is a place, not a mood. */
+  background: var(--surface-desk);
   /* clip, NOT hidden: hidden makes the scene a (never-scrolling) scroll
-     container, which kills the footer's position:sticky. clip crops the
-     decorative splashes without capturing sticky. */
+     container, which kills the footer's position:sticky. */
   overflow: clip;
-  /* No animation here on purpose: the old 18s --gradient-angle sweep
-     re-rasterized this viewport-sized gradient every frame, forever, on
-     every page (typed @property animations run on the main thread). The
-     living-light motion now rides sceneDrift's transform below — the
-     compositor moves the painted wash for free. */
 }
 
-.mapper-scene::before {
-  content: "";
-  position: absolute;
-  inset: -30% -20% auto -20%;
-  height: 70%;
-  /* Warm near-white, not absolute white: this sheet covers the top 70% of the
-     viewport, so a cold veil here desaturated the whole ground on every theme
-     (the "washed out" report, Aug 21). Same light sweep, no bleach. */
-  background: linear-gradient(
-    128deg,
-    rgba(255, 254, 247, 0.55) 0%,
-    rgba(255, 254, 247, 0) 65%
-  );
-  opacity: 0.28;
-  transform: rotate(1deg);
-  pointer-events: none;
-  animation: sceneDrift 26s ease-in-out infinite alternate;
-}
-
-.mapper-scene::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  /* Golden Master grain texture: 1-2% opacity warm noise.
-     The 35% white radial that used to lead this stack is GONE (Aug 21). With
-     `mix-blend-mode: overlay` on a light backdrop it resolved to near-pure
-     white across the ENTIRE viewport — un-themeable, and between them the two
-     scene veils were destroying roughly half the ground's chroma on every
-     theme. The grain and the warm dot are the texture; the bleach was not. */
-  background-image:
-    radial-gradient(circle at 1px 1px, rgba(30, 23, 20, 0.02), transparent 3px),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='4' seed='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)' opacity='0.015'/%3E%3C/svg%3E");
-  background-size: 140px 140px, auto;
-  opacity: 1;
-}
-
-@keyframes sceneDrift {
-  /* Slightly wider swing than before — this transform-only drift carries
-     the living-light feel the gradient-angle sweep used to provide. */
-  from {
-    transform: rotate(1.1deg) translateY(0);
-  }
-  to {
-    transform: rotate(-1.1deg) translateY(16px);
-  }
+/* The porch gets its own warmer sunrise over the same desk family (Pablo,
+   Sept 28: "a slightly warmer sunrise gradient, still subtle and airy"). */
+.mapper-scene:has(.porch) {
+  background: var(--surface-dawn);
 }
 
 /* ===================================================================
@@ -1098,14 +1186,10 @@ h6,
   --porch-footer: calc(2.25rem + env(safe-area-inset-bottom, 0px));
   /* How much of the table shows above the footer before any scrolling. */
   --porch-peek: 0.85rem;
-  /* The table is a flat sheet in the ACCENT's hue while the sky above wears
-     the ground's — so crossing the membrane is a hue flip by construction,
-     on every roll, with no new colour. Flat on purpose: a hard cut. */
-  --table-ground: color-mix(
-    in oklab,
-    var(--color-accent) 16%,
-    var(--soft-cream)
-  );
+  /* Screen one is the warm DESK (the scene's Aperol haze); crossing the
+     membrane — a 3px carbon rim — drops into a cool aqua SKY where the
+     specimens float as Tokyo index cards. The lip wears the sky's top. */
+  --table-ground: var(--sky-mint);
   font-family: var(--font-display);
 }
 
@@ -1125,10 +1209,10 @@ h6,
 }
 
 .mapper-hero {
-  /* One column, left-aligned, centred on the page — one reading path, top
-     to bottom: the line, the gist, the mic. Wide enough for the headline's
-     first line in one piece at full size. */
-  width: min(100%, 42rem);
+  /* One column, left-aligned, centred on the page — the line, then the gist
+     with the mic level on its right, then the tray. Wide enough for the
+     gist's first line to run in one piece beside the mic. */
+  width: min(100%, 52rem);
   margin: auto;
   display: flex;
   flex-direction: column;
@@ -1159,7 +1243,6 @@ h6,
 }
 
 .mapper-hero-desc {
-  max-width: 34rem;
   font-size: 1.125rem;
   font-weight: 600;
   line-height: 1.45;
@@ -1178,12 +1261,6 @@ h6,
   text-wrap: balance;
 }
 
-.mapper-input-lab {
-  /* A beat more air above the mic than between the lines of copy — the
-     copy is one thought, the capture is the next move. */
-  margin-top: 0.9rem;
-}
-
 .mapper-capture-block {
   /* Was its own soft-bordered/blurred panel wrapping .mapper-unified-input
      — that middle layer was the whole "input is lost inside soft nested
@@ -1192,7 +1269,7 @@ h6,
      carries the one confident border. */
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .mapper-block-meta {
@@ -1261,30 +1338,44 @@ h6,
   cursor: pointer;
 }
 
-/* The mic row: the one slab, plus a quiet "last upload" note beside it. */
+/* The gist and the mic, one row: the two subtitle lines on the left, the
+   mic level with them on the right (Pablo, Sept 28). Porch-only — the lede
+   is the hero's copy handed in as UploadIsland children. */
 .mapper-capture-actions {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
+  gap: 1rem clamp(1.5rem, 4vw, 3rem);
+}
+
+.mapper-hero-lede {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+/* The mic, with the quiet "last upload" note tucked under it. */
+.mapper-capture-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
 }
 
 .mapper-unified-input {
-  /* The paste tray — the SECOND door, under the mic. Same --line-ink edge
-     as the slab so it reads as an object on the sky, but no offset shadow
-     at rest: the slab above is the thing that pops. Hover/focus below still
-     lift it into a full toy plate the moment it's in use. */
-  border: 2px solid var(--line-ink);
-  border-radius: 16px;
+  /* The paste tray — the SECOND door, under the mic. A Tokyo index card
+     (paper, 8px corners, 2px carbon edge, like the dashboard's modules) but
+     with no slab shadow at rest: the mic is the thing that pops. Hover/focus
+     below still lift it into a full plate the moment it's in use. */
+  border: 2px solid var(--ink-carbon);
+  border-radius: var(--border-radius-sm);
   padding: 0.35rem 0.5rem;
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease,
     background 150ms ease,
     transform 150ms ease;
-  /* Plain cream paper — the white-alpha wash that used to sit over it was a
-     white wash by another name. */
-  background: var(--soft-cream);
+  background: var(--surface-paper);
   cursor: text;
   position: relative;
 }
@@ -1364,12 +1455,14 @@ h6,
 /* Recording stays WARM — the old blackout panel read as office-tech (and
    near-absolute black besides). Live-ness comes from the accent border,
    the breathing dot, and the bars dancing — not a mode eclipse. */
+/* Live: the same paper tray, lifted onto a MANDARIN slab — the porch's
+   record ink, the same as the mic that started the take. */
 .mapper-unified-input.is-recording {
-  border: 3px solid var(--accent-ink);
-  background: color-mix(in srgb, var(--color-accent) 10%, var(--soft-cream));
-  color: var(--soft-black);
+  border: 2px solid var(--ink-carbon);
+  background: var(--surface-paper);
+  color: var(--ink-carbon);
   cursor: default;
-  box-shadow: 3px 3px 0 0 var(--accent-ink);
+  box-shadow: 4px 4px 0 0 var(--ink-mandarin);
 }
 
 .mapper-unified-input.is-recording textarea {
@@ -1455,19 +1548,20 @@ h6,
   bottom: 12px;
   right: 12px;
   padding: 0.4rem 0.75rem;
-  border-radius: 999px;
-  border: 2px solid var(--line-ink);
+  /* Squared to match the mic's slab — Tokyo corners, carbon edge. */
+  border-radius: 6px;
+  border: 2px solid var(--ink-carbon);
   background: var(--soft-cream-dark);
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  color: var(--soft-black);
+  color: var(--ink-carbon);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
   transition: all 150ms ease;
-  box-shadow: 2px 2px 0 0 var(--line-ink);
+  box-shadow: 2px 2px 0 0 var(--ink-carbon);
 }
 
 .mapper-clip-btn:hover,
@@ -1522,8 +1616,8 @@ h6,
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  background: var(--accent-ink);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--color-accent) 60%, transparent);
+  background: var(--ink-mandarin);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--ink-mandarin) 60%, transparent);
   animation: record-breathe 1.6s ease-in-out infinite;
   flex-shrink: 0;
 }
@@ -1559,17 +1653,14 @@ h6,
 }
 
 .mapper-live-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-accent) 12%, var(--soft-cream));
-  color: var(--accent-ink);
-  border: 1.5px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
   white-space: nowrap;
+}
+
+/* The porch's live stamp matches the mandarin mic that started the take
+   (two classes to outrank .stamped-tab--orange, which stays spritz for the
+   dashboard's SESSION // ACTIVE). */
+.mapper-live-pill.stamped-tab {
+  background: var(--ink-mandarin);
 }
 
 .mapper-record-mini-viz {
@@ -1647,31 +1738,34 @@ h6,
   opacity: 0.7;
 }
 
+/* Recording: Stop takes the mic's exact slot, Cancel sits quietly under it
+   — the same footprint as the idle mic, so the gist beside it never
+   re-wraps when a take starts. */
 .mapper-record-actions-row {
   display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  width: 100%;
+  flex-direction: column;
+  align-items: inherit;
+  gap: 0.6rem;
 }
 
 .mapper-cancel-btn {
-  padding: 0.9rem 1.25rem;
-  border-radius: 13px;
-  border: 2.5px solid var(--line-ink);
-  background: var(--surface-card, #fbf1e4);
-  color: var(--soft-black);
-  font-size: 0.9rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  border: 2px solid var(--ink-carbon);
+  background: var(--surface-paper);
+  color: var(--ink-carbon);
+  font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
   transition: all 120ms ease;
-  box-shadow: 2px 2px 0 0 rgba(30, 23, 20, 0.2);
+  box-shadow: 2px 2px 0 0 var(--ink-carbon);
 }
 
 /* Cancel recedes rather than alarms — destructive = recession, never red. */
 .mapper-cancel-btn:hover {
   background: var(--soft-cream-dark);
-  box-shadow: 3px 3px 0 0 var(--line-ink);
+  box-shadow: 3px 3px 0 0 var(--ink-carbon);
   transform: translate(-1px, -1px);
 }
 
@@ -1693,14 +1787,18 @@ h6,
   justify-content: center;
   min-width: 13rem;
   padding: 1.05rem 2rem;
-  border-radius: 14px;
-  border: 2.5px solid var(--cta-plate-border);
-  background: var(--cta-plate);
-  color: var(--soft-black);
+  /* Tokyo record ink, softened for the porch: MANDARIN, spritz's lighter
+     cousin (Pablo, Sept 28 — spritz read "too heavy an orange" here). Same
+     rim recipe as the table's door (3px carbon, 4px carbon slab, squared 6px
+     corners). Carbon on mandarin is ~8:1. */
+  border-radius: 6px;
+  border: 3px solid var(--ink-carbon);
+  background: var(--ink-mandarin);
+  color: var(--ink-carbon);
   font-size: 1.02rem;
   font-weight: 800;
   letter-spacing: 0.01em;
-  box-shadow: 4px 4px 0 0 var(--line-ink);
+  box-shadow: 4px 4px 0 0 var(--ink-carbon);
   transition:
     transform 120ms ease,
     box-shadow 120ms ease,
@@ -1715,15 +1813,14 @@ h6,
 
 .mapper-slab-button:disabled {
   opacity: 0.55;
-  box-shadow: 2px 2px 0 0 var(--line-ink);
+  box-shadow: 2px 2px 0 0 var(--ink-carbon);
   cursor: not-allowed;
 }
 
 .mapper-slab-button:not(:disabled):hover {
   --mapper-translate-x: -2px;
   --mapper-translate-y: -2px;
-  background: var(--cta-plate-hover);
-  box-shadow: 6px 6px 0 0 var(--line-ink);
+  box-shadow: 6px 6px 0 0 var(--ink-carbon);
 }
 
 .mapper-slab-button:not(:disabled):active {
@@ -1803,7 +1900,7 @@ h6,
     1.02 100%
   ) forwards;
   /* Compressed 3D shadow on press */
-  box-shadow: 2px 2px 0 0 var(--line-ink);
+  box-shadow: 2px 2px 0 0 var(--ink-carbon);
 }
 
 .mapper-textarea {
@@ -1877,8 +1974,6 @@ h6,
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mapper-scene::before,
-  .porch-specimen,
   .mapper-slab-button,
   .mapper-hero-line {
     animation: none !important;
@@ -1887,7 +1982,6 @@ h6,
     transform: none !important;
   }
 
-  .porch-specimen:hover,
   .mapper-slab-button:not(:disabled):hover {
     transform: none !important;
   }
@@ -2187,13 +2281,12 @@ h6,
     text-wrap: balance;
   }
 
-  /* The mic softens into a pill — a full-bleed slab read as imposing;
-     centered with a mic glyph it reads as an invitation. */
+  /* Phones: the mic stands centred under the gist, wide enough to own the
+     thumb zone — still the squared Tokyo slab, not a pill. */
   .mapper-slab-button {
     width: fit-content;
     min-width: 72%;
     margin-inline: auto;
-    border-radius: 999px;
     padding: 0.95rem 1.9rem;
   }
 
@@ -2212,9 +2305,14 @@ h6,
     line-height: 1.42;
   }
 
+  /* The gist stacks over the mic on a phone — side by side there is no
+     room for either. */
   .mapper-capture-actions {
-    gap: 0.55rem;
-    flex-direction: column;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+
+  .mapper-capture-controls {
     align-items: center;
   }
 
@@ -2411,29 +2509,25 @@ h6,
    DASHBOARD CARD SYSTEM - Reusable card components
    ================================================================ */
 
-/* The SHELL — one container holding ALL the components, so the dashboard
-   feels like a held composition instead of cards floating loose on the sky.
-   A soft accent-tinted plane between ground and cards. */
+/* The SHELL — Flattened direct grid mount (Kill the Russian Doll)
+   Removes the outer bounding card wrapper so module grid cards
+   mount directly to the tactile desk surface without nested border framing. */
 .dashboard-shell {
-  background: color-mix(
-    in srgb,
-    var(--color-accent) 11%,
-    rgba(255, 252, 247, 0.72)
-  );
-  border: 2px solid var(--line-ink);
-  border-radius: 28px;
-  padding: clamp(0.8rem, 1.8vw, 1.4rem);
-  /* FLAT on purpose (Sept 12). The shell wore the same slab as every card
-     inside it, so the offset read twice at two levels and turned to mush.
-     The shell is a container; the cards are the objects. Only objects lift. */
+  background: transparent;
+  border: none;
+  border-radius: 0;
   box-shadow: none;
+  padding: 0;
+  position: relative;
+  width: 100%;
 }
 
-/* Mobile: let the modules float free — no nested container chrome */
+/* Mobile: clean tactile container with zero outer bounding card */
 @media (max-width: 768px) {
   .dashboard-shell {
     background: transparent;
     border: none;
+    border-radius: 0;
     box-shadow: none;
     padding: 0;
   }
@@ -2744,24 +2838,27 @@ h6,
   display: block;
 }
 
-/* Canvas module — the whiteboard needs real height to draw in. */
-.canvas-module-body {
-  max-height: none;
-  height: 32rem;
-  padding: 0;
-  overflow: hidden;
-}
-/* The canvas as the map's flip side: the back face is absolutely positioned
-   to the front's height, so the body stretches instead of fixing its own. */
+/* Canvas module — the tactile desk pad model: recessed desk frame with drafting paper */
+.canvas-module-body,
 .canvas-flip-body {
   max-height: none;
-  padding: 0;
+  background-color: #ECE5D8;
+  padding: 10px;
   overflow: hidden;
   flex: 1;
   min-height: 0;
 }
-.canvas-flip-body .shared-whiteboard {
+.canvas-module-body {
+  height: 32rem;
+}
+.canvas-flip-body .shared-whiteboard,
+.canvas-module-body .shared-whiteboard {
   height: 100%;
+  background-color: #FFFFFF !important;
+  border: 2px solid var(--border-strong, #1A1A1A);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0px rgba(26, 26, 26, 0.15);
+  overflow: hidden;
 }
 .canvas-live-note {
   display: flex;
@@ -2839,11 +2936,11 @@ h6,
   font-size: 0.8rem;
   /* CTA plate (COLOR-SYSTEM.md): hued ink, compact — icon slabs stay
      small and juicy, never big dark pucks. */
-  border: 2px solid var(--cta-plate-border);
+  border: 2px solid var(--ink-carbon);
   border-radius: 50%;
-  background: var(--cta-plate);
-  color: var(--soft-black);
-  box-shadow: 2px 2px 0 var(--line-ink);
+  background: var(--ink-spritz);
+  color: var(--ink-carbon);
+  box-shadow: 2px 2px 0 var(--ink-carbon);
   cursor: pointer;
   transition:
     transform var(--transition-fast),
@@ -2852,12 +2949,15 @@ h6,
 }
 .radio-play:hover {
   transform: translateY(-1.5px);
-  box-shadow: 3px 3px 0 var(--line-ink);
-  background: var(--cta-plate-hover);
+  box-shadow: 3px 3px 0 var(--ink-carbon);
 }
 .radio-play:active {
   transform: translateY(0.5px);
-  box-shadow: 1px 1px 0 var(--line-ink);
+  box-shadow: 1px 1px 0 var(--ink-carbon);
+}
+/* A take that's playing wears the same orange. */
+.recording-dock__take-actions .fa-pause {
+  color: var(--ink-spritz);
 }
 /* 44px tap target on touch — the compact visual stays. */
 @media (pointer: coarse) {
@@ -3038,10 +3138,12 @@ h6,
   align-items: center;
   justify-content: center;
   padding: 0.35rem 0.5rem;
-  background: color-mix(in srgb, var(--surface-cream) 92%, var(--soft-black));
-  border: 2px solid var(--border-cream-medium);
+  /* The rolling box: a recessed well of deeper kraft, carbon-rimmed, with a
+     hard inset lip instead of a soft blur. */
+  background: var(--ink-kraft-deep);
+  border: 2px solid var(--ink-carbon);
   border-radius: var(--border-radius-sm);
-  box-shadow: inset 1px 1px 3px color-mix(in srgb, var(--soft-black) 8%,
+  box-shadow: inset 3px 3px 0 color-mix(in srgb, var(--ink-carbon) 14%,
     transparent);
   transition: transform var(--transition-fast), border-color
     var(--transition-fast), background var(--transition-fast);
@@ -3138,9 +3240,9 @@ h6,
   box-shadow: 0.5px 0.5px 0 var(--line-ink);
 }
 .dice-btn.is-selected {
-  background: var(--header-band);
-  color: var(--header-band-ink);
-  border-color: var(--line-ink);
+  background: var(--spot-riso-pink);
+  color: var(--ink-carbon);
+  border-color: var(--ink-carbon);
 }
 
 /* Options / Steppers */
@@ -3210,8 +3312,8 @@ h6,
   color: var(--accent-ink);
 }
 .dice-mode-toggle button.is-active {
-  background: var(--header-band);
-  color: var(--header-band-ink);
+  background: var(--spot-riso-pink);
+  color: var(--ink-carbon);
 }
 
 /* History Strip */
@@ -3717,20 +3819,12 @@ h6,
 }
 
 .dashboard-card {
-  /* SOLID themed surface — glass let the ground bleed through and the cards
-     read as having "no background colour". A whisper of the accent keeps
-     each card in relation to the theme; no backdrop-filter (opaque needs
-     none, and dropping it kills the per-card stacking-context traps). */
-  background: color-mix(in srgb, var(--color-accent) 5%, #fffdf8);
-  border-radius: var(--border-radius-lg);
-  /* project_mapper's chunky soul: a 2px warm-BLACK border (never brown) + a flat
-     warm slab shadow (no blur). Gives the card a confident toy-brut edge
-     that reads as ours, not corporate. 24px radius keeps it a touch refined.
-     OPAQUE ink, not the 25%-alpha slab: a hard offset at low alpha reads as
-     a soft grey smudge — the one thing a neo-brutalist shadow must not do.
-     Matching --line-ink makes the offset look like the border's own cast. */
-  border: 2px solid var(--line-ink);
-  box-shadow: 4px 4px 0 var(--line-ink);
+  /* Tokyo Hi-Fi Layer 2: Modular Index Stock
+     Resting cleanly on the desk surface with crisp carbon line work. */
+  background: var(--surface-card, #FDFBF7);
+  border-radius: var(--border-radius-sm, 8px);
+  border: 2px solid var(--border-strong, #1A1A1A);
+  box-shadow: var(--shadow-card, 3px 3px 0px var(--border-strong, #1A1A1A));
   height: 100%;
   overflow: hidden;
 }
@@ -3787,39 +3881,36 @@ h6,
   transform: rotateY(180deg);
 }
 
-/* Corner flip button — sits in the card's top-right, clear of the header
-   title. Soft, on-theme, unobtrusive until hovered. */
+/* Corner flip button — tactile mechanical latch sitting in card top-right */
 .flip-card-btn {
   position: absolute;
-  /* EXACTLY the .card-header-actions button metrics (2rem square at the
-     header's own padding coordinates) — a 1.9rem button at hand-picked
-     offsets sat a few px off its siblings on every card. */
-  /* +2px = the .dashboard-card border: this button positions against the
-     FACE while the header row lives inside the card's border box. Without
-     the offset it sat 2px high and 2px right of its siblings. */
   top: calc(var(--header-pad-y) + 2px);
   right: calc(var(--header-pad-x) + 2px);
   z-index: 2;
-  width: 2rem;
-  height: 2rem;
+  width: 1.85rem;
+  height: 1.85rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--border-radius-sm);
-  /* GHOST like its header-action siblings — the cream slab version read as
-     a different button species sitting in the same row. */
-  border: none;
-  background: transparent;
-  color: var(--header-band-ink);
+  border-radius: 3px;
+  border: 1.5px solid var(--ink-carbon, #121212);
+  background: var(--surface-board);
+  color: var(--ink-carbon, #121212);
+  box-shadow: 1.5px 1.5px 0px var(--ink-carbon, #121212);
   cursor: pointer;
-  transition:
-    background var(--transition-fast),
-    color var(--transition-fast);
+  transition: transform 80ms ease, box-shadow 80ms ease, background 120ms ease;
 }
 
 .flip-card-btn:hover {
-  background: var(--surface-cream-hover);
-  color: var(--accent-ink);
+  background: var(--spot-riso-pink, #FF2A6D);
+  color: #121212;
+  transform: translate(-0.5px, -0.5px);
+  box-shadow: 2px 2px 0px var(--ink-carbon, #121212);
+}
+
+.flip-card-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 0px 0px 0px var(--ink-carbon, #121212);
 }
 
 .flip-card-btn:focus-visible {
@@ -3874,36 +3965,84 @@ h6,
 }
 
 .dashboard-card-header {
-  /* LIGHT header: title on the card surface, dark text, a slim accent left-rule
-     as the only pop. Compact. Thin divider separates it from the body. */
-  background: var(--header-band);
-  color: var(--header-band-ink);
+  /* Dedicated subtle fill physically anchoring the header to the module */
+  background: var(--surface-header, #F0EAE1);
+  color: var(--ink-primary, #18181B);
   padding: var(--header-pad-y) var(--header-pad-x);
-  border-bottom: 1px solid var(--color-border);
-  border-left: 3px solid var(--color-accent);
+  border-bottom: 1.5px solid var(--border-strong, #1A1A1A);
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
-  /* EVERY band is the same height: 2rem control row + the paddings. Headers
-     without action icons (Ask/Takes/Sound) used to collapse to title
-     height, so the absolutely-placed flip button hung below the band. */
   min-height: calc(2rem + 2 * var(--header-pad-y));
 }
 
 .dashboard-card-header h3 {
-  /* Inter 700, SENTENCE CASE — all-caps is banned everywhere (July 9
-     decree: "nobody likes all capitals"). */
+  font-family: var(--font-mono);
   font-size: var(--small-size);
   font-weight: 700;
-  letter-spacing: 0.01em;
-  color: var(--header-band-ink);
+  letter-spacing: 0.04em;
+  color: var(--ink-primary, #18181B);
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-/* Sub-text in the header (e.g. "1 of 4 done") rides on the band too. */
-.dashboard-card-header :is(span, small, p) {
-  color: var(--header-band-sub);
+/* Sub-text in the header (e.g. "1 of 4 done") */
+.dashboard-card-header :is(span, small, p):not(.stamped-tab) {
+  color: var(--ink-secondary, #52525B);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+/* ===================================================================
+   TOKYO HI-FI — STAMPED INDEX TABS
+   Precision Japanese stationery indexing with high-voltage spot ink
+   ================================================================ */
+.stamped-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  padding: 0.22rem 0.5rem;
+  border-radius: 3px;
+  border: 1.5px solid var(--border-strong, #1A1A1A);
+  color: var(--ink-primary, #18181B);
+  background: var(--surface-item, #FFFFFF);
+  box-shadow: 1px 1px 0px var(--border-strong, #1A1A1A);
+  user-select: none;
+}
+
+.stamped-tab--sm {
+  font-size: 10px;
+  padding: 0.15rem 0.4rem;
+  letter-spacing: 0.08em;
+}
+
+.stamped-tab--yellow {
+  background: #FEF3C7;
+  color: #78350F;
+}
+
+.stamped-tab--pink {
+  background: #FFE4E6;
+  color: #881337;
+}
+
+.stamped-tab--orange {
+  background: #FFEDD5;
+  color: #7C2D12;
+}
+
+.stamped-tab--cyan {
+  background: #E0F2FE;
+  color: #0369A1;
 }
 
 .dashboard-card-body {
@@ -3949,12 +4088,17 @@ h6,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 1.85rem;
+  height: 1.85rem;
   flex-shrink: 0;
   position: relative;
-  border-radius: var(--border-radius-sm);
-  transition: color var(--transition-fast), background var(--transition-fast);
+  border-radius: 3px;
+  border: 1.5px solid var(--ink-carbon, #121212);
+  background: var(--surface-board);
+  color: var(--ink-carbon, #121212);
+  box-shadow: 1.5px 1.5px 0px var(--ink-carbon, #121212);
+  cursor: pointer;
+  transition: transform 80ms ease, box-shadow 80ms ease, background 120ms ease;
 }
 
 .card-header-actions button::after {
@@ -3967,18 +4111,26 @@ h6,
 }
 
 .card-header-actions button:hover:not(:disabled) {
-  color: var(--accent-ink);
-  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  background: var(--spot-fluro-yellow, #FFE600);
+  color: #121212;
+  transform: translate(-0.5px, -0.5px);
+  box-shadow: 2px 2px 0px var(--ink-carbon, #121212);
+}
+
+.card-header-actions button:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 0px 0px 0px var(--ink-carbon, #121212);
 }
 
 .card-header-actions button:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--ink-carbon, #121212);
   outline-offset: 2px;
 }
 
 .card-header-actions button:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: default;
+  box-shadow: none;
 }
 
 /* ── READER MODAL ───────────────────────────────────────────────────
@@ -4061,33 +4213,18 @@ h6,
   position: relative;
   padding: 0.7rem 0.85rem;
   border-radius: var(--border-radius-sm);
-  /* PLAIN paper (Sept 15). This was color-mix(accent 5%, --surface-card)
-     sitting inside .dashboard-card, which is ALREADY color-mix(accent 5%,
-     #fffdf8) — and .dashboard-card-body sets no background, so it inherits
-     that tint. Two accent mixes over two different creams is how "creamy"
-     turned "beigish". The 2px border + hard offset shadow already make the
-     item read as an object; it needs no colour to do that job. */
-  background: var(--surface-card);
-  border: 2px solid var(--color-border);
-  box-shadow: 2px 2px 0px 0px
-    var(--soft-black); /* Converted inline styles to a clean brutalist shadow */
+  background: var(--surface-item, #FFFFFF);
+  border: 1px solid var(--border-strong, #1A1A1A);
+  box-shadow: 1px 1px 0px var(--border-strong, #1A1A1A);
   transition:
-    transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
     border-color 160ms ease,
     background 160ms ease,
     opacity 160ms ease;
   cursor: pointer;
   font-family: var(--font-mono); /* Force monospace for the card text */
 }
-
-/* Accent spine — the same confident left tick the dashboard card headers
-   carry, one per item. Pending = vivid pop; completed = quiet echo. */
-/* The 4px accent spine is GONE (Sept 15). It echoed the card header's own
-   `border-left: 3px solid var(--color-accent)` one region above it, so each
-   card showed two left accent edges — and six items repeated the inner one
-   six times down a phone-width column. One accent edge per card region (the
-   header) is the motif; six is noise. */
 
 /* Monospace fonts for all inputs, textareas, search and presets in action items */
 .action-item-card textarea,
@@ -4104,42 +4241,44 @@ h6,
 }
 
 .action-item-card:hover {
-  transform: translateY(-2.5px);
-  box-shadow: 5px 5px 0px 0px var(--soft-black);
-  border-color: var(--soft-black);
-  background: var(--surface-card-deep);
+  transform: translateY(-1px);
+  box-shadow: 2px 2px 0px var(--border-strong, #1A1A1A);
+  border-color: var(--border-strong, #1A1A1A);
+  background: var(--surface-item-hover, #F8F5EE);
 }
 
 .action-item-card.is-completed {
-  /* Fade away: done items recede hard — ghostly, smaller, slow soft exhale
-     (the 400ms opacity ride makes checking off feel like a release). */
-  opacity: 0.45;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-accent) 8%, transparent) 0%,
-    var(--surface-card) 100%
-  );
-  border-color: var(--color-border);
+  opacity: 0.55;
+  background: var(--surface-item-hover, #F8F5EE);
+  border-color: var(--border-subtle, #E2DCD2);
   box-shadow: none;
-  transform: scale(0.97);
+  transform: none;
   transition:
-    opacity 400ms ease,
-    transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 400ms ease,
-    background 400ms ease,
-    border-color 400ms ease;
+    opacity 300ms ease,
+    transform 300ms ease,
+    box-shadow 300ms ease,
+    background 300ms ease,
+    border-color 300ms ease;
 }
 
 .action-item-card.is-completed:hover {
-  opacity: 0.85;
-  transform: scale(0.99) translateY(-1px);
-  box-shadow: 2px 2px 0px 0px rgba(30, 23, 20, 0.15);
-  border-color: var(--soft-black);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-accent) 12%, transparent) 0%,
-    var(--surface-card) 100%
-  );
+  opacity: 0.8;
+  transform: translateY(-0.5px);
+  box-shadow: 1px 1px 0px var(--border-strong, #1A1A1A);
+  border-color: var(--border-strong, #1A1A1A);
+}
+
+.action-item-card.is-completed .action-item-description {
+  text-decoration: line-through;
+  opacity: 0.75;
+}
+
+.action-item-card.is-completed :is(.action-person-chip, .action-when-chip, .action-due-chip, .action-tag-chip) {
+  filter: grayscale(1);
+  opacity: 0.65;
+  background: #F3F4F6 !important;
+  color: #6B7280 !important;
+  border-color: #E5E7EB !important;
 }
 
 /* Selected/editing = a calm accent edge. (The rotating conic ring and the
@@ -4269,56 +4408,55 @@ h6,
   transform: translateY(-1px);
 }
 
-/* @person chip — the who is a word wearing its identity color, not a form. */
+/* @person chip — warm amber tint with sharp ink */
 .action-person-chip {
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.5rem;
+  padding: 0.12rem 0.5rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--person-color) 14%, transparent);
-  /* 62%, not 80%: at 80 all EIGHT palette colours fail AA against this chip's
-     own background (3.42-4.36:1) at 12px/700, which is under the large-text
-     exemption. 62 clears every one (4.73-5.72:1) and is the most identity
-     colour that still does. Guarded by core/tests/speaker_contrast_test.ts. */
-  color: color-mix(in srgb, var(--person-color) 62%, var(--soft-black));
+  background: #FEF3C7; /* bg-amber-100 */
+  color: #451A03; /* text-amber-950 */
+  border: 1px solid #FCD34D; /* border-amber-300 */
+  font-family: var(--font-mono);
   font-size: var(--tiny-size);
   font-weight: 700;
+  line-height: 1.3;
 }
 
-/* The when — the third quiet word on the meta line, and the QUIETEST of the
-   three. @person wears an identity colour, #tag wears its own; the when has no
-   identity to wear, so it rides on ink alone. Never a bordered plate: it used
-   to borrow .action-item-chip (2px ink border + hard offset shadow), which made
-   a due date shout exactly as loud as the card holding it — a nag. A date is a
-   note to self, not an alarm. */
+/* The when — warm rose tint with sharp ink */
+.action-due-chip,
 .action-when-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.1rem 0.5rem;
-  border: none;
+  padding: 0.12rem 0.5rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--color-text) 7%, transparent);
-  color: var(--color-text-secondary);
-  font-family: inherit;
+  background: #FFE4E6; /* bg-rose-100 */
+  color: #4C0519; /* text-rose-950 */
+  border: 1px solid #FDA4AF; /* border-rose-300 */
+  font-family: var(--font-mono);
   font-size: var(--tiny-size);
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.3;
   cursor: pointer;
   transition:
     background var(--transition-fast),
+    border-color var(--transition-fast),
     color var(--transition-fast);
 }
+.action-due-chip:hover,
+.action-due-chip:focus-visible,
 .action-when-chip:hover,
 .action-when-chip:focus-visible {
-  background: color-mix(in srgb, var(--color-text) 13%, transparent);
-  color: var(--color-text);
+  background: #FECDD3; /* bg-rose-200 */
+  border-color: #FB7185;
+  color: #4C0519;
 }
-/* The clock is the disambiguator (without it "friday" reads as a #tag), so it
-   stays — but at a whisper. */
-.action-when-chip .fa {
+/* The clock icon inside the when chip */
+.action-when-chip .fa,
+.action-due-chip .fa {
   font-size: 0.85em;
-  opacity: 0.55;
+  opacity: 0.75;
 }
 
 /* The when mini-input — the clock's tiny "any words" field. */
@@ -4880,13 +5018,12 @@ h6,
    Both states share the amber so they read as "status"; the label differentiates. */
 .action-status-pill {
   font-size: var(--tiny-size);
-  font-weight: 600;
+  font-weight: 700;
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  background: var(--status-amber);
-  border: 1px solid
-    color-mix(in srgb, var(--color-accent) 18%, var(--color-border));
-  color: var(--status-amber-ink);
+  background: var(--ink-spritz);
+  border: 1.5px solid var(--ink-carbon);
+  color: var(--ink-carbon);
 }
 
 /* Clear-date pill: recessive ghost (it just nulls a due date — one-tap,
@@ -5070,6 +5207,49 @@ h6,
 
 /* ── ACTION ITEMS — modal & form shared styles ──────────────────── */
 
+/* ===================================================================
+   CENTER QUICK-ACTION MODAL (Rename, Shortcuts, Module Toggle, etc.)
+   Standardized overlay: fit-content up to 85vh ceiling, centered, tactile
+   ================================================================ */
+.modal-content {
+  width: 100%;
+  max-width: 480px;
+  height: fit-content;
+  max-height: 85vh;
+  margin: auto;
+  background: var(--surface-card, #FDFBF7);
+  border: 2px solid var(--border-strong, #1A1A1A);
+  border-radius: 12px;
+  box-shadow: 4px 4px 0px var(--border-strong, #1A1A1A);
+  overflow-y: auto;
+  position: relative;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle, #E2DCD2);
+  background: var(--surface-item, #FFFFFF);
+  color: var(--ink-secondary, #52525B);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all var(--transition-fast, 150ms ease);
+  z-index: 10;
+}
+
+.modal-close-btn:hover {
+  background: var(--surface-item-hover, #F8F5EE);
+  color: var(--ink-primary, #18181B);
+  border-color: var(--border-strong, #1A1A1A);
+}
+
 /* Modal heading inside a dashboard-card panel (delete, clear-done, add-item). */
 .modal-heading {
   font-size: var(--heading-size);
@@ -5217,39 +5397,46 @@ h6,
   box-shadow: 3px 3px 0 rgba(30, 23, 20, 0.1);
 }
 
-/* Bottom-right control cluster — FontAwesome icon buttons, on-brand chunky
-   chips (cream, 2px border, hard shadow) to match the add-topic button instead
-   of the old plain white-70% floating circles. */
+/* Bottom-right control cluster — Frosted Drafting Pill Casing */
 .topic-map-ctrls {
   position: absolute;
   bottom: 1rem;
   right: 1rem;
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.45rem;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 2px solid var(--ink-carbon);
+  border-radius: 9999px;
+  box-shadow: 3px 3px 0 var(--ink-carbon);
+  z-index: 10;
 }
 
 .topic-map-ctrl {
-  width: 2.4rem;
-  height: 2.4rem;
+  width: 2.2rem;
+  height: 2.2rem;
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--color-border);
-  border-radius: var(--border-radius-sm);
-  background: var(--surface-white-warm, #fffef7);
-  box-shadow: 2px 2px 0 rgba(30, 23, 20, 0.08);
-  color: var(--color-text);
+  border: 1.5px solid transparent;
+  border-radius: 9999px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink-carbon);
   font-size: var(--small-size);
   cursor: pointer;
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
-    border-color 160ms ease,
-    color 160ms ease;
+    background 160ms ease,
+    border-color 160ms ease;
 }
 
-/* 44px tap target on touch devices — the 38px visual stays compact. */
+/* 44px tap target on touch devices — the 35px visual stays compact. */
 @media (pointer: coarse) {
   .topic-map-ctrl::before {
     content: "";
@@ -5264,33 +5451,29 @@ h6,
 .topic-map-ctrl:hover,
 .topic-map-ctrl:focus-visible {
   outline: none;
-  border-color: var(--accent-ink);
-  color: var(--accent-ink);
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 rgba(30, 23, 20, 0.1);
+  border-color: var(--ink-carbon);
+  background: #FCFBF9;
+  color: var(--ink-carbon);
+  transform: translateY(-1px);
 }
 
-/* Add-topic leads the cluster as the primary action — wider, with a label
-   on roomy screens. INK PLATE (docs/COLOR-SYSTEM.md CTA law): warm-black
-   slab + white label + the band color peeking as a hard offset shadow —
-   riso misregistration, not a saturated slab shouting over the map. */
+/* Add-topic leads the cluster as the primary action — styled with spot fluro yellow */
 .topic-map-ctrl--add {
   width: auto;
   gap: 0.4rem;
-  padding: 0 0.7rem;
+  padding: 0 0.8rem;
   font-weight: 700;
-  border-color: var(--cta-plate-border);
-  background: var(--cta-plate);
-  color: var(--soft-black);
-  box-shadow: 2.5px 2.5px 0 var(--line-ink);
+  border: 1.5px solid var(--ink-carbon);
+  background: var(--spot-fluro-yellow);
+  color: var(--ink-carbon);
+  box-shadow: 1.5px 1.5px 0 var(--ink-carbon);
 }
 
 .topic-map-ctrl--add:hover,
 .topic-map-ctrl--add:focus-visible {
-  color: var(--soft-black);
-  background: var(--cta-plate-hover);
-  border-color: var(--cta-plate-border);
-  box-shadow: 3.5px 3.5px 0 var(--line-ink);
+  color: var(--ink-carbon);
+  background: #FFEE33;
+  transform: translateY(-1px);
 }
 
 /* Viz switcher — floats on the map's top-left, above the canvas. */
@@ -5369,24 +5552,17 @@ h6,
   font-weight: 700;
 }
 
-.topic-map-canvas {
-  /* Theme-aware tint: follows the active --color-accent instead of a baked
-     PEACH wash, so the map matches the rest of the app on every theme.
-     NOT transparent — the flip-card face it sits on is itself transparent,
-     so "inherit the card" (Aug 19) actually inherited the board container
-     and left the map a different colour from its sibling cards. */
-  background:
-    radial-gradient(
-    circle at 18% 15%,
-    color-mix(in srgb, var(--color-accent) 13%, transparent),
-    transparent 28%
-  ),
-    radial-gradient(
-    circle at 82% 28%,
-    color-mix(in srgb, var(--color-accent) 14%, transparent),
-    transparent 30%
-  ),
-    var(--surface-card);
+.topic-map-canvas,
+.board-skeleton__map {
+  /* Engineering dot-grid on paper stock. The D3 svg above it is transparent
+     (ForceDirectedGraph passes backgroundColor: "transparent") — an opaque
+     svg is what hid this grid and left the map on "an empty white desert". */
+  background-color: var(--surface-paper);
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--ink-carbon) 16%, transparent) 1.5px,
+    transparent 2px
+  );
+  background-size: 22px 22px;
 }
 
 .topic-map-canvas svg {
@@ -5406,13 +5582,14 @@ h6,
     0
     0
     5px
-    color-mix(in srgb, var(--color-accent) 42%, transparent)
+    color-mix(in srgb, var(--ink-spritz) 42%, transparent)
   );
 }
 
-.topic-map-canvas .node-group.is-selected .label,
-.topic-map-canvas .node-group.is-connected .label {
-  font-weight: 800;
+/* Selection highlights the badge instead of bolding the label — bold text
+   would outgrow a pill that was measured at regular weight. */
+.topic-map-canvas .node-group.is-selected .node-label-pill {
+  fill: var(--spot-fluro-yellow);
 }
 
 .topic-node-detail {
@@ -5772,7 +5949,6 @@ h6,
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  padding: 1.25rem 0;
 }
 .board-skeleton__row {
   display: grid;
@@ -5780,11 +5956,12 @@ h6,
   gap: 1rem;
 }
 .board-skeleton__card {
-  border: var(--card-border-width, 2px) solid var(--color-border);
-  border-radius: var(--border-radius-lg, 18px);
-  background: var(--surface-cream, #fbf1e4);
+  border: 2px solid var(--ink-carbon);
+  border-radius: 8px;
+  /* -color, not the shorthand: the map card's dot-grid image must survive. */
+  background-color: var(--surface-paper);
   overflow: hidden;
-  box-shadow: var(--shadow-soft);
+  box-shadow: 3px 3px 0 var(--ink-carbon);
   /* Each card lands a beat after the one before — the board being set,
      not four things blinking in unison. */
   opacity: 0;
@@ -5792,11 +5969,25 @@ h6,
   animation-delay: calc(var(--i, 0) * 90ms);
 }
 .board-skeleton__band {
-  height: 2.5rem;
-  background: var(--header-band);
-  opacity: 0.72;
+  height: 2.2rem;
+  background: var(--surface-header);
+  border-bottom: 2px solid var(--ink-carbon);
+  opacity: 0.9;
   animation: board-skeleton-breathe 2.4s ease-in-out infinite;
   animation-delay: calc(var(--i, 0) * 120ms);
+  position: relative;
+}
+/* A blank kraft index tab where the card's stamp will land. */
+.board-skeleton__band::before {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  width: 5.5rem;
+  height: 1.1rem;
+  transform: translateY(-50%);
+  background: var(--ink-kraft);
+  border: 1.5px solid var(--ink-carbon);
 }
 .board-skeleton__lines {
   display: flex;
@@ -5806,8 +5997,8 @@ h6,
 }
 .board-skeleton__lines span {
   height: 0.6rem;
-  border-radius: 999px;
-  background: var(--color-border);
+  border-radius: 2px;
+  background: var(--ink-kraft);
   opacity: 0.6;
   animation: board-line-breathe 2.4s ease-in-out infinite;
 }
@@ -5846,7 +6037,9 @@ h6,
 /* Nodes pop in one after another and then hold, bobbing very slightly —
    the shape of a map assembling itself. */
 .board-skeleton__node {
-  fill: var(--color-accent);
+  fill: var(--surface-board);
+  stroke: var(--ink-carbon);
+  stroke-width: 1;
   opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
@@ -5857,8 +6050,8 @@ h6,
     calc(900ms + var(--i) * 180ms);
 }
 .board-skeleton__edge {
-  stroke: var(--accent-ink);
-  stroke-width: 1.5;
+  stroke: var(--ink-carbon);
+  stroke-width: 1;
   stroke-linecap: round;
   opacity: 0;
   animation: board-edge-in 600ms ease-out forwards;
@@ -5889,7 +6082,7 @@ h6,
     transform: scale(0.2);
   }
   to {
-    opacity: 0.9;
+    opacity: 1;
     transform: scale(1);
   }
 }
@@ -5902,12 +6095,16 @@ h6,
     transform: translateY(-2.5px) scale(1);
   }
 }
+/* The hub (second circle) is the one highlighted on the finished map. */
+.board-skeleton__node:nth-of-type(2) {
+  fill: var(--spot-fluro-yellow);
+}
 @keyframes board-edge-in {
   from {
     opacity: 0;
   }
   to {
-    opacity: 0.28;
+    opacity: 0.85;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -5920,10 +6117,10 @@ h6,
     opacity: 1;
   }
   .board-skeleton__node {
-    opacity: 0.9;
+    opacity: 1;
   }
   .board-skeleton__edge {
-    opacity: 0.28;
+    opacity: 0.85;
   }
 }
 
@@ -5939,13 +6136,14 @@ h6,
   width: fit-content;
   max-width: min(28rem, 90vw);
   margin: 0;
-  padding: 0.85rem 1.35rem;
-  border: 2.5px solid var(--color-border);
-  border-radius: var(--border-radius-lg, 18px);
-  background: var(--surface-cream, #fbf1e4);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14), var(--shadow-chunky, 0 4px 0
-    var(--color-border));
-  backdrop-filter: blur(8px);
+  /* A printed readout slip: carbon rim, hard shadow, mono ticker. Opaque,
+     so no backdrop blur (paint-tax law). */
+  padding: 0.8rem 1.1rem;
+  border: 2px solid var(--ink-carbon);
+  border-radius: 4px;
+  background: var(--surface-board);
+  box-shadow: var(--shadow-card);
+  font-family: var(--font-mono);
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -5964,14 +6162,22 @@ h6,
   }
 }
 
+/* The live line is the highlighter pass: a fluro stamp in carbon ink. */
 .brew-ledger .dashboard-brew-note {
-  padding-top: 0;
+  align-self: flex-start;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-carbon);
+  background: var(--spot-fluro-yellow);
+  border: 1.5px solid var(--ink-carbon);
 }
 
 .brew-ledger__done {
-  font-size: 0.9rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  color: var(--color-text-secondary);
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
   opacity: 0.8;
   display: flex;
   align-items: center;
@@ -5980,7 +6186,7 @@ h6,
 }
 
 .brew-ledger__done .fa-check {
-  color: var(--accent-ink);
+  color: var(--ink-carbon);
   font-size: 0.75rem;
 }
 
@@ -6327,7 +6533,7 @@ a:focus-visible {
    pulse read as the whole map drifting/restless, so it's gone — a settled map
    stays still. Hover/select brighten it as a clear, deliberate response. */
 .node-pad {
-  fill: var(--color-accent);
+  fill: var(--ink-spritz);
   opacity: 0.14;
   filter: blur(5px);
   transition: opacity 0.22s ease, r 0.22s ease;
@@ -6338,8 +6544,8 @@ a:focus-visible {
    "ground" that replaces the old fuzzy-blob look. */
 .node-disc {
   fill: var(--surface-white-warm, #fffef7);
-  stroke: color-mix(in srgb, var(--color-accent) 18%, transparent);
-  stroke-width: 1.25;
+  stroke: var(--ink-carbon);
+  stroke-width: 2;
   transition: stroke 0.22s ease;
 }
 
@@ -6351,15 +6557,30 @@ a:focus-visible {
   user-select: none;
 }
 
+/* Labels ride on paper badges — physical tokens on the drafting board. The
+   pill carries the ground now, so the old cream text halo is gone. The shadow
+   is a second rect, not a filter: filters re-rasterize on every sim tick. */
 .node-group .label {
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  fill: var(--ink-carbon);
   pointer-events: none;
   user-select: none;
-  paint-order: stroke;
-  stroke: var(--surface-cream, #fff7ef);
-  stroke-width: 3px;
-  stroke-linejoin: round;
+}
+
+.node-label-pill {
+  fill: var(--surface-board);
+  stroke: var(--ink-carbon);
+  stroke-width: 2;
+  transition: fill 0.22s ease;
+}
+
+.node-label-shadow,
+.node-disc-shadow {
+  fill: var(--ink-carbon);
 }
 
 /* Inner wrapper carries the spring. transform-box/origin so scale pivots on the
@@ -6411,7 +6632,7 @@ a:focus-visible {
 /* On hover the chip's ring picks up more of the theme accent + the emoji lifts
    with a deeper shadow — a clear, deliberate "leaning toward you" beat. */
 .node-group:hover .node-disc {
-  stroke: color-mix(in srgb, var(--color-accent) 55%, transparent);
+  stroke: color-mix(in srgb, var(--ink-spritz) 55%, transparent);
 }
 
 .node-group:hover .emoji {
@@ -6428,8 +6649,8 @@ a:focus-visible {
 }
 
 .node-group.is-selected .node-disc {
-  stroke: var(--color-accent);
-  stroke-width: 2;
+  stroke: var(--ink-spritz);
+  stroke-width: 2.5;
 }
 
 .node-group.is-selected .node-inner {
@@ -6442,7 +6663,7 @@ a:focus-visible {
 
 /* A node connected to the selection picks up a soft accent ring too. */
 .node-group.is-connected .node-disc {
-  stroke: color-mix(in srgb, var(--color-accent) 45%, transparent);
+  stroke: color-mix(in srgb, var(--ink-spritz) 45%, transparent);
 }
 
 /* ── FOCUS MODE ─────────────────────────────────────────────────────
@@ -6473,7 +6694,7 @@ a:focus-visible {
 }
 
 .node-group.is-merge-target .node-disc {
-  stroke: var(--color-accent);
+  stroke: var(--ink-spritz);
   stroke-width: 2.5;
 }
 
@@ -6502,7 +6723,7 @@ a:focus-visible {
 }
 
 .node-group.is-merging .node-disc {
-  stroke: var(--color-accent);
+  stroke: var(--ink-spritz);
   stroke-dasharray: 3 3;
 }
 
@@ -6520,34 +6741,33 @@ a:focus-visible {
 }
 
 /* ===================================================================
-   HISTORY DRAWER — slide-out conversation list
+   HISTORY DRAWER — slide-out conversation list (Pattern B Inspector)
    ================================================================ */
 
 /* Backdrop behind the slide-out drawer. */
 .history-drawer-backdrop {
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(18, 18, 18, 0.4);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
 
-/* Drawer shell — a solid panel sliding out from the right. It read as "glass"
-   but at 95% opaque the blur(20px) behind it was invisible; it just re-blurred
-   the whole page under the panel on every frame of the slide-in, which is the
-   most animation-heavy moment it could have picked. The scrim behind
-   (.history-drawer-backdrop, blur 4px) still carries the depth. */
+/* Drawer shell — a solid panel sliding out from the right. */
 .history-drawer-panel {
-  background: rgba(255, 252, 248, 0.97);
-  border-left: 2px solid rgba(0, 0, 0, 0.1);
-  box-shadow: -4px 0 24px rgba(30, 23, 20, 0.12);
+  width: 420px;
+  max-width: 100vw;
+  background: var(--surface-card, #FDFBF7);
+  border-left: 2px solid var(--border-strong, #1A1A1A);
+  box-shadow: -6px 0 24px rgba(18, 18, 18, 0.15);
   display: flex;
   flex-direction: column;
 }
 
-/* Drawer header with warm-rose accent band. */
+/* Drawer header with standard height and anchored header fill. */
 .history-drawer-header {
-  background: var(--accent-rose-wash);
-  border-bottom: 2px solid var(--accent-rose-wash);
-  padding: 1.25rem 1.5rem;
+  background: var(--surface-header, #F0EAE1);
+  border-bottom: 2px solid var(--border-strong, #1A1A1A);
+  padding: 0.75rem 1rem;
+  min-height: 48px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -6556,31 +6776,39 @@ a:focus-visible {
 
 /* "Your Conversations" heading. */
 .history-drawer-title {
+  font-family: var(--font-mono);
+  font-size: var(--small-size, 0.85rem);
   font-weight: 700;
-  font-size: var(--font-size-lg);
-  color: var(--color-text);
-  letter-spacing: -0.01em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-primary, #18181B);
 }
 
 /* Close (✕) button. */
 .history-drawer-close {
-  background: rgba(0, 0, 0, 0.05);
-  border: 2px solid rgba(0, 0, 0, 0.1);
-  border-radius: var(--border-radius-sm);
-  width: 44px;
-  height: 44px;
-  display: flex;
+  background: var(--surface-board);
+  border: 1.5px solid var(--border-strong, #1A1A1A);
+  border-radius: 3px;
+  box-shadow: 1.5px 1.5px 0px var(--border-strong, #1A1A1A);
+  width: 1.85rem;
+  height: 1.85rem;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all var(--transition-medium);
-  color: var(--color-text);
-  font-size: var(--heading-size);
-  font-weight: 600;
+  transition: transform 80ms ease, box-shadow 80ms ease, background 120ms ease;
+  color: var(--ink-carbon, #121212);
+  font-size: 0.9rem;
 }
 .history-drawer-close:hover {
-  background: rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
+  background: var(--spot-fluro-yellow, #FFE600);
+  color: #121212;
+  transform: translate(-0.5px, -0.5px);
+  box-shadow: 2px 2px 0px var(--border-strong, #1A1A1A);
+}
+.history-drawer-close:active {
+  transform: translate(1px, 1px);
+  box-shadow: 0px 0px 0px var(--border-strong, #1A1A1A);
 }
 
 /* "New Conversation" slab button. */
@@ -7709,31 +7937,33 @@ a:focus-visible {
 }
 
 .summary-key-points {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  border-radius: var(--border-radius-sm);
-  background: color-mix(in srgb, var(--color-accent) 7%, transparent);
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--color-border);
+  background: transparent;
 }
 
 .key-points-title {
-  font-size: var(--small-size);
+  font-family: var(--font-family-mono);
+  font-size: 0.65rem;
   font-weight: 700;
-  color: var(--accent-ink);
+  color: var(--ink-carbon);
   margin-bottom: 0.5rem;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .key-point-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--border-radius-sm);
-  min-width: 1.125rem;
-  height: 1.125rem;
-  background: var(--accent-fill);
+  border-radius: 2px;
+  min-width: 1rem;
+  height: 1rem;
+  background: var(--ink-carbon);
   color: var(--surface-white-warm);
-  font-size: 0.6rem;
-  margin-top: 0.15rem;
+  font-size: 0.55rem;
+  margin-top: 0.2rem;
 }
 
 .key-point-text {
@@ -7976,20 +8206,20 @@ a:focus-visible {
   flex-shrink: 0;
 }
 
-/* Export drawer backdrop & container */
+/* Export drawer backdrop & container — Frosted Vellum Architectural Sidecar */
 .export-drawer-backdrop {
   position: fixed;
-  /* left/right, not the Tailwind-ism `inset-x` — that isn't CSS, so the
-     backdrop rendered 0px wide (never dimmed, never click-closable) */
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: calc(var(--z-drawer) - 10);
-  top: var(--header-height);
-  background: var(--scrim);
+  top: 0;
+  z-index: calc(var(--z-header) + 5);
+  background: rgba(18, 18, 18, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 400ms ease-out;
+  transition: opacity 300ms ease-out;
 }
 
 .export-drawer-backdrop.is-visible {
@@ -8001,21 +8231,18 @@ a:focus-visible {
   position: fixed;
   bottom: 0;
   right: 0;
-  z-index: var(--z-drawer);
+  z-index: calc(var(--z-header) + 10);
   display: flex;
-  width: 24rem; /* w-96 */
-  max-width: 100vw; /* the history drawer caps at 85vw via Tailwind; this one
-  had no cap at all and would overflow the viewport under 384px (iPhone SE) */
+  width: 420px;
+  max-width: 100vw;
   flex-direction: column;
   overflow: hidden;
-  top: var(--header-height);
-  border-left: var(--border-width) solid var(--color-border);
-  /* SOLID paper, not glass — the dashboard bleeding through read as "no
-     background colour" (same law as cards, July 9 contract). */
-  background: var(--soft-cream);
-  box-shadow: var(--shadow-lifted);
+  top: 0;
+  border-left: 2px solid var(--border-strong, #1A1A1A);
+  background: var(--surface-card, #FDFBF7);
+  box-shadow: -6px 0 24px rgba(18, 18, 18, 0.15);
   transform: translateX(100%);
-  transition: transform 400ms cubic-bezier(0.4, 0, 1, 1);
+  transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .export-drawer.is-open {
@@ -8029,14 +8256,11 @@ a:focus-visible {
 }
 
 .export-drawer-close-btn {
-  color: inherit;
+  color: var(--ink-carbon, #121212);
   cursor: pointer;
-  transition: color var(--transition-fast), transform var(--transition-fast);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: none;
-  background: transparent;
   position: relative;
   font-size: 1rem;
 }
@@ -8193,25 +8417,25 @@ a:focus-visible {
     "icon desc";
   align-items: center;
   gap: 0 0.5rem;
-  padding: 0.6rem 0.7rem;
+  padding: 0.6rem 0.75rem;
   min-height: 3.5rem;
   text-align: left;
-  border: 2px solid var(--border-cream-medium);
-  border-radius: var(--border-radius-md);
-  background: var(--surface-cream);
-  color: var(--color-text);
+  border: 2px solid var(--ink-carbon);
+  border-radius: 6px;
+  background: var(--surface-board);
+  box-shadow: 2px 2px 0 var(--ink-carbon);
+  color: var(--ink-carbon);
   font-family: var(--font-family);
   cursor: pointer;
   transition:
-    border-color var(--transition-fast),
-    background var(--transition-fast),
     transform var(--transition-fast),
+    background var(--transition-fast),
     box-shadow var(--transition-fast);
 }
 .export-chip__icon {
   grid-area: icon;
   font-size: 1rem;
-  color: var(--accent-ink);
+  color: var(--ink-carbon);
   opacity: 0.85;
 }
 .export-chip__label {
@@ -8229,22 +8453,25 @@ a:focus-visible {
   line-height: 1.3;
   color: var(--color-text-secondary);
 }
+/* Hover and selected are the highlighter pass: fluro fill, hard 3px slab. */
 .export-chip:hover:not(:disabled) {
-  border-color: color-mix(
-    in srgb,
-    var(--color-accent) 55%,
-    var(--border-cream-medium)
-  );
-  transform: translateY(-1px);
-  box-shadow: 2px 2px 0 0 var(--soft-black);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink-carbon);
+  background: var(--spot-fluro-yellow);
+}
+.export-chip:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--ink-carbon);
 }
 .export-chip:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: default;
+  box-shadow: none;
 }
 .export-chip.is-selected {
-  border-color: var(--accent-strong);
-  background: color-mix(in srgb, var(--color-accent) 10%, var(--surface-cream));
+  border-color: var(--ink-carbon);
+  background: var(--spot-fluro-yellow);
+  box-shadow: 3px 3px 0 var(--ink-carbon);
 }
 .export-chip.is-selected .export-chip__icon {
   opacity: 1;
@@ -8284,12 +8511,13 @@ a:focus-visible {
   color: var(--accent-ink);
 }
 
-/* Preview frame — themed bar the ghost icon buttons read white against */
+/* Preview frame — crisp archival swatch box */
 .export-preview {
-  border: 2px solid var(--color-border);
-  border-radius: 16px;
-  box-shadow: var(--shadow-sm);
+  border: 2px solid var(--ink-carbon);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 var(--ink-carbon);
   overflow: hidden;
+  background: var(--surface-board);
 }
 .export-preview-bar {
   display: flex;
@@ -8297,12 +8525,9 @@ a:focus-visible {
   align-items: center;
   gap: 0.5rem;
   padding: 0.45rem 0.75rem 0.45rem 1rem;
-  /* The same solved band every card header wears — bright, with the ink
-     solved against it. It used to be --accent-strong, which on a warm roll
-     is a deep espresso: a big slab of it read as maroon. Bands are fills,
-     inks are ink. */
-  background: var(--header-band);
-  color: var(--header-band-ink);
+  background: var(--surface-board);
+  color: var(--ink-carbon);
+  border-bottom: 2px solid var(--ink-carbon);
   font-weight: 700;
   font-size: var(--font-size-sm);
 }
@@ -8632,17 +8857,17 @@ label {
   gap: 0.5rem;
   padding: 0 1.15rem;
   height: 2.7rem;
-  border: 2px solid var(--cta-plate-border);
+  border: 2px solid var(--ink-carbon);
   border-radius: 999px;
-  /* CANDY PLATE (COLOR-SYSTEM.md): the mic is the loudest promise on the
-     dashboard — bright accent candy, warm-black ink. */
-  background: var(--cta-plate);
-  color: var(--soft-black);
+  /* The mic is the loudest promise on the dashboard: a spritz recording pin
+     in carbon ink, same orange as every play control. */
+  background: var(--ink-spritz);
+  color: var(--ink-carbon);
   font-weight: 800;
   font-size: var(--small-size);
   letter-spacing: 0.02em;
   cursor: pointer;
-  box-shadow: 2px 2px 0 var(--line-ink);
+  box-shadow: 2px 2px 0 var(--ink-carbon);
   transition:
     transform var(--transition-fast),
     box-shadow var(--transition-fast);
@@ -8650,13 +8875,12 @@ label {
 
 .recording-dock__record:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--line-ink);
-  background: var(--cta-plate-hover);
+  box-shadow: 3px 3px 0 var(--ink-carbon);
 }
 
 .recording-dock__record:active {
   transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 var(--line-ink);
+  box-shadow: 1px 1px 0 var(--ink-carbon);
 }
 
 .recording-dock__record-dot {
@@ -9491,16 +9715,16 @@ html:has(.porch) {
   z-index: 1;
   align-self: center;
   margin-top: clamp(1.25rem, 4vh, 2.5rem);
-  margin-bottom: -2px;
+  margin-bottom: -3px;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1.1rem 0.6rem;
   background: var(--table-ground);
-  border: 2px solid var(--line-ink);
+  border: 3px solid var(--ink-carbon);
   border-bottom: none;
-  border-radius: 14px 14px 0 0;
-  color: var(--soft-black);
+  border-radius: 8px 8px 0 0;
+  color: var(--ink-carbon);
   font-size: 0.85rem;
   font-weight: 700;
   text-decoration: none;
@@ -9550,19 +9774,38 @@ html:has(.porch) {
   /* Top: clear of the footer + peek at scroll 0, so the heading never shows
      through the (97%-opaque) footer as a ghost before the membrane's
      crossed. Bottom: clear of the footer once it has been. */
-  padding: calc(var(--porch-footer) + var(--porch-peek) + 0.75rem) 0
+  padding-block: calc(var(--porch-footer) + var(--porch-peek) + 0.75rem)
     calc(var(--porch-footer) + clamp(1rem, 3vh, 2rem));
-  /* Full-bleed ground plus a 2px ink table edge along the top, painted past
-     the centred column by border-image OUTSET. That's ink overflow — unlike
-     a 100vw pseudo-element it can't give <main> (overflow-y:auto, so x auto
-     too) a horizontal scrollbar. */
-  border-image: linear-gradient(var(--line-ink) 0 2px, var(--table-ground) 2px)
-    fill 0 / 0 / 0 100vw;
+  /* Full-bleed SKY, edge to edge: negative margins reach into <main>'s own
+     gutter (px-4, sm:px-6) — never 100vw, which counts the scrollbar and
+     would give <main> (overflow-y:auto, so x auto too) a sideways scroll.
+     The padding puts the content back on the dashboard's 80rem column. */
+  --porch-gutter: 1rem;
+  margin-inline: calc(-1 * var(--porch-gutter));
+  padding-inline: calc(
+    var(--porch-gutter) + max(0px, (100% - 80rem) / 2)
+  );
+  background: var(--surface-sky);
+  /* The membrane itself: the dashboard board's 3px carbon rim. */
+  border-top: 3px solid var(--ink-carbon);
+}
+
+@media (min-width: 640px) {
+  .porch-table {
+    --porch-gutter: 1.5rem;
+  }
 }
 
 .porch-table__head {
   grid-area: head;
   max-width: 52rem;
+}
+
+/* The index stamp that files this board, same idiom as the dashboard's
+   SESSION // ACTIVE. It's a graphic label, so it keeps the stamp's mono
+   caps; the heading and lede under it speak Inter. */
+.porch-table__kicker {
+  margin-bottom: 0.9rem;
 }
 
 .porch-table__title {
@@ -9571,14 +9814,14 @@ html:has(.porch) {
   font-weight: 900;
   line-height: 1.05;
   letter-spacing: -0.03em;
-  color: var(--soft-black);
+  color: var(--ink-carbon);
 }
 
 .porch-table__lede {
   margin-top: 0.6rem;
   font-size: 1rem;
   line-height: 1.5;
-  color: var(--color-text);
+  color: var(--ink-carbon);
   text-wrap: pretty;
 }
 
@@ -9590,20 +9833,14 @@ html:has(.porch) {
   align-items: start;
 }
 
-/* A specimen = a fun-size real card + one line about what it does. Laid on
-   the table a little crooked, the way things land on a real one; a hover
-   straightens it (transform only — compositor-cheap). */
+/* A specimen = a fun-size real card + one line about what it does, squared
+   up on the board like index cards in a tray (Tokyo functionalism — the
+   crooked scrapbook lay went with the pastel sky). */
 .porch-specimen {
   margin: 0;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  transform: rotate(var(--tilt, 0deg));
-  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.porch-specimen:hover {
-  transform: rotate(0deg) translateY(-3px);
 }
 
 /* Pictures of the tool, not the tool: nothing inside takes a pointer, so no
@@ -9643,7 +9880,7 @@ html:has(.porch) {
 .porch-action {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 0.6rem;
 }
 
@@ -9730,17 +9967,33 @@ html:has(.porch) {
 
 .porch-loop li {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 0.6rem;
   font-size: 0.92rem;
   line-height: 1.45;
   color: var(--soft-black);
 }
 
+/* Bullets are stamped stationery badges, one spot ink each — highlighter,
+   riso, kraft — never the rolled theme accent. */
 .porch-loop .fa {
   flex-shrink: 0;
-  width: 1rem;
-  color: var(--accent-ink);
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  font-size: 0.72rem;
+  color: var(--ink-carbon);
+  background: var(--spot-fluro-yellow);
+  border: 1.5px solid var(--ink-carbon);
+  border-radius: 3px;
+  box-shadow: var(--shadow-button);
+}
+.porch-loop li:nth-child(2) .fa {
+  background: var(--spot-riso-pink);
+}
+.porch-loop li:nth-child(3) .fa {
+  background: var(--ink-kraft);
 }
 
 /* Desktop: the way in sits beside the heading, so it's on screen the moment
@@ -9755,20 +10008,21 @@ html:has(.porch) {
   gap: 1rem 1.75rem;
 }
 
-/* The table's own way in — the same candy plate as the mic upstairs. */
+/* The table's own way in — a fluro highlighter slab, never the rolled theme
+   accent (a cold blue roll put corporate primary on the warm table). */
 .porch-door {
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
   padding: 0.8rem 1.4rem;
-  border-radius: 12px;
-  border: 2px solid var(--cta-plate-border);
-  background: var(--cta-plate);
-  color: var(--soft-black);
+  border-radius: 6px;
+  border: 3px solid var(--ink-carbon);
+  background: var(--spot-fluro-yellow);
+  color: var(--ink-carbon);
   font-size: 0.95rem;
   font-weight: 800;
   text-decoration: none;
-  box-shadow: 3px 3px 0 0 var(--line-ink);
+  box-shadow: 4px 4px 0 0 var(--ink-carbon);
   transition:
     transform var(--transition-fast),
     box-shadow var(--transition-fast),
@@ -9777,14 +10031,13 @@ html:has(.porch) {
 
 .porch-door:hover,
 .porch-door:focus-visible {
-  background: var(--cta-plate-hover);
   transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 0 var(--line-ink);
+  box-shadow: 5px 5px 0 0 var(--ink-carbon);
 }
 
 .porch-door:active {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0 0 var(--line-ink);
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 0 var(--ink-carbon);
 }
 
 .porch-back {
@@ -9844,10 +10097,255 @@ html:has(.porch) {
   .porch-table__grid > .porch-specimen:last-child {
     width: 100%;
   }
+}
 
-  /* Half the lean on a narrow screen — crooked reads as charm at arm's
-     length, as a mistake up close. */
-  .porch-specimen {
-    transform: rotate(calc(var(--tilt, 0deg) * 0.5));
+/* ===================================================================
+   TACTILE LOADER — Pastel-Punk / Tokyo Hi-Fi In-Between
+   ================================================================ */
+.tactile-loader-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-header, 1000) + 100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(18, 18, 18, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 1.5rem;
+}
+
+.tactile-loader-wrap {
+  position: relative;
+  max-width: 440px;
+  width: 100%;
+  border-radius: 22px;
+}
+
+.tactile-loader-glow {
+  position: absolute;
+  inset: -3px;
+  border-radius: 22px;
+  background: linear-gradient(
+    135deg,
+    var(--spot-riso-pink),
+    var(--ink-mandarin),
+    var(--spot-fluro-yellow),
+    var(--spot-electric-cyan),
+    var(--spot-riso-pink)
+  );
+  background-size: 300% 300%;
+  animation: tactile-border-glow 4s linear infinite;
+  z-index: 1;
+}
+
+.tactile-loader-card {
+  position: relative;
+  z-index: 2;
+  background: var(--surface-paper, #fff9f0);
+  border: 3px solid #121212;
+  border-radius: 20px;
+  padding: 1.75rem 2rem;
+  box-shadow: 6px 6px 0px #121212;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: tactile-float 3s ease-in-out infinite;
+}
+
+.tactile-loader-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.tactile-loader-led {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--spot-fluro-yellow);
+  border: 1.5px solid #121212;
+  box-shadow: 0 0 8px var(--spot-fluro-yellow);
+  animation: tactile-led-blink 0.9s ease-in-out infinite alternate;
+}
+
+.tactile-loader-emoji-slot {
+  margin-bottom: 0.65rem;
+  height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tactile-loader-emoji {
+  font-size: 2.8rem;
+  display: inline-block;
+  animation: tactile-emoji-pulse 1.6s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(255, 106, 194, 0.45));
+}
+
+.tactile-loader-title {
+  font-family: var(--font-inter, sans-serif);
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #121212;
+  margin: 0 0 0.4rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  line-height: 1.25;
+}
+
+.tactile-bounce-letter {
+  display: inline-block;
+  animation: tactile-letter-bounce 1.4s infinite cubic-bezier(0.34, 1.56, 0.64,
+    1);
+  animation-delay: var(--char-delay, 0s);
+}
+
+.tactile-loader-sub {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 0 0 1.25rem 0;
+  letter-spacing: 0.02em;
+  min-height: 1.3em;
+}
+
+.tactile-loader-track {
+  width: 100%;
+  height: 8px;
+  background: var(--ink-kraft, #eadcc9);
+  border: 2px solid #121212;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.tactile-loader-bar {
+  height: 100%;
+  width: 45%;
+  background: linear-gradient(90deg, var(--ink-mandarin),
+    var(--spot-riso-pink));
+  border-radius: 999px;
+  animation: tactile-track-slide 1.5s ease-in-out infinite alternate;
+}
+
+/* Sample Take Button on Hero */
+.mapper-sample-take-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.9rem;
+  background: var(--surface-paper, #fff9f0);
+  border: 2px solid #121212;
+  border-radius: 12px;
+  font-family: var(--font-inter, sans-serif);
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #121212;
+  box-shadow: 2px 2px 0px #121212;
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow
+    var(--transition-fast), background var(--transition-fast);
+  white-space: nowrap;
+}
+
+.mapper-sample-take-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px #121212;
+  background: #ffffff;
+}
+
+.mapper-sample-take-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 0px 0px 0px #121212;
+}
+
+.mapper-sample-take-btn .sample-icon {
+  font-size: 1rem;
+  display: inline-block;
+  animation: tactile-dice-wiggle 3s ease-in-out infinite;
+}
+
+@keyframes tactile-letter-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  35% {
+    transform: translateY(-8px) scale(1.08);
+  }
+  60% {
+    transform: translateY(2px);
+  }
+}
+
+@keyframes tactile-emoji-pulse {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.15) rotate(4deg);
+    filter: drop-shadow(0 0 14px rgba(255, 138, 76, 0.6));
+  }
+}
+
+@keyframes tactile-border-glow {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 300% 300%;
+  }
+}
+
+@keyframes tactile-float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes tactile-track-slide {
+  0% {
+    transform: translateX(-20%);
+    width: 30%;
+  }
+  100% {
+    transform: translateX(240%);
+    width: 50%;
+  }
+}
+
+@keyframes tactile-led-blink {
+  0% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes tactile-dice-wiggle {
+  0%,
+  80%,
+  100% {
+    transform: rotate(0deg);
+  }
+  85% {
+    transform: rotate(-12deg);
+  }
+  95% {
+    transform: rotate(12deg);
   }
 }

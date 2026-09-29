@@ -25,6 +25,7 @@ import {
 import { ensureApiSession } from "../utils/apiAuth.ts";
 import { showToast } from "../utils/toast.ts";
 import { isSpanish } from "../utils/i18n.ts";
+import ChonkyQrModal from "../components/ChonkyQrModal.tsx";
 
 export default function ShareButton() {
   const share = useSignal<ShareCreationResult | null>(null);
@@ -32,6 +33,11 @@ export default function ShareButton() {
   const qrGenerating = useSignal(false);
   const liveStarting = useSignal(false);
   const popoverOpen = useSignal(false);
+  const qrModalOpen = useSignal(false);
+  const qrTargetUrl = useSignal("");
+  const qrModalTitle = useSignal("");
+  const qrModalSubtitle = useSignal("");
+  const qrModalBadge = useSignal("");
   // What the current share.value was minted from — lets a re-click reopen the
   // existing link instead of minting a fresh server row every time.
   const lastSharedJSON = useSignal("");
@@ -171,9 +177,6 @@ export default function ShareButton() {
   async function handleQr() {
     const data = conversationData.value;
     if (!data || qrGenerating.value) return;
-    // Open the tab inside the click gesture — window.open after an await gets
-    // popup-blocked — then point it once the link exists.
-    const tab = globalThis.open("", "_blank");
     qrGenerating.value = true;
     try {
       const json = JSON.stringify(data);
@@ -190,13 +193,14 @@ export default function ShareButton() {
         lastSharedJSON.value = json;
         url = result.url;
       }
-      const qrUrl = `https://qrbuddy.app/q?d=${
-        encodeURIComponent(url)
-      }&s=candy`;
-      if (tab) tab.location.href = qrUrl;
-      else globalThis.open(qrUrl, "_blank");
+      qrTargetUrl.value = url;
+      qrModalBadge.value = "MAP SNAPSHOT";
+      qrModalTitle.value = "Scan to Open Map";
+      qrModalSubtitle.value =
+        "Point phone camera at screen to explore this map instantly.";
+      qrModalOpen.value = true;
+      popoverOpen.value = false;
     } catch (error) {
-      tab?.close();
       console.error("Failed to QR the map:", error);
       showToast("Couldn't mint a link to QR — try again in a sec", "error");
     } finally {
@@ -342,6 +346,7 @@ export default function ShareButton() {
                   onClick={(e) => (e.target as HTMLInputElement).select()}
                 />
                 <button
+                  type="button"
                   onClick={async () => {
                     const url = liveRoomUrl();
                     const shared = await tryNativeShare(
@@ -354,6 +359,23 @@ export default function ShareButton() {
                   data-tip="Copy live link"
                 >
                   <i class="fa fa-copy" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    qrTargetUrl.value = liveRoomUrl();
+                    qrModalBadge.value = "SPECTATOR PASS";
+                    qrModalTitle.value = "Scan to Join Live Session";
+                    qrModalSubtitle.value =
+                      "Audience & non-contributors can watch the live map and transcript on their phones.";
+                    qrModalOpen.value = true;
+                    popoverOpen.value = false;
+                  }}
+                  class="min-h-9 px-3 py-1 text-xs font-bold share-copy-btn"
+                  data-tip="Show Spectator QR for projector or screen"
+                  aria-label="Show Spectator QR"
+                >
+                  <i class="fa fa-qrcode" aria-hidden="true"></i>
                 </button>
               </div>
             </div>
@@ -467,6 +489,16 @@ export default function ShareButton() {
           Add a conversation to enable sharing
         </p>
       )}
+
+      <ChonkyQrModal
+        open={qrModalOpen.value}
+        onClose={() => qrModalOpen.value = false}
+        url={qrTargetUrl.value}
+        title={qrModalTitle.value || "Scan to Open"}
+        subtitle={qrModalSubtitle.value}
+        badge={qrModalBadge.value}
+        roomCode={liveSession.value?.roomId}
+      />
     </div>
   );
 }

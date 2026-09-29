@@ -87,6 +87,9 @@ export default function PorchTable() {
       aria-labelledby="porch-table-title"
     >
       <header class="porch-table__head">
+        <span class="stamped-tab stamped-tab--yellow porch-table__kicker">
+          {i18n.tableKicker}
+        </span>
         <h2 id="porch-table-title" class="porch-table__title">
           {i18n.tableTitle}
         </h2>
@@ -94,10 +97,14 @@ export default function PorchTable() {
       </header>
 
       <div class="porch-table__grid">
-        <figure class="porch-specimen" style={{ "--tilt": "-1deg" }}>
+        <figure class="porch-specimen">
           <div class="dashboard-card porch-card">
             <div class="dashboard-card-header">
-              <h3>Transcript</h3>
+              <div class="inline-flex items-center gap-2">
+                <span class="stamped-tab stamped-tab--yellow">
+                  01 // TRANSCRIPT
+                </span>
+              </div>
             </div>
             <div
               class="porch-card__body transcript-content"
@@ -109,15 +116,27 @@ export default function PorchTable() {
           <figcaption class="porch-note">{i18n.tableTranscriptNote}</figcaption>
         </figure>
 
-        <figure class="porch-specimen" style={{ "--tilt": "0.7deg" }}>
+        <figure class="porch-specimen">
           <div class="dashboard-card porch-card">
             <div class="dashboard-card-header">
-              <h3>Actions</h3>
+              <div class="inline-flex items-center gap-2">
+                <span class="stamped-tab stamped-tab--orange">
+                  03 // ACTIONS
+                </span>
+              </div>
             </div>
             <ul class="porch-card__body porch-actions">
               {ACTIONS.map((item) => (
                 <li class="action-item-card" key={item.text}>
                   <div class="porch-action">
+                    <span
+                      class={`action-item-checkbox-button${
+                        item.why ? " is-checked" : ""
+                      }`}
+                      aria-hidden="true"
+                    >
+                      {item.why && <i class="fa fa-check"></i>}
+                    </span>
                     <div class="porch-action__words">
                       <p
                         class={`action-item-description${
@@ -154,14 +173,6 @@ export default function PorchTable() {
                         </div>
                       )}
                     </div>
-                    <span
-                      class={`action-item-checkbox-button${
-                        item.why ? " is-checked" : ""
-                      }`}
-                      aria-hidden="true"
-                    >
-                      {item.why && <i class="fa fa-check"></i>}
-                    </span>
                   </div>
                 </li>
               ))}
@@ -170,10 +181,12 @@ export default function PorchTable() {
           <figcaption class="porch-note">{i18n.tableActionsNote}</figcaption>
         </figure>
 
-        <figure class="porch-specimen" style={{ "--tilt": "-0.5deg" }}>
+        <figure class="porch-specimen">
           <div class="dashboard-card porch-card">
             <div class="dashboard-card-header">
-              <h3>Map</h3>
+              <div class="inline-flex items-center gap-2">
+                <span class="stamped-tab stamped-tab--yellow">10 // MAP</span>
+              </div>
             </div>
             <svg
               class="porch-card__body porch-map"

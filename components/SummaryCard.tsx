@@ -5,46 +5,42 @@
 
 import { copyToClipboard } from "../utils/toast.ts";
 import { formatMarkdownSafe } from "../utils/sanitize.ts";
-import { paragraphizeSummary } from "../utils/summaryFormat.ts";
+import { paragraphizeSummary, splitSentences } from "../utils/summaryFormat.ts";
 import { openReader } from "@signals/readerStore.ts";
 
 interface SummaryCardProps {
   summary: string | null;
 }
 
-// Extract key points from summary
+function cleanKeyPoint(s: string): string {
+  let cleaned = s.trim().replace(/^[-*•]\s+/, "");
+  // Clean trailing punctuation or orphan commas/conjunctions
+  cleaned = cleaned.replace(/[,;:\-\s]+$/, "");
+  if (!/[.!?]$/.test(cleaned)) {
+    cleaned += ".";
+  }
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
+// Extract key points from summary without breaking decimals or leaving trailing fragments
 function extractKeyPoints(text: string): string[] {
   if (!text) return [];
 
-  // Split into paragraphs
-  const paragraphs = text.split("\n\n");
-
-  // Short text - extract sentences
-  if (paragraphs.length <= 2) {
-    const sentences = text.split(/[.!?]+/).filter((s) => s.trim().length > 20);
-    return sentences
-      .slice(0, 3)
-      .map((s) => s.trim())
-      .map((s) => s.charAt(0).toUpperCase() + s.slice(1));
+  // Try to find explicit markdown bullet points first
+  const bulletMatches = text.match(/^[-*•]\s+(.+)$/gm);
+  if (bulletMatches && bulletMatches.length >= 2) {
+    return bulletMatches
+      .slice(0, 4)
+      .map(cleanKeyPoint)
+      .filter((s) => s.length > 12);
   }
 
-  // Try to find bullet points
-  const bulletPoints = text.match(/- (.+)/g);
-  if (bulletPoints && bulletPoints.length >= 2) {
-    return bulletPoints
-      .slice(0, 3)
-      .map((point) => point.replace(/^- /, ""));
-  }
+  // Otherwise extract clean sentences using splitSentences (which protects decimals & abbreviations)
+  const sentences = splitSentences(text)
+    .map(cleanKeyPoint)
+    .filter((s) => s.length > 18);
 
-  // Extract key sentences from paragraphs
-  return paragraphs
-    .slice(0, 3)
-    .map((p) => {
-      const sentences = p.split(/[.!?]+/);
-      return sentences[0].trim();
-    })
-    .filter((s) => s.length > 10)
-    .map((s) => s.charAt(0).toUpperCase() + s.slice(1));
+  return sentences.slice(0, 3);
 }
 
 export default function SummaryCard(
@@ -54,9 +50,12 @@ export default function SummaryCard(
     <div class="w-full h-full">
       <div class="dashboard-card">
         <div class="dashboard-card-header">
-          <h3>Summary</h3>
+          <div class="inline-flex items-center gap-2">
+            <span class="stamped-tab stamped-tab--pink">02 // SUMMARY</span>
+          </div>
           <div class="card-header-actions">
             <button
+              type="button"
               onClick={() =>
                 summary && openReader({
                   title: "Summary",
@@ -70,9 +69,11 @@ export default function SummaryCard(
               <i class="fa fa-up-right-and-down-left-from-center text-sm"></i>
             </button>
             <button
+              type="button"
               onClick={() => summary && copyToClipboard(summary)}
               class="cursor-pointer"
               data-tip="Copy summary"
+              data-tip-align="right"
               aria-label="Copy summary"
               disabled={!summary}
             >
