@@ -768,13 +768,7 @@ export default function HomeIsland() {
   }, [isBrewing, isAppending]);
 
   return (
-    <div
-      class={`mapper-scene flex min-h-screen flex-col ${
-        conversationData.value || processingConversation.value
-          ? "mapper-scene--dashboard"
-          : ""
-      }`}
-    >
+    <div class="mapper-scene flex min-h-screen flex-col">
       {/* Top Bar - Brand presence */}
       <header class="app-header-glass">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 w-full app-header__container">
@@ -1095,13 +1089,18 @@ export default function HomeIsland() {
                         </span>
                       ))}
                     </h1>
-                    <p class="mapper-hero-desc">
-                      {i18n.heroDesc}
-                    </p>
-                    <p class="mapper-hero-caption">
-                      {i18n.heroCaption}
-                    </p>
-                    <UploadIsland />
+                    {
+                      /* The two subtitle lines ride INTO the capture row, so
+                        the mic sits on their right, level with them. */
+                    }
+                    <UploadIsland>
+                      <p class="mapper-hero-desc">
+                        {i18n.heroDesc}
+                      </p>
+                      <p class="mapper-hero-caption">
+                        {i18n.heroCaption}
+                      </p>
+                    </UploadIsland>
                   </div>
                   <a href="#table" class="porch-cue">
                     {i18n.porchCue}

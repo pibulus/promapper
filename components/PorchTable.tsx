@@ -87,6 +87,9 @@ export default function PorchTable() {
       aria-labelledby="porch-table-title"
     >
       <header class="porch-table__head">
+        <span class="stamped-tab stamped-tab--yellow porch-table__kicker">
+          {i18n.tableKicker}
+        </span>
         <h2 id="porch-table-title" class="porch-table__title">
           {i18n.tableTitle}
         </h2>
@@ -94,7 +97,7 @@ export default function PorchTable() {
       </header>
 
       <div class="porch-table__grid">
-        <figure class="porch-specimen" style={{ "--tilt": "-1deg" }}>
+        <figure class="porch-specimen">
           <div class="dashboard-card porch-card">
             <div class="dashboard-card-header">
               <div class="inline-flex items-center gap-2">
@@ -113,7 +116,7 @@ export default function PorchTable() {
           <figcaption class="porch-note">{i18n.tableTranscriptNote}</figcaption>
         </figure>
 
-        <figure class="porch-specimen" style={{ "--tilt": "0.7deg" }}>
+        <figure class="porch-specimen">
           <div class="dashboard-card porch-card">
             <div class="dashboard-card-header">
               <div class="inline-flex items-center gap-2">
@@ -176,7 +179,7 @@ export default function PorchTable() {
           <figcaption class="porch-note">{i18n.tableActionsNote}</figcaption>
         </figure>
 
-        <figure class="porch-specimen" style={{ "--tilt": "-0.5deg" }}>
+        <figure class="porch-specimen">
           <div class="dashboard-card porch-card">
             <div class="dashboard-card-header">
               <div class="inline-flex items-center gap-2">

@@ -77,11 +77,16 @@
      board reads as material, not a white void (Sept 27). Near-white
      --surface-board is kept for chips, pills and badges, so they pop off
      the cream like white stationery. */
+  /* The mat's stops as tokens so a full-bleed surface (the porch's second
+     screen) can wear the same mat as a linear sheet. */
+  --mat-light: #fff3e4;
+  --mat-mid: #fdebd8;
+  --mat-deep: #fbe4cd;
   --surface-mat: radial-gradient(
     circle at 50% 30%,
-    #fff3e4 0%,
-    #fdebd8 60%,
-    #fbe4cd 100%
+    var(--mat-light) 0%,
+    var(--mat-mid) 60%,
+    var(--mat-deep) 100%
   );
   --surface-paper: #fff9f0;
   --surface-header: #fdefdd;
@@ -1077,77 +1082,16 @@ h6,
   min-height: 100vh;
   min-height: 100dvh;
   position: relative;
-  /* Risograph-style pastel splashes, driven by the active theme so the
-     theme switcher actually repaints the canvas. --gradient-bg is defined
-     per-theme in core/theme/themes.ts (and the FOUC script in _app.tsx). */
-  background: var(--gradient-bg);
+  /* Layer 0, THE DESK, on every page — porch, dashboard, shared, 404. It
+     used to be the rolled theme's --gradient-bg here (saturated sky blobs +
+     a drifting sweep + grain) while the Tokyo pass gave only the dashboard
+     the Aperol desk, so the porch was the one heavy, un-airy room (Pablo,
+     Sept 28: "airier and lighter, more elegant"). The theme dice still roll
+     accents and plates; the ground is a place, not a mood. */
+  background: var(--surface-desk);
   /* clip, NOT hidden: hidden makes the scene a (never-scrolling) scroll
-     container, which kills the footer's position:sticky. clip crops the
-     decorative splashes without capturing sticky. */
+     container, which kills the footer's position:sticky. */
   overflow: clip;
-  /* No animation here on purpose: the old 18s --gradient-angle sweep
-     re-rasterized this viewport-sized gradient every frame, forever, on
-     every page (typed @property animations run on the main thread). The
-     living-light motion now rides sceneDrift's transform below — the
-     compositor moves the painted wash for free. */
-}
-
-/* Layer 0 (The Architectural Drafting Desk) — grounded archival surface */
-.mapper-scene--dashboard {
-  background: var(--surface-desk) !important;
-}
-
-.mapper-scene--dashboard::before,
-.mapper-scene--dashboard::after {
-  display: none !important;
-}
-
-.mapper-scene::before {
-  content: "";
-  position: absolute;
-  inset: -30% -20% auto -20%;
-  height: 70%;
-  /* Warm near-white, not absolute white: this sheet covers the top 70% of the
-     viewport, so a cold veil here desaturated the whole ground on every theme
-     (the "washed out" report, Aug 21). Same light sweep, no bleach. */
-  background: linear-gradient(
-    128deg,
-    rgba(255, 254, 247, 0.55) 0%,
-    rgba(255, 254, 247, 0) 65%
-  );
-  opacity: 0.28;
-  transform: rotate(1deg);
-  pointer-events: none;
-  animation: sceneDrift 26s ease-in-out infinite alternate;
-}
-
-.mapper-scene::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  /* Golden Master grain texture: 1-2% opacity warm noise.
-     The 35% white radial that used to lead this stack is GONE (Aug 21). With
-     `mix-blend-mode: overlay` on a light backdrop it resolved to near-pure
-     white across the ENTIRE viewport — un-themeable, and between them the two
-     scene veils were destroying roughly half the ground's chroma on every
-     theme. The grain and the warm dot are the texture; the bleach was not. */
-  background-image:
-    radial-gradient(circle at 1px 1px, rgba(30, 23, 20, 0.02), transparent 3px),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='4' seed='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)' opacity='0.015'/%3E%3C/svg%3E");
-  background-size: 140px 140px, auto;
-  opacity: 1;
-}
-
-@keyframes sceneDrift {
-  /* Slightly wider swing than before — this transform-only drift carries
-     the living-light feel the gradient-angle sweep used to provide. */
-  from {
-    transform: rotate(1.1deg) translateY(0);
-  }
-  to {
-    transform: rotate(-1.1deg) translateY(16px);
-  }
 }
 
 /* ===================================================================
@@ -1168,14 +1112,11 @@ h6,
   --porch-footer: calc(2.25rem + env(safe-area-inset-bottom, 0px));
   /* How much of the table shows above the footer before any scrolling. */
   --porch-peek: 0.85rem;
-  /* The table is a flat sheet in the ACCENT's hue while the sky above wears
-     the ground's — so crossing the membrane is a hue flip by construction,
-     on every roll, with no new colour. Flat on purpose: a hard cut. */
-  --table-ground: color-mix(
-    in oklab,
-    var(--color-accent) 16%,
-    var(--soft-cream)
-  );
+  /* Tokyo layering: screen one is the DESK (Layer 0, the scene's Aperol
+     haze); crossing the membrane steps onto the BOARD — the dashboard's own
+     warm mat (Layer 1) under its 3px carbon rim — where the specimens lie
+     as index cards (Layer 2). A material change, not a colour trick. */
+  --table-ground: var(--mat-light);
   font-family: var(--font-display);
 }
 
@@ -1195,10 +1136,10 @@ h6,
 }
 
 .mapper-hero {
-  /* One column, left-aligned, centred on the page — one reading path, top
-     to bottom: the line, the gist, the mic. Wide enough for the headline's
-     first line in one piece at full size. */
-  width: min(100%, 42rem);
+  /* One column, left-aligned, centred on the page — the line, then the gist
+     with the mic level on its right, then the tray. Wide enough for the
+     gist's first line to run in one piece beside the mic. */
+  width: min(100%, 52rem);
   margin: auto;
   display: flex;
   flex-direction: column;
@@ -1229,7 +1170,6 @@ h6,
 }
 
 .mapper-hero-desc {
-  max-width: 34rem;
   font-size: 1.125rem;
   font-weight: 600;
   line-height: 1.45;
@@ -1248,12 +1188,6 @@ h6,
   text-wrap: balance;
 }
 
-.mapper-input-lab {
-  /* A beat more air above the mic than between the lines of copy — the
-     copy is one thought, the capture is the next move. */
-  margin-top: 0.9rem;
-}
-
 .mapper-capture-block {
   /* Was its own soft-bordered/blurred panel wrapping .mapper-unified-input
      — that middle layer was the whole "input is lost inside soft nested
@@ -1262,7 +1196,7 @@ h6,
      carries the one confident border. */
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .mapper-block-meta {
@@ -1331,30 +1265,44 @@ h6,
   cursor: pointer;
 }
 
-/* The mic row: the one slab, plus a quiet "last upload" note beside it. */
+/* The gist and the mic, one row: the two subtitle lines on the left, the
+   mic level with them on the right (Pablo, Sept 28). Porch-only — the lede
+   is the hero's copy handed in as UploadIsland children. */
 .mapper-capture-actions {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
+  gap: 1rem clamp(1.5rem, 4vw, 3rem);
+}
+
+.mapper-hero-lede {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+/* The mic, with the quiet "last upload" note tucked under it. */
+.mapper-capture-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
 }
 
 .mapper-unified-input {
-  /* The paste tray — the SECOND door, under the mic. Same --line-ink edge
-     as the slab so it reads as an object on the sky, but no offset shadow
-     at rest: the slab above is the thing that pops. Hover/focus below still
-     lift it into a full toy plate the moment it's in use. */
-  border: 2px solid var(--line-ink);
-  border-radius: 16px;
+  /* The paste tray — the SECOND door, under the mic. A Tokyo index card
+     (paper, 8px corners, 2px carbon edge, like the dashboard's modules) but
+     with no slab shadow at rest: the mic is the thing that pops. Hover/focus
+     below still lift it into a full plate the moment it's in use. */
+  border: 2px solid var(--ink-carbon);
+  border-radius: var(--border-radius-sm);
   padding: 0.35rem 0.5rem;
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease,
     background 150ms ease,
     transform 150ms ease;
-  /* Plain cream paper — the white-alpha wash that used to sit over it was a
-     white wash by another name. */
-  background: var(--soft-cream);
+  background: var(--surface-paper);
   cursor: text;
   position: relative;
 }
@@ -1434,12 +1382,15 @@ h6,
 /* Recording stays WARM — the old blackout panel read as office-tech (and
    near-absolute black besides). Live-ness comes from the accent border,
    the breathing dot, and the bars dancing — not a mode eclipse. */
+/* Live: the same paper tray, lifted onto a SPRITZ slab — Tokyo's ink for
+   record/live, the same as the mic that started it and the dashboard's
+   recording dock. */
 .mapper-unified-input.is-recording {
-  border: 3px solid var(--accent-ink);
-  background: color-mix(in srgb, var(--color-accent) 10%, var(--soft-cream));
-  color: var(--soft-black);
+  border: 2px solid var(--ink-carbon);
+  background: var(--surface-paper);
+  color: var(--ink-carbon);
   cursor: default;
-  box-shadow: 3px 3px 0 0 var(--accent-ink);
+  box-shadow: 4px 4px 0 0 var(--ink-spritz);
 }
 
 .mapper-unified-input.is-recording textarea {
@@ -1525,19 +1476,20 @@ h6,
   bottom: 12px;
   right: 12px;
   padding: 0.4rem 0.75rem;
-  border-radius: 999px;
-  border: 2px solid var(--line-ink);
+  /* Squared to match the mic's slab — Tokyo corners, carbon edge. */
+  border-radius: 6px;
+  border: 2px solid var(--ink-carbon);
   background: var(--soft-cream-dark);
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  color: var(--soft-black);
+  color: var(--ink-carbon);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: pointer;
   transition: all 150ms ease;
-  box-shadow: 2px 2px 0 0 var(--line-ink);
+  box-shadow: 2px 2px 0 0 var(--ink-carbon);
 }
 
 .mapper-clip-btn:hover,
@@ -1592,8 +1544,8 @@ h6,
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  background: var(--accent-ink);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--color-accent) 60%, transparent);
+  background: var(--ink-spritz);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--ink-spritz) 60%, transparent);
   animation: record-breathe 1.6s ease-in-out infinite;
   flex-shrink: 0;
 }
@@ -1629,16 +1581,6 @@ h6,
 }
 
 .mapper-live-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-accent) 12%, var(--soft-cream));
-  color: var(--accent-ink);
-  border: 1.5px solid color-mix(in srgb, var(--color-accent) 40%, transparent);
   white-space: nowrap;
 }
 
@@ -1717,31 +1659,34 @@ h6,
   opacity: 0.7;
 }
 
+/* Recording: Stop takes the mic's exact slot, Cancel sits quietly under it
+   — the same footprint as the idle mic, so the gist beside it never
+   re-wraps when a take starts. */
 .mapper-record-actions-row {
   display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  width: 100%;
+  flex-direction: column;
+  align-items: inherit;
+  gap: 0.6rem;
 }
 
 .mapper-cancel-btn {
-  padding: 0.9rem 1.25rem;
-  border-radius: 13px;
-  border: 2.5px solid var(--line-ink);
-  background: var(--surface-card, #fbf1e4);
-  color: var(--soft-black);
-  font-size: 0.9rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  border: 2px solid var(--ink-carbon);
+  background: var(--surface-paper);
+  color: var(--ink-carbon);
+  font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
   transition: all 120ms ease;
-  box-shadow: 2px 2px 0 0 rgba(30, 23, 20, 0.2);
+  box-shadow: 2px 2px 0 0 var(--ink-carbon);
 }
 
 /* Cancel recedes rather than alarms — destructive = recession, never red. */
 .mapper-cancel-btn:hover {
   background: var(--soft-cream-dark);
-  box-shadow: 3px 3px 0 0 var(--line-ink);
+  box-shadow: 3px 3px 0 0 var(--ink-carbon);
   transform: translate(-1px, -1px);
 }
 
@@ -1763,14 +1708,18 @@ h6,
   justify-content: center;
   min-width: 13rem;
   padding: 1.05rem 2rem;
-  border-radius: 14px;
-  border: 2.5px solid var(--cta-plate-border);
-  background: var(--cta-plate);
-  color: var(--soft-black);
+  /* Tokyo spot ink: SPRITZ means record — the header's recording state and
+     the dashboard's recording dock already wear it, and this is the same
+     action. Same rim recipe as the table's door (3px carbon, 4px carbon
+     slab, squared 6px corners). Carbon on spritz is ~5.9:1. */
+  border-radius: 6px;
+  border: 3px solid var(--ink-carbon);
+  background: var(--ink-spritz);
+  color: var(--ink-carbon);
   font-size: 1.02rem;
   font-weight: 800;
   letter-spacing: 0.01em;
-  box-shadow: 4px 4px 0 0 var(--line-ink);
+  box-shadow: 4px 4px 0 0 var(--ink-carbon);
   transition:
     transform 120ms ease,
     box-shadow 120ms ease,
@@ -1785,15 +1734,14 @@ h6,
 
 .mapper-slab-button:disabled {
   opacity: 0.55;
-  box-shadow: 2px 2px 0 0 var(--line-ink);
+  box-shadow: 2px 2px 0 0 var(--ink-carbon);
   cursor: not-allowed;
 }
 
 .mapper-slab-button:not(:disabled):hover {
   --mapper-translate-x: -2px;
   --mapper-translate-y: -2px;
-  background: var(--cta-plate-hover);
-  box-shadow: 6px 6px 0 0 var(--line-ink);
+  box-shadow: 6px 6px 0 0 var(--ink-carbon);
 }
 
 .mapper-slab-button:not(:disabled):active {
@@ -1873,7 +1821,7 @@ h6,
     1.02 100%
   ) forwards;
   /* Compressed 3D shadow on press */
-  box-shadow: 2px 2px 0 0 var(--line-ink);
+  box-shadow: 2px 2px 0 0 var(--ink-carbon);
 }
 
 .mapper-textarea {
@@ -1947,8 +1895,6 @@ h6,
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mapper-scene::before,
-  .porch-specimen,
   .mapper-slab-button,
   .mapper-hero-line {
     animation: none !important;
@@ -1957,7 +1903,6 @@ h6,
     transform: none !important;
   }
 
-  .porch-specimen:hover,
   .mapper-slab-button:not(:disabled):hover {
     transform: none !important;
   }
@@ -2257,13 +2202,12 @@ h6,
     text-wrap: balance;
   }
 
-  /* The mic softens into a pill — a full-bleed slab read as imposing;
-     centered with a mic glyph it reads as an invitation. */
+  /* Phones: the mic stands centred under the gist, wide enough to own the
+     thumb zone — still the squared Tokyo slab, not a pill. */
   .mapper-slab-button {
     width: fit-content;
     min-width: 72%;
     margin-inline: auto;
-    border-radius: 999px;
     padding: 0.95rem 1.9rem;
   }
 
@@ -2282,9 +2226,14 @@ h6,
     line-height: 1.42;
   }
 
+  /* The gist stacks over the mic on a phone — side by side there is no
+     room for either. */
   .mapper-capture-actions {
-    gap: 0.55rem;
-    flex-direction: column;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+  }
+
+  .mapper-capture-controls {
     align-items: center;
   }
 
@@ -9654,16 +9603,16 @@ html:has(.porch) {
   z-index: 1;
   align-self: center;
   margin-top: clamp(1.25rem, 4vh, 2.5rem);
-  margin-bottom: -2px;
+  margin-bottom: -3px;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1.1rem 0.6rem;
   background: var(--table-ground);
-  border: 2px solid var(--line-ink);
+  border: 3px solid var(--ink-carbon);
   border-bottom: none;
-  border-radius: 14px 14px 0 0;
-  color: var(--soft-black);
+  border-radius: 8px 8px 0 0;
+  color: var(--ink-carbon);
   font-size: 0.85rem;
   font-weight: 700;
   text-decoration: none;
@@ -9715,11 +9664,17 @@ html:has(.porch) {
      crossed. Bottom: clear of the footer once it has been. */
   padding: calc(var(--porch-footer) + var(--porch-peek) + 0.75rem) 0
     calc(var(--porch-footer) + clamp(1rem, 3vh, 2rem));
-  /* Full-bleed ground plus a 2px ink table edge along the top, painted past
-     the centred column by border-image OUTSET. That's ink overflow — unlike
-     a 100vw pseudo-element it can't give <main> (overflow-y:auto, so x auto
-     too) a horizontal scrollbar. */
-  border-image: linear-gradient(var(--line-ink) 0 2px, var(--table-ground) 2px)
+  /* Full-bleed BOARD: the dashboard's 3px carbon rim along the top edge,
+     then its warm mat deepening toward the bottom (the mat's own stops as a
+     sheet), painted past the centred column by border-image OUTSET. That's
+     ink overflow — unlike a 100vw pseudo-element it can't give <main>
+     (overflow-y:auto, so x auto too) a horizontal scrollbar. */
+  border-image: linear-gradient(
+    var(--ink-carbon) 0 3px,
+    var(--mat-light) 3px,
+    var(--mat-mid) 60%,
+    var(--mat-deep)
+  )
     fill 0 / 0 / 0 100vw;
 }
 
@@ -9728,20 +9683,27 @@ html:has(.porch) {
   max-width: 52rem;
 }
 
+/* The index stamp that files this board, same idiom as the dashboard's
+   SESSION // ACTIVE. It's a graphic label, so it keeps the stamp's mono
+   caps; the heading and lede under it speak Inter. */
+.porch-table__kicker {
+  margin-bottom: 0.9rem;
+}
+
 .porch-table__title {
   margin: 0;
   font-size: clamp(1.7rem, 3.2vw, 2.6rem);
   font-weight: 900;
   line-height: 1.05;
   letter-spacing: -0.03em;
-  color: var(--soft-black);
+  color: var(--ink-carbon);
 }
 
 .porch-table__lede {
   margin-top: 0.6rem;
   font-size: 1rem;
   line-height: 1.5;
-  color: var(--color-text);
+  color: var(--ink-carbon);
   text-wrap: pretty;
 }
 
@@ -9753,20 +9715,14 @@ html:has(.porch) {
   align-items: start;
 }
 
-/* A specimen = a fun-size real card + one line about what it does. Laid on
-   the table a little crooked, the way things land on a real one; a hover
-   straightens it (transform only — compositor-cheap). */
+/* A specimen = a fun-size real card + one line about what it does, squared
+   up on the board like index cards in a tray (Tokyo functionalism — the
+   crooked scrapbook lay went with the pastel sky). */
 .porch-specimen {
   margin: 0;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  transform: rotate(var(--tilt, 0deg));
-  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.porch-specimen:hover {
-  transform: rotate(0deg) translateY(-3px);
 }
 
 /* Pictures of the tool, not the tool: nothing inside takes a pointer, so no
@@ -10022,11 +9978,5 @@ html:has(.porch) {
 
   .porch-table__grid > .porch-specimen:last-child {
     width: 100%;
-  }
-
-  /* Half the lean on a narrow screen — crooked reads as charm at arm's
-     length, as a mistake up close. */
-  .porch-specimen {
-    transform: rotate(calc(var(--tilt, 0deg) * 0.5));
   }
 }
