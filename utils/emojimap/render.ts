@@ -221,6 +221,24 @@ const BADGE_PAD_X = 7;
 const BADGE_PAD_Y = 3;
 const BADGE_SHADOW = 2;
 
+/** Calculate the horizontal half-extent of a node, covering both the emoji disc and the label pill. */
+export function nodeHalfWidth(d: NodeData): number {
+  const label = d.label || "";
+  const textWidth = Math.max(30, label.length * 7.5);
+  return Math.max(26, (textWidth / 2) + BADGE_PAD_X + BADGE_SHADOW + 4);
+}
+
+/** Calculate dynamic collision radius so wide text pills never overlap or collide. */
+export function getNodeCollisionRadius(
+  d: NodeData,
+  baseRadius: number = 38,
+): number {
+  const label = d.label || "";
+  const textWidth = Math.max(28, label.length * 7.5);
+  const pillRadius = (textWidth / 2) + BADGE_PAD_X + 14;
+  return Math.max(baseRadius, pillRadius);
+}
+
 /** Wrap the badge rects around the label's real ink. getBBox reads 0 while the
  *  map is hidden (flip-card back) and throws in some engines for unrendered
  *  SVG, so fall back to a per-character estimate until the next update
@@ -473,15 +491,14 @@ export function fitAllIcons(
   const fillFactor = 0.8;
 
   // A node is not a point: the disc is r=20 (glow pad r=23) and the label sits
-  // at y=28 below center. Measuring bare x/y centers made the bbox symmetric
-  // around the glyphs while the real ink hangs BELOW them, so bottom-row labels
-  // clipped while the top had spare room. Grow the box by the actual extents.
-  const NODE_EXTENT_X = 23;
+  // at y=28 below center. Label pills have dynamic width based on text length;
+  // using nodeHalfWidth guarantees long labels like SKELETON DENTAL AUDIT are
+  // never clipped on the viewport edges.
   const NODE_EXTENT_UP = 23;
   const NODE_EXTENT_DOWN = 46; // badge centre (32) + half its height + shadow
 
-  const minX = (d3.min(nodes, (d) => d.x || 0) || 0) - NODE_EXTENT_X;
-  const maxX = (d3.max(nodes, (d) => d.x || 0) || 0) + NODE_EXTENT_X;
+  const minX = d3.min(nodes, (d) => (d.x ?? 0) - nodeHalfWidth(d)) ?? -26;
+  const maxX = d3.max(nodes, (d) => (d.x ?? 0) + nodeHalfWidth(d)) ?? 26;
   const minY = (d3.min(nodes, (d) => d.y || 0) || 0) - NODE_EXTENT_UP;
   const maxY = (d3.max(nodes, (d) => d.y || 0) || 0) + NODE_EXTENT_DOWN;
 

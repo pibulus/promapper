@@ -11,6 +11,7 @@ import { copyToClipboard, showToast } from "../utils/toast.ts";
 import { localDateISO } from "@core/storage/dates.ts";
 import { conversationData } from "@signals/conversationStore.ts";
 import { createBestShareLink } from "@core/storage/shareService.ts";
+import { speakerColor } from "@core/theme/speakerColors.ts";
 
 interface ActionItem {
   id: string;
@@ -141,6 +142,7 @@ export default function ActionItemsBack(
   const done = items.filter((i) => i.status === "completed").length;
   const pending = total - done;
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+  const speakers = conversationData.value?.transcript?.speakers ?? [];
 
   // Per-person open load (pending only — "who still owes what"), most-loaded first.
   const byPerson = new Map<string, number>();
@@ -281,40 +283,56 @@ export default function ActionItemsBack(
                   )
                   : (
                     <div class="flex flex-col gap-2">
-                      {people.map(([who, count]) => (
-                        <div key={who}>
-                          <div
-                            class="card-back-stat"
-                            style={{ marginBottom: "0.2rem" }}
-                          >
-                            <span class="truncate">{who}</span>
-                            <span class="flex items-center gap-1">
-                              <button
-                                type="button"
-                                class="card-back-person-share"
-                                aria-label={`Share ${who}'s items as a link`}
-                                title={`Share ${who}'s items`}
-                                onClick={() => shareAssigneeItems(who)}
-                              >
-                                <i class="fa fa-link" aria-hidden="true" />
-                              </button>
-                              <span class="card-back-stat-value">{count}</span>
-                            </span>
-                          </div>
-                          <div class="card-back-bar">
+                      {people.map(([who, count]) => {
+                        const isUnassigned = who === "Unassigned";
+                        const color = isUnassigned
+                          ? "var(--ink-muted, #71717A)"
+                          : speakerColor(who, speakers);
+                        return (
+                          <div key={who}>
                             <div
-                              class="card-back-bar-fill"
-                              style={{
-                                "--fill": `${
-                                  maxLoad === 0
-                                    ? 0
-                                    : Math.round((count / maxLoad) * 100)
-                                }%`,
-                              }}
-                            />
+                              class="card-back-stat"
+                              style={{ marginBottom: "0.2rem" }}
+                            >
+                              <span class="truncate flex items-center gap-1.5">
+                                <span
+                                  class="w-2 h-2 rounded-full shrink-0"
+                                  style={{ backgroundColor: color }}
+                                  aria-hidden="true"
+                                />
+                                {who}
+                              </span>
+                              <span class="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  class="card-back-person-share"
+                                  aria-label={`Share ${who}'s items as a link`}
+                                  title={`Share ${who}'s items`}
+                                  onClick={() => shareAssigneeItems(who)}
+                                >
+                                  <i class="fa fa-link" aria-hidden="true" />
+                                </button>
+                                <span class="card-back-stat-value">
+                                  {count}
+                                </span>
+                              </span>
+                            </div>
+                            <div class="card-back-bar">
+                              <div
+                                class="card-back-bar-fill"
+                                style={{
+                                  "--fill": `${
+                                    maxLoad === 0
+                                      ? 0
+                                      : Math.round((count / maxLoad) * 100)
+                                  }%`,
+                                  backgroundColor: color,
+                                }}
+                              />
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
               </div>

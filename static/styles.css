@@ -2838,24 +2838,27 @@ h6,
   display: block;
 }
 
-/* Canvas module — the whiteboard needs real height to draw in. */
-.canvas-module-body {
-  max-height: none;
-  height: 32rem;
-  padding: 0;
-  overflow: hidden;
-}
-/* The canvas as the map's flip side: the back face is absolutely positioned
-   to the front's height, so the body stretches instead of fixing its own. */
+/* Canvas module — the tactile desk pad model: recessed desk frame with drafting paper */
+.canvas-module-body,
 .canvas-flip-body {
   max-height: none;
-  padding: 0;
+  background-color: #ECE5D8;
+  padding: 10px;
   overflow: hidden;
   flex: 1;
   min-height: 0;
 }
-.canvas-flip-body .shared-whiteboard {
+.canvas-module-body {
+  height: 32rem;
+}
+.canvas-flip-body .shared-whiteboard,
+.canvas-module-body .shared-whiteboard {
   height: 100%;
+  background-color: #FFFFFF !important;
+  border: 2px solid var(--border-strong, #1A1A1A);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0px rgba(26, 26, 26, 0.15);
+  overflow: hidden;
 }
 .canvas-live-note {
   display: flex;

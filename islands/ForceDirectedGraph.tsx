@@ -860,68 +860,71 @@ export default function ForceDirectedGraph(
       {renderEdgeDetail()}
 
       {showAddNode.value && (
-        <BodyPortal>
-          <div class="topic-node-modal-backdrop">
-            <div class="topic-node-modal" role="dialog" aria-modal="true">
-              <div class="topic-node-modal__header">
-                <h4>Add topic</h4>
-                <button
-                  type="button"
-                  onClick={() => showAddNode.value = false}
-                  aria-label="Close add topic"
-                >
-                  ×
-                </button>
-              </div>
-              <label>
-                <span>Emoji</span>
-                <input
-                  type="text"
-                  value={newNodeEmoji.value}
-                  onInput={(event) =>
-                    newNodeEmoji.value =
-                      (event.target as HTMLInputElement).value}
-                  placeholder="✨"
-                  // 16 not 4 — maxLength counts UTF-16 units, and a single ZWJ
-                  // emoji (👨‍👩‍👧‍👦, flags) is up to ~11 units. 4 truncated them into
-                  // mojibake.
-                  maxLength={16}
-                />
-              </label>
-              <label>
-                <span>Topic</span>
-                <input
-                  type="text"
-                  value={newNodeLabel.value}
-                  onInput={(event) =>
-                    newNodeLabel.value =
-                      (event.target as HTMLInputElement).value}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") addManualNode();
-                  }}
-                  placeholder="New thread"
-                  maxLength={MAX_LABEL_LENGTH}
-                  autoFocus
-                />
-              </label>
-              <div class="topic-node-modal__actions">
-                <button
-                  type="button"
-                  onClick={() => showAddNode.value = false}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={addManualNode}
-                  disabled={!newNodeLabel.value.trim()}
-                >
-                  Add
-                </button>
-              </div>
+        <Modal
+          open
+          onClose={() => showAddNode.value = false}
+          titleId="add-topic-modal-title"
+          panelClass="max-w-sm"
+        >
+          <div class="modal-stack">
+            <h3
+              id="add-topic-modal-title"
+              style={{
+                margin: 0,
+                fontSize: "var(--heading-size)",
+                fontWeight: 700,
+                color: "var(--color-text)",
+              }}
+            >
+              Add topic
+            </h3>
+            <div class="flex items-center gap-2 mt-1">
+              <input
+                type="text"
+                value={newNodeEmoji.value}
+                onInput={(event) =>
+                  newNodeEmoji.value = (event.target as HTMLInputElement).value}
+                placeholder="✨"
+                maxLength={16}
+                aria-label="Topic emoji"
+                class="w-12 h-11 text-center text-xl shrink-0 border-2 border-[var(--border-strong)] rounded-lg bg-[var(--surface-item)] shadow-[2px_2px_0px_var(--border-strong)]"
+              />
+              <input
+                type="text"
+                value={newNodeLabel.value}
+                onInput={(event) =>
+                  newNodeLabel.value = (event.target as HTMLInputElement).value}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") addManualNode();
+                }}
+                placeholder="New topic thread..."
+                maxLength={MAX_LABEL_LENGTH}
+                autoFocus
+                aria-label="Topic name"
+                class="flex-1 min-w-0 h-11 px-3 border-2 border-[var(--border-strong)] rounded-lg bg-[var(--surface-item)] shadow-[2px_2px_0px_var(--border-strong)] text-sm font-medium"
+              />
+            </div>
+            <div class="modal-actions mt-3">
+              <button
+                type="button"
+                class="btn btn--secondary"
+                style={{ flex: 1 }}
+                onClick={() => showAddNode.value = false}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                class="btn btn--primary"
+                style={{ flex: 1 }}
+                onClick={addManualNode}
+                disabled={!newNodeLabel.value.trim()}
+              >
+                Add Topic
+              </button>
             </div>
           </div>
-        </BodyPortal>
+        </Modal>
       )}
 
       {/* Rename topic modal */}

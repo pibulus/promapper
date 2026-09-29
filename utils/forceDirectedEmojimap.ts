@@ -28,6 +28,7 @@ import {
   createZoomBehavior,
   debounce,
   fitAllIcons,
+  getNodeCollisionRadius,
   ticked,
   updateElements,
 } from "./emojimap/render.ts";
@@ -255,7 +256,14 @@ export function forceDirectedEmojimap(
     .force("charge", d3.forceManyBody().strength(mergedConfig.chargeStrength))
     .force("x", d3.forceX(mergedConfig.width / 2).strength(0.05))
     .force("y", d3.forceY(mergedConfig.height / 2).strength(0.05))
-    .force("collide", d3.forceCollide(mergedConfig.collisionRadius));
+    .force(
+      "collide",
+      d3
+        .forceCollide<NodeData>((d) =>
+          getNodeCollisionRadius(d, mergedConfig.collisionRadius)
+        )
+        .iterations(3),
+    );
 
   // Build the elements once now that the simulation exists (drag handlers need
   // it). update() rebuilds this join when data changes; tick never does.
@@ -510,7 +518,11 @@ export function forceDirectedEmojimap(
       if (chargeForce) chargeForce.strength(mergedConfig.chargeStrength);
       simulation.force(
         "collide",
-        d3.forceCollide(mergedConfig.collisionRadius),
+        d3
+          .forceCollide<NodeData>((d) =>
+            getNodeCollisionRadius(d, mergedConfig.collisionRadius)
+          )
+          .iterations(3),
       );
       simulation.force("x", d3.forceX(mergedConfig.width / 2).strength(0.05));
       simulation.force("y", d3.forceY(mergedConfig.height / 2).strength(0.05));
