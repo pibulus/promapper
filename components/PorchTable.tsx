@@ -127,6 +127,14 @@ export default function PorchTable() {
               {ACTIONS.map((item) => (
                 <li class="action-item-card" key={item.text}>
                   <div class="porch-action">
+                    <span
+                      class={`action-item-checkbox-button${
+                        item.why ? " is-checked" : ""
+                      }`}
+                      aria-hidden="true"
+                    >
+                      {item.why && <i class="fa fa-check"></i>}
+                    </span>
                     <div class="porch-action__words">
                       <p
                         class={`action-item-description${
@@ -163,14 +171,6 @@ export default function PorchTable() {
                         </div>
                       )}
                     </div>
-                    <span
-                      class={`action-item-checkbox-button${
-                        item.why ? " is-checked" : ""
-                      }`}
-                      aria-hidden="true"
-                    >
-                      {item.why && <i class="fa fa-check"></i>}
-                    </span>
                   </div>
                 </li>
               ))}

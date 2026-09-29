@@ -15,6 +15,7 @@ interface ModalProps {
   panelClass?: string;
   initialFocusRef?: RefObject<HTMLElement>;
   children: ComponentChildren;
+  showCloseBtn?: boolean;
 }
 
 export default function Modal(
@@ -25,6 +26,7 @@ export default function Modal(
     panelClass = "max-w-md",
     initialFocusRef,
     children,
+    showCloseBtn = true,
   }: ModalProps,
 ) {
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -110,8 +112,11 @@ export default function Modal(
   return (
     <BodyPortal>
       <div
-        class="fixed inset-0 flex items-center justify-center z-50"
-        style={{ background: "rgba(30,23,20,0.5)" }}
+        class="fixed inset-0 flex items-center justify-center z-50 p-4"
+        style={{
+          background: "rgba(30,23,20,0.5)",
+          backdropFilter: "blur(3px)",
+        }}
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
@@ -121,10 +126,20 @@ export default function Modal(
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
-          class={`dashboard-card ${panelClass} w-full mx-4`}
+          class={`modal-content ${panelClass} w-full`}
           style={{ padding: "var(--card-padding)" }}
           onClick={(e) => e.stopPropagation()}
         >
+          {showCloseBtn && (
+            <button
+              type="button"
+              class="modal-close-btn"
+              onClick={onClose}
+              aria-label="Close dialog"
+            >
+              <i class="fa fa-xmark" aria-hidden="true"></i>
+            </button>
+          )}
           {children}
         </div>
       </div>

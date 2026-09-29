@@ -397,7 +397,7 @@ export default function MobileHistoryMenu() {
           order and screen-reader tree while invisible. */
       }
       <div
-        class={`history-drawer history-drawer-panel fixed inset-y-0 right-0 w-96 max-w-[85vw] z-40 ${
+        class={`history-drawer history-drawer-panel fixed inset-y-0 right-0 w-[420px] max-w-full z-40 ${
           isOpen.value ? "is-open" : "is-closed"
         }`}
         aria-hidden={!isOpen.value}

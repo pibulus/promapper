@@ -1073,7 +1073,7 @@ export default function ActionItemsCard(
                             </div>
                           )}
                           {!isEditing && (
-                            <div class="grid grid-cols-[auto_1fr_auto] gap-2.5 items-start relative z-[2]">
+                            <div class="grid grid-cols-[auto_auto_1fr] gap-2.5 items-start relative z-[2]">
                               {/* Drag Handle (mouse/pen: press to grab; touch: long-press the row) */}
                               <div class="flex items-center pt-1">
                                 {canDrag
@@ -1089,8 +1089,71 @@ export default function ActionItemsCard(
                                   : <div class="drag-handle-placeholder"></div>}
                               </div>
 
+                              {/* Checkbox (affordance left-aligned right after drag handle) */}
+                              <div class="flex items-center pt-1">
+                                <button
+                                  type="button"
+                                  onMouseEnter={soundHover}
+                                  disabled={readOnly}
+                                  onPointerDown={(event) => {
+                                    event.stopPropagation();
+                                    if (event.pointerType === "mouse") {
+                                      event.preventDefault();
+                                      checkboxHandledByPointer.current = true;
+                                      toggleActionItem(item.id);
+                                    }
+                                  }}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    if (checkboxHandledByPointer.current) {
+                                      checkboxHandledByPointer.current = false;
+                                      return;
+                                    }
+                                    toggleActionItem(item.id);
+                                  }}
+                                  onKeyDown={(event) => {
+                                    if (
+                                      event.key !== "Enter" &&
+                                      event.key !== " "
+                                    ) {
+                                      return;
+                                    }
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    toggleActionItem(item.id);
+                                  }}
+                                  class={`action-item-checkbox-button${
+                                    item.status === "completed"
+                                      ? " is-checked"
+                                      : ""
+                                  }${
+                                    poppingId.value === item.id
+                                      ? " is-popping"
+                                      : ""
+                                  }`}
+                                  title={item.assignee
+                                    ? `Assigned to ${item.assignee}`
+                                    : undefined}
+                                  role="checkbox"
+                                  aria-checked={item.status === "completed"}
+                                  aria-label={`Mark ${item.description} as ${
+                                    item.status === "completed"
+                                      ? "pending"
+                                      : "completed"
+                                  }`}
+                                >
+                                  {item.status === "completed" && (
+                                    <i
+                                      class="fa fa-check"
+                                      aria-hidden="true"
+                                    >
+                                    </i>
+                                  )}
+                                </button>
+                              </div>
+
                               {/* Content */}
-                              <div class="flex flex-col gap-2 min-w-0 w-full">
+                              <div class="flex flex-col gap-2 min-w-0 w-full pr-12">
                                 {
                                   /* Two-line clamp keeps every row the same
                                           shape. Desktop: click the words to
@@ -1345,78 +1408,6 @@ export default function ActionItemsCard(
                                   >
                                   </i>
                                 </button>
-                              </div>
-
-                              {/* Checkbox */}
-                              <div class="flex items-center pt-1">
-                                {
-                                  <button
-                                    type="button"
-                                    onMouseEnter={soundHover}
-                                    // `disabled` (not a hidden handler) so the
-                                    // snapshot reads as a photo to a mouse, a
-                                    // thumb AND a screen reader at once.
-                                    disabled={readOnly}
-                                    // Mouse toggles on pointerdown (snappy);
-                                    // touch/pen wait for the click so a scroll
-                                    // flick that lands here can't check it.
-                                    onPointerDown={(event) => {
-                                      event.stopPropagation();
-                                      if (event.pointerType === "mouse") {
-                                        event.preventDefault();
-                                        checkboxHandledByPointer.current = true;
-                                        toggleActionItem(item.id);
-                                      }
-                                    }}
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      if (checkboxHandledByPointer.current) {
-                                        checkboxHandledByPointer.current =
-                                          false;
-                                        return;
-                                      }
-                                      toggleActionItem(item.id);
-                                    }}
-                                    onKeyDown={(event) => {
-                                      if (
-                                        event.key !== "Enter" &&
-                                        event.key !== " "
-                                      ) {
-                                        return;
-                                      }
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                      toggleActionItem(item.id);
-                                    }}
-                                    class={`action-item-checkbox-button${
-                                      item.status === "completed"
-                                        ? " is-checked"
-                                        : ""
-                                    }${
-                                      poppingId.value === item.id
-                                        ? " is-popping"
-                                        : ""
-                                    }`}
-                                    title={item.assignee
-                                      ? `Assigned to ${item.assignee}`
-                                      : undefined}
-                                    role="checkbox"
-                                    aria-checked={item.status === "completed"}
-                                    aria-label={`Mark ${item.description} as ${
-                                      item.status === "completed"
-                                        ? "pending"
-                                        : "completed"
-                                    }`}
-                                  >
-                                    {item.status === "completed" && (
-                                      <i
-                                        class="fa fa-check"
-                                        aria-hidden="true"
-                                      >
-                                      </i>
-                                    )}
-                                  </button>
-                                }
                               </div>
                             </div>
                           )}

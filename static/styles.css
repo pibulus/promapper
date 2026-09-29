@@ -135,8 +135,25 @@
     rgba(255, 214, 160, 0.24),
     transparent 78%
   ), linear-gradient(180deg, #ffe6d6 0%, #ffefe3 55%, #fff8f1 100%);
-  --surface-paper: #fff9f0;
-  --surface-header: #fdefdd;
+  /* ===================================================================
+     STRICT 3-LAYER SURFACE ELEVATION & CONTRAST SYSTEM
+     ================================================================ */
+  --surface-base: #F4EFE6; /* Desktop background */
+  --surface-card: #FDFBF7; /* Modules / panels */
+  --surface-item: #FFFFFF; /* Interactive child cards (Action items, input rows) */
+  --surface-item-hover: #F8F5EE;
+
+  /* Borders & Lines */
+  --border-strong: #1A1A1A; /* 1.5px or 2px solid for module boundaries */
+  --border-subtle: #E2DCD2; /* 1px solid for internal dividers/rows */
+
+  /* Ink / Text */
+  --ink-primary: #18181B; /* Body text, titles */
+  --ink-secondary: #52525B; /* Timestamps, word counts, metadata */
+  --ink-muted: #71717A; /* Placeholder text */
+
+  --surface-paper: var(--surface-card);
+  --surface-header: #F0EAE1;
   --surface-vellum: rgba(250, 249, 246, 0.90);
   --scrim-smoke: rgba(18, 18, 18, 0.22);
 
@@ -587,7 +604,7 @@ h6,
 .action-item-actions {
   position: absolute;
   z-index: 3;
-  right: 3.1rem;
+  right: 0.6rem;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
@@ -2492,26 +2509,27 @@ h6,
    DASHBOARD CARD SYSTEM - Reusable card components
    ================================================================ */
 
-/* The SHELL — The Melamine Drafting Board (Tokyo Hi-Fi Layer 1)
-   A commanding, crisp white melamine drafting board holding all modules.
-   Sharp 3px carbon border and hard 5px drop shadow. */
+/* The SHELL — Flattened direct grid mount (Kill the Russian Doll)
+   Removes the outer bounding card wrapper so module grid cards
+   mount directly to the tactile desk surface without nested border framing. */
 .dashboard-shell {
-  background: var(--surface-mat);
-  border: 3px solid var(--ink-carbon, #121212);
-  border-radius: 10px;
-  padding: clamp(1rem, 2vw, 1.6rem);
-  box-shadow: var(--shadow-board, 5px 5px 0px #121212);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
   position: relative;
+  width: 100%;
 }
 
-/* Mobile: clean tactile container with compact padding */
+/* Mobile: clean tactile container with zero outer bounding card */
 @media (max-width: 768px) {
   .dashboard-shell {
-    background: var(--surface-mat);
-    border: 2px solid var(--ink-carbon, #121212);
-    border-radius: 8px;
-    box-shadow: 3px 3px 0px #121212;
-    padding: 0.6rem;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
   }
 }
 
@@ -3799,11 +3817,11 @@ h6,
 
 .dashboard-card {
   /* Tokyo Hi-Fi Layer 2: Modular Index Stock
-     Resting cleanly on the melamine board with crisp carbon line work. */
-  background: var(--surface-paper, #FCFBF9);
+     Resting cleanly on the desk surface with crisp carbon line work. */
+  background: var(--surface-card, #FDFBF7);
   border-radius: var(--border-radius-sm, 8px);
-  border: 2px solid var(--ink-carbon, #121212);
-  box-shadow: var(--shadow-card, 3px 3px 0px #121212);
+  border: 2px solid var(--border-strong, #1A1A1A);
+  box-shadow: var(--shadow-card, 3px 3px 0px var(--border-strong, #1A1A1A));
   height: 100%;
   overflow: hidden;
 }
@@ -3944,12 +3962,11 @@ h6,
 }
 
 .dashboard-card-header {
-  /* Tokyo Hi-Fi: shaded cream header with a crisp carbon rule.
-     No edge-to-edge color flood. Color lives strictly in the stamped index tabs. */
-  background: var(--surface-header);
-  color: var(--ink-carbon, #121212);
+  /* Dedicated subtle fill physically anchoring the header to the module */
+  background: var(--surface-header, #F0EAE1);
+  color: var(--ink-primary, #18181B);
   padding: var(--header-pad-y) var(--header-pad-x);
-  border-bottom: 2px solid var(--ink-carbon, #121212);
+  border-bottom: 1.5px solid var(--border-strong, #1A1A1A);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -3962,7 +3979,7 @@ h6,
   font-size: var(--small-size);
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: var(--ink-carbon, #121212);
+  color: var(--ink-primary, #18181B);
   margin: 0;
   display: inline-flex;
   align-items: center;
@@ -3971,7 +3988,7 @@ h6,
 
 /* Sub-text in the header (e.g. "1 of 4 done") */
 .dashboard-card-header :is(span, small, p):not(.stamped-tab) {
-  color: var(--ink-muted, #6B6860);
+  color: var(--ink-secondary, #52525B);
   font-family: var(--font-mono);
   font-size: 0.78rem;
 }
@@ -3992,10 +4009,10 @@ h6,
   line-height: 1.1;
   padding: 0.22rem 0.5rem;
   border-radius: 3px;
-  border: 1.5px solid var(--ink-carbon, #121212);
-  color: var(--ink-carbon, #121212);
-  background: var(--surface-board);
-  box-shadow: 1px 1px 0px var(--ink-carbon, #121212);
+  border: 1.5px solid var(--border-strong, #1A1A1A);
+  color: var(--ink-primary, #18181B);
+  background: var(--surface-item, #FFFFFF);
+  box-shadow: 1px 1px 0px var(--border-strong, #1A1A1A);
   user-select: none;
 }
 
@@ -4006,22 +4023,27 @@ h6,
 }
 
 .stamped-tab--yellow {
-  background: var(--spot-fluro-yellow, #FFE600);
+  background: #FEF3C7;
+  color: #78350F;
+  border-color: #D97706;
 }
 
 .stamped-tab--pink {
-  background: var(--spot-riso-pink, #FF2A6D);
-  color: #121212;
+  background: #FFE4E6;
+  color: #881337;
+  border-color: #E11D48;
 }
 
 .stamped-tab--orange {
-  background: var(--ink-spritz);
-  color: #121212;
+  background: #FFEDD5;
+  color: #7C2D12;
+  border-color: #EA580C;
 }
 
 .stamped-tab--cyan {
-  background: var(--spot-electric-cyan, #00E5FF);
-  color: #121212;
+  background: #E0F2FE;
+  color: #0369A1;
+  border-color: #0284C7;
 }
 
 .dashboard-card-body {
@@ -4192,33 +4214,18 @@ h6,
   position: relative;
   padding: 0.7rem 0.85rem;
   border-radius: var(--border-radius-sm);
-  /* PLAIN paper (Sept 15). This was color-mix(accent 5%, --surface-card)
-     sitting inside .dashboard-card, which is ALREADY color-mix(accent 5%,
-     #fffdf8) — and .dashboard-card-body sets no background, so it inherits
-     that tint. Two accent mixes over two different creams is how "creamy"
-     turned "beigish". The 2px border + hard offset shadow already make the
-     item read as an object; it needs no colour to do that job. */
-  background: var(--surface-card);
-  border: 2px solid var(--color-border);
-  box-shadow: 2px 2px 0px 0px
-    var(--soft-black); /* Converted inline styles to a clean brutalist shadow */
+  background: var(--surface-item, #FFFFFF);
+  border: 1px solid var(--border-strong, #1A1A1A);
+  box-shadow: 1px 1px 0px var(--border-strong, #1A1A1A);
   transition:
-    transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
     border-color 160ms ease,
     background 160ms ease,
     opacity 160ms ease;
   cursor: pointer;
   font-family: var(--font-mono); /* Force monospace for the card text */
 }
-
-/* Accent spine — the same confident left tick the dashboard card headers
-   carry, one per item. Pending = vivid pop; completed = quiet echo. */
-/* The 4px accent spine is GONE (Sept 15). It echoed the card header's own
-   `border-left: 3px solid var(--color-accent)` one region above it, so each
-   card showed two left accent edges — and six items repeated the inner one
-   six times down a phone-width column. One accent edge per card region (the
-   header) is the motif; six is noise. */
 
 /* Monospace fonts for all inputs, textareas, search and presets in action items */
 .action-item-card textarea,
@@ -4235,42 +4242,44 @@ h6,
 }
 
 .action-item-card:hover {
-  transform: translateY(-2.5px);
-  box-shadow: 5px 5px 0px 0px var(--soft-black);
-  border-color: var(--soft-black);
-  background: var(--surface-card-deep);
+  transform: translateY(-1px);
+  box-shadow: 2px 2px 0px var(--border-strong, #1A1A1A);
+  border-color: var(--border-strong, #1A1A1A);
+  background: var(--surface-item-hover, #F8F5EE);
 }
 
 .action-item-card.is-completed {
-  /* Fade away: done items recede hard — ghostly, smaller, slow soft exhale
-     (the 400ms opacity ride makes checking off feel like a release). */
-  opacity: 0.45;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-accent) 8%, transparent) 0%,
-    var(--surface-card) 100%
-  );
-  border-color: var(--color-border);
+  opacity: 0.55;
+  background: var(--surface-item-hover, #F8F5EE);
+  border-color: var(--border-subtle, #E2DCD2);
   box-shadow: none;
-  transform: scale(0.97);
+  transform: none;
   transition:
-    opacity 400ms ease,
-    transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 400ms ease,
-    background 400ms ease,
-    border-color 400ms ease;
+    opacity 300ms ease,
+    transform 300ms ease,
+    box-shadow 300ms ease,
+    background 300ms ease,
+    border-color 300ms ease;
 }
 
 .action-item-card.is-completed:hover {
-  opacity: 0.85;
-  transform: scale(0.99) translateY(-1px);
-  box-shadow: 2px 2px 0px 0px rgba(30, 23, 20, 0.15);
-  border-color: var(--soft-black);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-accent) 12%, transparent) 0%,
-    var(--surface-card) 100%
-  );
+  opacity: 0.8;
+  transform: translateY(-0.5px);
+  box-shadow: 1px 1px 0px var(--border-strong, #1A1A1A);
+  border-color: var(--border-strong, #1A1A1A);
+}
+
+.action-item-card.is-completed .action-item-description {
+  text-decoration: line-through;
+  opacity: 0.75;
+}
+
+.action-item-card.is-completed :is(.action-person-chip, .action-when-chip, .action-due-chip, .action-tag-chip) {
+  filter: grayscale(1);
+  opacity: 0.65;
+  background: #F3F4F6 !important;
+  color: #6B7280 !important;
+  border-color: #E5E7EB !important;
 }
 
 /* Selected/editing = a calm accent edge. (The rotating conic ring and the
@@ -4400,56 +4409,55 @@ h6,
   transform: translateY(-1px);
 }
 
-/* @person chip — the who is a word wearing its identity color, not a form. */
+/* @person chip — warm amber tint with sharp ink */
 .action-person-chip {
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.5rem;
+  padding: 0.12rem 0.5rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--person-color) 14%, transparent);
-  /* 62%, not 80%: at 80 all EIGHT palette colours fail AA against this chip's
-     own background (3.42-4.36:1) at 12px/700, which is under the large-text
-     exemption. 62 clears every one (4.73-5.72:1) and is the most identity
-     colour that still does. Guarded by core/tests/speaker_contrast_test.ts. */
-  color: color-mix(in srgb, var(--person-color) 62%, var(--soft-black));
+  background: #FEF3C7; /* bg-amber-100 */
+  color: #451A03; /* text-amber-950 */
+  border: 1px solid #FCD34D; /* border-amber-300 */
+  font-family: var(--font-mono);
   font-size: var(--tiny-size);
   font-weight: 700;
+  line-height: 1.3;
 }
 
-/* The when — the third quiet word on the meta line, and the QUIETEST of the
-   three. @person wears an identity colour, #tag wears its own; the when has no
-   identity to wear, so it rides on ink alone. Never a bordered plate: it used
-   to borrow .action-item-chip (2px ink border + hard offset shadow), which made
-   a due date shout exactly as loud as the card holding it — a nag. A date is a
-   note to self, not an alarm. */
+/* The when — warm rose tint with sharp ink */
+.action-due-chip,
 .action-when-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.1rem 0.5rem;
-  border: none;
+  padding: 0.12rem 0.5rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--color-text) 7%, transparent);
-  color: var(--color-text-secondary);
-  font-family: inherit;
+  background: #FFE4E6; /* bg-rose-100 */
+  color: #4C0519; /* text-rose-950 */
+  border: 1px solid #FDA4AF; /* border-rose-300 */
+  font-family: var(--font-mono);
   font-size: var(--tiny-size);
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.3;
   cursor: pointer;
   transition:
     background var(--transition-fast),
+    border-color var(--transition-fast),
     color var(--transition-fast);
 }
+.action-due-chip:hover,
+.action-due-chip:focus-visible,
 .action-when-chip:hover,
 .action-when-chip:focus-visible {
-  background: color-mix(in srgb, var(--color-text) 13%, transparent);
-  color: var(--color-text);
+  background: #FECDD3; /* bg-rose-200 */
+  border-color: #FB7185;
+  color: #4C0519;
 }
-/* The clock is the disambiguator (without it "friday" reads as a #tag), so it
-   stays — but at a whisper. */
-.action-when-chip .fa {
+/* The clock icon inside the when chip */
+.action-when-chip .fa,
+.action-due-chip .fa {
   font-size: 0.85em;
-  opacity: 0.55;
+  opacity: 0.75;
 }
 
 /* The when mini-input — the clock's tiny "any words" field. */
@@ -5199,6 +5207,49 @@ h6,
 }
 
 /* ── ACTION ITEMS — modal & form shared styles ──────────────────── */
+
+/* ===================================================================
+   CENTER QUICK-ACTION MODAL (Rename, Shortcuts, Module Toggle, etc.)
+   Standardized overlay: fit-content up to 85vh ceiling, centered, tactile
+   ================================================================ */
+.modal-content {
+  width: 100%;
+  max-width: 480px;
+  height: fit-content;
+  max-height: 85vh;
+  margin: auto;
+  background: var(--surface-card, #FDFBF7);
+  border: 2px solid var(--border-strong, #1A1A1A);
+  border-radius: 12px;
+  box-shadow: 4px 4px 0px var(--border-strong, #1A1A1A);
+  overflow-y: auto;
+  position: relative;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle, #E2DCD2);
+  background: var(--surface-item, #FFFFFF);
+  color: var(--ink-secondary, #52525B);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all var(--transition-fast, 150ms ease);
+  z-index: 10;
+}
+
+.modal-close-btn:hover {
+  background: var(--surface-item-hover, #F8F5EE);
+  color: var(--ink-primary, #18181B);
+  border-color: var(--border-strong, #1A1A1A);
+}
 
 /* Modal heading inside a dashboard-card panel (delete, clear-done, add-item). */
 .modal-heading {
@@ -6691,34 +6742,33 @@ a:focus-visible {
 }
 
 /* ===================================================================
-   HISTORY DRAWER — slide-out conversation list
+   HISTORY DRAWER — slide-out conversation list (Pattern B Inspector)
    ================================================================ */
 
 /* Backdrop behind the slide-out drawer. */
 .history-drawer-backdrop {
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(18, 18, 18, 0.4);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
 
-/* Drawer shell — a solid panel sliding out from the right. It read as "glass"
-   but at 95% opaque the blur(20px) behind it was invisible; it just re-blurred
-   the whole page under the panel on every frame of the slide-in, which is the
-   most animation-heavy moment it could have picked. The scrim behind
-   (.history-drawer-backdrop, blur 4px) still carries the depth. */
+/* Drawer shell — a solid panel sliding out from the right. */
 .history-drawer-panel {
-  background: rgba(255, 252, 248, 0.97);
-  border-left: 2px solid rgba(0, 0, 0, 0.1);
-  box-shadow: -4px 0 24px rgba(30, 23, 20, 0.12);
+  width: 420px;
+  max-width: 100vw;
+  background: var(--surface-card, #FDFBF7);
+  border-left: 2px solid var(--border-strong, #1A1A1A);
+  box-shadow: -6px 0 24px rgba(18, 18, 18, 0.15);
   display: flex;
   flex-direction: column;
 }
 
-/* Drawer header with warm-rose accent band. */
+/* Drawer header with standard height and anchored header fill. */
 .history-drawer-header {
-  background: var(--accent-rose-wash);
-  border-bottom: 2px solid var(--accent-rose-wash);
-  padding: 1.25rem 1.5rem;
+  background: var(--surface-header, #F0EAE1);
+  border-bottom: 2px solid var(--border-strong, #1A1A1A);
+  padding: 0.75rem 1rem;
+  min-height: 48px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -6727,30 +6777,33 @@ a:focus-visible {
 
 /* "Your Conversations" heading. */
 .history-drawer-title {
+  font-family: var(--font-mono);
+  font-size: var(--small-size, 0.85rem);
   font-weight: 700;
-  font-size: var(--font-size-lg);
-  color: var(--color-text);
-  letter-spacing: -0.01em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-primary, #18181B);
 }
 
 /* Close (✕) button. */
 .history-drawer-close {
-  background: rgba(0, 0, 0, 0.05);
-  border: 2px solid rgba(0, 0, 0, 0.1);
+  background: var(--surface-item, #FFFFFF);
+  border: 1px solid var(--border-subtle, #E2DCD2);
   border-radius: var(--border-radius-sm);
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all var(--transition-medium);
-  color: var(--color-text);
-  font-size: var(--heading-size);
-  font-weight: 600;
+  transition: all var(--transition-fast, 150ms ease);
+  color: var(--ink-secondary, #52525B);
+  font-size: 0.9rem;
 }
 .history-drawer-close:hover {
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--surface-item-hover, #F8F5EE);
+  color: var(--ink-primary, #18181B);
+  border-color: var(--border-strong, #1A1A1A);
   transform: translateY(-1px);
 }
 
@@ -8157,9 +8210,9 @@ a:focus-visible {
   bottom: 0;
   top: 0;
   z-index: calc(var(--z-header) + 5);
-  background: rgba(18, 18, 18, 0.25);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(18, 18, 18, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   opacity: 0;
   pointer-events: none;
   transition: opacity 300ms ease-out;
@@ -8176,18 +8229,14 @@ a:focus-visible {
   right: 0;
   z-index: calc(var(--z-header) + 10);
   display: flex;
-  width: 26rem;
+  width: 420px;
   max-width: 100vw;
   flex-direction: column;
   overflow: hidden;
   top: 0;
-  border-left: 3px solid var(--ink-carbon);
-  /* Frosted vellum. Only paints while open (modal-only blur is allowed). */
-  background: rgba(250, 249, 246, 0.85);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  box-shadow: -10px 0 24px rgba(18, 18, 18, 0.15), -4px 0 0 rgba(18, 18, 18,
-    0.08);
+  border-left: 2px solid var(--border-strong, #1A1A1A);
+  background: var(--surface-card, #FDFBF7);
+  box-shadow: -6px 0 24px rgba(18, 18, 18, 0.15);
   transform: translateX(100%);
   transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -9830,7 +9879,7 @@ html:has(.porch) {
 .porch-action {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 0.6rem;
 }
 

@@ -10,6 +10,7 @@ import { useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import {
   canUndo,
+  type ConversationData,
   conversationData,
   historyDrawerOpen,
   openStoredConversation,
@@ -20,6 +21,7 @@ import {
   flushPendingSave,
   getActiveConversationId,
   getAllConversations,
+  saveConversation,
 } from "../core/storage/localStorage.ts";
 import { sweepOrphanSnapshots } from "@core/storage/exportSnapshots.ts";
 import { sweepOrphans } from "@core/storage/recordingsDB.ts";
@@ -140,6 +142,56 @@ export default function HomeIsland() {
         url.pathname + url.search + url.hash,
       );
       if (!liveSession.value) openStoredConversation(openId);
+    }
+
+    // Import link handling: #import= or ?import= (e.g. from StageType thermal receipt)
+    const importParam = url.searchParams.get("import") ||
+      (window.location.hash.startsWith("#import=")
+        ? window.location.hash.slice(8)
+        : null);
+    if (importParam && !liveSession.value) {
+      try {
+        const rawJson = decodeURIComponent(escape(atob(importParam)));
+        const imported = JSON.parse(rawJson);
+        if (imported?.transcript) {
+          const id = crypto.randomUUID();
+          const title = imported.title || "StageType Session";
+          const newConv: ConversationData = {
+            conversation: {
+              id,
+              title,
+              source: "import",
+              transcript: imported.transcript,
+              created_at: imported.timestamp || new Date().toISOString(),
+            },
+            transcript: {
+              text: imported.transcript,
+              speakers: Array.isArray(imported.speakers)
+                ? imported.speakers
+                : [],
+            },
+            nodes: [],
+            edges: [],
+            actionItems: [],
+            statusUpdates: [],
+            summary: "",
+          };
+          conversationData.value = newConv;
+          saveConversation(newConv);
+          showToast(`Imported "${title}" into ProMapper!`, "success", 4000);
+        }
+      } catch (e) {
+        console.warn("Failed to parse import payload:", e);
+      }
+      url.searchParams.delete("import");
+      const cleanHash = window.location.hash.startsWith("#import=")
+        ? ""
+        : window.location.hash;
+      window.history.replaceState(
+        window.history.state,
+        "",
+        url.pathname + (url.search ? url.search : "") + cleanHash,
+      );
     }
 
     // Orphan sweeps, once per page load. Both were strays: the takes sweep
