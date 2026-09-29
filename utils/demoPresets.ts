@@ -351,158 +351,173 @@ export const DEMO_SAILOR_MOON: ConversationData = {
 };
 
 /* ===================================================================
-   3. MUSHROOM KINGDOM: CASTLE PIPE INFRASTRUCTURE AUDIT
+   3. EVIL WIZARD: OBSIDIAN SPIRE LOGISTICS & BLOOD MOON ALIGNMENT
    =================================================================== */
-const MARIO_TRANSCRIPT =
-  `Mario: Okay, let's-a go. Third time this month Bowser took the castle. What happened to the reinforced drawbridge?
-Toad: We set the bridge traps, but the lava pit had a drainage backup! The Chain Chomp chewed through the titanium chain again!
-Luigi: I told-a you, Mario! The green warp pipe in World 1-2 leads directly into the throne room! Anyone with a spiky shell can bypass security!
-Princess Peach: Honestly, the Koopa Clown Copter plucked me right off the veranda while I was baking a peach tart. The tart burned.
-Mario: Mamma mia. Did Yoshi recover the surveillance tape in World 1-3?
-Toad: Yoshi ate the tape. But he laid an egg with three Fire Flowers inside.
-Mario: Good enough. Luigi, take the underground pipe with the wrench. Toad, stock up on Super Mushrooms. Peach, stay behind the Thwomp wall.
-Princess Peach: Bowser left a note saying 'The Princess is in another castle'. He taped it to the fridge before he even grabbed me.
-Luigi: He's taunting us! And what about the bouncing green shell in hallway 4?
-Mario: I stomped it five minutes ago. Hallway 4 is clear. Let's get our boots on.`;
+const WIZARD_TRANSCRIPT =
+  `Lord Malakor: Silence, fools! Tonight the blood moon crests over Mount Brimstone! Why is the Doom Ray not calibrated? Gorg, I explicitly ordered green obsidian crystal for the central focus array!
+Gorg (Goblin Contractor): Boss, the quarry in the Shadow Realm was backordered on green obsidian. We got you mauve quartz instead. It still shoots a death beam, it's just more pastel.
+Barnaby (Apprentice): Master, also, the dark raven arrived from the Nether Council. They're auditing our minion health insurance again. Apparently skeletons don't qualify for dental because they don't have gums.
+Lord Malakor: Skeletons don't need dental, Barnaby! They are literally just teeth and bone! What about the pit of despair? Has the moat been stocked with carnivorous abyss eels?
+Gorg (Goblin Contractor): We ordered two crates from the trench, but the courier swapped the labels. Right now the moat has forty-eight domestic goldfish.
+Sir Roland (Captive Paladin): (from hanging iron cage) If I may interject, the goldfish are remarkably soothing. Although the dungeon humidity is doing terrible things to my plate armor.
+Lord Malakor: Why is the prisoner offering ergonomic feedback?!
+Barnaby (Apprentice): He makes valid points, Master. Also, did you banish the village of Oakhaven yet?
+Lord Malakor: I turned their mayor into an organic turnip thirty minutes ago. That's handled. But who left their cursed cauldron bubbling on medium-high in the east wing?
+Gorg (Goblin Contractor): That's the goblin stew. It needs to simmer.
+Lord Malakor: Fine. Gorg, reinforce the drawbridge spikes. Barnaby, file the necromancy tax exemption. Roland, quiet down or you're getting turned into a parsnip to keep the mayor company.`;
 
-export const DEMO_MARIO: ConversationData = {
+export const DEMO_EVIL_WIZARD: ConversationData = {
   conversation: {
-    id: "demo-mario-castle",
-    title: "World 1-2 Warp Pipe Vulnerability & Peach Extraction Audit",
+    id: "demo-evil-wizard",
+    title: "Obsidian Spire Blood Moon Alignment & Minion Logistics",
     source: "text",
-    transcript: MARIO_TRANSCRIPT,
+    transcript: WIZARD_TRANSCRIPT,
     created_at: NOW,
   },
   transcript: {
-    text: MARIO_TRANSCRIPT,
-    speakers: ["Mario", "Toad", "Luigi", "Princess Peach"],
+    text: WIZARD_TRANSCRIPT,
+    speakers: [
+      "Lord Malakor",
+      "Gorg (Goblin Contractor)",
+      "Barnaby (Apprentice)",
+      "Sir Roland (Captive Paladin)",
+    ],
   },
   nodes: [
     {
-      id: "mario_n1",
-      label: "World 1-2 Warp Pipe",
-      emoji: "🟢",
-      color: "#5B9E8F",
+      id: "wiz_n1",
+      label: "Blood Moon Doom Ray",
+      emoji: "🔮",
+      color: "#9b5de5",
     },
     {
-      id: "mario_n2",
-      label: "Koopa Clown Copter",
-      emoji: "🛸",
-      color: "#FFE600",
-    },
-    {
-      id: "mario_n3",
-      label: "Burned Peach Tart",
-      emoji: "🥧",
-      color: "#FF8A4C",
-    },
-    {
-      id: "mario_n4",
-      label: "Yoshi's Fire Egg",
-      emoji: "🥚",
+      id: "wiz_n2",
+      label: "Mauve Quartz Death Ray",
+      emoji: "💎",
       color: "#ff6ac2",
     },
     {
-      id: "mario_n5",
-      label: "Fridge Note // Another Castle",
-      emoji: "📜",
-      color: "#EADCC9",
+      id: "wiz_n3",
+      label: "Skeleton Dental Audit",
+      emoji: "💀",
+      color: "#FFE600",
     },
     {
-      id: "mario_n6",
-      label: "Hallway Green Shell",
-      emoji: "🐢",
+      id: "wiz_n4",
+      label: "Moat Domestic Goldfish",
+      emoji: "🐟",
       color: "#00E5FF",
     },
     {
-      id: "mario_n7",
-      label: "Lava Pit Drainage",
-      emoji: "🌋",
-      color: "#FF5522",
+      id: "wiz_n5",
+      label: "Mayor Turned Turnip",
+      emoji: "🥕",
+      color: "#FF8A4C",
+    },
+    {
+      id: "wiz_n6",
+      label: "Paladin Armor Rust",
+      emoji: "⛓️",
+      color: "#EADCC9",
+    },
+    {
+      id: "wiz_n7",
+      label: "East Wing Simmering Stew",
+      emoji: "🍲",
+      color: "#5B9E8F",
     },
   ],
   edges: [
     {
-      id: "mario_e1",
-      source_topic_id: "mario_n1",
-      target_topic_id: "mario_n2",
+      id: "wiz_e1",
+      source_topic_id: "wiz_n1",
+      target_topic_id: "wiz_n2",
       color: "",
     },
     {
-      id: "mario_e2",
-      source_topic_id: "mario_n2",
-      target_topic_id: "mario_n3",
+      id: "wiz_e2",
+      source_topic_id: "wiz_n1",
+      target_topic_id: "wiz_n4",
       color: "",
     },
     {
-      id: "mario_e3",
-      source_topic_id: "mario_n4",
-      target_topic_id: "mario_n6",
+      id: "wiz_e3",
+      source_topic_id: "wiz_n3",
+      target_topic_id: "wiz_n1",
       color: "",
     },
     {
-      id: "mario_e4",
-      source_topic_id: "mario_n1",
-      target_topic_id: "mario_n7",
+      id: "wiz_e4",
+      source_topic_id: "wiz_n4",
+      target_topic_id: "wiz_n6",
       color: "",
     },
     {
-      id: "mario_e5",
-      source_topic_id: "mario_n5",
-      target_topic_id: "mario_n2",
+      id: "wiz_e5",
+      source_topic_id: "wiz_n5",
+      target_topic_id: "wiz_n6",
+      color: "",
+    },
+    {
+      id: "wiz_e6",
+      source_topic_id: "wiz_n7",
+      target_topic_id: "wiz_n1",
       color: "",
     },
   ],
   actionItems: [
     {
-      id: "mario_a1",
-      conversation_id: "demo-mario-castle",
-      description: "Neutralize kinetic green shell bouncing in hallway 4",
-      assignee: "Mario",
-      due_date: "immediately",
+      id: "wiz_a1",
+      conversation_id: "demo-evil-wizard",
+      description:
+        "Transfigure village mayor of Oakhaven into an organic turnip",
+      assignee: "Lord Malakor",
+      due_date: "before dusk",
       status: "completed",
       created_at: NOW,
       updated_at: NOW,
       ai_checked: true,
       checked_reason:
-        "Mario confirmed he stomped the green shell five minutes ago and the hallway is clear.",
+        "Lord Malakor confirmed he turned the mayor into a turnip thirty minutes ago.",
     },
     {
-      id: "mario_a2",
-      conversation_id: "demo-mario-castle",
-      description: "Plumb and cap unauthorized warp pipe in World 1-2",
-      assignee: "Luigi",
-      due_date: "today",
+      id: "wiz_a2",
+      conversation_id: "demo-evil-wizard",
+      description: "Replace moat goldfish with flesh-eating abyss eels",
+      assignee: "Gorg",
+      due_date: "tomorrow",
       status: "pending",
       created_at: NOW,
       updated_at: NOW,
     },
     {
-      id: "mario_a3",
-      conversation_id: "demo-mario-castle",
-      description: "Stock castle reserve with Super Mushrooms and Fire Flowers",
-      assignee: "Toad",
-      due_date: "this afternoon",
-      status: "pending",
-      created_at: NOW,
-      updated_at: NOW,
-    },
-    {
-      id: "mario_a4",
-      conversation_id: "demo-mario-castle",
-      description: "Install reinforced Thwomp barrier along kitchen veranda",
-      assignee: "Toad",
+      id: "wiz_a3",
+      conversation_id: "demo-evil-wizard",
+      description:
+        "Dispute Nether Council skeleton dental denial with anatomical proof",
+      assignee: "Barnaby",
       due_date: "this week",
       status: "pending",
       created_at: NOW,
       updated_at: NOW,
     },
     {
-      id: "mario_a5",
-      conversation_id: "demo-mario-castle",
-      description: "Bake fresh replacement peach tart for the victory banquet",
-      assignee: "Peach",
+      id: "wiz_a4",
+      conversation_id: "demo-evil-wizard",
+      description: "Calibrate mauve quartz focus prism for pastel death beam",
+      assignee: "Gorg",
       due_date: "tonight",
+      status: "pending",
+      created_at: NOW,
+      updated_at: NOW,
+    },
+    {
+      id: "wiz_a5",
+      conversation_id: "demo-evil-wizard",
+      description:
+        "Provide anti-rust buffing wax to captive paladin in iron cage",
+      assignee: "Barnaby",
+      due_date: "whenever",
       status: "pending",
       created_at: NOW,
       updated_at: NOW,
@@ -510,17 +525,18 @@ export const DEMO_MARIO: ConversationData = {
   ],
   statusUpdates: [
     {
-      id: "mario_a1",
-      description: "Neutralize kinetic green shell bouncing in hallway 4",
+      id: "wiz_a1",
+      description:
+        "Transfigure village mayor of Oakhaven into an organic turnip",
       status: "completed",
       reason:
-        "Mario confirmed he stomped the green shell five minutes ago and the hallway is clear.",
+        "Lord Malakor confirmed he turned the mayor into a turnip thirty minutes ago.",
     },
   ],
   summary:
-    "The Mushroom Kingdom council conducts an incident review following Princess Peach's third kidnapping this month via an unpermitted Koopa Copter veranda breach. A major architectural flaw was confirmed in the World 1-2 green warp pipe, which bypasses all outer moat and lava defenses directly into the throne room. Mario has already cleared hallway 4 of kinetic shell hazards.",
+    "Lord Malakor convenes an emergency tower sync in the Obsidian Spire ahead of tonight's blood moon alignment. Hardware compromises were forced across the lair: the Doom Ray has been fitted with mauve quartz due to supply shortages in the Shadow Realm, and the moat is currently populated by forty-eight domestic goldfish instead of abyss eels. Sir Roland continues to critique dungeon acoustics and humidity from his suspended iron cage, while the mayor of Oakhaven has already been neutralized via root-vegetable transfiguration.",
   notes:
-    "Yoshi consumed the security tape but produced three Fire Flowers. Bowser's 'another castle' memo was pre-printed and affixed to the refrigerator.",
+    "Nether Council claims skeleton legions ineligible for dental coverage due to lack of gums. East wing cursed goblin stew left unattended on medium-high.",
 };
 
 /* ===================================================================
@@ -714,7 +730,7 @@ export const DEMO_DUSTY: ConversationData = {
 export const ALL_DEMOS: readonly ConversationData[] = [
   DEMO_T2,
   DEMO_SAILOR_MOON,
-  DEMO_MARIO,
+  DEMO_EVIL_WIZARD,
   DEMO_DUSTY,
 ];
 

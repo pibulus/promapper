@@ -737,7 +737,7 @@ export default function UploadIsland(
                       class="mapper-sample-take-btn"
                       onClick={handleRollDemo}
                       disabled={primaryDisabled.value || isRollingDemo.value}
-                      title="Roll a random pop-culture board: Terminator 2, Sailor Moon, Mario, or Dusty Gulch"
+                      title="Roll a random pop-culture board: Terminator 2, Sailor Moon, Evil Wizard, or Dusty Gulch"
                     >
                       <span class="sample-icon" aria-hidden="true">🎲</span>
                       <span>Roll a sample take</span>

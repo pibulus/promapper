@@ -4,7 +4,7 @@
  * Randomly rolls one of our rich pop-culture or twisted narrative boards:
  * - Terminator 2: Cyberdyne Raid
  * - Sailor Moon: Tokyo Exam Prep
- * - Mushroom Kingdom: World 1-2 Pipe Audit
+ * - Evil Wizard: Obsidian Spire Logistics
  * - Dusty Gulch: The Prize Pig Biting Incident
  *
  * Saves it straight into localStorage and bounces to the dashboard,
@@ -23,7 +23,7 @@ export default function DemoSeedIsland() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Check if a specific preset was requested via ?preset=t2 | sailor | mario | dusty
+    // Check if a specific preset was requested via ?preset=t2 | sailor | wizard | dusty
     const params = new URLSearchParams(window.location.search);
     const presetParam = params.get("preset")?.toLowerCase();
 
