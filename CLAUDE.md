@@ -267,11 +267,13 @@ Adding a tool should be drop-a-file + register-a-line:
 - **The porch is two screens with a membrane** (Sept 25, Tokyo pass Sept 28):
   screen one is hit-record-and-go on the DESK (no card at any width; the gist
   with the spritz mic level on its right, the paste tray under both); screen two
-  is `components/PorchTable.tsx`, the /example board laid out on the BOARD (the
-  dashboard's warm mat under a 3px carbon rim) as fun-size specimens that reuse
-  the REAL card classes. The membrane is native CSS scroll snap scoped by
-  `html:has(.porch)`; no JS, no reveal animations. `/` never auto-restores, so
-  /example opens its board via `/?open=<id>` → `openStoredConversation()`.
+  is `components/PorchTable.tsx`, the /example board laid out under an airy aqua
+  SKY (`--surface-sky`, full-bleed below a 3px carbon rim; Pablo's pick, Sept
+  28) as fun-size specimens that reuse the REAL card classes. The porch sits
+  OUTSIDE `<main>`'s centred grid so that sky can bleed edge to edge via
+  negative margins (never 100vw). The membrane is native CSS scroll snap scoped
+  by `html:has(.porch)`; no JS, no reveal animations. `/` never auto-restores,
+  so /example opens its board via `/?open=<id>` → `openStoredConversation()`.
 - **The ground is NOT theme-driven** (Sept 28): `.mapper-scene` paints the
   static Tokyo desk (`--surface-desk`) on every page. SHUFFLE rolls tint
   accents, plates and hearts only; `--gradient-bg` now feeds nothing but

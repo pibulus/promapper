@@ -1057,6 +1057,52 @@ export default function HomeIsland() {
             while header/footer chrome sat at ~24px. */
         }
         <main class="app-scroll flex-1 overflow-y-auto px-4 pt-4 sm:px-6">
+          {
+            /* THE PORCH — two screens with a membrane between them (scroll
+              snap, styles.css). Screen one is hit-record-and-go on the desk;
+              screen two is one finished board laid out under an aqua sky. It
+              lives OUTSIDE the centred grid so the second screen's sky can
+              bleed edge to edge (negative margins into <main>'s gutter — no
+              100vw, so no stray horizontal scrollbar). The stage's lip is the
+              second screen's own edge peeking up, so it announces itself
+              without a word. Only while there's no data and nothing brewing. */
+          }
+          {!conversationData.value && !processingConversation.value && (
+            <div class="porch">
+              <section class="mapper-stage" id="porch">
+                <div class="mapper-hero">
+                  <h1 class="mapper-hero-title">
+                    {heroLines.map((line, lineIndex) => (
+                      <span
+                        class="mapper-hero-line"
+                        key={line}
+                        style={{ animationDelay: `${lineIndex * 140}ms` }}
+                      >
+                        {line}
+                      </span>
+                    ))}
+                  </h1>
+                  {
+                    /* The two subtitle lines ride INTO the capture row, so
+                      the mic sits on their right, level with them. */
+                  }
+                  <UploadIsland>
+                    <p class="mapper-hero-desc">
+                      {i18n.heroDesc}
+                    </p>
+                    <p class="mapper-hero-caption">
+                      {i18n.heroCaption}
+                    </p>
+                  </UploadIsland>
+                </div>
+                <a href="#table" class="porch-cue">
+                  {i18n.porchCue}
+                  <i class="fa fa-chevron-down" aria-hidden="true"></i>
+                </a>
+              </section>
+              <PorchTable />
+            </div>
+          )}
           <div
             class={`max-w-7xl mx-auto grid gap-4 sm:gap-6 ${
               conversationData.value
@@ -1066,51 +1112,6 @@ export default function HomeIsland() {
                 : ""
             }`}
           >
-            {
-              /* THE PORCH — two screens with a membrane between them (scroll
-                snap, styles.css). Screen one is hit-record-and-go, standing
-                straight on the sky; screen two is one finished board laid out
-                on the table. The stage's bottom lip is the table's own edge
-                peeking up, so the second screen announces itself without a
-                word. Only while there's no data and nothing brewing. */
-            }
-            {!conversationData.value && !processingConversation.value && (
-              <div class="porch">
-                <section class="mapper-stage" id="porch">
-                  <div class="mapper-hero">
-                    <h1 class="mapper-hero-title">
-                      {heroLines.map((line, lineIndex) => (
-                        <span
-                          class="mapper-hero-line"
-                          key={line}
-                          style={{ animationDelay: `${lineIndex * 140}ms` }}
-                        >
-                          {line}
-                        </span>
-                      ))}
-                    </h1>
-                    {
-                      /* The two subtitle lines ride INTO the capture row, so
-                        the mic sits on their right, level with them. */
-                    }
-                    <UploadIsland>
-                      <p class="mapper-hero-desc">
-                        {i18n.heroDesc}
-                      </p>
-                      <p class="mapper-hero-caption">
-                        {i18n.heroCaption}
-                      </p>
-                    </UploadIsland>
-                  </div>
-                  <a href="#table" class="porch-cue">
-                    {i18n.porchCue}
-                    <i class="fa fa-chevron-down" aria-hidden="true"></i>
-                  </a>
-                </section>
-                <PorchTable />
-              </div>
-            )}
-
             {
               /* Dashboard — also rendered while the first process brews:
               DashboardIsland's no-data branch is the skeleton, so loading

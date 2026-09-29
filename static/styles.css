@@ -88,6 +88,26 @@
     var(--mat-mid) 60%,
     var(--mat-deep) 100%
   );
+  /* Below the porch's membrane: an airy aqua SKY (Pablo, Sept 28 — "an airy,
+     lush aqua sky kinda fade", sampled from the aqua roll he pointed at).
+     Mint from the top-left, cyan leaning in from the top-right, thinning to
+     pale sky at the floor. The warm desk above + this cool sky below makes
+     crossing the membrane a hue flip, with the cream index cards floating on
+     it. */
+  --sky-mint: #c4ede7;
+  --sky-cyan: #cdedf7;
+  --sky-mist: #d6f1f4;
+  --sky-floor: #e2f3fa;
+  --surface-sky: radial-gradient(
+    ellipse 70% 60% at 94% 0%,
+    var(--sky-cyan) 0%,
+    transparent 72%
+  ), linear-gradient(
+    180deg,
+    var(--sky-mint) 0%,
+    var(--sky-mist) 48%,
+    var(--sky-floor) 100%
+  );
   --surface-paper: #fff9f0;
   --surface-header: #fdefdd;
   --surface-vellum: rgba(250, 249, 246, 0.90);
@@ -1112,11 +1132,10 @@ h6,
   --porch-footer: calc(2.25rem + env(safe-area-inset-bottom, 0px));
   /* How much of the table shows above the footer before any scrolling. */
   --porch-peek: 0.85rem;
-  /* Tokyo layering: screen one is the DESK (Layer 0, the scene's Aperol
-     haze); crossing the membrane steps onto the BOARD — the dashboard's own
-     warm mat (Layer 1) under its 3px carbon rim — where the specimens lie
-     as index cards (Layer 2). A material change, not a colour trick. */
-  --table-ground: var(--mat-light);
+  /* Screen one is the warm DESK (the scene's Aperol haze); crossing the
+     membrane — a 3px carbon rim — drops into a cool aqua SKY where the
+     specimens float as Tokyo index cards. The lip wears the sky's top. */
+  --table-ground: var(--sky-mint);
   font-family: var(--font-display);
 }
 
@@ -9662,20 +9681,26 @@ html:has(.porch) {
   /* Top: clear of the footer + peek at scroll 0, so the heading never shows
      through the (97%-opaque) footer as a ghost before the membrane's
      crossed. Bottom: clear of the footer once it has been. */
-  padding: calc(var(--porch-footer) + var(--porch-peek) + 0.75rem) 0
+  padding-block: calc(var(--porch-footer) + var(--porch-peek) + 0.75rem)
     calc(var(--porch-footer) + clamp(1rem, 3vh, 2rem));
-  /* Full-bleed BOARD: the dashboard's 3px carbon rim along the top edge,
-     then its warm mat deepening toward the bottom (the mat's own stops as a
-     sheet), painted past the centred column by border-image OUTSET. That's
-     ink overflow — unlike a 100vw pseudo-element it can't give <main>
-     (overflow-y:auto, so x auto too) a horizontal scrollbar. */
-  border-image: linear-gradient(
-    var(--ink-carbon) 0 3px,
-    var(--mat-light) 3px,
-    var(--mat-mid) 60%,
-    var(--mat-deep)
-  )
-    fill 0 / 0 / 0 100vw;
+  /* Full-bleed SKY, edge to edge: negative margins reach into <main>'s own
+     gutter (px-4, sm:px-6) — never 100vw, which counts the scrollbar and
+     would give <main> (overflow-y:auto, so x auto too) a sideways scroll.
+     The padding puts the content back on the dashboard's 80rem column. */
+  --porch-gutter: 1rem;
+  margin-inline: calc(-1 * var(--porch-gutter));
+  padding-inline: calc(
+    var(--porch-gutter) + max(0px, (100% - 80rem) / 2)
+  );
+  background: var(--surface-sky);
+  /* The membrane itself: the dashboard board's 3px carbon rim. */
+  border-top: 3px solid var(--ink-carbon);
+}
+
+@media (min-width: 640px) {
+  .porch-table {
+    --porch-gutter: 1.5rem;
+  }
 }
 
 .porch-table__head {
