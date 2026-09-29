@@ -406,14 +406,21 @@ export default function MobileHistoryMenu() {
       >
         {/* Header */}
         <div class="history-drawer-header">
-          <h2 class="history-drawer-title">Your Conversations</h2>
-          <button
-            onClick={() => (isOpen.value = false)}
-            class="history-drawer-close"
-            aria-label="Close history"
-          >
-            <i class="fa fa-xmark" aria-hidden="true"></i>
-          </button>
+          <div class="inline-flex items-center gap-2">
+            <span class="stamped-tab stamped-tab--yellow">
+              HISTORY // SAVED
+            </span>
+          </div>
+          <div class="card-header-actions">
+            <button
+              type="button"
+              onClick={() => (isOpen.value = false)}
+              class="history-drawer-close"
+              aria-label="Close history"
+            >
+              <i class="fa fa-xmark" aria-hidden="true"></i>
+            </button>
+          </div>
         </div>
 
         {/* New Conversation Button */}

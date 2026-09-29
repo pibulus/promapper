@@ -57,6 +57,7 @@ export default function TranscriptCard(
           </div>
           <div class="card-header-actions">
             <button
+              type="button"
               onClick={() =>
                 transcript?.text && openReader({
                   title: "Transcript",
@@ -74,6 +75,7 @@ export default function TranscriptCard(
               <i class="fa fa-up-right-and-down-left-from-center text-sm"></i>
             </button>
             <button
+              type="button"
               onClick={() =>
                 transcript?.text && copyToClipboard(transcript.text)}
               class="cursor-pointer"

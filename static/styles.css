@@ -4025,25 +4025,21 @@ h6,
 .stamped-tab--yellow {
   background: #FEF3C7;
   color: #78350F;
-  border-color: #D97706;
 }
 
 .stamped-tab--pink {
   background: #FFE4E6;
   color: #881337;
-  border-color: #E11D48;
 }
 
 .stamped-tab--orange {
   background: #FFEDD5;
   color: #7C2D12;
-  border-color: #EA580C;
 }
 
 .stamped-tab--cyan {
   background: #E0F2FE;
   color: #0369A1;
-  border-color: #0284C7;
 }
 
 .dashboard-card-body {
@@ -6787,24 +6783,29 @@ a:focus-visible {
 
 /* Close (✕) button. */
 .history-drawer-close {
-  background: var(--surface-item, #FFFFFF);
-  border: 1px solid var(--border-subtle, #E2DCD2);
-  border-radius: var(--border-radius-sm);
-  width: 32px;
-  height: 32px;
-  display: flex;
+  background: var(--surface-board);
+  border: 1.5px solid var(--border-strong, #1A1A1A);
+  border-radius: 3px;
+  box-shadow: 1.5px 1.5px 0px var(--border-strong, #1A1A1A);
+  width: 1.85rem;
+  height: 1.85rem;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all var(--transition-fast, 150ms ease);
-  color: var(--ink-secondary, #52525B);
+  transition: transform 80ms ease, box-shadow 80ms ease, background 120ms ease;
+  color: var(--ink-carbon, #121212);
   font-size: 0.9rem;
 }
 .history-drawer-close:hover {
-  background: var(--surface-item-hover, #F8F5EE);
-  color: var(--ink-primary, #18181B);
-  border-color: var(--border-strong, #1A1A1A);
-  transform: translateY(-1px);
+  background: var(--spot-fluro-yellow, #FFE600);
+  color: #121212;
+  transform: translate(-0.5px, -0.5px);
+  box-shadow: 2px 2px 0px var(--border-strong, #1A1A1A);
+}
+.history-drawer-close:active {
+  transform: translate(1px, 1px);
+  box-shadow: 0px 0px 0px var(--border-strong, #1A1A1A);
 }
 
 /* "New Conversation" slab button. */
@@ -8252,14 +8253,11 @@ a:focus-visible {
 }
 
 .export-drawer-close-btn {
-  color: inherit;
+  color: var(--ink-carbon, #121212);
   cursor: pointer;
-  transition: color var(--transition-fast), transform var(--transition-fast);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: none;
-  background: transparent;
   position: relative;
   font-size: 1rem;
 }

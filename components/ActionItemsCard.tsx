@@ -733,7 +733,7 @@ export default function ActionItemsCard(
         <div class="dashboard-card action-items-card">
           <div class="dashboard-card-header">
             <div class="inline-flex items-center gap-2">
-              <span class="stamped-tab stamped-tab--pink">03 // ACTIONS</span>
+              <span class="stamped-tab stamped-tab--orange">03 // ACTIONS</span>
             </div>
             {
               /* card-header-actions like every other card — this header used
@@ -745,7 +745,6 @@ export default function ActionItemsCard(
                 onClick={() => sendToZipList(visibleItems.value)}
                 onMouseEnter={soundHover}
                 data-tip="Send to ZipList"
-                data-tip-align="right"
                 aria-label="Send action items to ZipList"
                 disabled={visibleItems.value.length === 0}
               >
@@ -753,16 +752,17 @@ export default function ActionItemsCard(
               </button>
               {!readOnly && (
                 <button
+                  type="button"
                   onClick={cycleSort}
                   onMouseEnter={soundHover}
                   aria-label="Reorder tasks — newest, oldest, or shuffled"
                   data-tip="Sort: newest / oldest / shuffle"
-                  data-tip-align="right"
                 >
                   <i class="fa fa-arrow-down-wide-short" aria-hidden="true"></i>
                 </button>
               )}
               <button
+                type="button"
                 onClick={toggleSearch}
                 onMouseEnter={soundHover}
                 aria-label={searchOpen.value ? "Close search" : "Search tasks"}

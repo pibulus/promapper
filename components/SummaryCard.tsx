@@ -59,6 +59,7 @@ export default function SummaryCard(
           </div>
           <div class="card-header-actions">
             <button
+              type="button"
               onClick={() =>
                 summary && openReader({
                   title: "Summary",
@@ -72,9 +73,11 @@ export default function SummaryCard(
               <i class="fa fa-up-right-and-down-left-from-center text-sm"></i>
             </button>
             <button
+              type="button"
               onClick={() => summary && copyToClipboard(summary)}
               class="cursor-pointer"
               data-tip="Copy summary"
+              data-tip-align="right"
               aria-label="Copy summary"
               disabled={!summary}
             >

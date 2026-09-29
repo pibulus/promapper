@@ -34,6 +34,7 @@ export default function TranscriptBack(
         </div>
         <div class="card-header-actions">
           <button
+            type="button"
             onClick={() => text && copyToClipboard(text)}
             class="cursor-pointer"
             data-tip="Copy transcript"
