@@ -3,9 +3,13 @@ import type { ComponentChildren } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 import {
   conversationData,
+  openStoredConversation,
   pendingAudio,
   processingConversation,
 } from "@signals/conversationStore.ts";
+import { saveConversation } from "@core/storage/localStorage.ts";
+import { getRandomDemo } from "../utils/demoPresets.ts";
+import TactileLoader from "../components/TactileLoader.tsx";
 import { startJournal, type TakeJournal } from "@core/storage/takeJournal.ts";
 import {
   letGoOfPendingAudio,
@@ -41,6 +45,7 @@ export default function UploadIsland(
   const lastUploadName = useSignal("");
   const selectedFile = useSignal<File | null>(null);
   const isDragActive = useSignal(false);
+  const isRollingDemo = useSignal(false);
 
   // Live Deepgram transcription signals
   const liveTranscript = useSignal("");
@@ -310,6 +315,19 @@ export default function UploadIsland(
     analyserRef.current = null;
     unsubsRef.current.forEach((fn) => fn());
     unsubsRef.current = [];
+  }
+
+  function handleRollDemo() {
+    if (isRollingDemo.value || isProcessing.value) return;
+    isRollingDemo.value = true;
+    soundBloom();
+    const demo = getRandomDemo();
+    saveConversation(demo);
+    setTimeout(() => {
+      openStoredConversation(demo.conversation.id);
+      isRollingDemo.value = false;
+      showToast(`🎲 Rolled: ${demo.conversation.title}`);
+    }, 1200);
   }
 
   async function processLiveTranscript(text: string, audioBlob?: Blob) {
@@ -712,6 +730,19 @@ export default function UploadIsland(
                       {i18n.lastUpload} {lastUploadName.value}
                     </span>
                   )}
+
+                  {!selectedFile.value && !hasText.value && (
+                    <button
+                      type="button"
+                      class="mapper-sample-take-btn"
+                      onClick={handleRollDemo}
+                      disabled={primaryDisabled.value || isRollingDemo.value}
+                      title="Roll a random pop-culture board: Terminator 2, Sailor Moon, Mario, or Dusty Gulch"
+                    >
+                      <span class="sample-icon" aria-hidden="true">🎲</span>
+                      <span>Roll a sample take</span>
+                    </button>
+                  )}
                 </>
               )}
           </div>
@@ -867,6 +898,11 @@ export default function UploadIsland(
         ref={fileInputRef}
         onChange={handleAudioUpload}
         style={{ display: "none" }}
+      />
+
+      <TactileLoader
+        isOpen={isProcessing.value || isRollingDemo.value}
+        demoMode={isRollingDemo.value}
       />
     </div>
   );

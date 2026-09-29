@@ -44,6 +44,7 @@ import {
   stopLiveSync,
 } from "@signals/liveSync.ts";
 import ChatPanel from "../components/ChatPanel.tsx";
+import TactileLoader from "../components/TactileLoader.tsx";
 import { sendTranscriptChunk } from "@signals/partyService.ts";
 import {
   flushLiveAnalysis,
@@ -1292,6 +1293,11 @@ export default function HomeIsland() {
 
       {/* Supporter & Pricing Modal */}
       <SupporterModal />
+
+      {/* Tactile In-Between Loader for subsequent takes */}
+      <TactileLoader
+        isOpen={processingConversation.value && !!conversationData.value}
+      />
     </div>
   );
 }

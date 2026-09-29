@@ -23,6 +23,7 @@ import * as $api_square_webhook from "./routes/api/square/webhook.ts";
 import * as $api_supporter_checkout from "./routes/api/supporter/checkout.ts";
 import * as $api_supporter_checkout_checkoutId_ from "./routes/api/supporter/checkout/[checkoutId].ts";
 import * as $api_supporter_redeem from "./routes/api/supporter/redeem.ts";
+import * as $demo from "./routes/demo.tsx";
 import * as $dev_colors from "./routes/dev/colors.tsx";
 import * as $dev_nodemap from "./routes/dev/nodemap.tsx";
 import * as $dnd from "./routes/dnd.tsx";
@@ -96,6 +97,7 @@ const manifest = {
     "./routes/api/supporter/checkout/[checkoutId].ts":
       $api_supporter_checkout_checkoutId_,
     "./routes/api/supporter/redeem.ts": $api_supporter_redeem,
+    "./routes/demo.tsx": $demo,
     "./routes/dev/colors.tsx": $dev_colors,
     "./routes/dev/nodemap.tsx": $dev_nodemap,
     "./routes/dnd.tsx": $dnd,
