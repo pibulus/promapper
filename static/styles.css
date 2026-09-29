@@ -94,20 +94,47 @@
      pale sky at the floor. The warm desk above + this cool sky below makes
      crossing the membrane a hue flip, with the cream index cards floating on
      it. */
-  --sky-mint: #c4ede7;
-  --sky-cyan: #cdedf7;
-  --sky-mist: #d6f1f4;
-  --sky-floor: #e2f3fa;
+  /* Sept 28, pass two: "gradientier" and "fade a tad more to white" — lusher
+     mint and cyan pooling in the top corners, thinning to a near-white floor
+     (never #fff) by about three-quarters of the way down. */
+  --sky-mint: #bfe9e3;
+  --sky-cyan: #bfe6f6;
+  --sky-mist: #d6f0f3;
+  --sky-haze: #eef9fa;
+  --sky-floor: #fafdfc;
   --surface-sky: radial-gradient(
-    ellipse 70% 60% at 94% 0%,
+    ellipse 75% 65% at 96% -4%,
     var(--sky-cyan) 0%,
     transparent 72%
+  ), radial-gradient(
+    ellipse 65% 55% at 0% -2%,
+    #b2e6dc 0%,
+    transparent 70%
   ), linear-gradient(
     180deg,
     var(--sky-mint) 0%,
-    var(--sky-mist) 48%,
+    var(--sky-mist) 40%,
+    var(--sky-haze) 72%,
     var(--sky-floor) 100%
   );
+  /* Above the membrane, the porch's own SUNRISE — warmer and more of a
+     gradient than the dashboard's Aperol desk (which keeps its own tuning):
+     an apricot sun from the top-right, a peach-rose wash top-left, a honey
+     haze through the middle, all on a peach-to-cream fall. Still airy: the
+     floor is warm near-white. */
+  --surface-dawn: radial-gradient(
+    ellipse 80% 70% at 85% -10%,
+    rgba(255, 140, 80, 0.3),
+    transparent 70%
+  ), radial-gradient(
+    ellipse 70% 60% at 5% 0%,
+    rgba(255, 178, 150, 0.3),
+    transparent 70%
+  ), radial-gradient(
+    ellipse 110% 60% at 50% 65%,
+    rgba(255, 214, 160, 0.24),
+    transparent 78%
+  ), linear-gradient(180deg, #ffe6d6 0%, #ffefe3 55%, #fff8f1 100%);
   --surface-paper: #fff9f0;
   --surface-header: #fdefdd;
   --surface-vellum: rgba(250, 249, 246, 0.90);
@@ -123,6 +150,10 @@
   /* Olivetti / Aperol bitter orange: the map's hero pins, play controls
      and the live-session stamp. */
   --ink-spritz: #FF5522;
+  /* The porch mic's softer cousin (Pablo, Sept 28: spritz read "too heavy an
+     orange" on the landing page — "a tad more mandariney"). Same Aperol
+     family; carbon ink on it is ~8:1. The dashboard keeps spritz. */
+  --ink-mandarin: #FF8A4C;
   /* TalkType's action pink: candy, not riso-red (#FF2A6D read too hot).
      Carbon ink on it is ~6.8:1. */
   --spot-riso-pink: #ff6ac2;
@@ -1114,6 +1145,12 @@ h6,
   overflow: clip;
 }
 
+/* The porch gets its own warmer sunrise over the same desk family (Pablo,
+   Sept 28: "a slightly warmer sunrise gradient, still subtle and airy"). */
+.mapper-scene:has(.porch) {
+  background: var(--surface-dawn);
+}
+
 /* ===================================================================
    THE PORCH — two screens, one membrane.
    Screen one is hit-record-and-go in OPEN AIR at every width: the hero and
@@ -1401,15 +1438,14 @@ h6,
 /* Recording stays WARM — the old blackout panel read as office-tech (and
    near-absolute black besides). Live-ness comes from the accent border,
    the breathing dot, and the bars dancing — not a mode eclipse. */
-/* Live: the same paper tray, lifted onto a SPRITZ slab — Tokyo's ink for
-   record/live, the same as the mic that started it and the dashboard's
-   recording dock. */
+/* Live: the same paper tray, lifted onto a MANDARIN slab — the porch's
+   record ink, the same as the mic that started the take. */
 .mapper-unified-input.is-recording {
   border: 2px solid var(--ink-carbon);
   background: var(--surface-paper);
   color: var(--ink-carbon);
   cursor: default;
-  box-shadow: 4px 4px 0 0 var(--ink-spritz);
+  box-shadow: 4px 4px 0 0 var(--ink-mandarin);
 }
 
 .mapper-unified-input.is-recording textarea {
@@ -1563,8 +1599,8 @@ h6,
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  background: var(--ink-spritz);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--ink-spritz) 60%, transparent);
+  background: var(--ink-mandarin);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--ink-mandarin) 60%, transparent);
   animation: record-breathe 1.6s ease-in-out infinite;
   flex-shrink: 0;
 }
@@ -1601,6 +1637,13 @@ h6,
 
 .mapper-live-pill {
   white-space: nowrap;
+}
+
+/* The porch's live stamp matches the mandarin mic that started the take
+   (two classes to outrank .stamped-tab--orange, which stays spritz for the
+   dashboard's SESSION // ACTIVE). */
+.mapper-live-pill.stamped-tab {
+  background: var(--ink-mandarin);
 }
 
 .mapper-record-mini-viz {
@@ -1727,13 +1770,13 @@ h6,
   justify-content: center;
   min-width: 13rem;
   padding: 1.05rem 2rem;
-  /* Tokyo spot ink: SPRITZ means record — the header's recording state and
-     the dashboard's recording dock already wear it, and this is the same
-     action. Same rim recipe as the table's door (3px carbon, 4px carbon
-     slab, squared 6px corners). Carbon on spritz is ~5.9:1. */
+  /* Tokyo record ink, softened for the porch: MANDARIN, spritz's lighter
+     cousin (Pablo, Sept 28 — spritz read "too heavy an orange" here). Same
+     rim recipe as the table's door (3px carbon, 4px carbon slab, squared 6px
+     corners). Carbon on mandarin is ~8:1. */
   border-radius: 6px;
   border: 3px solid var(--ink-carbon);
-  background: var(--ink-spritz);
+  background: var(--ink-mandarin);
   color: var(--ink-carbon);
   font-size: 1.02rem;
   font-weight: 800;
