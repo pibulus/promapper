@@ -782,10 +782,18 @@ export default function ForceDirectedGraph(
             : "Cluster the map tighter (organic layout)"}
           aria-label="Toggle layout density"
         >
+          {
+            /* Was a pair of resize-diagonal arrows (Sept 29 2026: Pablo
+              couldn't tell this apart from "fit to view"/"fullscreen" at a
+              glance — three arrow-cornered glyphs in one cluster). Swapped
+              for node-shaped icons that actually read as "how the nodes
+              sit," reusing fa-share-nodes/fa-diagram-project (both already
+              in the FA subset elsewhere, so no blank-icon risk). */
+          }
           <i
             class={layoutMode.value === "organic"
-              ? "fa fa-up-right-and-down-left-from-center"
-              : "fa fa-down-left-and-up-right-to-center"}
+              ? "fa fa-share-nodes"
+              : "fa fa-diagram-project"}
             aria-hidden="true"
           >
           </i>

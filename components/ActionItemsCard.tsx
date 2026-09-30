@@ -222,6 +222,9 @@ export default function ActionItemsCard(
   const expandedItemId = useSignal<string | null>(null);
   // The quick-add line's live text (the input at the card's foot).
   const quickAddText = useSignal("");
+  // A dragged text chunk (a key point, a transcript line) is hovering the
+  // card — same drop-zone pattern as MagpieModule.
+  const isDropTarget = useSignal(false);
   // Which item's "when" is being typed inline (the clock's tiny input).
   const editingWhenId = useSignal<string | null>(null);
   // Re-render tick after a tag color re-roll (colors live in localStorage).
@@ -519,13 +522,14 @@ export default function ActionItemsCard(
     );
   }
 
-  // The quiet add row: one sentence in, one item out. @word → assignee,
-  // #tags stay inline. Focus stays in the input for the next one.
-  function submitQuickAdd() {
-    const raw = quickAddText.value.trim();
-    if (!raw) return;
-    const { description, assignee } = parseQuickAdd(raw);
-    if (!description) return;
+  // Shared creation path: one raw sentence in, one item out. @word →
+  // assignee, #tags stay inline. Used by the quick-add row and by dropping
+  // text (a summary line, a key point, a transcript chunk) onto the card.
+  function addItemFromText(raw: string): boolean {
+    const trimmed = raw.trim();
+    if (!trimmed) return false;
+    const { description, assignee } = parseQuickAdd(trimmed);
+    if (!description) return false;
     const now = new Date().toISOString();
     publishItems([...visibleItems.value, {
       id: crypto.randomUUID(),
@@ -538,6 +542,11 @@ export default function ActionItemsCard(
       created_at: now,
       updated_at: now,
     }]);
+    return true;
+  }
+
+  function submitQuickAdd() {
+    if (!addItemFromText(quickAddText.value)) return;
     quickAddText.value = "";
     soundBloom();
   }
@@ -730,7 +739,32 @@ export default function ActionItemsCard(
         spread={70}
       />
       <div class="w-full h-full">
-        <div class="dashboard-card action-items-card">
+        <div
+          class={`dashboard-card action-items-card${
+            isDropTarget.value ? " magpie-card--dropping" : ""
+          }`}
+          onDragOver={(e) => {
+            // preventDefault first: otherwise a read-only shared card isn't a
+            // drop target and the browser navigates the tab to the dropped
+            // text/link instead.
+            e.preventDefault();
+            if (readOnly) return;
+            isDropTarget.value = true;
+          }}
+          onDragLeave={(e) => {
+            const to = e.relatedTarget as Node | null;
+            if (!to || !(e.currentTarget as Node).contains(to)) {
+              isDropTarget.value = false;
+            }
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            isDropTarget.value = false;
+            if (readOnly) return;
+            const text = e.dataTransfer?.getData("text/plain")?.trim();
+            if (text && addItemFromText(text)) soundBloom();
+          }}
+        >
           <div class="dashboard-card-header">
             <div class="inline-flex items-center gap-2">
               <span class="stamped-tab stamped-tab--orange">03 // ACTIONS</span>
@@ -1074,22 +1108,7 @@ export default function ActionItemsCard(
                           )}
                           {!isEditing && (
                             <div class="grid grid-cols-[auto_auto_1fr] gap-2.5 items-start relative z-[2]">
-                              {/* Drag Handle (mouse/pen: press to grab; touch: long-press the row) */}
-                              <div class="flex items-center pt-1">
-                                {canDrag
-                                  ? (
-                                    <i
-                                      class="fa fa-grip-vertical drag-handle"
-                                      title="Drag to reorder"
-                                      onPointerDown={(e) =>
-                                        onHandlePointerDown(e, item.id)}
-                                    >
-                                    </i>
-                                  )
-                                  : <div class="drag-handle-placeholder"></div>}
-                              </div>
-
-                              {/* Checkbox (affordance left-aligned right after drag handle) */}
+                              {/* Checkbox leads the row — the primary affordance. */}
                               <div class="flex items-center pt-1">
                                 <button
                                   type="button"
@@ -1150,6 +1169,21 @@ export default function ActionItemsCard(
                                     </i>
                                   )}
                                 </button>
+                              </div>
+
+                              {/* Drag Handle (mouse/pen: press to grab; touch: long-press the row) */}
+                              <div class="flex items-center pt-1">
+                                {canDrag
+                                  ? (
+                                    <i
+                                      class="fa fa-grip-vertical drag-handle"
+                                      title="Drag to reorder"
+                                      onPointerDown={(e) =>
+                                        onHandlePointerDown(e, item.id)}
+                                    >
+                                    </i>
+                                  )
+                                  : <div class="drag-handle-placeholder"></div>}
                               </div>
 
                               {/* Content */}
@@ -1227,7 +1261,7 @@ export default function ActionItemsCard(
                                 }
                                 {(item.assignee || item.due_date ||
                                   editingWhenId.value === item.id) && (
-                                  <div class="action-item-meta flex items-center gap-2 flex-wrap">
+                                  <div class="action-item-meta flex items-center gap-2 flex-nowrap overflow-x-auto">
                                     {item.assignee && (
                                       <span
                                         class="action-person-chip"

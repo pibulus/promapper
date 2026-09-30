@@ -730,19 +730,6 @@ export default function UploadIsland(
                       {i18n.lastUpload} {lastUploadName.value}
                     </span>
                   )}
-
-                  {!selectedFile.value && !hasText.value && (
-                    <button
-                      type="button"
-                      class="mapper-sample-take-btn"
-                      onClick={handleRollDemo}
-                      disabled={primaryDisabled.value || isRollingDemo.value}
-                      title="Roll a random pop-culture board: Terminator 2, Sailor Moon, Evil Wizard, or Dusty Gulch"
-                    >
-                      <span class="sample-icon" aria-hidden="true">🎲</span>
-                      <span>Roll a sample take</span>
-                    </button>
-                  )}
                 </>
               )}
           </div>
@@ -887,6 +874,22 @@ export default function UploadIsland(
                   <span aria-hidden="true">+</span>
                   <span>{i18n.addFile}</span>
                 </button>
+
+                {!selectedFile.value && !hasText.value && (
+                  <button
+                    type="button"
+                    class="mapper-sample-take-btn"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleRollDemo();
+                    }}
+                    disabled={primaryDisabled.value || isRollingDemo.value}
+                    title="Roll a random pop-culture board: Terminator 2, Sailor Moon, Evil Wizard, or Dusty Gulch"
+                  >
+                    <span class="sample-icon" aria-hidden="true">🎲</span>
+                    <span>or roll a sample take</span>
+                  </button>
+                )}
               </>
             )}
         </div>

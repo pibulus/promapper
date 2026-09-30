@@ -86,7 +86,7 @@ export const moduleRegistry: ModuleEntry[] = [
     name: "Magpie",
     tagline: "A shelf for shiny things — drop files, links, scraps.",
     icon: "fa-gem",
-    size: "medium",
+    size: "small",
     component: MagpieModule,
   },
 ];

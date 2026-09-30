@@ -40,7 +40,7 @@ export const TRANSLATIONS = {
       "A sheriff's third callout this week: a biting, a sinkhole, and bloodwork that came back better than clean.",
     tableTranscriptNote: "Who said what, the way they said it.",
     tableActionsNote:
-      "The to-dos, with who and when. Say it's done in a later take and it ticks itself off.",
+      "The actions, with who and when. Say it's done in a later take and it ticks itself off.",
     tableMapNote: "The threads, and how they tangle.",
     tableLoopAdd: "Next week's take folds into the same map.",
     tableLoopInvite: "A live room puts everyone on one board.",

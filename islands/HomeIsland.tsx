@@ -776,7 +776,7 @@ export default function HomeIsland() {
     ]
     : [
       "01 // READING IT THROUGH…",
-      "02 // PULLING OUT THE TO-DOS…",
+      "02 // PULLING OUT THE ACTIONS…",
       "03 // SKETCHING THE TOPIC MAP…",
       "04 // INKING WHAT CONNECTS…",
       "05 // SETTING THE TABLE…",

@@ -369,12 +369,13 @@
   --soft-cream: #fbf1e4; /* The agreed paper cream — mildly creamy, never white */
   --soft-cream-dark: #f5ebdb; /* Slightly darker cream for subtle inset areas */
 
-  /* Card surface tokens. Default to warm cream (the soul of the 4 warm themes).
-     Cool themes (MINT/LAVENDER) override these in core/theme/themes.ts so cards
-     sit in the same temperature as their page instead of floating warm. All
-     card-surface consumers point at these, so an override propagates everywhere. */
-  --surface-card: var(--soft-cream);
-  --surface-card-deep: var(--soft-cream-dark);
+  /* --surface-card is defined once, above (line 142) — near-white module/panel
+     tier, NOT the beige --soft-cream. This block used to redeclare it to
+     --soft-cream, silently shadowing the near-white value for every module
+     container (Sept 29 2026 fix — Pablo: modules read the same beige as the
+     page). --surface-card-deep stays here as a hover/pressed shade one notch
+     darker than whatever --surface-card resolves to. */
+  --surface-card-deep: color-mix(in srgb, var(--soft-black) 4%, var(--surface-card));
 
   /* ===================================================================
      UNIFIED DESIGN SYSTEM - Typography, Shadows, Surfaces
@@ -4408,22 +4409,30 @@ h6,
   transform: translateY(-1px);
 }
 
-/* @person chip — warm amber tint with sharp ink */
+/* @person chip — carries --person-color (set inline per item, from the same
+   SPEAKER_PALETTE that colors transcript names), NOT a flat hue. Sept 29
+   2026 fix: this used to hardcode amber regardless of --person-color, so
+   every assignee showed the same "cream yellow" chip despite the var
+   already being wired in the JSX — the design note above (Sept 15) always
+   said the chip should wear it, the CSS just never did. */
 .action-person-chip {
   display: inline-flex;
   align-items: center;
   padding: 0.12rem 0.5rem;
   border-radius: 999px;
-  background: #FEF3C7; /* bg-amber-100 */
-  color: #451A03; /* text-amber-950 */
-  border: 1px solid #FCD34D; /* border-amber-300 */
+  background: var(--surface-item-hover);
+  color: var(--person-color, var(--ink-secondary));
+  border: 1px solid
+    color-mix(in srgb, var(--person-color, var(--border-subtle)) 55%,
+    transparent);
   font-family: var(--font-mono);
   font-size: var(--tiny-size);
   font-weight: 700;
   line-height: 1.3;
 }
 
-/* The when — warm rose tint with sharp ink */
+/* The when — quiet ink, no hue (house law: never red/maroon on anything —
+   Pablo's Aug 17 2026 veto — this was a hardcoded rose chip until Sept 29). */
 .action-due-chip,
 .action-when-chip {
   display: inline-flex;
@@ -4431,9 +4440,9 @@ h6,
   gap: 0.3rem;
   padding: 0.12rem 0.5rem;
   border-radius: 999px;
-  background: #FFE4E6; /* bg-rose-100 */
-  color: #4C0519; /* text-rose-950 */
-  border: 1px solid #FDA4AF; /* border-rose-300 */
+  background: var(--surface-item-hover);
+  color: var(--ink-secondary);
+  border: 1px solid var(--border-subtle);
   font-family: var(--font-mono);
   font-size: var(--tiny-size);
   font-weight: 600;
@@ -4448,9 +4457,10 @@ h6,
 .action-due-chip:focus-visible,
 .action-when-chip:hover,
 .action-when-chip:focus-visible {
-  background: #FECDD3; /* bg-rose-200 */
-  border-color: #FB7185;
-  color: #4C0519;
+  background: color-mix(in srgb, var(--soft-black) 8%,
+    var(--surface-item-hover));
+  border-color: var(--ink-muted);
+  color: var(--ink-primary);
 }
 /* The clock icon inside the when chip */
 .action-when-chip .fa,
@@ -10235,39 +10245,45 @@ html:has(.porch) {
   animation: tactile-track-slide 1.5s ease-in-out infinite alternate;
 }
 
-/* Sample Take Button on Hero */
+/* Sample Take — demoted Sept 29 2026 (Pablo: it competed visually with Start
+   Recording as a second hard-bordered slab). Now a quiet text link tucked
+   into the paste tray, bottom-left, opposite the file-add chip — no border,
+   no shadow, just an underline on hover. */
 .mapper-sample-take-btn {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.45rem 0.9rem;
-  background: var(--surface-paper, #fff9f0);
-  border: 2px solid #121212;
-  border-radius: 12px;
+  gap: 0.35rem;
+  padding: 0.3rem 0.4rem;
+  background: none;
+  border: none;
   font-family: var(--font-inter, sans-serif);
-  font-size: 0.8rem;
-  font-weight: 800;
-  color: #121212;
-  box-shadow: 2px 2px 0px #121212;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-muted);
   cursor: pointer;
-  transition: transform var(--transition-fast), box-shadow
-    var(--transition-fast), background var(--transition-fast);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: color var(--transition-fast), text-decoration-color
+    var(--transition-fast);
   white-space: nowrap;
 }
 
-.mapper-sample-take-btn:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0px #121212;
-  background: #ffffff;
+.mapper-sample-take-btn:hover,
+.mapper-sample-take-btn:focus-visible {
+  color: var(--ink-secondary);
+  text-decoration-color: currentColor;
 }
 
-.mapper-sample-take-btn:active {
-  transform: translate(1px, 1px);
-  box-shadow: 0px 0px 0px #121212;
+.mapper-sample-take-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .mapper-sample-take-btn .sample-icon {
-  font-size: 1rem;
+  font-size: 0.9rem;
   display: inline-block;
   animation: tactile-dice-wiggle 3s ease-in-out infinite;
 }
