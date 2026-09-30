@@ -150,7 +150,9 @@
   /* Ink / Text */
   --ink-primary: #18181B; /* Body text, titles */
   --ink-secondary: #52525B; /* Timestamps, word counts, metadata */
-  --ink-muted: #71717A; /* Placeholder text */
+  /* --ink-muted lives below with the Tokyo carbon family (was duplicated
+     here with a different value, #71717A vs #6B6860 — this one was always
+     shadowed by source order, so removed rather than left as dead noise). */
 
   --surface-paper: var(--surface-card);
   --surface-header: #F0EAE1;
@@ -237,10 +239,14 @@
   --tiny-size: 0.75rem;
   --line-height: 1.55;
 
-  /* Shadows - Warm browns (DEPRECATED - use --shadow-* below) */
+  /* Shadows - Warm browns (DEPRECATED - use --shadow-* below).
+     --shadow-card removed from this block Sept 30 2026: it duplicated the
+     real definition above (line ~186, the chunky hard-offset shadow) and,
+     because this deprecated block comes AFTER it in source order, this
+     soft blurred value was the one silently winning on every module card
+     for who knows how long — the "deprecated" comment was lying. */
   --shadow-soft: 0 4px 12px rgba(30, 23, 20, 0.08);
   --shadow-lifted: 0 8px 24px rgba(30, 23, 20, 0.12);
-  --shadow-card: 0 2px 8px rgba(30, 23, 20, 0.06);
   --shadow-xl: 0 20px 40px rgba(30, 23, 20, 0.15);
 
   /* Glassmorphism - Warm cream tint */
@@ -6421,16 +6427,21 @@ a:focus-visible {
   margin: 0.75rem 0;
 }
 
+/* h2's color used to be grouped into the shared rule below as var(--accent-ink),
+   then silently overridden back to var(--color-text) by the h2-only rule that
+   follows it — same-specificity duplicate, later one wins. h2 was never
+   actually accent-colored; this just stops the shared rule from lying about
+   it. Matches h3-h6 below, which are plain --color-text on purpose. */
 .markdown-body h1,
 .markdown-body h2 {
   font-weight: 700;
-  color: var(--accent-ink);
   margin: 1rem 0 0.5rem;
   line-height: 1.3;
 }
 
 .markdown-body h1 {
   font-size: 1.25rem;
+  color: var(--accent-ink);
 }
 
 .markdown-body h2 {
