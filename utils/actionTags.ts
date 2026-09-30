@@ -87,6 +87,21 @@ export function parseQuickAdd(
   return { description, assignee };
 }
 
+// ── Item color dots ───────────────────────────────────────────────────
+//
+// Replaces the typed "when" field (Sept 30 2026 — Pablo: no more arbitrary
+// typed words, just colors people assign their own meaning to). Same idea
+// as NibNab's 5 capture-bucket colors (active/mac/nibnab/Sources/ColorTheme.swift)
+// — reused here verbatim so the color vocabulary matches across the SoftStack
+// family. No fixed labels: a color means whatever the person using it decides.
+export const DOT_COLORS = Object.freeze([
+  "#FFEB3B", // Highlighter Yellow
+  "#f68717", // Highlighter Orange
+  "#f60474", // Highlighter Pink
+  "#8717f6", // Highlighter Purple
+  "#39FF14", // Highlighter Green
+]);
+
 // ── Legacy tag-tint storage ───────────────────────────────────────────
 //
 // #tag chips used to hash into SPEAKER_PALETTE and let a tap re-roll the hue,

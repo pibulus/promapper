@@ -30,7 +30,11 @@ import {
   undoLastMutation,
 } from "@signals/conversationStore.ts";
 import { speakerColor } from "@core/theme/speakerColors.ts";
-import { parseQuickAdd, tokenizeActionText } from "@utils/actionTags.ts";
+import {
+  DOT_COLORS,
+  parseQuickAdd,
+  tokenizeActionText,
+} from "@utils/actionTags.ts";
 import Confetti from "./Confetti.tsx";
 
 /**
@@ -82,6 +86,7 @@ interface ActionItem {
   description: string;
   assignee: string | null;
   due_date: string | null;
+  color?: string | null;
   status: "pending" | "completed";
   created_at: string;
   updated_at: string;
@@ -100,43 +105,6 @@ type AIFlaggedItem = ActionItem & {
   ai_checked?: boolean;
   checked_reason?: string;
 };
-
-/**
- * Parse a YYYY-MM-DD date string at local midnight to avoid UTC offset shifting
- * the displayed day (e.g. "2025-12-01" showing as "Nov 30" in UTC-5 timezones).
- */
-function formatFriendlyDate(dateString: string): string {
-  const [year, month, day] = dateString.split("-").map(Number);
-  const date = new Date(year, month - 1, day); // local midnight, no TZ shift
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const yearSuffix = date.getFullYear() !== new Date().getFullYear()
-    ? ` ${date.getFullYear()}`
-    : "";
-  return `${days[date.getDay()]}, ${
-    months[date.getMonth()]
-  } ${date.getDate()}${yearSuffix}`;
-}
-
-/** "When" is human words. AI extraction still emits real ISO dates — those
- * render friendly; anything typed ("friday", "before the gig") shows as-is. */
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-function formatDue(due: string): string {
-  return ISO_DATE.test(due) ? formatFriendlyDate(due) : due;
-}
 
 /** Sometimes the add row's placeholder quietly teaches the sigils — most
  * mounts it just says "add one…". Hints are seasoning, not signage. */
@@ -199,7 +167,7 @@ export default function ActionItemsCard(
   const editingItemId = useSignal<string | null>(null);
   const editingDescription = useSignal("");
   const editingAssignee = useSignal("");
-  const editingDueDate = useSignal("");
+  const editingColor = useSignal<string | null>(null);
   const triggerConfetti = useSignal(false);
   // Where the last-item confetti bursts FROM — the checkbox that earned it.
   const confettiOrigin = useSignal<{ x: number; y: number } | undefined>(
@@ -225,8 +193,8 @@ export default function ActionItemsCard(
   // A dragged text chunk (a key point, a transcript line) is hovering the
   // card — same drop-zone pattern as MagpieModule.
   const isDropTarget = useSignal(false);
-  // Which item's "when" is being typed inline (the clock's tiny input).
-  const editingWhenId = useSignal<string | null>(null);
+  // Which item's color swatch picker is open (row-level quick picker).
+  const pickingColorId = useSignal<string | null>(null);
   // Re-render tick after a tag color re-roll (colors live in localStorage).
   // Transient "just checked off" id — drives a one-shot checkbox pop. Kept
   // separate from the persistent completed state so it never replays on
@@ -245,7 +213,7 @@ export default function ActionItemsCard(
     {
       description: string;
       assignee: string | null;
-      due_date: string | null;
+      color: string | null;
     } | null
   >(null);
   const selectedItemIndex = useSignal<number>(-1);
@@ -291,7 +259,7 @@ export default function ActionItemsCard(
     } else if (
       current.description !== snapshot.description ||
       (current.assignee || null) !== (snapshot.assignee || null) ||
-      (current.due_date || null) !== (snapshot.due_date || null)
+      (current.color || null) !== (snapshot.color || null)
     ) {
       cancelEdit();
       showToast("That item changed elsewhere — reopen it to edit", "warning");
@@ -409,7 +377,12 @@ export default function ActionItemsCard(
       e.preventDefault();
       const item = renderedItems.value[selectedItemIndex.value];
       if (item) {
-        startEditing(item.id, item.description, item.assignee, item.due_date);
+        startEditing(
+          item.id,
+          item.description,
+          item.assignee,
+          item.color ?? null,
+        );
       }
     }
   };
@@ -555,7 +528,7 @@ export default function ActionItemsCard(
     itemId: string,
     currentDescription: string,
     currentAssignee: string | null,
-    currentDueDate: string | null,
+    currentColor: string | null,
   ) {
     // A shared snapshot is a photo — there's nowhere for an edit to land.
     if (isViewingShared.value) return;
@@ -568,12 +541,12 @@ export default function ActionItemsCard(
     editSnapshotRef.current = {
       description: currentDescription,
       assignee: currentAssignee,
-      due_date: currentDueDate,
+      color: currentColor,
     };
     editingItemId.value = itemId;
     editingDescription.value = currentDescription;
     editingAssignee.value = currentAssignee || "";
-    editingDueDate.value = currentDueDate || "";
+    editingColor.value = currentColor || null;
   }
 
   function saveEdit() {
@@ -596,11 +569,11 @@ export default function ActionItemsCard(
     // around that touches nothing must not stamp updated_at or push a sync.
     const description = editingDescription.value.trim();
     const assignee = editingAssignee.value.trim() || null;
-    const due_date = editingDueDate.value.trim() || null;
+    const color = editingColor.value || null;
     if (
       existing.description === description &&
       (existing.assignee || null) === assignee &&
-      (existing.due_date || null) === due_date
+      (existing.color || null) === color
     ) {
       cancelEdit();
       return;
@@ -612,7 +585,7 @@ export default function ActionItemsCard(
             ...item,
             description,
             assignee,
-            due_date,
+            color,
             updated_at: new Date().toISOString(),
           }
           : item
@@ -628,7 +601,7 @@ export default function ActionItemsCard(
     editingItemId.value = null;
     editingDescription.value = "";
     editingAssignee.value = "";
-    editingDueDate.value = "";
+    editingColor.value = null;
     editSnapshotRef.current = null;
     // Return focus to the row the editor came from — otherwise closing the
     // editor (Esc / Ctrl+Enter) drops keyboard focus onto <body>. Skipped
@@ -644,20 +617,16 @@ export default function ActionItemsCard(
     }
   }
 
-  function updateDueDate(itemId: string, due_date: string | null) {
-    // Same no-change guard saveEdit has, and for the same reason: a look
-    // around that touches nothing must not stamp updated_at or push a sync.
-    // The blur handler fires unconditionally, so without this, opening a
-    // row's clock and tapping away published a new array every time — and
-    // because publishItems routes through withUndo (which arms on reference
-    // change), that silently overwrote a live undo snapshot. Delete an item,
-    // tap a clock, tap away, and the still-visible Undo toast had nothing
-    // left to restore.
+  // Same no-change guard saveEdit has, and for the same reason: a look
+  // around that touches nothing must not stamp updated_at or push a sync
+  // (publishItems routes through withUndo, which arms on reference change —
+  // a no-op write would silently overwrite a live undo snapshot).
+  function setItemColor(itemId: string, color: string | null) {
     const current = visibleItems.value.find((i) => i.id === itemId);
-    if (!current || (current.due_date || null) === (due_date || null)) return;
+    if (!current || (current.color || null) === (color || null)) return;
     const updatedItems = visibleItems.value.map((item) =>
       item.id === itemId
-        ? { ...item, due_date, updated_at: new Date().toISOString() }
+        ? { ...item, color, updated_at: new Date().toISOString() }
         : item
     );
     publishItems(updatedItems);
@@ -1050,32 +1019,34 @@ export default function ActionItemsCard(
                                         class="action-edit-chip-input"
                                       />
                                     </label>
-                                    <label
-                                      class={`action-edit-chip${
-                                        editingDueDate.value.trim()
-                                          ? " has-value"
-                                          : ""
-                                      }`}
+                                    <div
+                                      class="action-color-picker"
+                                      role="group"
+                                      aria-label="Pick a color"
                                     >
-                                      <i
-                                        class="fa fa-clock"
-                                        aria-hidden="true"
-                                      >
-                                      </i>
-                                      <input
-                                        type="text"
-                                        value={editingDueDate.value}
-                                        onInput={(e) => {
-                                          editingDueDate.value = (e
-                                            .target as HTMLInputElement)
-                                            .value;
-                                          soundTick();
-                                        }}
-                                        placeholder="when"
-                                        aria-label="When (any words)"
-                                        class="action-edit-chip-input"
-                                      />
-                                    </label>
+                                      {DOT_COLORS.map((c) => (
+                                        <button
+                                          type="button"
+                                          key={c}
+                                          class={`action-color-swatch${
+                                            editingColor.value === c
+                                              ? " is-selected"
+                                              : ""
+                                          }`}
+                                          style={{ "--dot-color": c }}
+                                          aria-label="Set this item's color"
+                                          onMouseEnter={soundHover}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            editingColor.value =
+                                              editingColor.value === c
+                                                ? null
+                                                : c;
+                                            soundTick();
+                                          }}
+                                        />
+                                      ))}
+                                    </div>
                                   </div>
 
                                   <div class="action-edit-footer">
@@ -1221,7 +1192,7 @@ export default function ActionItemsCard(
                                       item.id,
                                       item.description,
                                       item.assignee,
-                                      item.due_date,
+                                      item.color ?? null,
                                     );
                                   }}
                                   // Full text on hover (truncated rows), native so it wraps.
@@ -1256,11 +1227,14 @@ export default function ActionItemsCard(
 
                                 {
                                   /* Metadata — only what EXISTS renders: the
-                                    person as an @chip, the when as words.
+                                    person as an @chip, the color as a dot.
+                                    No fixed meaning on the color — people
+                                    make up their own rules for it (replaced
+                                    the typed "when" field, Sept 30 2026).
                                     Empty slots show nothing. */
                                 }
-                                {(item.assignee || item.due_date ||
-                                  editingWhenId.value === item.id) && (
+                                {(item.assignee || item.color ||
+                                  pickingColorId.value === item.id) && (
                                   <div class="action-item-meta flex items-center gap-2 flex-nowrap overflow-x-auto">
                                     {item.assignee && (
                                       <span
@@ -1275,57 +1249,52 @@ export default function ActionItemsCard(
                                         @{item.assignee}
                                       </span>
                                     )}
-                                    {editingWhenId.value === item.id
+                                    {pickingColorId.value === item.id
                                       ? (
-                                        <input
-                                          type="text"
-                                          class="action-when-input"
-                                          defaultValue={item.due_date ?? ""}
-                                          placeholder="when? any words"
-                                          aria-label="When (any words)"
-                                          ref={(el) => el?.focus()}
-                                          onKeyDown={(e) => {
-                                            if (e.key === "Enter") {
-                                              updateDueDate(
-                                                item.id,
-                                                (e.target as HTMLInputElement)
-                                                  .value.trim() || null,
-                                              );
-                                              editingWhenId.value = null;
-                                            } else if (e.key === "Escape") {
-                                              editingWhenId.value = null;
-                                            }
-                                          }}
-                                          onBlur={(e) => {
-                                            updateDueDate(
-                                              item.id,
-                                              (e.target as HTMLInputElement)
-                                                .value.trim() || null,
-                                            );
-                                            editingWhenId.value = null;
-                                          }}
-                                        />
+                                        <div
+                                          class="action-color-picker"
+                                          role="group"
+                                          aria-label="Pick a color"
+                                        >
+                                          {DOT_COLORS.map((c) => (
+                                            <button
+                                              type="button"
+                                              key={c}
+                                              class={`action-color-swatch${
+                                                item.color === c
+                                                  ? " is-selected"
+                                                  : ""
+                                              }`}
+                                              style={{ "--dot-color": c }}
+                                              aria-label="Set this item's color"
+                                              onMouseEnter={soundHover}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setItemColor(
+                                                  item.id,
+                                                  item.color === c ? null : c,
+                                                );
+                                                pickingColorId.value = null;
+                                              }}
+                                            />
+                                          ))}
+                                        </div>
                                       )
-                                      : item.due_date && (
+                                      : item.color && (
                                         <button
                                           type="button"
                                           onMouseEnter={soundHover}
-                                          class="action-when-chip"
+                                          class="action-color-dot"
+                                          style={{
+                                            "--dot-color": item.color,
+                                          }}
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            editingWhenId.value = item.id;
+                                            pickingColorId.value = item.id;
                                           }}
-                                          data-tip="Change when"
-                                        >
-                                          <i
-                                            class="fa fa-clock"
-                                            aria-hidden="true"
-                                          >
-                                          </i>
-                                          <span>
-                                            {formatDue(item.due_date)}
-                                          </span>
-                                        </button>
+                                          data-tip="Change color"
+                                          aria-label="Change this item's color"
+                                        />
                                       )}
                                   </div>
                                 )}
@@ -1382,22 +1351,28 @@ export default function ActionItemsCard(
                                   reserved width and starved the words (the
                                   dead-space bug). pointer-events gate in CSS. */
                               }
-                              <div class="action-item-actions">
-                                {!item.due_date &&
+                              <div
+                                class={`action-item-actions${
+                                  pickingColorId.value === item.id
+                                    ? " is-hidden"
+                                    : ""
+                                }`}
+                              >
+                                {!item.color &&
                                   item.status === "pending" && (
                                   <button
                                     type="button"
                                     onMouseEnter={soundHover}
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      editingWhenId.value = item.id;
+                                      pickingColorId.value = item.id;
                                     }}
                                     class="action-item-icon-btn"
-                                    aria-label={`Add a when to "${item.description}"`}
-                                    title="When? (any words)"
+                                    aria-label={`Add a color to "${item.description}"`}
+                                    title="Add a color"
                                   >
                                     <i
-                                      class="fa fa-clock text-xs"
+                                      class="fa fa-circle text-xs"
                                       aria-hidden="true"
                                     >
                                     </i>
@@ -1412,7 +1387,7 @@ export default function ActionItemsCard(
                                       item.id,
                                       item.description,
                                       item.assignee,
-                                      item.due_date,
+                                      item.color ?? null,
                                     );
                                   }}
                                   class="action-item-icon-btn"

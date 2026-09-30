@@ -627,6 +627,13 @@ h6,
   opacity: 1;
   pointer-events: auto;
 }
+/* The color swatch picker needs the room this overlay would otherwise sit
+   on top of — hidden for the row whose picker is open, regardless of
+   hover state. */
+.action-item-actions.is-hidden {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
 /* Feathered scrim so covered words fade out under the buttons instead of
    peeking through the gaps between them. The scrim must match the row's
    ACTUAL background: base rows are accent-tinted, hovered rows deepen —
@@ -4287,7 +4294,7 @@ h6,
   opacity: 0.75;
 }
 
-.action-item-card.is-completed :is(.action-person-chip, .action-when-chip, .action-due-chip, .action-tag-chip) {
+.action-item-card.is-completed :is(.action-person-chip, .action-color-dot, .action-tag-chip) {
   filter: grayscale(1);
   opacity: 0.65;
   background: #F3F4F6 !important;
@@ -4444,59 +4451,56 @@ h6,
   line-height: 1.3;
 }
 
-/* The when — quiet ink, no hue (house law: never red/maroon on anything —
-   Pablo's Aug 17 2026 veto — this was a hardcoded rose chip until Sept 29). */
-.action-due-chip,
-.action-when-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.12rem 0.5rem;
+/* The color dot — replaces the typed "when" field (Sept 30 2026). No fixed
+   meaning: DOT_COLORS (utils/actionTags.ts) is the same 5-hue palette as
+   NibNab's capture buckets, and what each color means is up to whoever's
+   using it. A solid dot once set; click to reopen the swatch picker. */
+.action-color-dot {
+  width: 1.1rem;
+  height: 1.1rem;
   border-radius: 999px;
-  background: var(--surface-item-hover);
-  color: var(--ink-secondary);
-  border: 1px solid var(--border-subtle);
-  font-family: var(--font-mono);
-  font-size: var(--tiny-size);
-  font-weight: 600;
-  line-height: 1.3;
+  border: 2px solid var(--border-strong, #1A1A1A);
+  background: var(--dot-color);
   cursor: pointer;
-  transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast),
-    color var(--transition-fast);
+  padding: 0;
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
 }
-.action-due-chip:hover,
-.action-due-chip:focus-visible,
-.action-when-chip:hover,
-.action-when-chip:focus-visible {
-  background: color-mix(in srgb, var(--soft-black) 8%,
-    var(--surface-item-hover));
-  border-color: var(--ink-muted);
-  color: var(--ink-primary);
-}
-/* The clock icon inside the when chip */
-.action-when-chip .fa,
-.action-due-chip .fa {
-  font-size: 0.85em;
-  opacity: 0.75;
+.action-color-dot:hover,
+.action-color-dot:focus-visible {
+  transform: scale(1.15);
+  outline: none;
 }
 
-/* The when mini-input — the clock's tiny "any words" field. */
-.action-when-input {
-  width: 10rem;
-  max-width: 100%;
-  padding: 0.15rem 0.5rem;
-  border: 2px solid var(--color-border);
-  border-radius: var(--border-radius-sm);
-  background: var(--surface-cream);
-  color: var(--color-text);
-  font-family: inherit;
-  font-size: var(--tiny-size);
+/* The swatch picker — one row of the 5 dots, tap one to set it. Reused
+   as-is (no --inline variant styling needed) inside the row's meta strip
+   and inside the full pencil-edit form. */
+.action-color-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
 }
-.action-when-input:focus-visible {
+.action-color-swatch {
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 999px;
+  border: 2px solid var(--border-strong, #1A1A1A);
+  background: var(--dot-color);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  opacity: 0.55;
+  transition: transform var(--transition-fast), opacity var(--transition-fast);
+}
+.action-color-swatch:hover,
+.action-color-swatch:focus-visible {
+  opacity: 1;
+  transform: scale(1.15);
   outline: none;
-  border-color: var(--color-accent);
+}
+.action-color-swatch.is-selected {
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--surface-card), 0 0 0 4px var(--dot-color);
 }
 
 .action-item-description {
