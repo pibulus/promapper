@@ -801,10 +801,15 @@ export default function MobileHistoryMenu() {
                   padding: "14px 20px",
                   fontSize: "var(--heading-size)",
                   fontWeight: "700",
-                  border: `3px solid var(--color-danger-dark)`,
+                  // Destructive = recession + warm rose wash, never alarm
+                  // red (docs/COLOR-SYSTEM.md standing law) — this used to
+                  // be a solid --color-danger fill, which that same law
+                  // reserves for a class of modal this isn't meant to be.
+                  border:
+                    `3px solid color-mix(in srgb, var(--color-accent) 45%, transparent)`,
                   borderRadius: "12px",
-                  background: "var(--color-danger)",
-                  color: "var(--surface-white-warm)",
+                  background: "var(--accent-rose-wash)",
+                  color: "var(--color-text)",
                   cursor: "pointer",
                   transition: "all var(--transition-medium)",
                   boxShadow: "var(--shadow-md)",

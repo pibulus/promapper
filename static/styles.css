@@ -2855,7 +2855,9 @@ h6,
 .canvas-flip-body .shared-whiteboard,
 .canvas-module-body .shared-whiteboard {
   height: 100%;
-  background-color: #FFFFFF !important;
+  /* !important still needed to beat Excalidraw's own injected inline
+     background — but warm near-white, not pure white (house law). */
+  background-color: var(--surface-white-warm, #fffef7) !important;
   border: 2px solid var(--border-strong, #1A1A1A);
   border-radius: 8px;
   box-shadow: 2px 2px 0px rgba(26, 26, 26, 0.15);
@@ -4031,9 +4033,14 @@ h6,
   color: #78350F;
 }
 
+/* Fuchsia, not rose — Sept 30 2026 fix: the old #FFE4E6/#881337 pair was the
+   same rose/maroon family the house vetoed (Aug 17 2026, "never, on
+   anything, ever"), just reused across 4 module headers via this one
+   class (Summary, Summary-back, Dice, export drawer). Fuchsia reads
+   unmistakably pink/purple, nowhere near the red axis. */
 .stamped-tab--pink {
-  background: #FFE4E6;
-  color: #881337;
+  background: #FAE8FF;
+  color: #86198F;
 }
 
 .stamped-tab--orange {
@@ -6812,7 +6819,7 @@ a:focus-visible {
 }
 .history-drawer-close:hover {
   background: var(--spot-fluro-yellow, #FFE600);
-  color: #121212;
+  color: var(--ink-carbon, #121212);
   transform: translate(-0.5px, -0.5px);
   box-shadow: 2px 2px 0px var(--border-strong, #1A1A1A);
 }
