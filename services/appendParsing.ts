@@ -9,6 +9,7 @@
  */
 
 import type { ActionItem, Edge, Node } from "@core/types/index.ts";
+import { withEdgeKind } from "@core/types/edge.ts";
 
 /** Prevent a crafted existingTranscript field from OOM'ing the server during
  *  transcript concatenation. 500KB ≈ 2+ hour meeting. */
@@ -147,6 +148,7 @@ function sanitizeEdge(raw: unknown, conversationId: string): Edge | null {
     source_topic_id: source,
     target_topic_id: target,
     color: cap(r.color, 40) || "#8A8F98",
+    ...withEdgeKind(r.kind),
     created_at: typeof r.created_at === "string"
       ? r.created_at
       : new Date().toISOString(),

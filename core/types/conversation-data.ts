@@ -6,6 +6,7 @@
  */
 
 import type { ActionItem, ActionItemStatusUpdate } from "./action-item.ts";
+import type { EdgeKind } from "./edge.ts";
 
 export interface ConversationData {
   conversation: {
@@ -35,6 +36,7 @@ export interface ConversationData {
     source_topic_id: string;
     target_topic_id: string;
     color: string;
+    kind?: EdgeKind;
   }>;
   actionItems: ActionItem[];
   statusUpdates: ActionItemStatusUpdate[];

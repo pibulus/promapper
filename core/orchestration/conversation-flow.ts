@@ -231,6 +231,7 @@ export async function processAudio(
       source_topic_id: edge.source_topic_id,
       target_topic_id: edge.target_topic_id,
       color: edge.color,
+      ...(edge.kind ? { kind: edge.kind } : {}),
       created_at: new Date().toISOString(),
     }));
     actionItems = analysis.actionItems.map((item) => ({
@@ -301,6 +302,7 @@ function mapAnalysis(analysis: TextAnalysis, conversationId: string): {
       source_topic_id: edge.source_topic_id,
       target_topic_id: edge.target_topic_id,
       color: edge.color,
+      ...(edge.kind ? { kind: edge.kind } : {}),
       created_at: new Date().toISOString(),
     })),
     actionItems: analysis.actionItems.map((item) => ({

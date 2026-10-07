@@ -18,6 +18,7 @@ import {
 } from "../ai/prompts.ts";
 
 import type { ActionItem } from "../types/index.ts";
+import { EDGE_KINDS } from "../types/edge.ts";
 import { localDateISO } from "../storage/dates.ts";
 
 // ===================================================================
@@ -165,6 +166,26 @@ Deno.test("buildTopicExtractionPrompt includes conversation text", () => {
   const text = "We discussed the budget and timeline.";
   const prompt = buildTopicExtractionPrompt(text);
   assertStringIncludes(prompt, text);
+});
+
+Deno.test("buildTopicExtractionPrompt asks for every edge kind, and shows kinds it already knows", () => {
+  const prompt = buildTopicExtractionPrompt(
+    "the budget hangs on the timeline",
+    [
+      { id: "budget", label: "Budget", color: "#5B8DEF", emoji: "💰" },
+      { id: "timeline", label: "Timeline", color: "#52A37F", emoji: "📅" },
+    ],
+    [{
+      source_topic_id: "budget",
+      target_topic_id: "timeline",
+      color: "#888",
+      kind: "depends_on",
+    }],
+  );
+  for (const key of Object.keys(EDGE_KINDS)) {
+    assertStringIncludes(prompt, `"${key}"`);
+  }
+  assertStringIncludes(prompt, "- Budget depends on Timeline");
 });
 
 Deno.test("buildTopicExtractionPrompt requests nodes and edges JSON", () => {

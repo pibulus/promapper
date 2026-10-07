@@ -6,6 +6,7 @@
  */
 
 import type { ActionItem, EdgeInput, NodeInput } from "../types/index.ts";
+import { EDGE_KINDS, edgePhrase } from "../types/edge.ts";
 import { localDateISO } from "../storage/dates.ts";
 
 // ===================================================================
@@ -208,7 +209,7 @@ export const buildTopicExtractionPrompt = (
           edge.source_topic_id;
         const target = labelById.get(edge.target_topic_id) ||
           edge.target_topic_id;
-        return `- ${source} -> ${target}`;
+        return `- ${source} ${edgePhrase(edge.kind, "->")} ${target}`;
       }).join("\n")
     }`
     : "";
@@ -228,7 +229,14 @@ Topic quality rules:
 - Use one semantically meaningful emoji per topic. Avoid generic emoji unless the topic is genuinely broad.
 
 Relationship quality rules:
-- Edges should mean a real conceptual relationship: dependency, cause/effect, contrast, implementation path, risk, or evidence.
+- Edges should mean a real conceptual relationship. Give each edge a "kind",
+  read source -> target, from exactly this list:
+  ${
+    Object.entries(EDGE_KINDS).map(([key, phrase]) =>
+      `"${key}" (source ${phrase} target)`
+    ).join(", ")
+  }.
+  If none fits, the relationship is probably too weak to draw.
 - Avoid duplicate edges and self loops.
 - Prefer a readable graph: usually 1-3 relationships per topic.
 - If possible, keep the graph connected, but do not invent weak relationships just to connect everything.
@@ -258,7 +266,8 @@ Return a JSON object with the following structure:
 		{
 			"source_topic_id": "silk-yield",
 			"target_topic_id": "public-backlash",
-			"color": "#8A8F98"
+			"color": "#8A8F98",
+			"kind": "leads_to"
 		}
 	]
 }${existingNodesContext}${existingEdgesContext}${historyContext}

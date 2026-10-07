@@ -107,6 +107,45 @@ Deno.test("the action-item dot colour survives all three sanitizer copies", asyn
   );
 });
 
+Deno.test("edge kinds survive all three sanitizers, and the worker's list matches core", async () => {
+  const { EDGE_KINDS } = await import("../types/edge.ts");
+  const { EDGE_KIND_KEYS } = await import(
+    "../../workers/collab/src/conversationProtocol.ts"
+  );
+  // The worker restates the keys because it can't import. Drift = a kind
+  // that silently vanishes for live-collab peers only.
+  assertEquals([...EDGE_KIND_KEYS].sort(), Object.keys(EDGE_KINDS).sort());
+
+  const { sanitizeShareConversation } = await import(
+    "../realtime/shareProtocol.ts"
+  );
+  const { parseExistingEdges } = await import(
+    "../../services/appendParsing.ts"
+  );
+  const edges = [
+    {
+      source_topic_id: "a",
+      target_topic_id: "b",
+      color: "#888",
+      kind: "leads_to",
+    },
+    { source_topic_id: "b", target_topic_id: "c", color: "#888", kind: "nope" },
+  ];
+  const kinds = (list: Array<{ kind?: string }>) => list.map((e) => e.kind);
+  const expected = ["leads_to", undefined];
+
+  const worker = sanitizeConversationData(validInput({ edges }));
+  const share = sanitizeShareConversation(validInput({ edges }));
+  assertExists(worker);
+  assertExists(share);
+  assertEquals(kinds(worker.edges), expected);
+  assertEquals(kinds(share.edges), expected);
+  assertEquals(
+    kinds(parseExistingEdges(JSON.stringify(edges), "c1")),
+    expected,
+  );
+});
+
 Deno.test("sanitizeConversationData keeps the core shared shape", () => {
   const out = sanitizeConversationData(validInput());
   assertExists(out);

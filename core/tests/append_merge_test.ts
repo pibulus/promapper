@@ -22,6 +22,7 @@ interface TestEdge {
   source_topic_id: string;
   target_topic_id: string;
   color: string;
+  kind?: string;
 }
 
 function node(id: string, label = id, extra: Partial<TestNode> = {}): TestNode {
@@ -200,6 +201,23 @@ Deno.test("mergeAppendEdges unions edges without dropping or duplicating", () =>
     e.source_topic_id === "a" && e.target_topic_id === "b"
   );
   assertEquals(ab?.id, "e1"); // existing edge kept its identity
+});
+
+Deno.test("mergeAppendEdges lets an untyped edge pick up a kind, never overwrites one", () => {
+  const valid = new Set(["a", "b", "c"]);
+  const merged = mergeAppendEdges(
+    [edge("a", "b", "e1"), { ...edge("b", "c", "e2"), kind: "risks" }],
+    [
+      { ...edge("a", "b"), kind: "depends_on" },
+      { ...edge("b", "c"), kind: "supports" },
+    ],
+    valid,
+  );
+  const byId = new Map(merged.map((e) => [e.id, e]));
+  // Saved before kinds existed: adopts the new read, keeps its identity.
+  assertEquals(byId.get("e1")?.kind, "depends_on");
+  // Already typed: the existing answer stands.
+  assertEquals(byId.get("e2")?.kind, "risks");
 });
 
 Deno.test("mergeAppendEdges drops dangling edges and self-loops", () => {

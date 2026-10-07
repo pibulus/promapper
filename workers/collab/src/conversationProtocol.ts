@@ -250,6 +250,17 @@ function sanitizeNode(input: unknown) {
   return node;
 }
 
+// Keys of EDGE_KINDS in core/types/edge.ts (this worker takes no imports);
+// party_sanitizer_test.ts fails if the two lists drift.
+export const EDGE_KIND_KEYS = new Set([
+  "depends_on",
+  "leads_to",
+  "contrasts",
+  "way_to",
+  "risks",
+  "supports",
+]);
+
 function sanitizeEdge(input: unknown) {
   if (!isRecord(input)) return null;
   const source = normalizeString(input.source_topic_id, LIMITS.MAX_ID_LENGTH);
@@ -260,6 +271,9 @@ function sanitizeEdge(input: unknown) {
     source_topic_id: source,
     target_topic_id: target,
     color: normalizeString(input.color, LIMITS.MAX_COLOR_LENGTH) || "#e8839c",
+    ...(typeof input.kind === "string" && EDGE_KIND_KEYS.has(input.kind)
+      ? { kind: input.kind }
+      : {}),
   };
 }
 

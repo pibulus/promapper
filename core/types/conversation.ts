@@ -24,5 +24,6 @@ export interface ConversationGraph {
     source_topic_id: string;
     target_topic_id: string;
     color: string;
+    kind?: import("./edge.ts").EdgeKind;
   }>;
 }

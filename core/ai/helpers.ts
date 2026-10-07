@@ -4,6 +4,7 @@ import type {
   ConversationGraph,
   NodeInput,
 } from "../types/index.ts";
+import { withEdgeKind } from "../types/edge.ts";
 
 // ===================================================================
 // SPEAKERS
@@ -493,6 +494,7 @@ export function normalizeTopicGraph(data: unknown): ConversationGraph {
           rawToNormalizedId.get(normalizeString(edge.target_topic_id)) ||
           normalizeString(edge.target_topic_id),
         color: normalizeHexColor(edge.color) || "#8A8F98",
+        ...withEdgeKind(edge.kind),
       }))
       .filter((edge) => {
         const key = `${edge.source_topic_id}->${edge.target_topic_id}`;

@@ -10,6 +10,7 @@
  */
 
 import type { ConversationData } from "../types/conversation-data.ts";
+import { edgePhrase } from "../types/edge.ts";
 
 type ActionItem = ConversationData["actionItems"][number] & {
   checked_reason?: string;
@@ -54,7 +55,9 @@ function formatTopics(nodes: TopicNode[], edges: TopicEdge[]): string {
     .map((e) => {
       const source = labelById.get(e.source_topic_id);
       const target = labelById.get(e.target_topic_id);
-      return source && target ? `- ${source} -> ${target}` : "";
+      return source && target
+        ? `- ${source} ${edgePhrase(e.kind, "->")} ${target}`
+        : "";
     })
     .filter(Boolean)
     .join("\n");

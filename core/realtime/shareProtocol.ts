@@ -1,5 +1,6 @@
 import type { ConversationData } from "../types/conversation-data.ts";
 import { isRecord } from "../ai/helpers.ts";
+import { withEdgeKind } from "../types/edge.ts";
 
 export const SHARE_ROOM_PREFIX = "cm_";
 
@@ -199,6 +200,7 @@ export function sanitizeEdge(input: unknown) {
     target_topic_id: target,
     color: normalizeString(input.color, SHARE_ROOM_LIMITS.MAX_COLOR_LENGTH) ||
       "#e8839c",
+    ...withEdgeKind(input.kind),
   };
 }
 

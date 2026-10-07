@@ -33,6 +33,7 @@ import {
 } from "@signals/actionItemsStore.ts";
 import { isViewingShared } from "@signals/conversationStore.ts";
 import { MAX_LABEL_LENGTH } from "@core/orchestration/conversation-ops.ts";
+import { edgePhrase } from "@core/types/edge.ts";
 import { showToast, showUndoToast } from "@utils/toast.ts";
 import * as htmlToImage from "html-to-image";
 import BodyPortal from "../components/BodyPortal.tsx";
@@ -702,11 +703,9 @@ export default function ForceDirectedGraph(
           <h4>Relationship</h4>
           <p>
             {(edgeSource || edgeTarget)
-              ? `${edgeSource?.emoji || "•"} ${
-                edgeSource?.label || "Topic"
-              } connects to ${edgeTarget?.emoji || "•"} ${
-                edgeTarget?.label || "Topic"
-              }.`
+              ? `${edgeSource?.emoji || "•"} ${edgeSource?.label || "Topic"} ${
+                edgePhrase(selectedEdge.kind)
+              } ${edgeTarget?.emoji || "•"} ${edgeTarget?.label || "Topic"}.`
               : "This line links two topics the map drew together from the conversation."}
           </p>
         </div>

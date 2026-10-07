@@ -147,6 +147,27 @@ Deno.test("normalizeTopicGraph rejects generic IDs, dedupes nodes, drops bad edg
   });
 });
 
+Deno.test("normalizeTopicGraph keeps a real edge kind and drops anything else", () => {
+  const nodes = ["Alpha", "Beta", "Gamma", "Delta"].map((label) => ({
+    id: label.toLowerCase(),
+    label,
+    color: "#5B8DEF",
+    emoji: "🧵",
+  }));
+  const graph = normalizeTopicGraph({
+    nodes,
+    edges: [
+      { source_topic_id: "alpha", target_topic_id: "beta", kind: "risks" },
+      { source_topic_id: "alpha", target_topic_id: "gamma", kind: "vibes" },
+      // Prototype keys must not pass as kinds.
+      { source_topic_id: "alpha", target_topic_id: "delta", kind: "toString" },
+    ],
+  });
+  assertEquals(graph.edges.map((e) => e.kind), ["risks", undefined, undefined]);
+  // Untyped edges carry no kind key at all, not kind: undefined.
+  assertEquals("kind" in graph.edges[1], false);
+});
+
 Deno.test("normalizeStatusUpdate validates id membership and status enum", () => {
   const ids = new Set(["a1", "a2"]);
   assertEquals(

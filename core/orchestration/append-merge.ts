@@ -23,6 +23,7 @@ interface MergeEdge {
   source_topic_id: string;
   target_topic_id: string;
   color: string;
+  kind?: string;
 }
 
 /**
@@ -140,8 +141,14 @@ export function mergeAppendEdges<T extends MergeEdge>(
     if (!validNodeIds.has(s) || !validNodeIds.has(t)) return; // dangling
     const key = `${s}->${t}`;
     // Existing edges are considered first, so they keep their identity; an
-    // extracted edge for the same pair won't overwrite it.
-    if (!byPair.has(key)) byPair.set(key, edge);
+    // extracted edge for the same pair won't overwrite it. The one thing it
+    // may add is a kind: edges saved before kinds existed would otherwise
+    // stay untyped forever.
+    const kept = byPair.get(key);
+    if (!kept) byPair.set(key, edge);
+    else if (!kept.kind && edge.kind) {
+      byPair.set(key, { ...kept, kind: edge.kind });
+    }
   };
 
   for (const edge of existingEdges) consider(edge);

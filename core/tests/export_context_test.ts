@@ -60,6 +60,14 @@ Deno.test("buildExportContext includes title, summary, actions, topics, transcri
   assertStringIncludes(ctx, "TOPICS:");
   assertStringIncludes(ctx, "💰 Budget");
   assertStringIncludes(ctx, "TOPIC CONNECTIONS:\n- Budget -> Timeline");
+
+  // A typed edge tells the export model WHY two topics connect.
+  const typed = data();
+  typed.edges[0] = { ...typed.edges[0], kind: "depends_on" };
+  assertStringIncludes(
+    buildExportContext(typed),
+    "TOPIC CONNECTIONS:\n- Budget depends on Timeline",
+  );
   assertStringIncludes(ctx, "TRANSCRIPT:\nMae: lock the budget");
 });
 
