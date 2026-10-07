@@ -32,6 +32,7 @@ import {
 } from "@services/audio.ts";
 import { pushResultToRoom } from "@services/partyUpdates.ts";
 import {
+  MAX_EXISTING_SUMMARY,
   MAX_EXISTING_TRANSCRIPT,
   parseExistingActionItems,
   parseExistingEdges,
@@ -152,6 +153,8 @@ export const handler: Handlers = {
             existingActionItems,
             existingNodes,
             existingEdges,
+            existingSummary: existingSummary?.slice(0, MAX_EXISTING_SUMMARY) ||
+              undefined,
             lightweightIfShort: true,
             existingTitle: (formData.get("existingTitle") as string | null)
               ?.slice(0, 200) ?? undefined,

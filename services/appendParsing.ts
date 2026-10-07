@@ -15,6 +15,11 @@ import { withEdgeKind } from "@core/types/edge.ts";
  *  transcript concatenation. 500KB ≈ 2+ hour meeting. */
 export const MAX_EXISTING_TRANSCRIPT = 500_000;
 
+/** The running summary rides into three prompts per append (topics, actions,
+ *  summary), and live rooms append every ~30s, so it is context, not cargo.
+ *  2KB ≈ 500 tokens ≈ the opening overview, which is the useful part. */
+export const MAX_EXISTING_SUMMARY = 2_000;
+
 export function parseExistingActionItems(
   json: string | null,
   conversationId: string,

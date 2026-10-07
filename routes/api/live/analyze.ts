@@ -42,6 +42,7 @@ import { getByoKey, guardRequest } from "@services/requestGuard.ts";
 import { getAIService } from "@services/ai.ts";
 import { pushResultToRoom } from "@services/partyUpdates.ts";
 import {
+  MAX_EXISTING_SUMMARY,
   MAX_EXISTING_TRANSCRIPT,
   parseExistingActionItems,
   parseExistingEdges,
@@ -141,6 +142,8 @@ export const handler: Handlers = {
             existingActionItems,
             existingNodes,
             existingEdges,
+            existingSummary: existingSummary?.slice(0, MAX_EXISTING_SUMMARY) ||
+              undefined,
             signal: ctrl.signal,
           },
         );

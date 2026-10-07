@@ -8,8 +8,8 @@ export interface ActionItem {
   description: string;
   assignee: string | null;
   /** Human words ("friday", "before the gig"). AI extraction may emit
-   * YYYY-MM-DD — ISO strings render as friendly dates in the UI.
-   * No longer editable in the UI as of Sept 30 2026 (replaced by `color`,
+   * YYYY-MM-DD. Not shown in the UI since Sept 30 2026 — it surfaces only in
+   * exports and Ask context. No longer editable either (replaced by `color`,
    * a user-picked dot with no fixed meaning) — kept on the type so old
    * saved items don't lose the field, and AI extraction/exports are
    * untouched. */

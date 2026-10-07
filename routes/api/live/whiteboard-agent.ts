@@ -4,7 +4,8 @@
  * Server-side AI endpoint that watches the conversation transcript and
  * edits the shared whiteboard. The client sends the current Excalidraw
  * scene + the latest transcript chunk; this endpoint formats the scene
- * as line-numbered text, sends it to Claude Haiku, parses the edit
+ * as line-numbered text, sends it to the workhorse model (OPENROUTER_MODEL,
+ * see services/ai.ts — it passes no model of its own), parses the edit
  * operations, applies them, and returns the updated elements array.
  *
  * POST /api/live/whiteboard-agent

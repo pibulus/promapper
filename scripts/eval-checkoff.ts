@@ -6,13 +6,14 @@
  * that matters is FALSE POSITIVES: a wrong checkoff hides real work in the
  * done drawer; a missed one costs the user a tap.
  *
- *   deno task eval:checkoff             # A/B: flash-lite vs haiku
+ *   deno task eval:checkoff             # A/B: production's status model vs haiku
  *   deno task eval:checkoff <model-id>  # just one model
  *
  * Costs ~1-2¢ per full run. Needs OPENROUTER_API_KEY (loaded via --env-file).
  */
 
 import { createOpenRouterService } from "@core/ai/openrouter.ts";
+import { getOpenRouterModelName } from "@services/ai.ts";
 import type { ActionItem } from "@core/types/index.ts";
 
 const now = new Date().toISOString();
@@ -206,10 +207,15 @@ async function evalModel(model: string): Promise<ModelResult> {
   return result;
 }
 
+// Default to what production runs for status checks (the knob if set, else
+// the workhorse). This used to hardcode a dated slug that production had
+// moved off, so the "14/14" verdict described a model nobody was using.
+const prodStatusModel = Deno.env.get("OPENROUTER_STATUS_MODEL")?.trim() ||
+  getOpenRouterModelName();
 const requested = Deno.args[0];
 const models = requested
   ? [requested]
-  : ["google/gemini-3.1-flash-lite", "~anthropic/claude-haiku-latest"];
+  : [prodStatusModel, "~anthropic/claude-haiku-latest"];
 
 console.log(
   `Checkoff eval — ${CASES.length} cases, ${ITEMS.length} standing items\n`,
