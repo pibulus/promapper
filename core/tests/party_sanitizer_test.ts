@@ -70,6 +70,43 @@ Deno.test("sanitizeConversationData preserves ai_checked/checked_reason through 
   );
 });
 
+Deno.test("the action-item dot colour survives all three sanitizer copies", async () => {
+  // Shipped Sept 30 with no sanitizer knowing the field, so share links,
+  // collab peers and append round-trips silently dropped every dot.
+  const { sanitizeShareConversation } = await import(
+    "../realtime/shareProtocol.ts"
+  );
+  const { parseExistingActionItems } = await import(
+    "../../services/appendParsing.ts"
+  );
+
+  const base = validInput().actionItems[0];
+  const items = [
+    { ...base, id: "picked", color: "#f60474" },
+    // Cleared on one device must stay cleared on the others.
+    { ...base, id: "cleared", color: null },
+    // The colour is interpolated into an inline color-mix(): no CSS through.
+    { ...base, id: "hostile", color: "red);background:url(//x.y/z" },
+  ];
+  const expected = [["picked", "#f60474"], ["cleared", null], [
+    "hostile",
+    undefined,
+  ]];
+  const colours = (list: Array<{ id: string; color?: string | null }>) =>
+    list.map((item) => [item.id, item.color]);
+
+  const worker = sanitizeConversationData(validInput({ actionItems: items }));
+  const share = sanitizeShareConversation(validInput({ actionItems: items }));
+  assertExists(worker);
+  assertExists(share);
+  assertEquals(colours(worker.actionItems), expected);
+  assertEquals(colours(share.actionItems), expected);
+  assertEquals(
+    colours(parseExistingActionItems(JSON.stringify(items), "c1")),
+    expected,
+  );
+});
+
 Deno.test("sanitizeConversationData keeps the core shared shape", () => {
   const out = sanitizeConversationData(validInput());
   assertExists(out);

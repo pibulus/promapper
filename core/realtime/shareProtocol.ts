@@ -224,6 +224,15 @@ export function sanitizeStatusUpdate(input: unknown) {
   };
 }
 
+// A dot colour lands inside an inline CSS color-mix(), so only a plain hex
+// survives. null is kept on purpose: it is how "cleared" reaches other peers.
+function sanitizeDotColor(value: unknown): string | null | undefined {
+  if (value === null) return null;
+  return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value)
+    ? value
+    : undefined;
+}
+
 export function sanitizeActionItem(input: unknown, conversationId: string) {
   if (!isRecord(input)) return null;
   const id = normalizeString(input.id, 128);
@@ -247,6 +256,7 @@ export function sanitizeActionItem(input: unknown, conversationId: string) {
     status: "completed" | "pending";
     created_at: string;
     updated_at: string;
+    color?: string | null;
     ai_checked?: boolean;
     checked_reason?: string;
   } = {
@@ -263,6 +273,9 @@ export function sanitizeActionItem(input: unknown, conversationId: string) {
     created_at: normalizeTimestamp(input.created_at, now),
     updated_at: normalizeTimestamp(input.updated_at, now),
   };
+
+  const color = sanitizeDotColor(input.color);
+  if (color !== undefined) item.color = color;
 
   // Preserve the AI self-checkoff annotations in shared conversations — the same
   // headline-feature reasoning as the PartyKit sanitizer. Without these, a shared

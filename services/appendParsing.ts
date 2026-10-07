@@ -72,6 +72,16 @@ function sanitizeActionItem(
       : isoNow,
   };
 
+  // Dot colour lands inside an inline CSS color-mix(): plain hex only. null
+  // is kept, it is how a cleared dot survives the round trip.
+  if (record.color === null) {
+    item.color = null;
+  } else if (
+    typeof record.color === "string" && /^#[0-9a-f]{6}$/i.test(record.color)
+  ) {
+    item.color = record.color;
+  }
+
   if (record.ai_checked === true) {
     item.ai_checked = true;
   }

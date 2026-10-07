@@ -403,14 +403,18 @@ export function createOpenRouterService(
           return [];
         }
 
-        const prompt = buildActionItemStatusPrompt(existingActionItems);
         const text = typeof input === "string"
           ? await chatText(
-            `${prompt}\n\nText: ${input}`,
+            buildActionItemStatusPrompt(existingActionItems, input),
             options.statusModel,
             signal,
           )
-          : await chatAudio(prompt, input, options.statusModel, signal);
+          : await chatAudio(
+            buildActionItemStatusPrompt(existingActionItems),
+            input,
+            options.statusModel,
+            signal,
+          );
 
         // Validate against real IDs + enum so a hallucinated id/status can't
         // silently flip the wrong task.

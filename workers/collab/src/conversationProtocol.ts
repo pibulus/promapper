@@ -284,6 +284,16 @@ function sanitizeStatusUpdate(input: unknown) {
   };
 }
 
+// Same rule as core/realtime/shareProtocol.ts (this worker takes no imports).
+// A dot colour lands inside an inline CSS color-mix(), so only a plain hex
+// survives. null is kept on purpose: it is how "cleared" reaches other peers.
+function sanitizeDotColor(value: unknown): string | null | undefined {
+  if (value === null) return null;
+  return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value)
+    ? value
+    : undefined;
+}
+
 function sanitizeActionItem(input: unknown, conversationId: string) {
   if (!isRecord(input)) return null;
   const id = normalizeString(input.id, LIMITS.MAX_ID_LENGTH);
@@ -302,6 +312,7 @@ function sanitizeActionItem(input: unknown, conversationId: string) {
     status: "completed" | "pending";
     created_at: string;
     updated_at: string;
+    color?: string | null;
     ai_checked?: boolean;
     checked_reason?: string;
   } = {
@@ -316,6 +327,9 @@ function sanitizeActionItem(input: unknown, conversationId: string) {
     created_at: normalizeTimestamp(input.created_at, now),
     updated_at: normalizeTimestamp(input.updated_at, now),
   };
+
+  const color = sanitizeDotColor(input.color);
+  if (color !== undefined) item.color = color;
 
   // Preserve the AI self-checkoff annotations through the broadcast — these are
   // the app's headline feature. Without them, only the client that made the
