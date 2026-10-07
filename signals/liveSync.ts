@@ -19,6 +19,7 @@ import {
 import {
   type ChatMessage,
   chatMessages,
+  liveSyncStatus,
   partyConnected,
   remoteWhiteboardUpdate,
   unreadChatCount,
@@ -43,19 +44,68 @@ import {
 } from "../core/storage/localStorage.ts";
 
 import { showToast } from "@utils/toast.ts";
+import { reconcileRoomUpdate } from "@core/orchestration/room-reconcile.ts";
 
+const PENDING_TIMEOUT_MS = 5000;
 let stopBroadcast: (() => void) | null = null;
-let lastSentJSON = "";
-// Reconnect-flush state: a local edit failed to send (socket down). On
-// reconnect INIT we compare the room's revision counter against the last rev
-// we KNOW includes our writes (updates we receive bump it; our own sends bump
-// it via the server's UPDATE_ACK). rev unchanged → nobody else moved the room
-// → our local state wins and is re-sent; rev moved → remote wins, honestly.
-// (The old JSON comparison could essentially never match — the room sanitizes
-// payloads and never echoes your own write back — so it silently discarded
-// local edits in the common case while toasting "synced the room's latest".)
-let unsentLocal = false;
-let lastSeenRev = -1;
+let lastObservedJSON = "";
+let queuedLocal = false;
+let roomReady = false;
+let headRev = -1;
+let headData: ConversationData | null = null;
+let connectBaseline: ConversationData | null = null;
+let pendingTimer: ReturnType<typeof setTimeout> | null = null;
+let pending: {
+  id: string;
+  base: ConversationData;
+  sent: ConversationData;
+} | null = null;
+
+function clearPending(): void {
+  if (pendingTimer) {
+    clearTimeout(pendingTimer);
+    pendingTimer = null;
+  }
+  pending = null;
+}
+
+function flushLocal(): void {
+  if (!roomReady || !partyConnected.value || !queuedLocal || pending) return;
+  const current = conversationData.value;
+  if (!current || headRev < 0) return;
+  const id = crypto.randomUUID();
+  if (!sendConversationUpdate(stripWhiteboard(current), headRev, id)) return;
+  pending = { id, base: headData ?? current, sent: current };
+  liveSyncStatus.value = "syncing";
+  if (pendingTimer) clearTimeout(pendingTimer);
+  pendingTimer = setTimeout(() => {
+    // Write ack timed out after 5s — clear lock and retry if still queued
+    pending = null;
+    pendingTimer = null;
+    queuedLocal = true;
+    flushLocal();
+  }, PENDING_TIMEOUT_MS);
+  queuedLocal = false;
+}
+
+function receiveHead(data: ConversationData, rev: number): void {
+  if (rev <= headRev) return;
+  const base = headData;
+  const mine = conversationData.value;
+  headData = data;
+  headRev = rev;
+  const merged = base && mine && mine.conversation.id === data.conversation.id
+    ? reconcileRoomUpdate(base, mine, data)
+    : data;
+  applyRemoteConversation(merged);
+  lastObservedJSON = sentKey();
+  if (
+    JSON.stringify(stripWhiteboard(merged)) !==
+      JSON.stringify(stripWhiteboard(data))
+  ) queuedLocal = true;
+  liveSyncStatus.value = queuedLocal || pending ? "syncing" : "synced";
+  if (!pending) flushLocal();
+}
 
 /**
  * Connect to a room and start two-way conversation sync. Extra callbacks
@@ -66,6 +116,7 @@ export function startLiveSync(
   extra: PartyCallbacks = {},
 ): void {
   if (!IS_BROWSER) return;
+  connectBaseline = conversationData.value;
 
   // Reset chat state for the new room.
   chatMessages.value = [];
@@ -75,34 +126,22 @@ export function startLiveSync(
     ...extra,
     onInit: (data, meta, whiteboard) => {
       const rev = metaRev(meta);
+      roomReady = true;
       if (data) {
-        // "Not ahead of us": the room's revision is at (or behind) the last
-        // rev we know includes our writes. <= not ===: a dev-server restart
-        // can hand back an even older room, and healing it with our state is
-        // the right move there too.
-        const roomNotAhead = rev !== null && rev <= lastSeenRev;
-        if (unsentLocal && conversationData.value && roomNotAhead) {
-          // Reconnected and nobody else moved the room while we were away —
-          // our unsent local state wins.
-          unsentLocal = false;
-          lastSentJSON = localJSON(conversationData.value);
-          if (sendConversationUpdate(stripWhiteboard(conversationData.value))) {
-            showToast("Reconnected — your changes synced", "success");
-          }
-        } else if (roomNotAhead && conversationData.value) {
-          // Nothing new in this snapshot — do NOT re-apply it. A flappy
-          // reconnect can deliver a second INIT that races our just-flushed
-          // update; applying it rolled the tab back to the pre-flush state
-          // (found live: room+peer had the flushed edit, the flusher didn't).
-          unsentLocal = false;
-        } else {
-          if (unsentLocal) {
-            // The room moved on while we were offline — remote wins, say so.
-            showToast("Reconnected — synced the room's latest", "info");
-          }
-          unsentLocal = false;
-          // Only here: this is the branch that takes the room's version whole.
-          const stashed = stashDivergedLocalCopy(data as ConversationData);
+        const incoming = data as ConversationData;
+        if (!headData) {
+          // A local edit can land between opening the socket and INIT. Keep
+          // only that new delta; a pre-existing offline copy still gets filed
+          // in History below instead of replacing the room on join.
+          const mine = conversationData.value;
+          const editedWhileConnecting = mine && connectBaseline &&
+            mine.conversation.id === incoming.conversation.id &&
+            JSON.stringify(stripWhiteboard(mine)) !==
+              JSON.stringify(stripWhiteboard(connectBaseline));
+          const merged = editedWhileConnecting
+            ? reconcileRoomUpdate(connectBaseline, mine, incoming)
+            : incoming;
+          const stashed = stashDivergedLocalCopy(incoming);
           if (stashed) {
             showToast(
               stashed.ok
@@ -112,12 +151,36 @@ export function startLiveSync(
               7000,
             );
           }
-          applyRemoteConversation(data as ConversationData);
-          lastSentJSON = sentKey();
-          if (rev !== null) lastSeenRev = Math.max(lastSeenRev, rev);
+          headData = incoming;
+          headRev = rev ?? 0;
+          applyRemoteConversation(merged);
+          lastObservedJSON = sentKey();
+          queuedLocal = JSON.stringify(stripWhiteboard(merged)) !==
+            JSON.stringify(stripWhiteboard(incoming));
+          liveSyncStatus.value = queuedLocal ? "syncing" : "synced";
+          flushLocal();
+        } else if (rev !== null && rev >= headRev) {
+          // A reconnect can arrive while a write was in flight. Reconcile
+          // against the last accepted head, then retry from the new revision.
+          const mine = conversationData.value;
+          const merged = mine
+            ? reconcileRoomUpdate(headData, mine, incoming)
+            : incoming;
+          headData = incoming;
+          headRev = rev;
+          clearPending();
+          applyRemoteConversation(merged);
+          lastObservedJSON = sentKey();
+          queuedLocal = JSON.stringify(stripWhiteboard(merged)) !==
+            JSON.stringify(stripWhiteboard(incoming));
+          liveSyncStatus.value = queuedLocal ? "syncing" : "synced";
+          flushLocal();
         }
       } else if (rev !== null) {
-        lastSeenRev = rev;
+        headRev = rev;
+        queuedLocal = Boolean(conversationData.value);
+        liveSyncStatus.value = queuedLocal ? "syncing" : "synced";
+        flushLocal();
       }
       // The room remembers the whiteboard — late joiners and reloading hosts
       // get the current drawing instead of a blank board.
@@ -126,16 +189,36 @@ export function startLiveSync(
     },
     onConversationUpdate: (data, rev) => {
       if (!data) return;
-      applyRemoteConversation(data as ConversationData);
-      lastSentJSON = sentKey();
-      if (typeof rev === "number") lastSeenRev = rev;
+      receiveHead(data as ConversationData, rev ?? headRev + 1);
       extra.onConversationUpdate?.(data, rev);
     },
-    onUpdateAck: (rev) => {
-      // Our own write landed — track its rev so a reconnect can tell whether
-      // the room moved past us.
-      lastSeenRev = rev;
-      extra.onUpdateAck?.(rev);
+    onUpdateAck: (rev, updateId) => {
+      if (pending?.id !== updateId) return;
+      if (rev > headRev) {
+        headRev = rev;
+        headData = pending.sent;
+      }
+      clearPending();
+      liveSyncStatus.value = queuedLocal ? "syncing" : "synced";
+      flushLocal();
+      extra.onUpdateAck?.(rev, updateId);
+    },
+    onUpdateStale: (data, rev, updateId) => {
+      if (pending?.id !== updateId || !data) return;
+      const mine = conversationData.value;
+      const incoming = data as ConversationData;
+      const merged = mine
+        ? reconcileRoomUpdate(pending.base, mine, incoming)
+        : incoming;
+      headData = incoming;
+      headRev = rev;
+      clearPending();
+      liveSyncStatus.value = "conflict";
+      applyRemoteConversation(merged);
+      lastObservedJSON = sentKey();
+      queuedLocal = JSON.stringify(stripWhiteboard(merged)) !==
+        JSON.stringify(stripWhiteboard(incoming));
+      flushLocal();
     },
     onChat: (text, sender: RemoteUser, at) => {
       appendChat({
@@ -156,7 +239,7 @@ export function startLiveSync(
   // Outbound broadcaster: fire on local conversationData changes only.
   stopBroadcast = effect(() => {
     const data = conversationData.value;
-    if (!partyConnected.value || !data) return;
+    if (!data) return;
     if (applyingRemoteUpdate.current) return; // remote apply — don't echo
     // Exclude whiteboardScene — the lightweight sendWhiteboardUpdate channel
     // handles live whiteboard sync. It must be stripped from the SENT payload
@@ -164,20 +247,22 @@ export function startLiveSync(
     // edit could trip the room's 1MB message cap and close the socket.
     const rest = stripWhiteboard(data);
     const json = JSON.stringify(rest);
-    if (json === lastSentJSON) return; // nothing actually changed
-    lastSentJSON = json;
-    if (!sendConversationUpdate(rest)) {
-      // Socket down mid-edit — remember so the reconnect INIT can flush.
-      unsentLocal = true;
-    }
+    if (json === lastObservedJSON) return;
+    lastObservedJSON = json;
+    queuedLocal = true;
+    flushLocal();
   });
 }
 
 /** The conversation without its (heavy, separately-synced) whiteboard scene. */
 function stripWhiteboard(data: ConversationData): ConversationData {
-  const { whiteboardScene: _s, ...rest } = data as ConversationData & {
-    whiteboardScene?: string;
-  };
+  const {
+    whiteboardScene: _s,
+    notes: _notes,
+    magpie: _magpie,
+    warnings: _warnings,
+    ...rest
+  } = data;
   return rest as ConversationData;
 }
 
@@ -266,9 +351,14 @@ function metaRev(meta: unknown): number | null {
 export function stopLiveSync(): void {
   stopBroadcast?.();
   stopBroadcast = null;
-  lastSentJSON = "";
-  unsentLocal = false;
-  lastSeenRev = -1;
+  lastObservedJSON = "";
+  queuedLocal = false;
+  roomReady = false;
+  headRev = -1;
+  headData = null;
+  connectBaseline = null;
+  clearPending();
+  liveSyncStatus.value = "disconnected";
   chatMessages.value = [];
   unreadChatCount.value = 0;
   remoteWhiteboardUpdate.value = null;

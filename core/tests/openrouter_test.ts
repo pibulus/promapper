@@ -5,7 +5,11 @@
  * real API calls.
  */
 
-import { assertEquals, assertStringIncludes } from "./_assert.ts";
+import {
+  assertEquals,
+  assertRejects,
+  assertStringIncludes,
+} from "./_assert.ts";
 
 import { createOpenRouterService } from "../ai/openrouter.ts";
 import type { OpenRouterAudioPart } from "../ai/types.ts";
@@ -16,6 +20,7 @@ function jsonResponse(content: string) {
       choices: [
         {
           message: { content },
+          finish_reason: "stop",
         },
       ],
     }),
@@ -91,6 +96,68 @@ Deno.test("OpenRouter transcribeAudio sends input_audio content", async () => {
   assertEquals(content[1].type, "input_audio");
   assertEquals(content[1].input_audio.data, "YXVkaW8=");
   assertEquals(content[1].input_audio.format, "webm");
+});
+
+Deno.test("audio transcription rejects a nonempty truncated provider reply", async () => {
+  const service = createOpenRouterService({
+    apiKey: "test-key",
+    model: "~google/gemini-flash-latest",
+    fetcher: () =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            choices: [{
+              message: { content: "Speaker1: only the opening sentence" },
+              finish_reason: "length",
+            }],
+          }),
+          { status: 200 },
+        ),
+      ),
+  });
+  await assertRejects(
+    () =>
+      service.transcribeAudio({
+        inputAudio: {
+          data: "YXVkaW8=",
+          format: "webm",
+          mimeType: "audio/webm",
+        },
+      }),
+    Error,
+    "finish_reason: length",
+  );
+});
+
+Deno.test("a user's key never reaches the house Gemini rescue", async () => {
+  const previousKey = Deno.env.get("GEMINI_API_KEY");
+  const previousFetch = globalThis.fetch;
+  let houseCalls = 0;
+  try {
+    Deno.env.set("GEMINI_API_KEY", "fake-house-key");
+    globalThis.fetch = () => {
+      houseCalls++;
+      return Promise.resolve(jsonResponse("unexpected house result"));
+    };
+    const service = createOpenRouterService({
+      apiKey: "user-key",
+      model: "~google/gemini-flash-latest",
+      allowHouseFallback: false,
+      fetcher: () =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({ error: { message: "credits are depleted" } }),
+            { status: 402 },
+          ),
+        ),
+    });
+    await assertRejects(() => service.generateTitle("my take"));
+    assertEquals(houseCalls, 0);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousKey === undefined) Deno.env.delete("GEMINI_API_KEY");
+    else Deno.env.set("GEMINI_API_KEY", previousKey);
+  }
 });
 
 Deno.test("an empty balance is not retried - it falls through immediately", async () => {

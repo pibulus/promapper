@@ -75,6 +75,7 @@ export default function AudioRecorder(
   const lastRecordingBlobRef = useRef<Blob | null>(null);
   const lastTakeIdRef = useRef<string | null>(null);
   const journalRef = useRef<TakeJournal | null>(null);
+  const journalUnsafe = useSignal(false);
   // Re-entry guard for processAudioAppend — see the note at its definition.
   const appendingRef = useRef(false);
 
@@ -112,9 +113,17 @@ export default function AudioRecorder(
     // to hand back (utils/takeRecovery.ts). The take keeps the journal's id
     // below, which is what lets recovery tell a saved take from a lost one.
     onTakeStart: (recorder) => {
+      journalUnsafe.value = false;
       journalRef.current = startJournal(recorder, {
         conversationId,
         title: conversationData.value?.conversation?.title,
+      }, () => {
+        journalUnsafe.value = true;
+        showToast(
+          "This take isn't backed up while recording. Stop and save it soon.",
+          "warning",
+          7000,
+        );
       });
     },
     onStop: async (blob) => {
@@ -141,7 +150,10 @@ export default function AudioRecorder(
       // Safe as a take now — the journal's copy has done its job.
       if (persisted) void clearTake(take.id);
       takes.value = [...takes.value, take];
-      if (!persisted && recordingTime.value >= MIN_BACKUP_DURATION) {
+      if (
+        !persisted &&
+        (journalUnsafe.value || recordingTime.value >= MIN_BACKUP_DURATION)
+      ) {
         // No IndexedDB (private mode) — long takes still get a file backup.
         try {
           saveAudioBackup(blob, conversationId);
@@ -157,6 +169,7 @@ export default function AudioRecorder(
           "warning",
         );
       }
+      if (persisted) journalUnsafe.value = false;
       await processAudioAppend(blob, take.id);
     },
   });
@@ -536,6 +549,11 @@ export default function AudioRecorder(
         >
           <i class="fa fa-rotate-left" aria-hidden="true" />
         </button>
+      )}
+      {isRecording.value && journalUnsafe.value && (
+        <span class="recording-hub__safety" role="status">
+          Not backed up yet — stop to save this take
+        </span>
       )}
     </div>
   );

@@ -18,7 +18,7 @@ import {
 } from "@signals/partyConnectionStore.ts";
 import { type RemoteUser, remoteUsers } from "@signals/presenceStore.ts";
 
-// Message type strings — must match party/conversationProtocol.ts.
+// Message type strings — must match workers/collab/src/conversationProtocol.ts.
 export const MSG = {
   INIT: "init",
   PRESENCE: "presence",
@@ -30,6 +30,8 @@ export const MSG = {
   WHITEBOARD_UPDATE: "whiteboard_update",
   TRANSCRIPT_CHUNK: "transcript_chunk",
   UPDATE_ACK: "update_ack",
+  UPDATE_STALE: "update_stale",
+  TRANSCRIPT_ACK: "transcript_ack",
 } as const;
 
 /** The room closed us with ROOM_EXPIRED — no point auto-reconnecting. */
@@ -41,7 +43,8 @@ export interface PartyCallbacks {
   /** A conversation mutation arrived from a peer or server-push. */
   onConversationUpdate?: (data: unknown, rev?: number) => void;
   /** The server acknowledged OUR conversation update with its new revision. */
-  onUpdateAck?: (rev: number) => void;
+  onUpdateAck?: (rev: number, updateId: string) => void;
+  onUpdateStale?: (data: unknown, rev: number, updateId: string) => void;
   /** The room expired server-side; the connection will not be retried. */
   onRoomExpired?: () => void;
   /** A chat message arrived. */
@@ -79,6 +82,20 @@ export function isLocalHost(host: string): boolean {
 }
 
 let socket: PartySocket | null = null;
+const transcriptAcks = new Map<string, {
+  resolve: (
+    result: { ok: boolean; reason?: string; duplicate?: boolean },
+  ) => void;
+  timer: ReturnType<typeof setTimeout>;
+}>();
+
+function failTranscriptAcks() {
+  for (const pending of transcriptAcks.values()) {
+    clearTimeout(pending.timer);
+    pending.resolve({ ok: false, reason: "disconnected" });
+  }
+  transcriptAcks.clear();
+}
 
 function parse(raw: unknown): Record<string, unknown> | null {
   if (typeof raw !== "string") return null;
@@ -137,6 +154,7 @@ export function connectToRoom(
   thisSocket.addEventListener("close", (event) => {
     if (socket !== thisSocket) return;
     partyConnected.value = false;
+    failTranscriptAcks();
     // Room expired: PartySocket would happily retry forever, leaving the UI
     // stuck on "Reconnecting…" against a room that will never come back.
     if ((event as CloseEvent).code === CLOSE_ROOM_EXPIRED) {
@@ -172,8 +190,29 @@ export function connectToRoom(
         );
         break;
       case MSG.UPDATE_ACK:
-        if (typeof msg.rev === "number") callbacks.onUpdateAck?.(msg.rev);
+        if (typeof msg.rev === "number" && typeof msg.updateId === "string") {
+          callbacks.onUpdateAck?.(msg.rev, msg.updateId);
+        }
         break;
+      case MSG.UPDATE_STALE:
+        if (typeof msg.rev === "number" && typeof msg.updateId === "string") {
+          callbacks.onUpdateStale?.(msg.data, msg.rev, msg.updateId);
+        }
+        break;
+      case MSG.TRANSCRIPT_ACK: {
+        const id = typeof msg.chunkId === "string" ? msg.chunkId : "";
+        const pending = transcriptAcks.get(id);
+        if (pending) {
+          clearTimeout(pending.timer);
+          transcriptAcks.delete(id);
+          pending.resolve({
+            ok: msg.ok === true,
+            reason: typeof msg.reason === "string" ? msg.reason : undefined,
+            duplicate: msg.duplicate === true,
+          });
+        }
+        break;
+      }
       case MSG.CHAT:
         if (sender && msg.data && typeof msg.data === "object") {
           const d = msg.data as { text?: string; at?: number };
@@ -215,6 +254,7 @@ export function connectToRoom(
 }
 
 export function disconnectFromRoom(): void {
+  failTranscriptAcks();
   socket?.close();
   socket = null;
   partyConnected.value = false;
@@ -228,8 +268,12 @@ function send(type: string, data?: unknown): boolean {
   return true;
 }
 
-export function sendConversationUpdate(data: unknown): boolean {
-  return send(MSG.CONVERSATION_UPDATE, data);
+export function sendConversationUpdate(
+  snapshot: unknown,
+  baseRev: number,
+  updateId: string,
+): boolean {
+  return send(MSG.CONVERSATION_UPDATE, { snapshot, baseRev, updateId });
 }
 
 export function sendChat(text: string): boolean {
@@ -245,14 +289,32 @@ export function sendTyping(typing: boolean): boolean {
 }
 
 export function sendWhiteboardUpdate(scene: string): boolean {
+  if (typeof scene === "string" && scene.length > 500_000) {
+    console.warn("Whiteboard scene exceeds 500KB cap, skipping sync");
+    return false;
+  }
   return send(MSG.WHITEBOARD_UPDATE, { scene });
 }
 
-export function sendTranscriptChunk(text: string, speakers: string[]): boolean {
-  return send(MSG.TRANSCRIPT_CHUNK, {
-    text,
-    speakers,
-    chunkId: String(Date.now()),
+export function sendTranscriptChunk(
+  text: string,
+  speakers: string[],
+  chunkId: string,
+): Promise<{ ok: boolean; reason?: string; duplicate?: boolean }> {
+  if (!socket || socket.readyState !== PartySocket.OPEN) {
+    return Promise.resolve({ ok: false, reason: "disconnected" });
+  }
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      transcriptAcks.delete(chunkId);
+      resolve({ ok: false, reason: "timeout" });
+    }, 10_000);
+    transcriptAcks.set(chunkId, { resolve, timer });
+    if (!send(MSG.TRANSCRIPT_CHUNK, { text, speakers, chunkId })) {
+      clearTimeout(timer);
+      transcriptAcks.delete(chunkId);
+      resolve({ ok: false, reason: "disconnected" });
+    }
   });
 }
 

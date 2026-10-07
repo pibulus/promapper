@@ -199,6 +199,82 @@ Deno.test("S2 edge delete: reverse twin doesn't resurrect a severed undirected e
   assertEquals(out.edges.length, 0);
 });
 
+Deno.test("opposite directed relationships survive the append reconcile", () => {
+  const forward = { ...edge("a", "b"), kind: "depends_on" as const };
+  const reverse = { ...edge("b", "a"), kind: "risks" as const };
+  const data = conv({
+    nodes: [node("a", "a"), node("b", "b")],
+    edges: [forward, reverse],
+  });
+  const out = reconcileAppendResult(data, data, data);
+  assertEquals(
+    out.edges.map((e) => [e.source_topic_id, e.target_topic_id, e.kind]),
+    [
+      ["a", "b", "depends_on"],
+      ["b", "a", "risks"],
+    ],
+  );
+});
+
+Deno.test("two room peers can rebase independent task edits from one revision", () => {
+  const base = conv({
+    actionItems: [item("a", "book the venue"), item("b", "send the plan")],
+  });
+  const roomAfterA = conv({
+    actionItems: [
+      item("a", "book the venue", "completed"),
+      item("b", "send the plan"),
+    ],
+  });
+  const bLocal = conv({
+    actionItems: [
+      item("a", "book the venue"),
+      item("b", "send the plan", "completed"),
+    ],
+  });
+  const rebased = reconcileAppendResult(base, bLocal, roomAfterA);
+  assertEquals(rebased.actionItems.map((task) => task.status), [
+    "completed",
+    "completed",
+  ]);
+});
+
+Deno.test("a stale room writer keeps its own wording when both peers rename one task", () => {
+  const base = conv({ actionItems: [item("a1", "Plan the show")] });
+  const firstPeer = conv({
+    actionItems: [item("a1", "Plan the autumn show")],
+  });
+  const stalePeer = conv({
+    actionItems: [item("a1", "Plan the rooftop show")],
+  });
+  const retried = reconcileAppendResult(base, stalePeer, firstPeer);
+  assertEquals(retried.actionItems[0].description, "Plan the rooftop show");
+});
+
+Deno.test("an in-flight dot colour edit and clear both survive AI checkoff", () => {
+  for (const color of ["#aabbcc", null]) {
+    const base = conv({
+      actionItems: [
+        item("a1", "send the plan", "pending", { color: "#112233" }),
+      ],
+    });
+    const mine = conv({
+      actionItems: [item("a1", "send the plan", "pending", { color })],
+    });
+    const theirs = conv({
+      actionItems: [
+        item("a1", "send the plan", "completed", {
+          color: "#112233",
+          ai_checked: true,
+        }),
+      ],
+    });
+    const out = reconcileAppendResult(base, mine, theirs);
+    assertEquals(out.actionItems[0].color, color);
+    assertEquals(out.actionItems[0].status, "completed");
+  }
+});
+
 // ── S3: in-flight drag ──────────────────────────────────────────────────────
 Deno.test("S3 drag: user's new position survives AND the latest AI label is kept", () => {
   const base = conv({ nodes: [node("moth", "moth", { x: 100, y: 100 })] });

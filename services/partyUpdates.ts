@@ -34,6 +34,7 @@ function toSnapshot(result: ConversationFlowResult) {
 export async function pushSnapshotToRoom(
   roomId: string | null | undefined,
   snapshot: unknown,
+  baseRev?: number | string | null,
 ): Promise<boolean> {
   if (!roomId) return false;
   // Same shape rule the collab worker enforces on its side — one guard here
@@ -54,6 +55,11 @@ export async function pushSnapshotToRoom(
     }://${bare}`;
   const url = `${base}/parties/conversation/${encodeURIComponent(roomId)}`;
   const token = collabUpdateToken();
+  const expectedRev = typeof baseRev === "number"
+    ? baseRev
+    : typeof baseRev === "string" && /^\d+$/.test(baseRev)
+    ? Number(baseRev)
+    : null;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5_000);
@@ -64,6 +70,9 @@ export async function pushSnapshotToRoom(
       headers: {
         "Content-Type": "application/json",
         ...(token ? { "x-partykit-token": token } : {}),
+        ...(expectedRev !== null && Number.isSafeInteger(expectedRev)
+          ? { "If-Match": String(expectedRev) }
+          : {}),
       },
       body: JSON.stringify(snapshot),
       signal: controller.signal,
@@ -91,7 +100,8 @@ export async function pushSnapshotToRoom(
 export async function pushResultToRoom(
   roomId: string | null | undefined,
   result: ConversationFlowResult,
+  baseRev?: number | string | null,
 ): Promise<void> {
   if (!roomId) return;
-  await pushSnapshotToRoom(roomId, toSnapshot(result));
+  await pushSnapshotToRoom(roomId, toSnapshot(result), baseRev);
 }

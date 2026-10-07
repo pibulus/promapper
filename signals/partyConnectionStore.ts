@@ -10,6 +10,14 @@ import { signal } from "@preact/signals";
 export const connectedRoomId = signal<string | null>(null);
 export const partyConnected = signal<boolean>(false);
 
+export type LiveSyncStatus =
+  | "disconnected"
+  | "connected"
+  | "syncing"
+  | "synced"
+  | "conflict";
+export const liveSyncStatus = signal<LiveSyncStatus>("disconnected");
+
 export interface RoomMeta {
   createdAt?: string;
   updatedAt?: string;

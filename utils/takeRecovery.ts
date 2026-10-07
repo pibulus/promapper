@@ -77,6 +77,7 @@ export async function recoverUnfinishedTake(): Promise<void> {
 
   for (const { meta, blob } of ready) { // newest first
     if (live.has(meta.takeId)) continue;
+    if (meta.roomId) continue; // HomeIsland resumes this in its own room
 
     // An added take whose map still exists waits in that map. If the map was
     // deleted since, filing it there would hand it to the orphan sweep on the

@@ -56,7 +56,8 @@ function requireEnv(name: string): string {
  * cache is for the house key; per-user services are throwaway objects).
  */
 export function getAIService(byoKey?: string | null): AIService {
-  const apiKey = byoKey?.trim() || getOpenRouterApiKey();
+  const usingByoKey = Boolean(byoKey?.trim());
+  const apiKey = usingByoKey ? byoKey!.trim() : getOpenRouterApiKey();
   const model = getOpenRouterModelName();
   const baseUrl = Deno.env.get("OPENROUTER_BASE_URL") ??
     DEFAULT_OPENROUTER_BASE_URL;
@@ -88,9 +89,10 @@ export function getAIService(byoKey?: string | null): AIService {
     topicModel,
     markdownModel,
     statusModel,
+    allowHouseFallback: !usingByoKey,
   };
 
-  if (byoKey) return createOpenRouterService(config);
+  if (usingByoKey) return createOpenRouterService(config);
 
   const configKey = JSON.stringify(config);
   if (!cachedOpenRouterService || cachedOpenRouterConfig !== configKey) {

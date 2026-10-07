@@ -22,8 +22,8 @@ export interface RecorderOptions {
   onBeforeStart?: () => Promise<void>;
   /** Called on every dataavailable chunk. */
   onChunk?: (blob: Blob) => void;
-  /** Called with each take's MediaRecorder just before it starts (not for
-   * rotations) — e.g. to journal it with startJournal(). */
+  /** Called with every MediaRecorder just before it starts, including rotated
+   * live segments, so each piece has its own crash journal. */
   onTakeStart?: (recorder: MediaRecorder) => void;
   /** Called when recording stops, with the accumulated blob. */
   onStop?: (blob: Blob) => Promise<void>;
@@ -418,6 +418,7 @@ export function useRecorder(opts: RecorderOptions = {}): RecorderHandle {
         onChunk?.(e.data);
       }
     };
+    onTakeStart?.(next);
     next.start(timesliceMs);
     return blob;
   }

@@ -115,9 +115,8 @@ export interface ProcessAudioOptions {
  * Process new audio input.
  *
  * When `lightweightIfShort` is true and the transcription is under
- * SHORT_APPEND_THRESHOLD characters, the heavy analyses (topic extraction,
- * action-item extraction, summary) are skipped — only transcription and
- * status checks run. Saves ~2x on live-meeting append costs.
+ * SHORT_APPEND_THRESHOLD characters, topic extraction and summary are skipped.
+ * Action extraction still runs: a single short sentence can assign new work.
  */
 export async function processAudio(
   aiService: AIService,
@@ -178,31 +177,50 @@ export async function processAudio(
   let warnings: string[] = [];
 
   if (isShort) {
-    // Lightweight: skip topic extraction, action extraction, summary.
-    // Only check if existing items were completed/reopened.
+    // Lightweight: skip topics and summary, but always look for new work.
+    const garbled = new Set<string>();
+    const actionResult = aiService.extractActionItems(
+      transcriptText,
+      transcription.speakers,
+      existingActionItems,
+      existingSummary,
+      (what) => garbled.add(what),
+      signal,
+    ).then((items) => {
+      actionItems = items.map((item) => ({
+        id: crypto.randomUUID(),
+        conversation_id: conversationId,
+        description: clampShort(item.description, 500),
+        assignee: clampOpt(item.assignee, 100),
+        due_date: clampOpt(item.due_date, 40),
+        status: "pending" as const,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }));
+    }).catch((error) => {
+      console.error("Lightweight action extraction failed:", error);
+      warnings.push(
+        "Couldn't look for new items in this take — the transcript is preserved.",
+      );
+    });
+    let statusResult: Promise<void> = Promise.resolve();
     if (existingActionItems.length > 0) {
-      // The status check is the ONLY AI call on this path, so a silent failure
-      // here means the append lands as a 200 that changed nothing — and the
-      // receipt toast says "no new items this time", which reads as "the AI
-      // didn't hear you" when in fact it never got an answer. Warn instead.
-      // onParseError was `undefined` here while the full path (analyzeText)
-      // has always passed it, so a garbled reply degraded silently too.
-      const garbled = new Set<string>();
-      try {
-        statusUpdates = await aiService.checkActionItemStatus(
-          transcriptText,
-          existingActionItems,
-          (what) => garbled.add(what),
-          signal,
-        );
-      } catch (error) {
+      statusResult = aiService.checkActionItemStatus(
+        transcriptText,
+        existingActionItems,
+        (what) => garbled.add(what),
+        signal,
+      ).then((updates) => {
+        statusUpdates = updates;
+      }).catch((error) => {
         console.error("Lightweight status check failed:", error);
         warnings.push(
           "Couldn't check your items against this take — nothing was ticked off this round.",
         );
-      }
-      warnings.push(...buildWarnings("", garbled));
+      });
     }
+    await Promise.all([actionResult, statusResult]);
+    warnings.push(...buildWarnings("", garbled));
     summary = ""; // short append — summary not updated this round
   } else {
     // Full analysis — use analyzeText since we already transcribed

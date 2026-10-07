@@ -296,6 +296,15 @@
   --header-band-ink: color-mix(in srgb, var(--color-text) 65%, var(--soft-black));
   --header-band-sub: color-mix(in srgb, var(--color-text) 55%, transparent);
 
+  /* Module header wash — 30% wash of the solved band over the surface header
+     to bring the rolled palette subtly into the working board card headers
+     while keeping stamped tabs and card paper clean and legible. */
+  --module-header-wash: color-mix(
+    in srgb,
+    var(--header-band) 30%,
+    var(--surface-header)
+  );
+
   /* MONO HEADERS (July 20 ruling): every card band is THE accent band —
      one colour, consistent across the rack. The colour relationships live
      between the LAYERS (ground family ↔ band ↔ CTA plate — the trio law in
@@ -3991,6 +4000,13 @@ h6,
   align-items: center;
   gap: 0.5rem;
   min-height: calc(2rem + 2 * var(--header-pad-y));
+}
+
+/* The desk and paper stay put; a roll colors the index bands on the working
+   board. Keep the wash under the stamped tabs so their module identities and
+   the header controls remain legible across the full shuffle wheel. */
+.dashboard-grid .dashboard-card-header {
+  background: var(--module-header-wash);
 }
 
 .dashboard-card-header h3 {
@@ -7849,6 +7865,16 @@ a:focus-visible {
   display: inline-block;
 }
 
+.live-badge--syncing .live-badge__dot {
+  background: var(--color-accent-orange, #e0833a);
+  animation: pulse-subtle 1.2s ease-in-out infinite;
+}
+
+.live-badge__sync-indicator {
+  opacity: 0.85;
+  font-style: italic;
+}
+
 /* Phones: dot only — the "Live · N here" words ate header width in a bar
    that's already carrying nine live controls. This block must live AFTER
    the base rules above: an identical rule in the main ≤640 section (earlier
@@ -7922,6 +7948,30 @@ a:focus-visible {
   font-weight: 700;
   color: var(--accent-ink);
   margin-bottom: 0.35rem;
+}
+
+.live-transcript-rescue {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.live-transcript-rescue button {
+  border: 1px solid var(--color-border);
+  border-radius: 0.4rem;
+  padding: 0.25rem 0.55rem;
+  background: var(--surface-dawn);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--tiny-size);
+}
+
+.recording-hub__safety {
+  max-width: 12rem;
+  color: var(--accent-ink);
+  font-size: var(--tiny-size);
+  line-height: 1.2;
 }
 
 .live-transcript-item {

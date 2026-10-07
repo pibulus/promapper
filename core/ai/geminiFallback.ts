@@ -115,6 +115,7 @@ export async function chatViaGemini(
   messages: ChatMessageLike[],
   openRouterModel: string,
   signal?: AbortSignal,
+  requireComplete = false,
 ): Promise<string | null> {
   const key = Deno.env.get("GEMINI_API_KEY") ??
     Deno.env.get("PROMAPPER_GEMINI_KEY");
@@ -169,6 +170,9 @@ export async function chatViaGemini(
     }
 
     const payload = await response.json();
+    if (requireComplete && payload?.candidates?.[0]?.finishReason !== "STOP") {
+      return null;
+    }
     const parts = payload?.candidates?.[0]?.content?.parts;
     const text = Array.isArray(parts)
       ? parts.map((p: { text?: string }) => p?.text ?? "").join("").trim()

@@ -37,6 +37,13 @@ const DEFAULT_BASE_URL = "https://openrouter.ai/api/v1";
 
 type Fetcher = typeof fetch;
 
+export class IncompleteTranscriptError extends Error {
+  constructor(reason: string) {
+    super(`Audio transcript was incomplete (${reason})`);
+    this.name = "IncompleteTranscriptError";
+  }
+}
+
 export interface OpenRouterServiceOptions {
   apiKey: string;
   model: string;
@@ -54,6 +61,8 @@ export interface OpenRouterServiceOptions {
   markdownModel?: string;
   /** Optional model override for action-item status checks (self-checkoff). */
   statusModel?: string;
+  /** House-funded quota rescue must never run for a user's own key. */
+  allowHouseFallback?: boolean;
 }
 
 interface ChatMessage {
@@ -202,7 +211,10 @@ function extractMessageText(content: unknown): string {
   return "";
 }
 
-async function parseOpenRouterResponse(response: Response): Promise<string> {
+async function parseOpenRouterResponse(
+  response: Response,
+  requireComplete = false,
+): Promise<string> {
   if (!response.ok) {
     // Truncated: provider error bodies can echo request details; the thrown
     // message lands in server logs via every route's catch.
@@ -216,6 +228,11 @@ async function parseOpenRouterResponse(response: Response): Promise<string> {
 
   const payload = await response.json();
   const choice = payload.choices?.[0];
+  if (requireComplete && choice?.finish_reason !== "stop") {
+    throw new IncompleteTranscriptError(
+      `finish_reason: ${String(choice?.finish_reason ?? "missing")}`,
+    );
+  }
   const content = choice?.message?.content ?? choice?.text;
   const text = extractMessageText(content).trim();
 
@@ -255,17 +272,25 @@ export function createOpenRouterService(
     messages: ChatMessage[],
     modelHint?: string,
     signal?: AbortSignal,
+    requireComplete = false,
   ): Promise<string> {
     const model = modelHint ?? options.model;
     try {
-      return await chatViaOpenRouter(messages, model, signal);
+      return await chatViaOpenRouter(messages, model, signal, requireComplete);
     } catch (error) {
       // OpenRouter is one billing account. When its balance dies every AI
       // call in the app dies with it, so a quota failure - and ONLY a quota
       // failure - gets replayed against Gemini directly, on a different
       // account. Anything else is rethrown untouched.
-      if (!isQuotaError(error)) throw error;
-      const rescued = await chatViaGemini(messages, model, signal);
+      if (options.allowHouseFallback === false || !isQuotaError(error)) {
+        throw error;
+      }
+      const rescued = await chatViaGemini(
+        messages,
+        model,
+        signal,
+        requireComplete,
+      );
       if (rescued === null) throw error;
       console.warn("[openrouter] out of credits - served via Gemini direct");
       return rescued;
@@ -276,6 +301,7 @@ export function createOpenRouterService(
     messages: ChatMessage[],
     model: string,
     signal?: AbortSignal,
+    requireComplete = false,
   ): Promise<string> {
     return await withRetry(
       async () => {
@@ -293,7 +319,7 @@ export function createOpenRouterService(
           signal,
         });
 
-        return await parseOpenRouterResponse(response);
+        return await parseOpenRouterResponse(response, requireComplete);
       },
       3,
       600,
@@ -325,6 +351,7 @@ export function createOpenRouterService(
       ],
       modelHint,
       signal,
+      true,
     );
   }
 
@@ -344,6 +371,7 @@ export function createOpenRouterService(
         };
       } catch (error) {
         console.error("❌ Error transcribing audio:", error);
+        if (error instanceof IncompleteTranscriptError) throw error;
         throw new Error("Failed to transcribe audio with OpenRouter");
       }
     },

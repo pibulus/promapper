@@ -183,6 +183,46 @@ Deno.test("the solved band ink clears AA on every roll", () => {
   }
 });
 
+Deno.test("the module header wash keeps dark ink above AA across every roll", () => {
+  // Guard: the 30% header-band wash over --surface-header (#F0EAE1) must keep
+  // both primary ink (#18181B) and secondary ink (#52525B) readable across every roll.
+  const SURFACE_HEADER = "#F0EAE1";
+  const PRIMARY_INK = "#18181B";
+  const SECONDARY_INK = "#52525B";
+  const rand = seededRand(31337);
+  let worstPrimary = Infinity;
+  let worstSecondary = Infinity;
+  for (let i = 0; i < 300; i++) {
+    const { theme } = generateThemeParts(rand);
+    const band = theme.cssVars?.["--header-band"] as string;
+    const wash = mixHex(band, SURFACE_HEADER, 0.30);
+    const cPrimary = contrast(PRIMARY_INK, wash);
+    const cSecondary = contrast(SECONDARY_INK, wash);
+    worstPrimary = Math.min(worstPrimary, cPrimary);
+    worstSecondary = Math.min(worstSecondary, cSecondary);
+    assert(
+      cPrimary >= 4.5,
+      `primary ink ${cPrimary.toFixed(2)}:1 on wash ${wash} (band ${band})`,
+    );
+    assert(
+      cSecondary >= 4.5,
+      `secondary ink ${cSecondary.toFixed(2)}:1 on wash ${wash} (band ${band})`,
+    );
+  }
+  assert(
+    worstPrimary >= 7.0,
+    `worst primary ink contrast was ${
+      worstPrimary.toFixed(2)
+    }:1 (need AAA 7.0)`,
+  );
+  assert(
+    worstSecondary >= 4.5,
+    `worst secondary ink contrast was ${
+      worstSecondary.toFixed(2)
+    }:1 (need AA 4.5)`,
+  );
+});
+
 Deno.test("every roll carries two companion hues for nodes and modules", () => {
   const rand = seededRand(1234);
   for (let i = 0; i < 300; i++) {

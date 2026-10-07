@@ -4,8 +4,9 @@
  * Ported from the PartyKit room (party/conversationRoom.ts) after PartyKit's
  * SHARED partykit.dev zone hit Cloudflare's 10,000-custom-domains-per-zone
  * ceiling, permanently blocking deploys. DO is the primitive PartyKit wraps, so
- * the mapping is nearly 1:1 and the WIRE PROTOCOL IS UNCHANGED — the client
- * only swaps its connection URL.
+ * the mapping is nearly 1:1. The current client and worker share the versioned
+ * conversation update and transcript acknowledgement protocol; deploy them
+ * together when changing it.
  *
  * PartyKit -> Durable Object:
  *   onConnect(conn, ctx)  -> fetch() 101 upgrade + acceptWebSocket(server)
@@ -26,6 +27,7 @@
 import {
   createRoomMetadata,
   isRoomExpired,
+  LIMITS,
   LIVE_CLOSE_CODES,
   LIVE_MESSAGE_TYPES,
   normalizeLiveMessage,
@@ -36,6 +38,7 @@ import {
   sanitizeConversationData,
   touchRoomMetadata,
 } from "./conversationProtocol.ts";
+import { mergeWhiteboardScenes } from "../../../core/realtime/whiteboardScene.ts";
 
 export interface Env {
   CONVERSATION_ROOM: DurableObjectNamespace;
@@ -139,31 +142,60 @@ export class ConversationRoom {
 
     switch (normalized.type) {
       case LIVE_MESSAGE_TYPES.CONVERSATION_UPDATE: {
-        const data = sanitizeConversationData(normalized.data);
-        if (!data) return;
-        await this.saveData(data);
-        const metadata = touchRoomMetadata(state.metadata ?? {});
-        metadata.rev = (state.metadata?.rev ?? 0) + 1;
-        await this.saveMetadata(metadata);
+        const packet = normalized.data && typeof normalized.data === "object"
+          ? normalized.data as Record<string, unknown>
+          : {};
+        const data = sanitizeConversationData(packet.snapshot);
+        const baseRev = packet.baseRev;
+        const updateId = packet.updateId;
+        if (!data || typeof baseRev !== "number" ||
+          !Number.isSafeInteger(baseRev) || baseRev < 0 ||
+          typeof updateId !== "string" || updateId.length > 128) return;
+        const result = await this.ctx.storage.transaction(async (tx) => {
+          const stored = await tx.get<RoomMetadata>("metadata");
+          const currentRev = stored?.rev ?? 0;
+          if (baseRev !== currentRev) {
+            return {
+              accepted: false as const,
+              rev: currentRev,
+              data: await tx.get("data"),
+            };
+          }
+          const metadata = touchRoomMetadata(stored ?? {});
+          metadata.rev = currentRev + 1;
+          await tx.put("data", data);
+          await tx.put("metadata", metadata);
+          return { accepted: true as const, rev: metadata.rev, data };
+        });
+        if (!result.accepted) {
+          ws.send(JSON.stringify({
+            type: LIVE_MESSAGE_TYPES.UPDATE_STALE,
+            updateId,
+            rev: result.rev,
+            data: result.data,
+          }));
+          return;
+        }
         this.relay(
           LIVE_MESSAGE_TYPES.CONVERSATION_UPDATE,
           data,
           ws,
           false,
-          metadata.rev,
+          result.rev,
         );
         // Ack the sender with the new rev — relays exclude the sender, so
         // without this a client never learns the rev of its OWN write.
         ws.send(JSON.stringify({
           type: LIVE_MESSAGE_TYPES.UPDATE_ACK,
-          rev: metadata.rev,
+          updateId,
+          rev: result.rev,
         }));
         return;
       }
       case LIVE_MESSAGE_TYPES.CHAT: {
         const text = sanitizeChatText(this.field(normalized.data, "text"));
         if (!text) return;
-        await this.saveMetadata(touchRoomMetadata(state.metadata ?? {}));
+        await this.touchMetadata();
         this.relay(
           LIVE_MESSAGE_TYPES.CHAT,
           { text, at: Date.now() },
@@ -176,7 +208,7 @@ export class ConversationRoom {
         const alias = sanitizeAlias(this.field(normalized.data, "alias"));
         const current = this.stateOf(ws);
         ws.serializeAttachment({ ...current, alias });
-        await this.saveMetadata(touchRoomMetadata(state.metadata ?? {}));
+        await this.touchMetadata();
         this.broadcastPresence();
         return;
       }
@@ -189,26 +221,102 @@ export class ConversationRoom {
       case LIVE_MESSAGE_TYPES.WHITEBOARD_UPDATE: {
         const scene = this.field(normalized.data, "scene");
         if (typeof scene !== "string" || scene.length > 500_000) return;
-        await this.ctx.storage.put("whiteboard", scene);
-        await this.saveMetadata(touchRoomMetadata(state.metadata ?? {}));
-        this.relay(LIVE_MESSAGE_TYPES.WHITEBOARD_UPDATE, { scene }, ws);
+        const merged = await this.ctx.storage.transaction(async (tx) => {
+          const stored = await tx.get<string>("whiteboard");
+          const next = mergeWhiteboardScenes(stored ?? null, scene);
+          if (!next) return null;
+          const metadata = touchRoomMetadata(
+            await tx.get<RoomMetadata>("metadata") ?? {},
+          );
+          await tx.put("whiteboard", next);
+          await tx.put("metadata", metadata);
+          return next;
+        });
+        if (merged) {
+          this.relay(
+            LIVE_MESSAGE_TYPES.WHITEBOARD_UPDATE,
+            { scene: merged },
+            ws,
+            true,
+          );
+        }
         return;
       }
       case LIVE_MESSAGE_TYPES.TRANSCRIPT_CHUNK: {
         const text = this.field(normalized.data, "text");
         const speakers = this.field(normalized.data, "speakers");
         const chunkId = this.field(normalized.data, "chunkId");
-        if (typeof text !== "string" || text.length > 8000) return;
-        await this.saveMetadata(touchRoomMetadata(state.metadata ?? {}));
-        this.relay(LIVE_MESSAGE_TYPES.TRANSCRIPT_CHUNK, {
-          text,
-          speakers: Array.isArray(speakers)
-            ? speakers.filter((s): s is string => typeof s === "string")
-              .map((s) => s.slice(0, 100)).slice(0, 50)
-            : [],
-          chunkId: typeof chunkId === "string" ? chunkId : String(Date.now()),
-          at: Date.now(),
-        }, ws);
+        if (typeof text !== "string" || !text.trim() || text.length > 8000 ||
+          typeof chunkId !== "string" || !/^[A-Za-z0-9_-]{8,128}$/.test(chunkId)) return;
+        const cleanSpeakers = Array.isArray(speakers)
+          ? speakers.filter((s): s is string => typeof s === "string")
+            .map((s) => s.slice(0, LIMITS.MAX_SPEAKER_LENGTH))
+            .slice(0, LIMITS.MAX_SPEAKERS)
+          : [];
+        const result = await this.ctx.storage.transaction(async (tx) => {
+          const stored = await tx.get<RoomMetadata>("metadata");
+          const rev = stored?.rev ?? 0;
+          if (await tx.get(`chunk:${chunkId}`)) {
+            return { accepted: true as const, duplicate: true, rev };
+          }
+          const current = await tx.get<
+            NonNullable<ReturnType<typeof sanitizeConversationData>>
+          >("data");
+          if (!current) {
+            return { accepted: false as const, reason: "room_empty", rev };
+          }
+          const existing = current.transcript.text;
+          const combined = existing ? `${existing}\n\n${text.trim()}` : text.trim();
+          if (combined.length > 160_000) {
+            return { accepted: false as const, reason: "transcript_limit", rev };
+          }
+          const data = {
+            ...current,
+            conversation: { ...current.conversation, transcript: combined },
+            transcript: {
+              text: combined,
+              speakers: [...new Set([
+                ...current.transcript.speakers,
+                ...cleanSpeakers,
+              ])].slice(0, LIMITS.MAX_SPEAKERS),
+            },
+          };
+          const metadata = touchRoomMetadata(stored ?? {});
+          metadata.rev = rev + 1;
+          await tx.put("data", data);
+          await tx.put("metadata", metadata);
+          await tx.put(`chunk:${chunkId}`, true);
+          return { accepted: true as const, duplicate: false, rev: metadata.rev, data };
+        });
+        if (!result.accepted) {
+          ws.send(JSON.stringify({
+            type: LIVE_MESSAGE_TYPES.TRANSCRIPT_ACK,
+            chunkId,
+            ok: false,
+            reason: result.reason,
+          }));
+          return;
+        }
+        if (!result.duplicate) {
+          this.broadcast(JSON.stringify({
+            type: LIVE_MESSAGE_TYPES.CONVERSATION_UPDATE,
+            data: result.data,
+            rev: result.rev,
+          }));
+          this.relay(LIVE_MESSAGE_TYPES.TRANSCRIPT_CHUNK, {
+            text: text.trim(),
+            speakers: cleanSpeakers,
+            chunkId,
+            at: Date.now(),
+          }, ws);
+        }
+        ws.send(JSON.stringify({
+          type: LIVE_MESSAGE_TYPES.TRANSCRIPT_ACK,
+          chunkId,
+          ok: true,
+          rev: result.rev,
+          duplicate: result.duplicate,
+        }));
         return;
       }
     }
@@ -252,19 +360,31 @@ export class ConversationRoom {
       const data = sanitizeConversationData(payload);
       if (!data) return this.json({ error: "Invalid conversation data" }, 400);
 
-      await this.saveData(data);
-      const stored = await this.getMetadata();
-      const metadata = touchRoomMetadata(stored ?? {});
-      metadata.rev = (stored?.rev ?? 0) + 1;
-      await this.saveMetadata(metadata);
+      const expectedRev = req.headers.get("If-Match");
+      const result = await this.ctx.storage.transaction(async (tx) => {
+        const stored = await tx.get<RoomMetadata>("metadata");
+        const existing = await tx.get("data");
+        const rev = stored?.rev ?? 0;
+        if (existing && expectedRev !== String(rev)) {
+          return { accepted: false as const, rev };
+        }
+        const next = touchRoomMetadata(stored ?? {});
+        next.rev = rev + 1;
+        await tx.put("data", data);
+        await tx.put("metadata", next);
+        return { accepted: true as const, metadata: next };
+      });
+      if (!result.accepted) {
+        return this.json({ error: "Room changed; refresh before pushing" }, 409);
+      }
 
       this.broadcast(JSON.stringify({
         type: LIVE_MESSAGE_TYPES.CONVERSATION_UPDATE,
         data,
-        rev: metadata.rev,
+        rev: result.metadata.rev,
       }));
 
-      return this.json({ ok: true, expiresAt: metadata.expiresAt });
+      return this.json({ ok: true, expiresAt: result.metadata.expiresAt });
     }
 
     return new Response("Method not allowed", { status: 405 });
@@ -339,8 +459,13 @@ export class ConversationRoom {
     await this.ctx.storage.put("data", data);
   }
 
-  private async saveMetadata(metadata: RoomMetadata) {
-    await this.ctx.storage.put("metadata", metadata);
+  private async touchMetadata() {
+    // Presence and chat extend the room lifetime without reverting a newer
+    // conversation revision written while this message was in flight.
+    await this.ctx.storage.transaction(async (tx) => {
+      const stored = await tx.get<RoomMetadata>("metadata");
+      await tx.put("metadata", touchRoomMetadata(stored ?? {}));
+    });
   }
 
   private getPresenceUser(ws: WebSocket): PresenceUser {

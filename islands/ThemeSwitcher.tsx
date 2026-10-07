@@ -3,14 +3,15 @@
  *
  * No fixed theme list in the UI anymore: one button rolls a fresh warm/airy
  * theme from the constrained generator (core/theme/randomTheme.ts) and
- * persists it. On mount it restores the last roll (or the bubblegum default)
- * from localStorage — the _app.tsx FOUC script has already painted it.
+ * persists it. On mount it restores the last roll from localStorage, or rolls
+ * one if none was saved. The _app.tsx FOUC script paints saved rolls early.
  */
 
 import { useEffect } from "preact/hooks";
 import { createThemeSystem } from "@core/theme/themeEngine.ts";
 import { proMapperThemeConfig } from "@core/theme/themes.ts";
 import { generateThemeParts } from "@core/theme/randomTheme.ts";
+import { hexToOklch } from "@core/theme/oklch.ts";
 import { soundToggle } from "@utils/sound.ts";
 import { isSpanish } from "@utils/i18n.ts";
 
@@ -53,7 +54,12 @@ export default function ThemeSwitcher() {
   // behind a stale schema v or malformed JSON. See docs/COLOR-SYSTEM.md.
   useEffect(() => {
     const theme = themeSystem.init();
-    if (theme.name !== "SHUFFLE") shuffle(true);
+    if (theme.name !== "SHUFFLE") {
+      shuffle(true);
+    } else if (/^#[0-9a-f]{6}$/i.test(theme.accent)) {
+      // A restored roll is the previous roll for the first click, too.
+      lastAccentHue = hexToOklch(theme.accent)[2];
+    }
   }, []);
 
   return (

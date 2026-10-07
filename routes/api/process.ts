@@ -110,7 +110,11 @@ export const handler: Handlers = {
         }
 
         // If this came from a live room, push the result to all collaborators.
-        await pushResultToRoom(formData.get("roomId") as string | null, result);
+        await pushResultToRoom(
+          formData.get("roomId") as string | null,
+          result,
+          formData.get("roomRev") as string | null,
+        );
 
         return new Response(JSON.stringify(result), {
           headers: { "Content-Type": "application/json" },
@@ -122,7 +126,7 @@ export const handler: Handlers = {
       // ===============================================================
 
       const body = await req.json();
-      const { text, speakers = [], roomId = null } = body;
+      const { text, speakers = [], roomId = null, roomRev = null } = body;
 
       // Non-string text (objects/arrays) would sail past the length cap below,
       // so the type check and the presence check happen together.
@@ -173,7 +177,7 @@ export const handler: Handlers = {
       }
 
       // If this came from a live room, push the result to all collaborators.
-      await pushResultToRoom(roomId, result);
+      await pushResultToRoom(roomId, result, roomRev);
 
       return new Response(JSON.stringify(result), {
         headers: { "Content-Type": "application/json" },
@@ -182,7 +186,10 @@ export const handler: Handlers = {
       console.error("❌ Processing error:", error);
       return new Response(
         JSON.stringify({
-          error: "Processing failed — please try again.",
+          error: error instanceof Error &&
+              error.name === "IncompleteTranscriptError"
+            ? "The transcript stopped early. Your audio is still here — please try again."
+            : "Processing failed — please try again.",
         }),
         { status: 500, headers: { "Content-Type": "application/json" } },
       );

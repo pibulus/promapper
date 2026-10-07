@@ -26,6 +26,20 @@ import {
 import { sweepOrphanSnapshots } from "@core/storage/exportSnapshots.ts";
 import { sweepOrphans } from "@core/storage/recordingsDB.ts";
 import { recoverUnfinishedTake } from "@utils/takeRecovery.ts";
+import { saveAudioBackup } from "@utils/downloadBackup.ts";
+import {
+  listLiveSegments,
+  type LiveSegment,
+  removeLiveSegment,
+  saveLiveSegment,
+} from "@core/storage/liveSegmentJournal.ts";
+import {
+  clearTake,
+  liveTakeIds,
+  readJournal,
+  startJournal,
+  type TakeJournal,
+} from "@core/storage/takeJournal.ts";
 import { sweepOrphanTints } from "@utils/actionTags.ts";
 import { showActionToast, showToast } from "@utils/toast.ts";
 import {
@@ -36,6 +50,7 @@ import {
 import {
   chatMessages,
   connectedRoomId,
+  liveSyncStatus,
   partyConnected,
   unreadChatCount,
 } from "@signals/partyConnectionStore.ts";
@@ -83,8 +98,8 @@ import { isSpanish, t } from "@utils/i18n.ts";
 
 const SILENCE_FLUSH_MS = 2_000;
 const MAX_CHUNK_MS = 30_000;
-/** Ceiling on complete recordings held back for retry when the transcription
- * endpoint is failing. Each is one flush interval of audio. */
+/** When more than this many segments wait, pause recording and let the person
+ * save a backup. Never discard speech to keep a meeting running. */
 const MAX_PENDING_CHUNKS = 20;
 /** RMS amplitude threshold — values below this are treated as silence.
  *  Typical speech lands between 0.02–0.20 at comfortable mic distance.
@@ -340,8 +355,10 @@ export default function HomeIsland() {
 
   // Live recording — shared hook handles MediaRecorder lifecycle.
   const liveTranscript = useSignal<
-    Array<{ id: number; text: string; speakers?: string[] }>
+    Array<{ id: string; text: string; speakers?: string[] }>
   >([]);
+  const pendingLiveCount = useSignal(0);
+  const liveJournalUnsafe = useSignal(false);
 
   const {
     isRecording,
@@ -366,6 +383,31 @@ export default function HomeIsland() {
     // "" trailing fallback = let the browser pick if neither type is supported.
     mimeTypes: ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", ""],
     onBeforeStart: ensureApiSession,
+    onTakeStart: (recorder) => {
+      if (rawJournalRef.current) {
+        closedRawJournalsRef.current.push(rawJournalRef.current);
+      }
+      const owner = recordingRoomRef.current;
+      rawJournalRef.current = owner
+        ? startJournal(recorder, {
+          roomId: owner.roomId,
+          conversationId: owner.conversationId,
+        }, () => {
+          liveJournalUnsafe.value = true;
+          showToast(
+            "Live audio isn't backed up on this device. Keep this tab open or stop and save it.",
+            "warning",
+            7000,
+          );
+        })
+        : null;
+    },
+    onStop: async (blob) => {
+      const journal = rawJournalRef.current;
+      rawJournalRef.current = null;
+      await queueLiveBlob(blob, journal);
+      await drainPending();
+    },
     // Let the hook surface mic failures — silentMicError:true left the live
     // record button doing nothing on failure, with no explanation at all.
     silentMicError: false,
@@ -380,7 +422,12 @@ export default function HomeIsland() {
   // The in-flight chunk request, or null. Serialises sends — see sendChunk.
   const chunkInFlightRef = useRef<Promise<void> | null>(null);
   // Complete recordings awaiting upload (oldest first) — the retry queue.
-  const pendingChunksRef = useRef<Blob[]>([]);
+  const pendingChunksRef = useRef<LiveSegment[]>([]);
+  const recordingRoomRef = useRef<
+    { roomId: string; conversationId: string } | null
+  >(null);
+  const rawJournalRef = useRef<TakeJournal | null>(null);
+  const closedRawJournalsRef = useRef<TakeJournal[]>([]);
   // "We already said the allowance is out" — one toast per session, not one
   // per rejected chunk.
   const chunkLimitNotified = useRef(false);
@@ -411,6 +458,46 @@ export default function HomeIsland() {
       roomId: session.roomId,
       avatar: getLocalIdentity(),
     }, {
+      onInit: () => {
+        const recover = async () => {
+          if (liveSession.value?.roomId !== session.roomId) return;
+          const [segments, raw, activeIds] = await Promise.all([
+            listLiveSegments(session.roomId),
+            readJournal(),
+            liveTakeIds(),
+          ]);
+          for (const take of raw.ready) {
+            if (
+              take.meta.roomId !== session.roomId ||
+              activeIds.has(take.meta.takeId)
+            ) continue;
+            const segment: LiveSegment = {
+              id: take.meta.takeId,
+              roomId: session.roomId,
+              conversationId: take.meta.conversationId ?? "",
+              createdAt: Date.parse(take.meta.startedAt) || Date.now(),
+              audio: take.blob,
+            };
+            if (!segments.some((item) => item.id === segment.id)) {
+              segments.push(segment);
+            }
+            if (await saveLiveSegment(segment)) {
+              await clearTake(take.meta.takeId);
+            }
+          }
+          const known = new Set(pendingChunksRef.current.map((s) => s.id));
+          pendingChunksRef.current.push(
+            ...segments.filter((s) => !known.has(s.id)),
+          );
+          pendingChunksRef.current.sort((a, b) => a.createdAt - b.createdAt);
+          pendingLiveCount.value = pendingChunksRef.current.length;
+          if (pendingChunksRef.current.length) void sendChunk();
+        };
+        void recover();
+        // A tab just closed can still appear in Web Locks for a beat. Check
+        // once more after the browser releases it, without needing a reload.
+        setTimeout(() => void recover(), 1500);
+      },
       onRoomExpired: () => {
         // Without this the socket retried forever against a dead room and the
         // header sat on "Reconnecting…" until the tab closed.
@@ -430,7 +517,7 @@ export default function HomeIsland() {
         liveTranscript.value = [
           ...liveTranscript.value,
           {
-            id: Number(chunk.chunkId) || Date.now(),
+            id: chunk.chunkId,
             text: chunk.text,
             speakers: chunk.speakers,
           },
@@ -518,10 +605,22 @@ export default function HomeIsland() {
     // so a failing endpoint could hand the NEXT room the previous meeting's
     // words. Cost of clearing here: a stop/start inside one meeting drops
     // chunks that were already failing to send.
-    pendingChunksRef.current = [];
+    pendingChunksRef.current = pendingChunksRef.current.filter((segment) =>
+      segment.roomId === liveSession.value?.roomId
+    );
+    pendingLiveCount.value = pendingChunksRef.current.length;
+    recordingRoomRef.current = liveSession.value && conversationData.value
+      ? {
+        roomId: liveSession.value.roomId,
+        conversationId: conversationData.value.conversation.id,
+      }
+      : null;
     await _startRecording();
     // If recording didn't actually start (cancelled, permission denied), bail.
-    if (!isRecording.value || !streamRef.current) return;
+    if (!isRecording.value || !streamRef.current) {
+      recordingRoomRef.current = null;
+      return;
+    }
 
     // Set up silence detection on the hook's stream. If any of this throws
     // (context cap reached, stream already ended), fall back to a plain
@@ -632,89 +731,151 @@ export default function HomeIsland() {
    */
   async function flushPending() {
     const blob = await rotateRecording();
-    if (blob && blob.size > 0) pendingChunksRef.current.push(blob);
+    const rawJournal = closedRawJournalsRef.current.shift();
+    await queueLiveBlob(blob, rawJournal);
+    await drainPending();
+  }
 
+  async function queueLiveBlob(
+    blob: Blob | null,
+    rawJournal?: TakeJournal | null,
+  ) {
+    const owner = recordingRoomRef.current;
+    if (blob && blob.size > 0 && owner) {
+      await rawJournal?.whenFlushed();
+      const segment: LiveSegment = {
+        id: rawJournal?.takeId ?? crypto.randomUUID(),
+        roomId: owner.roomId,
+        conversationId: owner.conversationId,
+        createdAt: Date.now(),
+        audio: blob,
+      };
+      pendingChunksRef.current.push(segment);
+      pendingLiveCount.value = pendingChunksRef.current.length;
+      if (!await saveLiveSegment(segment)) {
+        liveJournalUnsafe.value = true;
+        showToast(
+          "Live audio isn't backed up on this device. Keep this tab open or stop and save it.",
+          "warning",
+          7000,
+        );
+      } else if (rawJournal) {
+        await clearTake(rawJournal.takeId);
+      }
+    } else if (rawJournal) {
+      await rawJournal.whenFlushed();
+      await clearTake(rawJournal.takeId);
+    }
+  }
+
+  async function drainPending() {
     while (pendingChunksRef.current.length > 0) {
       const ok = await deliverChunk(pendingChunksRef.current[0]);
       if (!ok) break;
       pendingChunksRef.current.shift();
+      pendingLiveCount.value = pendingChunksRef.current.length;
+      if (pendingChunksRef.current.length === 0) {
+        liveJournalUnsafe.value = false;
+      }
     }
 
-    // A persistently failing endpoint must not grow this without bound. Past
-    // the cap the OLDEST audio goes — in a live transcript the most recent
-    // words are the ones still worth catching up on.
-    if (pendingChunksRef.current.length > MAX_PENDING_CHUNKS) {
-      pendingChunksRef.current = pendingChunksRef.current.slice(
-        -MAX_PENDING_CHUNKS,
+    if (
+      pendingChunksRef.current.length >= MAX_PENDING_CHUNKS &&
+      isRecording.value
+    ) {
+      showToast(
+        "The room isn't saving speech right now. Recording has paused; your audio is kept here for retry.",
+        "warning",
+        7000,
       );
+      setTimeout(() => void stopRecording(), 0);
     }
   }
 
   /** POST one complete recording. Returns false if it should be retried. */
-  async function deliverChunk(blob: Blob): Promise<boolean> {
+  async function deliverChunk(segment: LiveSegment): Promise<boolean> {
+    if (liveSession.value?.roomId !== segment.roomId) return false;
     isProcessing.value = true;
     try {
-      // Name the file to match the actual codec. iOS records audio/mp4, not
-      // webm — a mismatched extension makes the server's format inference
-      // fragile if the Content-Type is ever lost in transit.
-      const ext = blob.type.includes("mp4")
-        ? "m4a"
-        : blob.type.includes("ogg")
-        ? "ogg"
-        : "webm";
-      const form = new FormData();
-      form.append("audio", blob, `chunk.${ext}`);
-      const res = await fetch("/api/live/chunk", {
-        method: "POST",
-        body: form,
-      });
-      if (!res.ok) {
-        // A non-OK response is a lost chunk too — this branch didn't exist,
-        // so a 429 or a 500 dropped the audio as quietly as a thrown error.
-        console.error("Chunk send rejected:", res.status);
-        // A rail closing mid-meeting used to be console-only: the transcript
-        // simply stopped growing and nothing said why. Say it once (the chunk
-        // loop fires every few seconds — a toast per chunk would be a siren),
-        // in the server's own warm words.
-        if (res.status === 429 && !chunkLimitNotified.current) {
-          chunkLimitNotified.current = true;
-          const said = await res.json().catch(() => null);
+      let text = segment.text ?? "";
+      let speakers = segment.speakers ?? [];
+      if (!text) {
+        const blob = segment.audio;
+        // Name the file to match the actual codec. iOS records audio/mp4, not
+        // webm — a mismatched extension makes the server's format inference
+        // fragile if the Content-Type is ever lost in transit.
+        const ext = blob.type.includes("mp4")
+          ? "m4a"
+          : blob.type.includes("ogg")
+          ? "ogg"
+          : "webm";
+        const form = new FormData();
+        form.append("audio", blob, `chunk.${ext}`);
+        const res = await fetch("/api/live/chunk", {
+          method: "POST",
+          body: form,
+        });
+        if (!res.ok) {
+          // A non-OK response is a lost chunk too — this branch didn't exist,
+          // so a 429 or a 500 dropped the audio as quietly as a thrown error.
+          console.error("Chunk send rejected:", res.status);
+          // A rail closing mid-meeting used to be console-only: the transcript
+          // simply stopped growing and nothing said why. Say it once (the chunk
+          // loop fires every few seconds — a toast per chunk would be a siren),
+          // in the server's own warm words.
+          if (res.status === 429 && !chunkLimitNotified.current) {
+            chunkLimitNotified.current = true;
+            const said = await res.json().catch(() => null);
+            showToast(
+              typeof said?.error === "string" && said.error.trim()
+                ? said.error
+                : "That's a lot of listening for one day — the map keeps everything so far.",
+              "warning",
+              7000,
+            );
+          }
+          return false;
+        }
+        // Re-arm the notice: the ref meant "once per page" rather than "once
+        // per limit", so a long meeting that tripped a rail, recovered, and
+        // tripped again hours later went silent the second time.
+        chunkLimitNotified.current = false;
+        const payload = await res.json().catch(() => null);
+        text = typeof payload?.text === "string" ? payload.text : "";
+        speakers = Array.isArray(payload?.speakers)
+          ? payload.speakers.filter((s: unknown): s is string =>
+            typeof s === "string"
+          )
+          : [];
+        if (!text.trim()) {
+          await removeLiveSegment(segment.id); // silence has no words to save
+          return true;
+        }
+        segment.text = text;
+        segment.speakers = speakers;
+        if (!await saveLiveSegment(segment)) liveJournalUnsafe.value = true;
+      }
+      if (!liveTranscript.value.some((chunk) => chunk.id === segment.id)) {
+        liveTranscript.value = [...liveTranscript.value, {
+          id: segment.id,
+          text,
+          speakers,
+        }].slice(-20);
+      }
+      const ack = await sendTranscriptChunk(text, speakers, segment.id);
+      if (!ack.ok) {
+        if (ack.reason === "transcript_limit") {
           showToast(
-            typeof said?.error === "string" && said.error.trim()
-              ? said.error
-              : "That's a lot of listening for one day — the map keeps everything so far.",
+            "This room's transcript is full. Your latest audio is kept for recovery.",
             "warning",
             7000,
           );
         }
         return false;
       }
-      // Re-arm the notice: the ref meant "once per page" rather than "once
-      // per limit", so a long meeting that tripped a rail, recovered, and
-      // tripped again hours later went silent the second time.
-      chunkLimitNotified.current = false;
-      const payload = await res.json().catch(() => null);
-      const text = typeof payload?.text === "string" ? payload.text : "";
-      const speakers = Array.isArray(payload?.speakers)
-        ? payload.speakers.filter((s: unknown): s is string =>
-          typeof s === "string"
-        )
-        : [];
-      if (text) {
-        const chunk = { id: Date.now(), text, speakers };
-        liveTranscript.value = [...liveTranscript.value, chunk].slice(-20);
-        // liveSession.value, not the render-time `session`: this lands seconds
-        // after the POST, and the session teardown calls stopRecording without
-        // awaiting it. On the stale closure the tail chunk kept feeding the
-        // analysis loop after resetLiveAnalysis — restarting its ticker and
-        // folding the old meeting's words into whatever map was open by then.
-        if (liveSession.value) {
-          sendTranscriptChunk(text, speakers);
-          // Host-only by construction (the record button is host-gated):
-          // feed the live-analysis loop so nodes/actions/summary keep up
-          // with the meeting instead of waiting for an explicit append.
-          noteLiveChunk(text, speakers);
-        }
+      await removeLiveSegment(segment.id);
+      if (!ack.duplicate && liveSession.value?.roomId === segment.roomId) {
+        noteLiveChunk(text, speakers);
       }
       return true;
     } catch (err) {
@@ -742,12 +903,8 @@ export default function HomeIsland() {
     if (chunkInFlightRef.current) {
       await chunkInFlightRef.current.catch(() => {});
     }
-    // Always flush, even with an empty chunk buffer: the rotation is what
-    // captures everything spoken since the last flush. That tail used to be
-    // dropped outright — HomeIsland never gives the hook an onStop, so the
-    // final blob _stopRecording assembles went nowhere.
-    await sendChunk();
     await _stopRecording();
+    recordingRoomRef.current = null;
     // Analyze the meaningful tail without delaying the stop UX — the result
     // lands in the dashboard (and the room) when it's ready.
     void flushLiveAnalysis();
@@ -913,9 +1070,27 @@ export default function HomeIsland() {
                     <>
                       {connected
                         ? (
-                          <span class="live-badge">
+                          <span
+                            class={`live-badge ${
+                              liveSyncStatus.value === "syncing"
+                                ? "live-badge--syncing"
+                                : ""
+                            }`}
+                            title={liveSyncStatus.value === "syncing"
+                              ? "Syncing edits to room…"
+                              : liveSyncStatus.value === "conflict"
+                              ? "Sync conflict resolved"
+                              : "Map synced with room"}
+                          >
                             <span aria-hidden="true" class="live-badge__dot" />
                             Live · {users.length} here
+                            {liveSyncStatus.value === "syncing"
+                              ? (
+                                <span class="live-badge__sync-indicator">
+                                  {" "}· Saving…
+                                </span>
+                              )
+                              : null}
                           </span>
                         )
                         : connectionFailed.value
@@ -1067,28 +1242,57 @@ export default function HomeIsland() {
       )}
 
       {/* Live transcript stream — appears during recording */}
-      {session && liveTranscript.value.length > 0 && (
-        <div
-          aria-live="polite"
-          aria-atomic="false"
-          class="live-transcript-stream"
-        >
-          <p class="live-transcript-title">
-            ● Live transcript
-          </p>
-          {liveTranscript.value.map((chunk, i) => (
-            <p
-              key={chunk.id}
-              class="live-transcript-item"
-              style={{
-                opacity: i < liveTranscript.value.length - 1 ? 0.6 : 1,
-              }}
-            >
-              {chunk.text}
+      {session &&
+        (liveTranscript.value.length > 0 || pendingLiveCount.value > 0 ||
+          liveJournalUnsafe.value) &&
+        (
+          <div
+            aria-live="polite"
+            aria-atomic="false"
+            class="live-transcript-stream"
+          >
+            <p class="live-transcript-title">
+              ● Live transcript
             </p>
-          ))}
-        </div>
-      )}
+            {pendingLiveCount.value > 0 && (
+              <div class="live-transcript-rescue">
+                <button type="button" onClick={() => void sendChunk()}>
+                  {pendingLiveCount.value}{" "}
+                  segment{pendingLiveCount.value === 1 ? "" : "s"}{" "}
+                  waiting · Retry
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const first = pendingChunksRef.current[0];
+                    if (first) {
+                      saveAudioBackup(first.audio, first.conversationId);
+                    }
+                  }}
+                >
+                  Save waiting audio
+                </button>
+              </div>
+            )}
+            {liveJournalUnsafe.value && (
+              <p role="status">
+                Some live audio isn't backed up on this device. Keep this tab
+                open until it lands.
+              </p>
+            )}
+            {liveTranscript.value.map((chunk, i) => (
+              <p
+                key={chunk.id}
+                class="live-transcript-item"
+                style={{
+                  opacity: i < liveTranscript.value.length - 1 ? 0.6 : 1,
+                }}
+              >
+                {chunk.text}
+              </p>
+            ))}
+          </div>
+        )}
 
       {
         /* Main Layout - No sidebar, centered content. flex-1 fills the space

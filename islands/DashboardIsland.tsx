@@ -18,6 +18,7 @@ import {
 import { liveSession } from "@signals/liveSessionStore.ts";
 import { sendWhiteboardUpdate } from "@signals/partyService.ts";
 import { remoteWhiteboardUpdate } from "@signals/partyConnectionStore.ts";
+import { mergeWhiteboardScenes } from "@core/realtime/whiteboardScene.ts";
 import { useEffect, useRef } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import { showToast } from "@utils/toast.ts";
@@ -234,6 +235,18 @@ export default function DashboardIsland() {
       if (first) {
         first = false;
         return;
+      }
+      const scene = remoteWhiteboardUpdate.value;
+      const current = conversationData.value;
+      if (scene && current) {
+        const local = pendingScene.current?.scene ??
+          current.whiteboardScene ?? null;
+        const merged = local
+          ? mergeWhiteboardScenes(scene, local) ?? scene
+          : scene;
+        pendingScene.current = null;
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        conversationData.value = { ...current, whiteboardScene: merged };
       }
       if (!canvasShowing.value) canvasNews.value = true;
     });

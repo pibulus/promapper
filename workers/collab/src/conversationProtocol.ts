@@ -24,6 +24,8 @@ export const LIVE_MESSAGE_TYPES = Object.freeze({
   WHITEBOARD_UPDATE: "whiteboard_update", // shared whiteboard scene changed
   TRANSCRIPT_CHUNK: "transcript_chunk", // live transcription segment
   UPDATE_ACK: "update_ack", // server -> sender: your conversation_update landed (carries rev)
+  UPDATE_STALE: "update_stale", // server -> sender: retry from this room head
+  TRANSCRIPT_ACK: "transcript_ack", // durable chunk accepted or rejected
 });
 
 export const LIVE_CLOSE_CODES = Object.freeze({

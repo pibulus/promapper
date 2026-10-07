@@ -141,3 +141,32 @@ Deno.test("every theme's SECONDARY ink passes AA on the card surface", () => {
     );
   }
 });
+
+Deno.test("every named theme's module header wash passes AA with dark ink", () => {
+  // Module header wash is 30% band over --surface-header (#f0eae1).
+  // Both primary ink (--ink-primary #18181b) and secondary ink
+  // (--ink-secondary #52525b) must pass WCAG AA.
+  const SURFACE_HEADER = "#f0eae1";
+  const PRIMARY_INK = "#18181b";
+  const SECONDARY_INK = "#52525b";
+  for (const theme of proMapperThemes) {
+    const band = mix(theme.accent, BAND_CREAM, 0.62);
+    const wash = mix(band, SURFACE_HEADER, 0.30);
+    const cPrimary = contrast(PRIMARY_INK, wash);
+    const cSecondary = contrast(SECONDARY_INK, wash);
+    assertEquals(
+      cPrimary >= 4.5,
+      true,
+      `Theme "${theme.name}" primary ink on wash ${wash} is ${
+        cPrimary.toFixed(2)
+      }:1 — below AA`,
+    );
+    assertEquals(
+      cSecondary >= 4.5,
+      true,
+      `Theme "${theme.name}" secondary ink on wash ${wash} is ${
+        cSecondary.toFixed(2)
+      }:1 — below AA`,
+    );
+  }
+});

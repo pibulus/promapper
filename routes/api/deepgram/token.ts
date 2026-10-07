@@ -7,13 +7,28 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { guardRequest } from "@services/requestGuard.ts";
+import { getByoKey, guardRequest } from "@services/requestGuard.ts";
 import { mintDeepgramToken } from "@services/deepgram.ts";
 
 export const handler: Handlers = {
   async GET(req) {
     const guard = await guardRequest(req);
     if (guard) return guard;
+    if (getByoKey(req)) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Live preview uses the house transcription key. Your own key will map the recording when you stop.",
+        }),
+        {
+          status: 409,
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store",
+          },
+        },
+      );
+    }
 
     try {
       const result = await mintDeepgramToken(60);

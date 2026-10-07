@@ -45,13 +45,14 @@ export const handler: Handlers = {
       }
 
       // Free-tier audio metering (no-op until AUDIO_BYTES_PER_DAY is set).
-      // When a house Deepgram key is configured it transcribes this chunk on
-      // the HOUSE's bill — a BYO OpenRouter key buys out the LLM path only, so
-      // it doesn't waive the meter here.
+      // A BYO request uses only that person's OpenRouter key. House Deepgram
+      // would otherwise run outside the house call ceiling on their behalf.
+      const byoKey = getByoKey(req);
+      const useDeepgram = Boolean(deepgramKey()) && !byoKey;
       const budgetBlock = await guardAudioBudget(
         req,
         audioFile.size,
-        Boolean(deepgramKey()),
+        useDeepgram,
       );
       if (budgetBlock) return budgetBlock;
 
@@ -61,7 +62,7 @@ export const handler: Handlers = {
       try {
         // Deepgram first when configured (~300ms/chunk vs a multi-second
         // LLM turn); any Deepgram failure falls through to the LLM path.
-        if (deepgramKey()) {
+        if (useDeepgram) {
           try {
             transcription = await transcribeChunkDeepgram(
               audioFile,
@@ -71,14 +72,14 @@ export const handler: Handlers = {
             if (ctrl.signal.aborted) throw dgError;
             console.warn("Deepgram chunk failed, falling back:", dgError);
             const { part: audioPart } = await uploadAudioFile(audioFile);
-            transcription = await getAIService(getByoKey(req)).transcribeAudio(
+            transcription = await getAIService(byoKey).transcribeAudio(
               audioPart,
               ctrl.signal,
             );
           }
         } else {
           const { part: audioPart } = await uploadAudioFile(audioFile);
-          transcription = await getAIService(getByoKey(req)).transcribeAudio(
+          transcription = await getAIService(byoKey).transcribeAudio(
             audioPart,
             ctrl.signal,
           );

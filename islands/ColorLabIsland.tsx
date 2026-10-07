@@ -14,15 +14,12 @@ import {
   composeTheme,
   CURATED_PAIRS,
   deriveStrong,
-  mixHex,
 } from "@core/theme/randomTheme.ts";
 import { hexToOklch, oklchToHex } from "@core/theme/oklch.ts";
 import { createThemeSystem } from "@core/theme/themeEngine.ts";
 import { proMapperThemeConfig } from "@core/theme/themes.ts";
 
 const themeSystem = createThemeSystem(proMapperThemeConfig);
-
-const BAND_CREAM = "#ffefdc";
 
 /** Accent inspo anchors (July 20 drop) — each sets the accent sliders. */
 const ACCENT_PRESETS: ReadonlyArray<[string, string]> = [
@@ -66,6 +63,7 @@ export default function ColorLabIsland() {
   const gL = useSignal(0.86);
   const gC = useSignal(0.09);
   const copied = useSignal(false);
+  const previewTarget = useSignal("/example");
   const frameRef = useRef<HTMLIFrameElement>(null);
   const reloadTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
@@ -135,10 +133,18 @@ export default function ColorLabIsland() {
     copied.value = true;
   }
 
-  const accentHex = oklchToHex(aL.value, aC.value, aH.value);
+  const preview = composeTheme({
+    hue: aH.value,
+    lightness: aL.value,
+    chroma: aC.value,
+    bgHue: gH.value,
+    groundL: gL.value,
+    groundC: gC.value,
+  });
+  const accentHex = preview.theme.accent;
   const strong = deriveStrong(aH.value, aC.value);
-  const band = mixHex(accentHex, BAND_CREAM, 0.62);
-  const plate = mixHex(accentHex, BAND_CREAM, 0.7);
+  const band = preview.theme.cssVars?.["--header-band"] as string;
+  const plate = preview.theme.cssVars?.["--cta-plate"] as string;
   const groundHex = oklchToHex(gL.value, gC.value, gH.value);
 
   const slider = (
@@ -205,9 +211,10 @@ export default function ColorLabIsland() {
           ))}
         </div>
 
-        <h2>Ground</h2>
+        <h2>Ground (feeds --gradient-bg; live board uses static desk)</h2>
         <p class="color-lab-hint">
-          Harmony modes seed the ground hue from the accent — then tune.
+          Feeds --gradient-bg and color lab preview. Live boards stay anchored
+          on the warm desk.
         </p>
         <div class="color-lab-chips">
           {HARMONY_MODES.map(([name, offsets]) => (
@@ -297,12 +304,59 @@ export default function ColorLabIsland() {
         <button type="button" class="btn btn--accent" onClick={copyPair}>
           {copied.value ? "Copied — paste into CURATED_PAIRS" : "Copy as pair"}
         </button>
+
+        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
+          <button
+            type="button"
+            class="btn"
+            style={{
+              flex: 1,
+              fontSize: "0.75rem",
+              padding: "0.35rem 0.5rem",
+              background: previewTarget.value === "/example"
+                ? "var(--accent-strong, #1b1020)"
+                : "var(--surface-white-warm, #fff)",
+              color: previewTarget.value === "/example" ? "#fff" : "inherit",
+              border: "1.5px solid var(--line-ink)",
+              borderRadius: "var(--border-radius-sm)",
+              cursor: "pointer",
+            }}
+            onClick={() => {
+              previewTarget.value = "/example";
+              if (frameRef.current) frameRef.current.src = "/example";
+            }}
+          >
+            Dashboard
+          </button>
+          <button
+            type="button"
+            class="btn"
+            style={{
+              flex: 1,
+              fontSize: "0.75rem",
+              padding: "0.35rem 0.5rem",
+              background: previewTarget.value === "/"
+                ? "var(--accent-strong, #1b1020)"
+                : "var(--surface-white-warm, #fff)",
+              color: previewTarget.value === "/" ? "#fff" : "inherit",
+              border: "1.5px solid var(--line-ink)",
+              borderRadius: "var(--border-radius-sm)",
+              cursor: "pointer",
+            }}
+            onClick={() => {
+              previewTarget.value = "/";
+              if (frameRef.current) frameRef.current.src = "/";
+            }}
+          >
+            Porch
+          </button>
+        </div>
       </aside>
 
       <iframe
         ref={frameRef}
         class="color-lab-frame"
-        src="/"
+        src={previewTarget.value}
         title="Live app preview"
       />
     </div>

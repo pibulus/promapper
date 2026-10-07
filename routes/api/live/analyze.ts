@@ -154,7 +154,10 @@ export const handler: Handlers = {
       // Same merge steps as /api/append, minus the "--- New Recording ---"
       // marker — a rolling loop would stamp one every 30s and shred the
       // transcript into confetti. Plain paragraph joins read as one meeting.
-      if (existingTranscript) {
+      if (body.transcriptAlreadyStored === true) {
+        result.transcript.text = existingTranscript;
+        result.conversation.transcript = existingTranscript;
+      } else if (existingTranscript) {
         const combined = `${existingTranscript}\n\n${result.transcript.text}`;
         result.transcript.text = combined;
         result.conversation.transcript = combined;
@@ -198,7 +201,11 @@ export const handler: Handlers = {
           /^[A-Za-z0-9_-]{3,64}$/.test(body.roomId.trim())
         ? body.roomId.trim()
         : null;
-      await pushResultToRoom(roomId, finalResult);
+      await pushResultToRoom(
+        roomId,
+        finalResult,
+        body.roomRev as number | string | null,
+      );
 
       return new Response(
         JSON.stringify({ ...finalResult, analyzedAt: Date.now() }),

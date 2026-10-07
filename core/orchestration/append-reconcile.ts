@@ -42,9 +42,13 @@ type Node = ConversationData["nodes"][number];
 type Edge = ConversationData["edges"][number];
 type ActionItem = ConversationData["actionItems"][number];
 
-// Undirected edge key, mirroring deleteEdge's order-independence: a user who
-// severs A<->B must not see it resurrected as its directional reverse twin B->A.
 function edgeKey(edge: Edge): string {
+  return `${edge.source_topic_id}->${edge.target_topic_id}`;
+}
+
+// The delete control intentionally severs both directions of a pair. Use this
+// only to recognize that explicit pair deletion, never for edge identity.
+function edgePairKey(edge: Edge): string {
   return [edge.source_topic_id, edge.target_topic_id].sort().join("::");
 }
 
@@ -152,6 +156,8 @@ function reconcileEdges(
 ): Edge[] {
   const baseKeys = new Set(base.map(edgeKey));
   const mineKeys = new Set(mine.map(edgeKey));
+  const basePairs = new Set(base.map(edgePairKey));
+  const minePairs = new Set(mine.map(edgePairKey));
 
   const kept: Edge[] = [];
   const keptKeys = new Set<string>();
@@ -162,11 +168,13 @@ function reconcileEdges(
     kept.push(edge);
   };
 
-  // THEIRS edges: keep unless the user severed this pair in-flight (present in
-  // BASE, gone from MINE). Undirected key so the reverse twin is caught too.
+  // A deleted direction stays deleted. When the UI removed the entire pair,
+  // also block a reverse edge newly emitted by the server during the append.
   for (const edge of theirs) {
     const key = edgeKey(edge);
-    const userSevered = baseKeys.has(key) && !mineKeys.has(key);
+    const pair = edgePairKey(edge);
+    const userSevered = (baseKeys.has(key) && !mineKeys.has(key)) ||
+      (basePairs.has(pair) && !minePairs.has(pair));
     if (userSevered) continue;
     consider(edge);
   }
@@ -264,6 +272,9 @@ function reconcileActionItems(
         }
         if (mineItem.due_date !== baseItem.due_date) {
           merged.due_date = mineItem.due_date;
+        }
+        if (mineItem.color !== baseItem.color) {
+          merged.color = mineItem.color;
         }
       }
     }

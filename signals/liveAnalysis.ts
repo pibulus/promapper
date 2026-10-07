@@ -132,6 +132,7 @@ async function runAnalysis(): Promise<void> {
           newText: text,
           speakers,
           existingTranscript: base.transcript?.text ?? "",
+          transcriptAlreadyStored: true,
           existingSummary: base.summary ?? "",
           existingTitle: base.conversation.title ?? "",
           existingActionItems: base.actionItems ?? [],
@@ -169,11 +170,23 @@ async function runAnalysis(): Promise<void> {
     }
 
     // Layer any edits made during the round-trip back on top, same as append.
-    conversationData.value = reconcileAppendResult(
+    const reconciled = reconcileAppendResult(
       base,
       current,
       flowResult,
     );
+    // Transcript chunks land durably before analysis starts. A new chunk may
+    // arrive during this AI round; keep that suffix when the older result lands.
+    const before = base.transcript?.text ?? "";
+    const now = current.transcript?.text ?? "";
+    if (now.startsWith(before) && now.length > before.length) {
+      const tail = now.slice(before.length);
+      if (!reconciled.transcript.text.endsWith(tail)) {
+        reconciled.transcript.text += tail;
+        reconciled.conversation.transcript = reconciled.transcript.text;
+      }
+    }
+    conversationData.value = reconciled;
     // New baseline — see the note in AudioRecorder.processAudioAppend.
     clearUndo();
   } catch (error) {

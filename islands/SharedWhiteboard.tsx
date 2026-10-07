@@ -12,6 +12,8 @@
 import { useEffect, useRef } from "preact/hooks";
 import { IS_BROWSER } from "$fresh/runtime.ts";
 import { remoteWhiteboardUpdate } from "@signals/partyConnectionStore.ts";
+import { sharedWhiteboardAppState } from "@core/realtime/whiteboardState.ts";
+import { mergeWhiteboardScenes } from "@core/realtime/whiteboardScene.ts";
 
 interface SharedWhiteboardProps {
   roomId: string;
@@ -34,29 +36,6 @@ const HIDDEN_PANEL_SECTIONS = new Set([
   "Layers",
 ]);
 
-/**
- * Strip per-viewer state from Excalidraw's appState before syncing. Without
- * this, a remote edit carries the sender's scroll/zoom/selection and silently
- * teleports everyone else's canvas — brutal on mobile, mid-stroke.
- */
-function sharedAppState(appState: unknown): Record<string, unknown> {
-  if (!appState || typeof appState !== "object") return {};
-  const {
-    scrollX: _scrollX,
-    scrollY: _scrollY,
-    zoom: _zoom,
-    cursorButton: _cursorButton,
-    selectedElementIds: _selectedElementIds,
-    selectedGroupIds: _selectedGroupIds,
-    width: _width,
-    height: _height,
-    offsetTop: _offsetTop,
-    offsetLeft: _offsetLeft,
-    ...rest
-  } = appState as Record<string, unknown>;
-  return rest;
-}
-
 export default function SharedWhiteboard(
   { initialScene, onSceneChange }: SharedWhiteboardProps,
 ) {
@@ -68,6 +47,8 @@ export default function SharedWhiteboard(
         appState: unknown;
         commitToHistory?: boolean;
       }) => void;
+      getSceneElementsIncludingDeleted: () => unknown[];
+      getAppState: () => unknown;
     } | null
   >(null);
   const reactRootRef = useRef<{ unmount: () => void } | null>(null);
@@ -111,13 +92,7 @@ export default function SharedWhiteboard(
       if (initialScene) {
         try {
           parsed = JSON.parse(initialScene);
-          // JSON round-trips turn appState.collaborators (a Map inside
-          // Excalidraw) into a plain object — restoring that crashes
-          // InteractiveCanvas ("collaborators.forEach is not a function").
-          // Strip it; Excalidraw rebuilds its own.
-          if (parsed?.appState && "collaborators" in parsed.appState) {
-            delete parsed.appState.collaborators;
-          }
+          parsed.appState = sharedWhiteboardAppState(parsed?.appState);
           // Warm the paper: stock/legacy scenes carry #ffffff.
           const bg = parsed?.appState?.viewBackgroundColor;
           if (!bg || bg === "#ffffff") {
@@ -162,7 +137,10 @@ export default function SharedWhiteboard(
             if (isRemoteUpdate.current) return;
             // Broadcast only collaborative state — never our viewport.
             onSceneChange?.(
-              JSON.stringify({ elements, appState: sharedAppState(appState) }),
+              JSON.stringify({
+                elements,
+                appState: sharedWhiteboardAppState(appState),
+              }),
             );
           },
         },
@@ -218,13 +196,18 @@ export default function SharedWhiteboard(
     const unsubscribe = remoteWhiteboardUpdate.subscribe((scene) => {
       if (!scene || !apiRef.current) return;
       try {
-        const { elements, appState } = JSON.parse(scene);
+        const localScene = JSON.stringify({
+          elements: apiRef.current.getSceneElementsIncludingDeleted(),
+          appState: sharedWhiteboardAppState(apiRef.current.getAppState()),
+        });
+        const merged = mergeWhiteboardScenes(scene, localScene) ?? scene;
+        const { elements, appState } = JSON.parse(merged);
         isRemoteUpdate.current = true;
         apiRef.current.updateScene({
           elements,
           // Drop any viewport state the sender may have included so our
           // pan/zoom is never yanked.
-          appState: sharedAppState(appState),
+          appState: sharedWhiteboardAppState(appState),
           commitToHistory: false,
         });
         // updateScene schedules a React render; onChange fires on the *next*

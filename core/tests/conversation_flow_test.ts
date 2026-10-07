@@ -272,11 +272,37 @@ Deno.test("processAudio short path skips topics + summary, keeps status check", 
   assertEquals(summaryGenerated, false);
   assertEquals(result.nodes.length, 0);
   assertEquals(result.summary, "");
+  assertEquals(result.actionItems.length, 1);
 
   // ...but the killer self-checkoff feature still fired.
   assertEquals(statusChecked, true);
   assertEquals(result.statusUpdates.length, 1);
   assertEquals(result.statusUpdates[0].status, "completed");
+});
+
+Deno.test("short audio append extracts a newly assigned task", async () => {
+  let extractedFrom = "";
+  const service: AIService = {
+    ...createMockAIService(),
+    async transcribeAudio() {
+      return { text: "Please send the venue plan by Friday", speakers: [] };
+    },
+    async extractActionItems(input) {
+      extractedFrom = String(input);
+      return [{
+        description: "Send the venue plan",
+        assignee: null,
+        due_date: "Friday",
+      }];
+    },
+  };
+  const result = await processAudio(service, mockAudioPart, "conv-short", {
+    lightweightIfShort: true,
+    existingTitle: "Workshop",
+  });
+  assertEquals(extractedFrom, "Please send the venue plan by Friday");
+  assertEquals(result.actionItems[0].description, "Send the venue plan");
+  assertEquals(result.actionItems[0].due_date, "Friday");
 });
 
 Deno.test("short path warns when its only AI call fails or comes back garbled", async () => {

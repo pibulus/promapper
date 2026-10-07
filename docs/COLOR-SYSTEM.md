@@ -1,11 +1,26 @@
 # ProMapper Color System — the law
 
-v2, July 20, 2026 (v1 same night; Pablo's veto pass folded in: mono headers, no
-stark black, backgrounds join the relationship). Everything below is enforced by
-tests (`core/tests/theme_contrast_test.ts`, `core/tests/random_theme_test.ts`)
-and implemented across the FOUR sync points: `static/styles.css` :root,
-`core/theme/themes.ts`, `routes/_app.tsx` FOUC map, `core/theme/randomTheme.ts`.
-Change one → change all. The color math lives in `core/theme/oklch.ts`.
+Current visible rules: October 2026. The July 2026 generation history remains
+below. `static/styles.css` decides which surfaces consume a roll;
+`core/theme/randomTheme.ts` generates it; `core/theme/themeEngine.ts` saves it;
+and `routes/_app.tsx` restores its variables before paint. Named themes in
+`core/theme/themes.ts` are the fallback. Contrast and generator math live in
+`core/theme/oklch.ts` and are swept by `core/tests/theme_contrast_test.ts` and
+`core/tests/random_theme_test.ts`.
+
+## Current visible contract (October 2026)
+
+The page ground is a place: `.mapper-scene` uses the fixed warm
+`--surface-desk`, and the porch has its own fixed dawn and sky. A shuffle
+changes the accent, its companion band, plates, and active controls. On the
+working board, every module header now wears a **30% wash of `--header-band`
+over `--surface-header`**; card paper, carbon borders, stamped module tabs, and
+speaker identity colors stay stable. This gives each roll a visible dashboard
+footprint without making every card a saturated slab. The generated
+`--gradient-bg` currently appears only in `/dev/colors`.
+
+The July ground-journey and full-strength header-band descriptions below record
+earlier versions of the app. The rules above describe the current screen.
 
 ## Why OKLCH
 
@@ -24,40 +39,41 @@ Two physical facts drive everything:
    wander). Above C ~0.12 — bands, accents — hues must be few and related. Three
    saturated header hues was the July 19 trio; it died.
 
-## THE TRIO (the relationship law)
+## Visual roles (October 2026)
 
-Every theme — named or rolled — is three ROLES designed together:
+Every theme — named or rolled — coordinates three visible roles on the
+dashboard:
 
-1. **The GROUND**: a two-hue family journey in the sky (L 0.84–0.90, C at the
-   family's gamut-budget), fading to an AIRY FLOOR where components live. The
-   sky CHANGES with the theme. ⚠️ **Amended Aug 20, 2026 — the floor is no
-   longer the fixed cream `#fff4e8`.** It is derived from the ground's own
-   hue/chroma at a lighter L, because a hardcoded warm cream bleached every roll
-   to near-white by mid-page and sat wrong under cool families. Paper still, but
-   paper you can name the colour of. See "the airy floor" below.
-2. **The BAND**: ONE colour on every card header — the accent at 62% over
-   `#ffefdc`. Headers are consistent; they never carry a second hue.
-3. **The POP**: the accent family everywhere ink meets colour — CTA plates,
-   chips, washes, checkbox fills, the deep companion.
+1. **The DESK & PAPER (Ground)**: A stable, tactile place. `.mapper-scene` sits
+   on fixed warm `--surface-desk`, cards use fixed cream paper
+   (`--surface-card`, `#fbf1e4`), and outlines use carbon `--line-ink`. The
+   generated `--gradient-bg` feeds the theme engine and `/dev/colors`.
+2. **The HEADER WASH**: On the working board, every module header wears
+   `--module-header-wash` — a restrained **30% wash of `--header-band` over
+   `--surface-header`**. The full solved `--header-band` (62% over `#ffefdc`)
+   anchors the module rack icon and active station indicators. Headers stay
+   MONO; stamped tabs and speaker spots keep their separate identity.
+3. **The POP & PLATES**: The accent speaks where action meets ink —
+   `--cta-plate` candy buttons (70% over band cream with dark ink), active
+   checkboxes, sound dials, and chips.
 
-Relationships live BETWEEN these layers, never inside one of them. (This is the
-conversation_mapper lesson: its best rolls were one field family + one chrome
-colour + one pop.)
+Relationships live BETWEEN these layers, never inside one of them.
 
-## The tiers (value hierarchy, top of app → ink)
+## The tiers (value hierarchy, desk → ink)
 
-| Tier | Layer          | OKLCH register                                            | Rule                                                 |
+| Tier | Layer          | OKLCH / CSS register                                      | Rule                                                 |
 | ---- | -------------- | --------------------------------------------------------- | ---------------------------------------------------- |
-| T0   | Sky ground     | washes L 0.84–0.90, C ≤ 0.10 per-hue clamped → airy floor | Two-hue family journey, airy, floor stays in-family  |
-| T1   | Shell          | accent 11% over near-white                                | unchanged recipe                                     |
-| T2   | Card face      | `#fbf1e4` paper cream, L 0.96                             | solid, never glass                                   |
-| T3   | Header band    | accent 62% over `#ffefdc`                                 | **MONO — one colour on every card, no exceptions**   |
-| T4   | Chips / washes | accent 4–20% mixes                                        | unchanged recipes, all derive from `--color-accent`  |
-| T5   | CTA plates     | `--cta-plate` (below)                                     | hued ink — never stark black, never a saturated slab |
-| T6   | Ink            | L ≈ 0.30, C 0.03, accent hue                              | text is a color — hue-tinted near-black, never grey  |
+| T0   | Desk ground    | `--surface-desk` (porch dawn; dev `--gradient-bg`)        | Fixed warm place; scene stays stable across rolls    |
+| T1   | Shell & lines  | `--line-ink` / carbon borders                             | Tactile toybrut outlines, never stark black          |
+| T2   | Card face      | `#fbf1e4` paper cream (`--surface-card`)                  | Solid stationery, never glass                        |
+| T3   | Header wash    | `--module-header-wash` (30% band over `--surface-header`) | **MONO wash across card headers; tabs stay legible** |
+| T4   | Chips / washes | accent 4–20% mixes                                        | Tinted accents derived from `--color-accent`         |
+| T5   | CTA plates     | `--cta-plate` (accent 70% over band cream)                | Bright candy fill with dark ink, chunky border       |
+| T6   | Ink            | `--ink-primary` / `--ink-secondary`                       | High-contrast ink, always passes WCAG AA             |
 
-Saturation is a budget. T3 spends it, T0 whispers it, T4 tints it, T5/T6 are
-hued ink. Nothing else shouts.
+Saturation is a budget: T5 plates grab attention, T3 header wash anchors the
+cards, T0/T2 paper stays quiet and warm, T6 ink stays razor-sharp. Nothing else
+shouts.
 
 ## The CTA plate law (+Topic, mic/record, Bishop ask, btn--accent)
 
@@ -115,8 +131,8 @@ the direct subject of 5 tests in `theme_contrast_test.ts`. **Do not delete it.**
 (Corrected Sept 12 2026 — the previous wording said "effectively DEAD", which
 contradicts line 6 of this same doc listing it as a load-bearing sync point.)
 
-The live knobs — the ones that change what a user actually sees — are all in
-`core/theme/randomTheme.ts`:
+These ground knobs still feed the generated `--gradient-bg` and the dev color
+lab. They no longer paint the dashboard or porch scene:
 
 | Knob                       | Where                   | Now              |
 | -------------------------- | ----------------------- | ---------------- |
@@ -124,11 +140,11 @@ The live knobs — the ones that change what a user actually sees — are all in
 | ground lightness floor     | `generateThemeParts`    | **L 0.90–0.915** |
 | **the 3 linear sky stops** | `composeTheme` `bgBase` | all track ground |
 
-The third row is the one that matters. `bgBase[1]` used to be pinned at
-`L 0.955` on HALF chroma and `bgBase[2]` was the literal `#fff4e8`, so whatever
-the dice rolled, the page washed out by 40% down and finished on a warm cream.
-All three stops now derive from the ground's own L/C/hue, with lightness still
-climbing toward the floor so it reads airy, not toy-solid.
+Historically, the third row was the one that mattered. `bgBase[1]` used to be
+pinned at `L 0.955` on HALF chroma and `bgBase[2]` was the literal `#fff4e8`, so
+whatever the dice rolled, the page washed out by 40% down and finished on a warm
+cream. All three stops now derive from the ground's own L/C/hue, with lightness
+still climbing toward the floor so it reads airy, not toy-solid.
 
 `core/tests/random_theme_test.ts` guards this as a LAW, not a constant: the
 floor must lift off the sky, stay under L 0.985, keep chroma ≥ 0.008, and stay
@@ -217,10 +233,11 @@ Three sources, one recipe:
 1. **Green-family accents are legal again.** The old "hospital pink and green"
    veto was green _on pink/sunrise grounds_; on paper it is a different
    proposition — and `LIME #00af82` was always a named theme accent anyway.
-2. **Two companion hues ride along** as `--accent-2` / `--accent-3`, for nodes,
-   speakers and module chrome. This is where the old app's good module colours
-   came from. **Header bands stay MONO** — the duo/trio ruling survives intact;
-   these never become a second band.
+2. **Two companion hues ride along** as `--accent-2` / `--accent-3`. The intent
+   was to bring them into nodes and module chrome, but today they have no CSS
+   consumers; completion confetti reads them. Speaker colors are separate
+   identity colors. **Header bands stay MONO** — the duo/trio ruling survives
+   intact; companions never become a second band.
 
 **Band and plate are SOLVED, not fixed.** `solveBand()` walks the mix until the
 result hits a target OKLCH lightness (band 0.755, plate 0.733 — measured as the
@@ -246,6 +263,10 @@ as pair" emits a CURATED_PAIRS entry — tune, copy, paste, done.
 Since July 26 `CURATED_PAIRS` are **lab presets only** — the dice deals from the
 NEON OFFICE generator, not from that list. The pairs survive as hand-approved
 starting points to tune from.
+
+The lab's iframe currently opens `/` (the static-ground porch), so the ground
+sliders do not preview a changing live page surface. Its band and plate swatches
+now read the solved values from `composeTheme()`.
 
 ## Standing law (inherited, still binding)
 

@@ -5,7 +5,14 @@ export function saveAudioBackup(blob: Blob, conversationId?: string) {
     .toISOString()
     .replace(/[:.]/g, "-");
   const suffix = conversationId ? `-${conversationId}` : "";
-  const filename = `${DOWNLOAD_PREFIX}${suffix}-${timestamp}.webm`;
+  const extension = blob.type.includes("mp4")
+    ? "m4a"
+    : blob.type.includes("ogg")
+    ? "ogg"
+    : blob.type.includes("wav")
+    ? "wav"
+    : "webm";
+  const filename = `${DOWNLOAD_PREFIX}${suffix}-${timestamp}.${extension}`;
 
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");

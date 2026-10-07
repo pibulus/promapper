@@ -36,6 +36,8 @@ export interface TakeMeta {
   /** Set when the take was being added to an existing map. */
   conversationId?: string;
   title?: string;
+  /** Live-room chunks are recovered by the room, never as ordinary takes. */
+  roomId?: string;
 }
 
 export interface JournalRow {
@@ -72,7 +74,8 @@ export function assembleTakes(
     );
     byTake.delete(meta.takeId);
     const blob = new Blob(sorted.map((r) => r.data), { type: meta.mimeType });
-    if (sorted[0]?.seq !== 0 || blob.size < MIN_RECOVERABLE_BYTES) {
+    const minBytes = meta.roomId ? 64 : MIN_RECOVERABLE_BYTES;
+    if (sorted[0]?.seq !== 0 || blob.size < minBytes) {
       junk.push(meta.takeId);
     } else {
       ready.push({ meta, blob });
@@ -100,6 +103,7 @@ function openDB(): Promise<IDBDatabase | null> {
         resolve(null);
       };
     } catch {
+      dbPromise = null;
       resolve(null);
     }
   });
@@ -116,6 +120,8 @@ function txDone(tx: IDBTransaction): Promise<void> {
 
 export interface TakeJournal {
   takeId: string;
+  /** Wait for queued chunk transactions before moving/clearing this take. */
+  whenFlushed(): Promise<void>;
   /** Cancelled: stop journaling and forget what's already here. */
   discard(): void;
 }
@@ -133,18 +139,30 @@ export interface TakeJournal {
  */
 export function startJournal(
   recorder: MediaRecorder,
-  meta?: Pick<TakeMeta, "conversationId" | "title">,
+  meta?: Pick<TakeMeta, "conversationId" | "title" | "roomId">,
+  onFailure?: () => void,
 ): TakeJournal {
   const takeId = crypto.randomUUID();
   let seq = 0;
   let discarded = false;
+  let failed = false;
+  let lastWrite: Promise<void> = Promise.resolve();
+  const reportFailure = () => {
+    if (failed || discarded) return;
+    failed = true;
+    onFailure?.();
+  };
 
   const onData = (e: BlobEvent) => {
     if (discarded || !e.data?.size) return;
     const n = seq++;
     const data = e.data;
-    void openDB().then((db) => {
-      if (!db) return;
+    lastWrite = lastWrite.then(async () => {
+      const db = await openDB();
+      if (!db) {
+        reportFailure();
+        return;
+      }
       const tx = db.transaction([CHUNKS, TAKES], "readwrite");
       if (n === 0) {
         tx.objectStore(TAKES).put(
@@ -157,7 +175,8 @@ export function startJournal(
         );
       }
       tx.objectStore(CHUNKS).put({ takeId, seq: n, data } satisfies JournalRow);
-    }).catch(() => {/* best effort — the in-memory take is unaffected */});
+      await txDone(tx);
+    }).catch(reportFailure);
   };
   recorder.addEventListener("dataavailable", onData);
 
@@ -179,6 +198,7 @@ export function startJournal(
 
   return {
     takeId,
+    whenFlushed: () => lastWrite,
     discard() {
       discarded = true;
       recorder.removeEventListener("dataavailable", onData);

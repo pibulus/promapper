@@ -226,6 +226,7 @@ export const handler: Handlers = {
       await pushResultToRoom(
         formData.get("roomId") as string | null,
         finalResult,
+        formData.get("roomRev") as string | null,
       );
 
       // NOTE: This endpoint is stateless — two concurrent appends for the
@@ -245,7 +246,10 @@ export const handler: Handlers = {
       console.error("❌ Append error:", error);
       return new Response(
         JSON.stringify({
-          error: "Processing failed — please try again.",
+          error: error instanceof Error &&
+              error.name === "IncompleteTranscriptError"
+            ? "The transcript stopped early. Your audio is still here — please try again."
+            : "Processing failed — please try again.",
         }),
         { status: 500, headers: { "Content-Type": "application/json" } },
       );
