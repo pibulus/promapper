@@ -23,16 +23,28 @@ import * as $api_square_webhook from "./routes/api/square/webhook.ts";
 import * as $api_supporter_checkout from "./routes/api/supporter/checkout.ts";
 import * as $api_supporter_checkout_checkoutId_ from "./routes/api/supporter/checkout/[checkoutId].ts";
 import * as $api_supporter_redeem from "./routes/api/supporter/redeem.ts";
+import * as $brainstorming from "./routes/brainstorming.tsx";
 import * as $demo from "./routes/demo.tsx";
 import * as $dev_colors from "./routes/dev/colors.tsx";
 import * as $dev_nodemap from "./routes/dev/nodemap.tsx";
 import * as $dnd from "./routes/dnd.tsx";
+import * as $es_ideas from "./routes/es/ideas.tsx";
 import * as $es_index from "./routes/es/index.tsx";
+import * as $es_investigacion from "./routes/es/investigacion.tsx";
+import * as $es_juntas from "./routes/es/juntas.tsx";
 import * as $es_rol from "./routes/es/rol.tsx";
 import * as $example from "./routes/example.tsx";
+import * as $for_brainstorming from "./routes/for/brainstorming.tsx";
 import * as $for_dnd from "./routes/for/dnd.tsx";
+import * as $for_meetings from "./routes/for/meetings.tsx";
+import * as $for_research from "./routes/for/research.tsx";
+import * as $ideas from "./routes/ideas.tsx";
 import * as $index from "./routes/index.tsx";
+import * as $investigacion from "./routes/investigacion.tsx";
+import * as $juntas from "./routes/juntas.tsx";
 import * as $live_roomId_ from "./routes/live/[roomId].tsx";
+import * as $meetings from "./routes/meetings.tsx";
+import * as $research from "./routes/research.tsx";
 import * as $rol from "./routes/rol.tsx";
 import * as $shared_shareId_ from "./routes/shared/[shareId].tsx";
 import * as $shared_index from "./routes/shared/index.tsx";
@@ -60,6 +72,7 @@ import * as $SupporterModal from "./islands/SupporterModal.tsx";
 import * as $ThemeSwitcher from "./islands/ThemeSwitcher.tsx";
 import * as $TopicVisualizationsCard from "./islands/TopicVisualizationsCard.tsx";
 import * as $UploadIsland from "./islands/UploadIsland.tsx";
+import * as $VerticalStudioIsland from "./islands/VerticalStudioIsland.tsx";
 import * as $VisualizationSelector from "./islands/VisualizationSelector.tsx";
 import * as $VoicePanel from "./islands/VoicePanel.tsx";
 import * as $modules_AskModule from "./islands/modules/AskModule.tsx";
@@ -97,16 +110,28 @@ const manifest = {
     "./routes/api/supporter/checkout/[checkoutId].ts":
       $api_supporter_checkout_checkoutId_,
     "./routes/api/supporter/redeem.ts": $api_supporter_redeem,
+    "./routes/brainstorming.tsx": $brainstorming,
     "./routes/demo.tsx": $demo,
     "./routes/dev/colors.tsx": $dev_colors,
     "./routes/dev/nodemap.tsx": $dev_nodemap,
     "./routes/dnd.tsx": $dnd,
+    "./routes/es/ideas.tsx": $es_ideas,
     "./routes/es/index.tsx": $es_index,
+    "./routes/es/investigacion.tsx": $es_investigacion,
+    "./routes/es/juntas.tsx": $es_juntas,
     "./routes/es/rol.tsx": $es_rol,
     "./routes/example.tsx": $example,
+    "./routes/for/brainstorming.tsx": $for_brainstorming,
     "./routes/for/dnd.tsx": $for_dnd,
+    "./routes/for/meetings.tsx": $for_meetings,
+    "./routes/for/research.tsx": $for_research,
+    "./routes/ideas.tsx": $ideas,
     "./routes/index.tsx": $index,
+    "./routes/investigacion.tsx": $investigacion,
+    "./routes/juntas.tsx": $juntas,
     "./routes/live/[roomId].tsx": $live_roomId_,
+    "./routes/meetings.tsx": $meetings,
+    "./routes/research.tsx": $research,
     "./routes/rol.tsx": $rol,
     "./routes/shared/[shareId].tsx": $shared_shareId_,
     "./routes/shared/index.tsx": $shared_index,
@@ -136,6 +161,7 @@ const manifest = {
     "./islands/ThemeSwitcher.tsx": $ThemeSwitcher,
     "./islands/TopicVisualizationsCard.tsx": $TopicVisualizationsCard,
     "./islands/UploadIsland.tsx": $UploadIsland,
+    "./islands/VerticalStudioIsland.tsx": $VerticalStudioIsland,
     "./islands/VisualizationSelector.tsx": $VisualizationSelector,
     "./islands/VoicePanel.tsx": $VoicePanel,
     "./islands/modules/AskModule.tsx": $modules_AskModule,

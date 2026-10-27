@@ -2,5 +2,8 @@ User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /_frsh/
+Disallow: /dev/
+Disallow: /demo
+Disallow: /example
 
 Sitemap: https://promapper.app/sitemap.xml

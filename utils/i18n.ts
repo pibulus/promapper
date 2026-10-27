@@ -7,13 +7,24 @@
 
 export type Locale = "en" | "es";
 
+let ssrLocale: Locale = "en";
+
+/**
+ * Set the active locale during synchronous SSR rendering so components calling
+ * getLocale() / isSpanish() / t() on the server match the requested route (/es*).
+ */
+export function setSsrLocale(locale: Locale): void {
+  ssrLocale = locale;
+}
+
 export function getLocale(): Locale {
   if (typeof window !== "undefined") {
     if (window.location.pathname.startsWith("/es")) return "es";
     const lang = (navigator.language || "").toLowerCase();
     if (lang.startsWith("es")) return "es";
+    return "en";
   }
-  return "en";
+  return ssrLocale;
 }
 
 export function isSpanish(): boolean {

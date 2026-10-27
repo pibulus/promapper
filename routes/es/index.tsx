@@ -15,7 +15,12 @@ export default function SpanishHome() {
         <meta name="description" content={description} />
         <link rel="canonical" href={canonicalUrl} />
         <link rel="alternate" hrefLang="es" href={canonicalUrl} />
-        <link rel="alternate" hrefLang="en" href="https://promapper.app" />
+        <link rel="alternate" hrefLang="en" href="https://promapper.app/" />
+        <link
+          rel="alternate"
+          hrefLang="x-default"
+          href="https://promapper.app/"
+        />
 
         {/* Open Graph */}
         <meta property="og:type" content="website" />
@@ -55,17 +60,28 @@ export default function SpanishHome() {
             "applicationCategory": "ProductivityApplication",
             "operatingSystem": "All",
             "inLanguage": "es",
-            "offers": {
-              "@type": "Offer",
-              "price": "0",
-              "priceCurrency": "AUD",
-              "description":
-                "Mapeo inteligente y colaborativo de pláticas y juntas",
-            },
+            "offers": [
+              {
+                "@type": "Offer",
+                "name": "Tablero Gratuito",
+                "price": "0",
+                "priceCurrency": "AUD",
+                "description":
+                  "Mapeo colaborativo local de pláticas y juntas, los 8 formatos de exportación y soporte gratuito para tu propia llave (BYOK)",
+              },
+              {
+                "@type": "Offer",
+                "name": "Pase de Soporte ProMapper (1 Año)",
+                "price": "49",
+                "priceCurrency": "AUD",
+                "description":
+                  "Tomas de audio extendidas, salas colaborativas en vivo con voz y enlaces permanentes — un solo pago sin cobros automáticos",
+              },
+            ],
           })}
         </script>
       </Head>
-      <HomeIsland />
+      <HomeIsland lang="es" />
     </>
   );
 }

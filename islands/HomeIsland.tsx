@@ -94,7 +94,7 @@ import {
 } from "@signals/supporterStore.ts";
 import AuthModalIsland from "./AuthModalIsland.tsx";
 import VoicePanel from "./VoicePanel.tsx";
-import { isSpanish, t } from "@utils/i18n.ts";
+import { isSpanish, type Locale, t } from "@utils/i18n.ts";
 
 const SILENCE_FLUSH_MS = 2_000;
 const MAX_CHUNK_MS = 30_000;
@@ -106,7 +106,11 @@ const MAX_PENDING_CHUNKS = 20;
  *  0.008 is generous to catch quiet/soft speakers. */
 const SPEAKING_THRESHOLD = 0.008;
 
-export default function HomeIsland() {
+export interface HomeIslandProps {
+  lang?: Locale;
+}
+
+export default function HomeIsland({ lang }: HomeIslandProps = {}) {
   // Per-instance UI state. These MUST be useSignal (not module-level signal())
   // — module scope is shared across concurrent SSR requests, so one visitor's
   // in-flight state would render into another visitor's HTML.
@@ -913,9 +917,10 @@ export default function HomeIsland() {
 
   const transcript = conversationData.value?.transcript?.text || "";
 
-  const i18n = t();
+  const spanish = lang ? lang === "es" : isSpanish();
+  const i18n = t(spanish ? "es" : "en");
   const heroLines = i18n.heroLines;
-  const homeUrl = isSpanish() ? "/es" : "/";
+  const homeUrl = spanish ? "/es" : "/";
 
   // While the first process brews, loading lives where the result will land:
   // the dashboard skeleton plus a LEDGER of stages. One rotating line read as
@@ -923,7 +928,7 @@ export default function HomeIsland() {
   // now stay on screen with a tick, so progress visibly ACCUMULATES. The
   // pacing is time-based (like the rotating line always was); the last stage
   // holds its pulse until the real result lands.
-  const brewNotes = isSpanish()
+  const brewNotes = spanish
     ? [
       "01 // LEYENDO EL TEXTO…",
       "02 // BUSCANDO PENDIENTES…",
@@ -940,7 +945,7 @@ export default function HomeIsland() {
     ];
 
   // Appending to a live map is a different story than the first brew.
-  const appendNotes = isSpanish()
+  const appendNotes = spanish
     ? [
       "01 // ESCUCHANDO DE NUEVO…",
       "02 // SUMÁNDOLO AL MAPA…",
@@ -1357,7 +1362,7 @@ export default function HomeIsland() {
                   <i class="fa fa-chevron-down" aria-hidden="true"></i>
                 </a>
               </section>
-              <PorchTable />
+              <PorchTable lang={spanish ? "es" : "en"} />
             </div>
           )}
           <div
@@ -1433,7 +1438,7 @@ export default function HomeIsland() {
                   <span>© 2026 ProMapper</span>
                   <i class="fa fa-heart" aria-hidden="true"></i>
                   <span class="app-footer__tagline">
-                    {isSpanish() ? "hecho en Melbourne" : "made in Melbourne"}
+                    {spanish ? "hecho en Melbourne" : "made in Melbourne"}
                   </span>
                 </span>
                 {
@@ -1445,7 +1450,7 @@ export default function HomeIsland() {
                 }
                 <span class="app-footer__controls">
                   <a
-                    href={isSpanish() ? "/es/rol" : "/for/dnd"}
+                    href={spanish ? "/es/rol" : "/for/dnd"}
                     class="header-icon-btn"
                     aria-label={i18n.tabletopLink}
                     data-tip={i18n.tabletopLink}

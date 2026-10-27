@@ -1,9 +1,14 @@
 import { type PageProps } from "$fresh/server.ts";
 import { asset } from "$fresh/runtime.ts";
+import { setSsrLocale } from "@utils/i18n.ts";
 
-export default function App({ Component }: PageProps) {
+export default function App({ Component, url }: PageProps) {
+  const isEs = url?.pathname === "/es" || url?.pathname?.startsWith("/es/");
+  const lang = isEs ? "es" : "en";
+  setSsrLocale(lang);
+
   return (
-    <html lang="en">
+    <html lang={lang}>
       <head>
         <meta charset="utf-8" />
         <script
@@ -13,67 +18,6 @@ export default function App({ Component }: PageProps) {
         >
         </script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-        {/* Primary Meta Tags */}
-        <title>ProMapper - Living project maps from messy conversations</title>
-        <meta
-          name="title"
-          content="ProMapper - Living project maps from messy conversations"
-        />
-        <meta
-          name="description"
-          content="ProMapper turns voice notes, meetings, research, scenes, and written rants into project memory: transcript, summary, actions, topic map, docs, and sharing."
-        />
-
-        <link rel="canonical" href="https://promapper.app/" />
-        <link rel="alternate" hrefLang="en" href="https://promapper.app/" />
-        <link rel="alternate" hrefLang="es" href="https://promapper.app/es" />
-
-        {/* Open Graph / Facebook */}
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://promapper.app/" />
-        <meta
-          property="og:title"
-          content="ProMapper - Living project maps from messy conversations"
-        />
-        <meta
-          property="og:description"
-          content="A friendly way to turn ongoing conversations and notes into transcripts, summaries, actions, topic maps, docs, and shared context."
-        />
-        {
-          /* ABSOLUTE image URL — link scrapers (iMessage, WhatsApp, Slack)
-            silently drop relative og:image paths, so the card showed no
-            thumbnail. Width/height let them render before downloading. */
-        }
-        <meta
-          property="og:image"
-          content="https://promapper.app/og-image.png"
-        />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta
-          property="og:image:alt"
-          content="ProMapper — project maps from messy conversations"
-        />
-
-        {/* Twitter */}
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta
-          property="twitter:url"
-          content="https://promapper.app/"
-        />
-        <meta
-          property="twitter:title"
-          content="ProMapper - Living project maps from messy conversations"
-        />
-        <meta
-          property="twitter:description"
-          content="A friendly way to turn ongoing conversations and notes into transcripts, summaries, actions, topic maps, docs, and shared context."
-        />
-        <meta
-          property="twitter:image"
-          content="https://promapper.app/og-image.png"
-        />
 
         {/* Favicon */}
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

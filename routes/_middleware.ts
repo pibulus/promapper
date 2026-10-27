@@ -25,7 +25,7 @@ import { FreshContext } from "$fresh/server.ts";
  * feature silently, with nothing pointing back at this file. It wants its own
  * pass with the origin list verified against the running app.
  */
-export async function handler(_req: Request, ctx: FreshContext) {
+export async function handler(req: Request, ctx: FreshContext) {
   const resp = await ctx.next();
 
   resp.headers.set(
@@ -35,6 +35,19 @@ export async function handler(_req: Request, ctx: FreshContext) {
   resp.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   resp.headers.set("X-Frame-Options", "SAMEORIGIN");
   resp.headers.set("X-Content-Type-Options", "nosniff");
+
+  const path = new URL(req.url).pathname;
+  if (
+    path === "/shared" ||
+    path.startsWith("/shared/") ||
+    path.startsWith("/live/") ||
+    path.startsWith("/dev/") ||
+    path.startsWith("/api/") ||
+    path === "/demo" ||
+    path === "/example"
+  ) {
+    resp.headers.set("X-Robots-Tag", "noindex, nofollow");
+  }
 
   return resp;
 }

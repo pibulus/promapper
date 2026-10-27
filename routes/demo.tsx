@@ -14,6 +14,7 @@ export default function DemoPage() {
           name="description"
           content="A finished ProMapper board: pop-culture debates and town hall chaos, mapped."
         />
+        <meta name="robots" content="noindex, nofollow" />
       </Head>
       <main style={{ minHeight: "100vh" }}>
         <DemoSeedIsland />

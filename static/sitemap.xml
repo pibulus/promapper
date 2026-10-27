@@ -4,52 +4,136 @@
   <!-- English Homepage -->
   <url>
     <loc>https://promapper.app/</loc>
-    <lastmod>2026-09-11</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="en" href="https://promapper.app/" />
     <xhtml:link rel="alternate" hreflang="es" href="https://promapper.app/es" />
+    <xhtml:link rel="alternate" hreflang="x-default"
+      href="https://promapper.app/" />
   </url>
 
   <!-- Spanish Homepage -->
   <url>
     <loc>https://promapper.app/es</loc>
-    <lastmod>2026-09-11</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="es" href="https://promapper.app/es" />
     <xhtml:link rel="alternate" hreflang="en" href="https://promapper.app/" />
+    <xhtml:link rel="alternate" hreflang="x-default"
+      href="https://promapper.app/" />
+  </url>
+
+  <!-- Weekly Meetings & Action Maps (EN) -->
+  <url>
+    <loc>https://promapper.app/for/meetings</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en"
+      href="https://promapper.app/for/meetings" />
+    <xhtml:link rel="alternate" hreflang="es"
+      href="https://promapper.app/es/juntas" />
+    <xhtml:link rel="alternate" hreflang="x-default"
+      href="https://promapper.app/for/meetings" />
+  </url>
+
+  <!-- Juntas y Mapas de Acuerdos (ES) -->
+  <url>
+    <loc>https://promapper.app/es/juntas</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="es"
+      href="https://promapper.app/es/juntas" />
+    <xhtml:link rel="alternate" hreflang="en"
+      href="https://promapper.app/for/meetings" />
+    <xhtml:link rel="alternate" hreflang="x-default"
+      href="https://promapper.app/for/meetings" />
+  </url>
+
+  <!-- Qualitative Research, Interviews & Case Files (EN) -->
+  <url>
+    <loc>https://promapper.app/for/research</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en"
+      href="https://promapper.app/for/research" />
+    <xhtml:link rel="alternate" hreflang="es"
+      href="https://promapper.app/es/investigacion" />
+    <xhtml:link rel="alternate" hreflang="x-default"
+      href="https://promapper.app/for/research" />
+  </url>
+
+  <!-- Investigación, Entrevistas y Casos (ES) -->
+  <url>
+    <loc>https://promapper.app/es/investigacion</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="es"
+      href="https://promapper.app/es/investigacion" />
+    <xhtml:link rel="alternate" hreflang="en"
+      href="https://promapper.app/for/research" />
+    <xhtml:link rel="alternate" hreflang="x-default"
+      href="https://promapper.app/for/research" />
+  </url>
+
+  <!-- Voice Notes, Brainstorming & Mind Maps (EN) -->
+  <url>
+    <loc>https://promapper.app/for/brainstorming</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en"
+      href="https://promapper.app/for/brainstorming" />
+    <xhtml:link rel="alternate" hreflang="es"
+      href="https://promapper.app/es/ideas" />
+    <xhtml:link rel="alternate" hreflang="x-default"
+      href="https://promapper.app/for/brainstorming" />
+  </url>
+
+  <!-- Notas de Voz, Ideas y Mapas Mentales (ES) -->
+  <url>
+    <loc>https://promapper.app/es/ideas</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="es"
+      href="https://promapper.app/es/ideas" />
+    <xhtml:link rel="alternate" hreflang="en"
+      href="https://promapper.app/for/brainstorming" />
+    <xhtml:link rel="alternate" hreflang="x-default"
+      href="https://promapper.app/for/brainstorming" />
   </url>
 
   <!-- D&D Campaign Studio (EN) -->
   <url>
     <loc>https://promapper.app/for/dnd</loc>
-    <lastmod>2026-09-11</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="en"
       href="https://promapper.app/for/dnd" />
     <xhtml:link rel="alternate" hreflang="es"
       href="https://promapper.app/es/rol" />
+    <xhtml:link rel="alternate" hreflang="x-default"
+      href="https://promapper.app/for/dnd" />
   </url>
 
   <!-- D&D Campaign Studio (ES) -->
   <url>
     <loc>https://promapper.app/es/rol</loc>
-    <lastmod>2026-09-11</lastmod>
+    <lastmod>2026-10-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="es"
       href="https://promapper.app/es/rol" />
     <xhtml:link rel="alternate" hreflang="en"
       href="https://promapper.app/for/dnd" />
-  </url>
-
-  <!-- Shared Map Directory / Viewer -->
-  <url>
-    <loc>https://promapper.app/shared</loc>
-    <lastmod>2026-09-11</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="x-default"
+      href="https://promapper.app/for/dnd" />
   </url>
 </urlset>

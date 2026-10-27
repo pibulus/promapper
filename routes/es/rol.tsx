@@ -20,6 +20,11 @@ export default function RolLandingPage() {
           hrefLang="en"
           href="https://promapper.app/for/dnd"
         />
+        <link
+          rel="alternate"
+          hrefLang="x-default"
+          href="https://promapper.app/for/dnd"
+        />
 
         {/* Open Graph */}
         <meta property="og:type" content="website" />
@@ -60,12 +65,42 @@ export default function RolLandingPage() {
                 "description": description,
                 "applicationCategory": "EntertainmentApplication",
                 "operatingSystem": "All",
-                "offers": {
-                  "@type": "Offer",
-                  "price": "0",
-                  "priceCurrency": "AUD",
-                  "description": "Mapeador de campañas de rol local y gratuito",
-                },
+                "inLanguage": "es",
+                "offers": [
+                  {
+                    "@type": "Offer",
+                    "name": "Estudio Gratuito para Campañas de Rol",
+                    "price": "0",
+                    "priceCurrency": "AUD",
+                    "description":
+                      "Mapeador local y gratuito de campañas de rol con bandeja de dados, sonido ambiental y exportación en Markdown",
+                  },
+                  {
+                    "@type": "Offer",
+                    "name": "Pase de Soporte ProMapper (1 Año)",
+                    "price": "49",
+                    "priceCurrency": "AUD",
+                    "description":
+                      "Grabaciones largas de partida, salas colaborativas en vivo y enlaces permanentes — un solo pago sin cobros automáticos",
+                  },
+                ],
+              },
+              {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                  {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "ProMapper en Español",
+                    "item": "https://promapper.app/es",
+                  },
+                  {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": "Partidas de Rol y D&D",
+                    "item": canonicalUrl,
+                  },
+                ],
               },
               {
                 "@type": "FAQPage",
@@ -76,25 +111,27 @@ export default function RolLandingPage() {
                     "acceptedAnswer": {
                       "@type": "Answer",
                       "text":
-                        "Graba el audio de tu partida o pega tus notas. ProMapper extrae PNJs, facciones, misiones y botín en un mapa interactivo.",
+                        "Entra el audio de la sesión o las notas escritas. ProMapper extrae PNJs, facciones, misiones activas y botín en un mapa interactivo donde las misiones se palomean solas conforme avanza la campaña.",
                     },
                   },
                   {
                     "@type": "Question",
-                    "name": "¿Puedo compartir el tablero con mis jugadores?",
+                    "name":
+                      "¿Cómo se comparte el tablero con el grupo de juego?",
                     "acceptedAnswer": {
                       "@type": "Answer",
                       "text":
-                        "Sí. Al darle a Compartir tienes un enlace con los datos en la URL. Tus jugadores abren el mapa en su cel o compu sin registrarse.",
+                        "El botón Compartir genera un enlace directo con el mapa completo. El grupo explora las conexiones de historia, misiones y resumen desde cualquier celular o computadora sin crear cuentas.",
                     },
                   },
                   {
                     "@type": "Question",
-                    "name": "¿Puedo exportar notas a Discord u Obsidian?",
+                    "name":
+                      "¿Se pueden exportar crónicas a Discord u Obsidian?",
                     "acceptedAnswer": {
                       "@type": "Answer",
                       "text":
-                        "Claro que sí. Genera resúmenes limpios en Markdown listos para pegar en tu servidor de Discord o en tu bóveda de Obsidian.",
+                        "Sí. El formato Crónica de Campaña arma resúmenes limpios en Markdown con personajes, lugares, misiones y botín listos para pegar en Discord o en una bóveda de Obsidian.",
                     },
                   },
                 ],

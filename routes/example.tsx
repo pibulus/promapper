@@ -23,6 +23,7 @@ export default function ExamplePage() {
           name="description"
           content="A finished ProMapper board: a rural sheriff's third callout this week, mapped."
         />
+        <meta name="robots" content="noindex, nofollow" />
       </Head>
       <main style={{ minHeight: "100vh" }}>
         <DemoSeedIsland />

@@ -20,6 +20,7 @@ export default function DndLandingPage() {
           hrefLang="es"
           href="https://promapper.app/es/rol"
         />
+        <link rel="alternate" hrefLang="x-default" href={canonicalUrl} />
 
         {/* Open Graph */}
         <meta property="og:type" content="website" />
@@ -60,41 +61,73 @@ export default function DndLandingPage() {
                 "description": description,
                 "applicationCategory": "EntertainmentApplication",
                 "operatingSystem": "All",
-                "offers": {
-                  "@type": "Offer",
-                  "price": "0",
-                  "priceCurrency": "USD",
-                  "description": "Free local-first tabletop campaign mapper",
-                },
+                "inLanguage": "en",
+                "offers": [
+                  {
+                    "@type": "Offer",
+                    "name": "Free Tabletop Campaign Studio",
+                    "price": "0",
+                    "priceCurrency": "AUD",
+                    "description":
+                      "Free local-first tabletop campaign mapper with dice tray, ambient soundscapes, and Markdown exports",
+                  },
+                  {
+                    "@type": "Offer",
+                    "name": "ProMapper 1-Year Supporter Pass",
+                    "price": "49",
+                    "priceCurrency": "AUD",
+                    "description":
+                      "Extended session audio takes, full multiplayer live rooms, and permanent campaign share links — no auto-renewal",
+                  },
+                ],
+              },
+              {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                  {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "ProMapper",
+                    "item": "https://promapper.app/",
+                  },
+                  {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": "D&D & TTRPG Campaign Studio",
+                    "item": canonicalUrl,
+                  },
+                ],
               },
               {
                 "@type": "FAQPage",
                 "mainEntity": [
                   {
                     "@type": "Question",
-                    "name": "How does ProMapper map my D&D session?",
+                    "name": "How does ProMapper map a D&D or TTRPG session?",
                     "acceptedAnswer": {
                       "@type": "Answer",
                       "text":
-                        "Record your session audio or paste notes. ProMapper automatically extracts NPCs, factions, open quest objectives, and party loot into an interactive force-directed graph.",
+                        "Drop in session audio or written notes. ProMapper extracts NPCs, factions, active quest objectives, and party loot into an interactive force-directed lore graph where quests tick themselves off as later sessions unfold.",
                     },
                   },
                   {
                     "@type": "Question",
-                    "name": "Can I share the campaign board with my players?",
+                    "name":
+                      "How does campaign sharing work for the rest of the party?",
                     "acceptedAnswer": {
                       "@type": "Answer",
                       "text":
-                        "Yes! Click Share to get a compressed URL link. Your players can explore the interactive graph on their phones with zero account registration.",
+                        "Click Share to generate a compressed link or permanent board URL. Players explore the interactive lore graph, quest log, and session summary on any phone or laptop with zero account signups.",
                     },
                   },
                   {
                     "@type": "Question",
-                    "name": "Can I export notes to Discord or Obsidian?",
+                    "name":
+                      "Does it export session recaps to Discord and Obsidian?",
                     "acceptedAnswer": {
                       "@type": "Answer",
                       "text":
-                        "Yes! ProMapper generates 1-click formatted Markdown summaries and quest logs ready to paste directly into Discord channels or your Obsidian lore vault.",
+                        "Yes. The Campaign Chronicle export preset builds clean Markdown recaps with dramatis personae, locations, active quests, and party loot ready to paste straight into a Discord channel or Obsidian vault.",
                     },
                   },
                 ],

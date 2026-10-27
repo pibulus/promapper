@@ -15,7 +15,7 @@
 
 import { formatTranscriptSafe } from "../utils/sanitize.ts";
 import { speakerColor } from "@core/theme/speakerColors.ts";
-import { t } from "../utils/i18n.ts";
+import { isSpanish, type Locale, t } from "../utils/i18n.ts";
 
 const SPEAKERS = ["Sheriff Dun", "Deputy Ruiz"];
 
@@ -77,8 +77,13 @@ function curve(a: typeof NODES[number], b: typeof NODES[number]): string {
   return `M${a.x} ${a.y}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${b.x} ${b.y}`;
 }
 
-export default function PorchTable() {
-  const i18n = t();
+export interface PorchTableProps {
+  lang?: Locale;
+}
+
+export default function PorchTable({ lang }: PorchTableProps = {}) {
+  const spanish = lang ? lang === "es" : isSpanish();
+  const i18n = t(spanish ? "es" : "en");
 
   return (
     <section
@@ -233,7 +238,7 @@ export default function PorchTable() {
       </ul>
 
       <div class="porch-doors">
-        <a href="/example" class="porch-door">
+        <a href="/example" rel="nofollow" class="porch-door">
           {i18n.tableOpen}
           <i class="fa fa-arrow-right" aria-hidden="true"></i>
         </a>
@@ -242,6 +247,52 @@ export default function PorchTable() {
           {i18n.tableBack}
         </a>
       </div>
+
+      <nav
+        aria-label={spanish
+          ? "Mesas de trabajo y rutas"
+          : "Workshop tables and routes"}
+        class="mt-8 pt-5 border-t border-[#1e1714]/15 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs font-semibold text-[#1e1714]/75"
+      >
+        <span class="uppercase tracking-wider text-[11px] font-bold text-[#1e1714]/55">
+          {spanish ? "Mesas:" : "Tables:"}
+        </span>
+        <a
+          href={spanish ? "/es/juntas" : "/for/meetings"}
+          class="hover:text-[#1e1714] underline decoration-[#1e1714]/30 underline-offset-4"
+        >
+          {spanish ? "Juntas y acuerdos" : "Weekly meetings"}
+        </a>
+        <span aria-hidden="true">·</span>
+        <a
+          href={spanish ? "/es/investigacion" : "/for/research"}
+          class="hover:text-[#1e1714] underline decoration-[#1e1714]/30 underline-offset-4"
+        >
+          {spanish ? "Investigación y entrevistas" : "Research & interviews"}
+        </a>
+        <span aria-hidden="true">·</span>
+        <a
+          href={spanish ? "/es/ideas" : "/for/brainstorming"}
+          class="hover:text-[#1e1714] underline decoration-[#1e1714]/30 underline-offset-4"
+        >
+          {spanish ? "Notas de voz e ideas" : "Voice notes & ideas"}
+        </a>
+        <span aria-hidden="true">·</span>
+        <a
+          href={spanish ? "/es/rol" : "/for/dnd"}
+          class="hover:text-[#1e1714] underline decoration-[#1e1714]/30 underline-offset-4"
+        >
+          {spanish ? "Partidas de rol y D&D" : "Tabletop & D&D"}
+        </a>
+        <span aria-hidden="true">·</span>
+        <a
+          href={spanish ? "/" : "/es"}
+          hrefLang={spanish ? "en" : "es"}
+          class="hover:text-[#1e1714] underline decoration-[#1e1714]/30 underline-offset-4"
+        >
+          {spanish ? "English" : "Español"}
+        </a>
+      </nav>
     </section>
   );
 }
