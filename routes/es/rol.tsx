@@ -29,6 +29,8 @@ export default function RolLandingPage() {
         {/* Open Graph */}
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="ProMapper" />
+        <meta property="og:locale" content="es_MX" />
+        <meta property="og:locale:alternate" content="en_US" />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />

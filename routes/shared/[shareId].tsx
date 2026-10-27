@@ -63,23 +63,23 @@ export default function SharedConversation({ params }: PageProps) {
         <header
           class="app-header-glass"
           style={{
-            borderBottom: "2px solid rgba(0, 0, 0, 0.08)",
-            boxShadow: "0 2px 12px rgba(0, 0, 0, 0.04)",
+            borderBottom: "2px solid var(--line-ink)",
+            boxShadow: "var(--shadow-soft)",
           }}
         >
           <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4">
             <div class="flex items-center justify-between">
               <div class="min-w-0">
-                <h1 class="truncate text-xl sm:text-2xl font-extrabold text-gray-900">
+                <h1 class="truncate text-xl sm:text-2xl font-extrabold text-[var(--soft-black)]">
                   ProMapper
                 </h1>
-                <p class="text-sm text-gray-600 mt-1">
+                <p class="text-sm text-[var(--color-text-secondary)] mt-1">
                   Shared project map
                 </p>
               </div>
               <a
                 href="/"
-                class="ml-3 inline-flex min-h-11 items-center rounded-lg border-2 px-3 sm:px-4 py-2 text-sm font-bold transition-colors"
+                class="ml-3 inline-flex min-h-11 items-center rounded-lg border-2 px-3 sm:px-4 py-2 text-sm font-bold shadow-[2px_2px_0px_var(--line-ink)] hover:-translate-y-0.5 active:translate-y-0 transition-all"
                 style={{
                   // Warm near-black on warm near-white, never absolute, and
                   // never Tailwind's cool gray-900 — the house law is

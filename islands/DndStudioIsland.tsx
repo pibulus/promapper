@@ -2,6 +2,7 @@ import { useSignal } from "@preact/signals";
 import { saveConversation } from "@core/storage/localStorage.ts";
 import type { ConversationData } from "@core/types/conversation-data.ts";
 import { soundBloom, soundTick } from "@utils/sound.ts";
+import { showToast } from "@utils/toast.ts";
 
 const DND_CID = "campaign-sunken-crypt";
 const DND_NOW = "2026-09-11T06:00:00.000Z";
@@ -167,10 +168,11 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
       // the empty porch (same fix as DemoSeedIsland).
       globalThis.location.href = `${isSpanish ? "/es" : "/"}?open=${DND_CID}`;
     } else {
-      alert(
+      showToast(
         isSpanish
-          ? "No se pudo guardar la partida de ejemplo en tu navegador."
-          : "Failed to save example campaign to local storage.",
+          ? "No se pudo guardar la partida de ejemplo en el navegador."
+          : "Storage full — could not save example campaign.",
+        "warning",
       );
       isSeeding.value = false;
     }
@@ -182,7 +184,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
       <nav class="flex items-center justify-between border-b-2 border-[#1e1714]/15 pb-4">
         <a
           href={isSpanish ? "/es" : "/"}
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#fbf1e4] border-2 border-[#1e1714] rounded-xl text-xs font-black shadow-[2px_2px_0px_#1e1714] hover:-translate-y-0.5 transition-transform"
+          class="min-h-[44px] px-3.5 py-2 inline-flex items-center gap-1.5 bg-[#fbf1e4] border-2 border-[#1e1714] rounded-xl text-xs font-black shadow-[2px_2px_0px_#1e1714] hover:shadow-[3px_3px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 transition-all"
         >
           {isSpanish ? "← Volver a ProMapper" : "← Back to ProMapper"}
         </a>
@@ -190,12 +192,12 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
           <a
             href={isSpanish ? "/for/dnd" : "/es/rol"}
             hrefLang={isSpanish ? "en" : "es"}
-            class="inline-flex items-center gap-1 px-2.5 py-1 bg-[#fbf1e4] border-2 border-[#1e1714] rounded-xl text-xs font-bold shadow-[2px_2px_0px_#1e1714] hover:-translate-y-0.5 transition-transform"
+            class="min-h-[44px] px-3.5 py-2 inline-flex items-center gap-1 bg-[#fbf1e4] border-2 border-[#1e1714] rounded-xl text-xs font-bold shadow-[2px_2px_0px_#1e1714] hover:shadow-[3px_3px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 transition-all"
             aria-label={isSpanish ? "Switch to English" : "Cambiar a Español"}
           >
             {isSpanish ? "🇬🇧 English" : "🇲🇽 Español"}
           </a>
-          <span class="inline-flex items-center gap-1 px-3 py-1 bg-[#1e1714] text-[#fffef7] rounded-full text-xs font-black tracking-wide uppercase">
+          <span class="hidden sm:inline-flex items-center gap-1 px-3 py-1 bg-[#1e1714] text-[#fffef7] rounded-full text-xs font-mono font-bold tracking-wide uppercase">
             🎲{" "}
             {isSpanish ? "D&D y juegos de rol" : "D&D 5e • Pathfinder • TTRPGs"}
           </span>
@@ -204,7 +206,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
 
       {/* Hero Section */}
       <header class="text-center space-y-4 max-w-3xl mx-auto pt-4">
-        <div class="inline-block px-3 py-1 bg-amber-100 border-2 border-[#1e1714] rounded-full text-xs font-black text-amber-900 shadow-[2px_2px_0px_#1e1714]">
+        <div class="inline-block px-3 py-1 bg-[#fbf1e4] border-2 border-[#1e1714] rounded-full text-xs font-mono font-bold text-[#1e1714] shadow-[2px_2px_0px_#1e1714]">
           {isSpanish
             ? "Para DMs y directores de juego"
             : "For Dungeon Masters & Tabletop Campaign Creators"}
@@ -226,7 +228,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
             type="button"
             onClick={handleLoadDemo}
             disabled={isSeeding.value}
-            class="w-full sm:w-auto px-6 py-3.5 bg-[#FF69B4] text-[#1e1714] border-3 border-[#1e1714] rounded-2xl font-black text-base shadow-[4px_4px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 hover:shadow-[5px_5px_0px_#1e1714] transition-all cursor-pointer flex items-center justify-center gap-2"
+            class="w-full sm:w-auto px-6 py-3.5 bg-[var(--spot-riso-pink,#ff6ac2)] text-[#1e1714] border-3 border-[#1e1714] rounded-2xl font-black text-base shadow-[4px_4px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 hover:shadow-[5px_5px_0px_#1e1714] active:shadow-[2px_2px_0px_#1e1714] transition-all cursor-pointer flex items-center justify-center gap-2"
           >
             <span>{isSeeding.value ? "⏳" : "🐉"}</span>
             <span>
@@ -239,7 +241,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
           </button>
           <a
             href={isSpanish ? "/es" : "/"}
-            class="w-full sm:w-auto px-6 py-3.5 bg-[#fbf1e4] text-[#1e1714] border-3 border-[#1e1714] rounded-2xl font-black text-base shadow-[4px_4px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2"
+            class="w-full sm:w-auto px-6 py-3.5 bg-[#fbf1e4] text-[#1e1714] border-3 border-[#1e1714] rounded-2xl font-black text-base shadow-[4px_4px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 hover:shadow-[5px_5px_0px_#1e1714] active:shadow-[2px_2px_0px_#1e1714] transition-all flex items-center justify-center gap-2"
           >
             <span>🎙️</span>
             <span>
@@ -250,15 +252,15 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
 
         {/* Quick d20 Tactile Roller Toy on the Landing Page */}
         <div class="pt-2 flex flex-col items-center justify-center gap-2">
-          <div class="inline-flex items-center gap-3 p-2 bg-[#fbf1e4] border-2 border-[#1e1714] rounded-2xl shadow-[3px_3px_0px_#1e1714]">
-            <span class="text-xs font-black uppercase tracking-wider text-[#1e1714]/70 pl-2">
+          <div class="inline-flex items-center gap-3 p-2 bg-[#fbf1e4] border-2 border-[#1e1714] rounded-2xl shadow-[3px_3px_0px_#1e1714] font-mono">
+            <span class="text-xs font-bold uppercase tracking-wider text-[#1e1714]/70 pl-2">
               {isSpanish ? "Tira el dado:" : "Test a tactile roll:"}
             </span>
             <button
               type="button"
               onClick={handleQuickRoll}
               disabled={isQuickRolling.value}
-              class={`px-3 py-1.5 bg-[#fffef7] border-2 border-[#1e1714] rounded-xl text-xs font-black text-[#1e1714] shadow-[2px_2px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer transition-transform flex items-center gap-1.5 ${
+              class={`min-h-[44px] px-4 py-2 bg-[#fffef7] border-2 border-[#1e1714] rounded-xl text-xs font-black text-[#1e1714] shadow-[2px_2px_0px_#1e1714] hover:shadow-[3px_3px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer transition-all flex items-center gap-1.5 ${
                 isQuickRolling.value ? "animate-spin" : ""
               }`}
             >
@@ -269,9 +271,9 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
               <span
                 class={`px-2.5 py-1 rounded-lg text-xs font-black border border-[#1e1714] transition-transform animate-bounce ${
                   quickRollResult.value === 20
-                    ? "bg-amber-300 text-amber-950 font-black shadow-[2px_2px_0px_#1e1714]"
+                    ? "bg-[var(--spot-fluro-yellow,#FFE600)] text-[#1e1714] font-black shadow-[2px_2px_0px_#1e1714]"
                     : quickRollResult.value === 1
-                    ? "bg-rose-200 text-rose-950 shadow-[2px_2px_0px_#1e1714]"
+                    ? "bg-[#fbf1e4] text-[#1e1714] shadow-[2px_2px_0px_#1e1714]"
                     : "bg-[#fffef7] text-[#1e1714]"
                 }`}
               >
@@ -346,10 +348,10 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
       </section>
 
       {/* Campaign Chronicle Showcase */}
-      <section class="bg-amber-50/70 border-3 border-[#1e1714] rounded-2xl p-6 sm:p-8 shadow-[4px_4px_0px_#1e1714] space-y-4">
+      <section class="bg-[#fbf1e4] border-3 border-[#1e1714] rounded-2xl p-5 sm:p-8 shadow-[4px_4px_0px_#1e1714] space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-[#1e1714]/15 pb-3">
           <div>
-            <span class="inline-block px-2.5 py-0.5 bg-[#1e1714] text-[#fffef7] text-[10px] font-black uppercase rounded-full tracking-wider mb-1">
+            <span class="inline-block px-2.5 py-0.5 bg-[#1e1714] text-[#fffef7] text-[10px] font-mono font-bold uppercase rounded-full tracking-wider mb-1">
               {isSpanish ? "Nuevo formato" : "New Export Preset"}
             </span>
             <h2 class="text-xl sm:text-2xl font-black text-[#1e1714]">
@@ -358,7 +360,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
                 : "1-Click Campaign Chronicle for Discord & Obsidian"}
             </h2>
           </div>
-          <span class="text-xs font-bold text-[#1e1714]/70">
+          <span class="text-xs font-mono font-bold text-[#1e1714]/70">
             {isSpanish
               ? "Exportación limpia en Markdown"
               : "Clean Markdown output"}
@@ -369,7 +371,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
             ? "Sin horas redactando resúmenes después de jugar. Este formato organiza personajes, lugares, misiones pendientes y botín en un solo archivo Markdown impecable:"
             : "No more hours writing post-session recaps. The Campaign Chronicle preset structures dramatis personae, locations, active quest hooks, and party loot in one clean Markdown file:"}
         </p>
-        <pre class="bg-[#fffef7] border-2 border-[#1e1714] rounded-xl p-4 text-xs font-mono text-[#1e1714] overflow-x-auto leading-relaxed shadow-[2px_2px_0px_#1e1714]">
+        <pre class="bg-[#fffef7] border-2 border-[#1e1714] rounded-xl p-4 text-xs font-mono text-[#1e1714] overflow-x-auto whitespace-pre-wrap break-words leading-relaxed shadow-[2px_2px_0px_#1e1714]">
 {`# The Sunken Crypt of Morzan (Session 14)
 **Dramatis Personae**: Madame Vesper (Crime Broker), Kaela (Wizard), Valen (Rogue), Thorin (Paladin)
 **Locations & Lore**: The Black Raven Tavern, Sunken Crypt of Morzan, Crimson Hand Cultists
@@ -382,7 +384,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
       </section>
 
       {/* Comparison Table */}
-      <section class="bg-[#fbf1e4] border-3 border-[#1e1714] rounded-2xl p-6 sm:p-8 shadow-[4px_4px_0px_#1e1714] space-y-6">
+      <section class="bg-[#fbf1e4] border-3 border-[#1e1714] rounded-2xl p-4 sm:p-8 shadow-[4px_4px_0px_#1e1714] space-y-6">
         <div class="text-center space-y-2">
           <h2 class="text-xl sm:text-3xl font-black text-[#1e1714]">
             {isSpanish
@@ -397,9 +399,9 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
         </div>
 
         <div class="overflow-x-auto">
-          <table class="w-full text-xs sm:text-sm border-collapse">
+          <table class="w-full min-w-[520px] text-xs sm:text-sm border-collapse">
             <thead>
-              <tr class="border-b-2 border-[#1e1714] bg-amber-50">
+              <tr class="border-b-2 border-[#1e1714] bg-[#fffef7]">
                 <th class="text-left p-3 font-black text-[#1e1714]">
                   {isSpanish ? "Detalle" : "Feature"}
                 </th>
@@ -408,7 +410,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
                     ? "Notas a mano / Notion"
                     : "Manual Notes / Notion"}
                 </th>
-                <th class="text-left p-3 font-black text-emerald-900 bg-emerald-50">
+                <th class="text-left p-3 font-black text-[#1e1714] bg-[#fbf1e4]">
                   ProMapper TTRPG Studio 🎲
                 </th>
               </tr>
@@ -423,7 +425,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
                     ? "Escribir o teclear corta el ritmo de la narración"
                     : "Typing or scribbling breaks the storytelling flow"}
                 </td>
-                <td class="p-3 font-bold text-emerald-900 bg-emerald-50/50">
+                <td class="p-3 font-bold text-[#1e1714] bg-[#fffef7]/80">
                   {isSpanish
                     ? "100% manos libres: el audio corre y la mesa sigue"
                     : "100% hands-free — the recording runs while the table plays"}
@@ -440,7 +442,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
                     ? "Páginas de texto plano difíciles de cruzar"
                     : "Wall of text notes, slow to cross-reference"}
                 </td>
-                <td class="p-3 font-bold text-emerald-900 bg-emerald-50/50">
+                <td class="p-3 font-bold text-[#1e1714] bg-[#fffef7]/80">
                   {isSpanish
                     ? "Grafo visual interactivo para mover y conectar"
                     : "Interactive force-directed node graph to drag & merge"}
@@ -455,7 +457,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
                     ? "Cinco pestañas abiertas (música, dados, notas, chat)"
                     : "5 open browser tabs (music, dice roller, notes, chat)"}
                 </td>
-                <td class="p-3 font-bold text-emerald-900 bg-emerald-50/50">
+                <td class="p-3 font-bold text-[#1e1714] bg-[#fffef7]/80">
                   {isSpanish
                     ? "Todo en el mismo tablero: sonido ambiental, bandeja de dados y mapa de lore"
                     : "All-in-one board — procedural ambient soundscapes, tactile dice tray & lore graph"}
@@ -470,7 +472,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
                     ? "Documentos pesados que pocos abren"
                     : "Long documents the party rarely opens"}
                 </td>
-                <td class="p-3 font-bold text-emerald-900 bg-emerald-50/50">
+                <td class="p-3 font-bold text-[#1e1714] bg-[#fffef7]/80">
                   {isSpanish
                     ? "Enlace directo sin registro: abre en el cel de cualquiera"
                     : "Compressed URL share link with interactive map + 0 signups"}
@@ -485,7 +487,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
                     ? "Cuentas obligatorias en la nube"
                     : "Locked behind mandatory cloud accounts"}
                 </td>
-                <td class="p-3 font-bold text-emerald-900 bg-emerald-50/50">
+                <td class="p-3 font-bold text-[#1e1714] bg-[#fffef7]/80">
                   {isSpanish
                     ? "Local en el navegador, con opción de llave propia (BYOK)"
                     : "100% local-first in browser with optional BYOK key routing"}
@@ -554,27 +556,27 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
         aria-label={isSpanish
           ? "Otras mesas de trabajo en ProMapper"
           : "Other ProMapper workshop tables"}
-        class="bg-[#fbf1e4] border-2 border-[#1e1714] rounded-2xl p-4 shadow-[2px_2px_0px_#1e1714] flex flex-wrap items-center justify-center gap-3 text-xs font-bold"
+        class="bg-[#fbf1e4] border-2 border-[#1e1714] rounded-2xl p-4 shadow-[2px_2px_0px_#1e1714] flex flex-wrap items-center justify-center gap-3 text-xs font-mono font-bold"
       >
         <span class="uppercase tracking-wider text-[#1e1714]/60">
           {isSpanish ? "Otras mesas:" : "More tables:"}
         </span>
         <a
           href={isSpanish ? "/es/juntas" : "/for/meetings"}
-          class="px-3 py-1.5 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
+          class="inline-flex items-center min-h-[44px] px-3.5 py-2 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
         >
           📋 {isSpanish ? "Juntas y acuerdos" : "Weekly Meetings"}
         </a>
         <a
           href={isSpanish ? "/es/investigacion" : "/for/research"}
-          class="px-3 py-1.5 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
+          class="inline-flex items-center min-h-[44px] px-3.5 py-2 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
         >
           🔍{" "}
           {isSpanish ? "Investigación y entrevistas" : "Research & Interviews"}
         </a>
         <a
           href={isSpanish ? "/es/ideas" : "/for/brainstorming"}
-          class="px-3 py-1.5 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
+          class="inline-flex items-center min-h-[44px] px-3.5 py-2 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
         >
           🎙️ {isSpanish ? "Notas de voz e ideas" : "Voice Notes & Ideas"}
         </a>
@@ -585,13 +587,13 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
         <button
           type="button"
           onClick={handleLoadDemo}
-          class="px-8 py-4 bg-[#FF69B4] text-[#1e1714] border-3 border-[#1e1714] rounded-2xl font-black text-lg shadow-[4px_4px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+          class="w-full sm:w-auto min-h-[44px] px-8 py-4 bg-[var(--spot-riso-pink,#ff6ac2)] text-[#1e1714] border-3 border-[#1e1714] rounded-2xl font-black text-base sm:text-lg shadow-[4px_4px_0px_#1e1714] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#1e1714] active:translate-y-0 transition-all cursor-pointer"
         >
           {isSpanish
             ? "Abre el tablero de campaña con dados y sonido 🎲"
             : "Open Campaign Board with Dice & Soundscapes 🎲"}
         </button>
-        <p class="text-xs text-[#1e1714]/60">
+        <p class="text-xs font-mono text-[#1e1714]/60">
           {isSpanish
             ? "Compatible con D&D 5e, Pathfinder 2e, Call of Cthulhu, Cyberpunk y cualquier juego de rol."
             : "Works seamlessly with D&D 5e, Pathfinder 2e, Call of Cthulhu, Cyberpunk RED, and any homebrew TTRPG."}

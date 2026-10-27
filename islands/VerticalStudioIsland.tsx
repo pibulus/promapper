@@ -1,5 +1,6 @@
 import { useSignal } from "@preact/signals";
 import { saveConversation } from "@core/storage/localStorage.ts";
+import { showToast } from "@utils/toast.ts";
 import { DEMO_DUSTY, DEMO_EVIL_WIZARD, DEMO_T2 } from "../utils/demoPresets.ts";
 
 export type VerticalKind = "meetings" | "research" | "brainstorming";
@@ -773,6 +774,12 @@ export default function VerticalStudioIsland(
       }?open=${demo.conversation.id}`;
     } else {
       isSeeding.value = false;
+      showToast(
+        isSpanish
+          ? "Almacenamiento local lleno. Limpia tableros antiguos e intenta de nuevo."
+          : "Browser storage is full. Clear older boards and try again.",
+        "warning",
+      );
     }
   }
 
@@ -782,7 +789,7 @@ export default function VerticalStudioIsland(
       <nav class="flex items-center justify-between border-b-2 border-[#1e1714]/15 pb-4">
         <a
           href={isSpanish ? "/es" : "/"}
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#fbf1e4] border-2 border-[#1e1714] rounded-xl text-xs font-black shadow-[2px_2px_0px_#1e1714] hover:-translate-y-0.5 transition-transform"
+          class="inline-flex items-center min-h-[44px] gap-1.5 px-3.5 py-2 bg-[#fbf1e4] border-2 border-[#1e1714] rounded-xl text-xs font-mono font-bold shadow-[2px_2px_0px_#1e1714] hover:-translate-y-0.5 transition-transform"
         >
           {isSpanish ? "← Volver a ProMapper" : "← Back to ProMapper"}
         </a>
@@ -790,12 +797,12 @@ export default function VerticalStudioIsland(
           <a
             href={isSpanish ? copy.enPath : copy.esPath}
             hrefLang={isSpanish ? "en" : "es"}
-            class="inline-flex items-center gap-1 px-2.5 py-1 bg-[#fbf1e4] border-2 border-[#1e1714] rounded-xl text-xs font-bold shadow-[2px_2px_0px_#1e1714] hover:-translate-y-0.5 transition-transform"
+            class="inline-flex items-center min-h-[44px] gap-1 px-3.5 py-2 bg-[#fbf1e4] border-2 border-[#1e1714] rounded-xl text-xs font-mono font-bold shadow-[2px_2px_0px_#1e1714] hover:-translate-y-0.5 transition-transform"
             aria-label={isSpanish ? "Switch to English" : "Cambiar a Español"}
           >
             {isSpanish ? "🇬🇧 English" : "🇲🇽 Español"}
           </a>
-          <span class="hidden sm:inline-flex items-center gap-1 px-3 py-1 bg-[#1e1714] text-[#fffef7] rounded-full text-xs font-black tracking-wide uppercase">
+          <span class="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 bg-[#1e1714] text-[#fffef7] rounded-full text-xs font-mono font-bold tracking-wide uppercase">
             {copy.navBadge}
           </span>
         </div>
@@ -803,7 +810,7 @@ export default function VerticalStudioIsland(
 
       {/* Hero Section */}
       <header class="text-center space-y-4 max-w-3xl mx-auto pt-4">
-        <div class="inline-block px-3 py-1 bg-amber-100 border-2 border-[#1e1714] rounded-full text-xs font-black text-amber-900 shadow-[2px_2px_0px_#1e1714]">
+        <div class="inline-block px-3.5 py-1.5 bg-[#fbf1e4] border-2 border-[#1e1714] rounded-full text-xs font-mono font-bold text-[#1e1714] shadow-[2px_2px_0px_#1e1714]">
           {copy.kicker}
         </div>
         <h1 class="text-3xl sm:text-5xl font-black tracking-tight text-[#1e1714] leading-tight">
@@ -819,14 +826,14 @@ export default function VerticalStudioIsland(
             type="button"
             onClick={handleLoadDemo}
             disabled={isSeeding.value}
-            class="w-full sm:w-auto px-6 py-3.5 bg-[#FF69B4] text-[#1e1714] border-3 border-[#1e1714] rounded-2xl font-black text-base shadow-[4px_4px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 hover:shadow-[5px_5px_0px_#1e1714] transition-all cursor-pointer flex items-center justify-center gap-2"
+            class="w-full sm:w-auto min-h-[44px] px-6 py-3.5 bg-[var(--spot-riso-pink,#ff6ac2)] text-[#1e1714] border-3 border-[#1e1714] rounded-2xl font-black text-base shadow-[4px_4px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 hover:shadow-[5px_5px_0px_#1e1714] transition-all cursor-pointer flex items-center justify-center gap-2"
           >
             <span>{isSeeding.value ? "⏳" : "🗺️"}</span>
             <span>{isSeeding.value ? copy.ctaDemoBusy : copy.ctaDemo}</span>
           </button>
           <a
             href={isSpanish ? "/es" : "/"}
-            class="w-full sm:w-auto px-6 py-3.5 bg-[#fbf1e4] text-[#1e1714] border-3 border-[#1e1714] rounded-2xl font-black text-base shadow-[4px_4px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2"
+            class="w-full sm:w-auto min-h-[44px] px-6 py-3.5 bg-[#fbf1e4] text-[#1e1714] border-3 border-[#1e1714] rounded-2xl font-black text-base shadow-[4px_4px_0px_#1e1714] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#1e1714] active:translate-y-0 transition-all flex items-center justify-center gap-2"
           >
             <span>🎙️</span>
             <span>{copy.ctaStart}</span>
@@ -851,28 +858,28 @@ export default function VerticalStudioIsland(
       </section>
 
       {/* Export Showcase */}
-      <section class="bg-amber-50/70 border-3 border-[#1e1714] rounded-2xl p-6 sm:p-8 shadow-[4px_4px_0px_#1e1714] space-y-4">
+      <section class="bg-[#fbf1e4] border-3 border-[#1e1714] rounded-2xl p-5 sm:p-8 shadow-[4px_4px_0px_#1e1714] space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-[#1e1714]/15 pb-3">
           <div>
-            <span class="inline-block px-2.5 py-0.5 bg-[#1e1714] text-[#fffef7] text-[10px] font-black uppercase rounded-full tracking-wider mb-1">
+            <span class="inline-block px-2.5 py-0.5 bg-[#1e1714] text-[#fffef7] text-[10px] font-mono font-bold uppercase rounded-full tracking-wider mb-1">
               {copy.exportBadge}
             </span>
             <h2 class="text-xl sm:text-2xl font-black text-[#1e1714]">
               {copy.exportTitle}
             </h2>
           </div>
-          <span class="text-xs font-bold text-[#1e1714]/70">
+          <span class="text-xs font-mono font-bold text-[#1e1714]/70">
             {copy.exportSubtitle}
           </span>
         </div>
         <p class="text-xs sm:text-sm text-[#1e1714]/80">{copy.exportIntro}</p>
-        <pre class="bg-[#fffef7] border-2 border-[#1e1714] rounded-xl p-4 text-xs font-mono text-[#1e1714] overflow-x-auto leading-relaxed shadow-[2px_2px_0px_#1e1714]">
+        <pre class="bg-[#fffef7] border-2 border-[#1e1714] rounded-xl p-4 text-xs font-mono text-[#1e1714] overflow-x-auto whitespace-pre-wrap break-words leading-relaxed shadow-[2px_2px_0px_#1e1714]">
           {copy.exportSample}
         </pre>
       </section>
 
       {/* Comparison Table */}
-      <section class="bg-[#fbf1e4] border-3 border-[#1e1714] rounded-2xl p-6 sm:p-8 shadow-[4px_4px_0px_#1e1714] space-y-6">
+      <section class="bg-[#fbf1e4] border-3 border-[#1e1714] rounded-2xl p-4 sm:p-8 shadow-[4px_4px_0px_#1e1714] space-y-6">
         <div class="text-center space-y-2">
           <h2 class="text-xl sm:text-3xl font-black text-[#1e1714]">
             {copy.compareTitle}
@@ -883,16 +890,16 @@ export default function VerticalStudioIsland(
         </div>
 
         <div class="overflow-x-auto">
-          <table class="w-full text-xs sm:text-sm border-collapse">
+          <table class="w-full min-w-[520px] text-xs sm:text-sm border-collapse">
             <thead>
-              <tr class="border-b-2 border-[#1e1714] bg-amber-50">
+              <tr class="border-b-2 border-[#1e1714] bg-[#fffef7]">
                 <th class="text-left p-3 font-black text-[#1e1714]">
                   {isSpanish ? "Detalle" : "Feature"}
                 </th>
                 <th class="text-left p-3 font-black text-[#1e1714]/70">
                   {copy.compareOtherHeader}
                 </th>
-                <th class="text-left p-3 font-black text-emerald-900 bg-emerald-50">
+                <th class="text-left p-3 font-black text-[#1e1714] bg-[#fbf1e4]">
                   {copy.compareOurHeader}
                 </th>
               </tr>
@@ -902,7 +909,7 @@ export default function VerticalStudioIsland(
                 <tr key={row.feature}>
                   <td class="p-3 font-bold">{row.feature}</td>
                   <td class="p-3 text-[#1e1714]/75">{row.traditional}</td>
-                  <td class="p-3 font-bold text-emerald-900 bg-emerald-50/50">
+                  <td class="p-3 font-bold text-[#1e1714] bg-[#fffef7]/80">
                     {row.promapper}
                   </td>
                 </tr>
@@ -943,7 +950,7 @@ export default function VerticalStudioIsland(
         aria-label={isSpanish
           ? "Otras mesas de trabajo en ProMapper"
           : "Other ProMapper workshop tables"}
-        class="bg-[#fbf1e4] border-2 border-[#1e1714] rounded-2xl p-4 shadow-[2px_2px_0px_#1e1714] flex flex-wrap items-center justify-center gap-3 text-xs font-bold"
+        class="bg-[#fbf1e4] border-2 border-[#1e1714] rounded-2xl p-4 shadow-[2px_2px_0px_#1e1714] flex flex-wrap items-center justify-center gap-3 text-xs font-mono font-bold"
       >
         <span class="uppercase tracking-wider text-[#1e1714]/60">
           {isSpanish ? "Otras mesas:" : "More tables:"}
@@ -951,7 +958,7 @@ export default function VerticalStudioIsland(
         {kind !== "meetings" && (
           <a
             href={isSpanish ? "/es/juntas" : "/for/meetings"}
-            class="px-3 py-1.5 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
+            class="inline-flex items-center min-h-[44px] px-3.5 py-2 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
           >
             📋 {isSpanish ? "Juntas y acuerdos" : "Weekly Meetings"}
           </a>
@@ -959,7 +966,7 @@ export default function VerticalStudioIsland(
         {kind !== "research" && (
           <a
             href={isSpanish ? "/es/investigacion" : "/for/research"}
-            class="px-3 py-1.5 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
+            class="inline-flex items-center min-h-[44px] px-3.5 py-2 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
           >
             🔍{" "}
             {isSpanish
@@ -970,14 +977,14 @@ export default function VerticalStudioIsland(
         {kind !== "brainstorming" && (
           <a
             href={isSpanish ? "/es/ideas" : "/for/brainstorming"}
-            class="px-3 py-1.5 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
+            class="inline-flex items-center min-h-[44px] px-3.5 py-2 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
           >
             🎙️ {isSpanish ? "Notas de voz e ideas" : "Voice Notes & Ideas"}
           </a>
         )}
         <a
           href={isSpanish ? "/es/rol" : "/for/dnd"}
-          class="px-3 py-1.5 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
+          class="inline-flex items-center min-h-[44px] px-3.5 py-2 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
         >
           🎲 {isSpanish ? "Partidas de rol y D&D" : "Tabletop & D&D"}
         </a>
@@ -988,11 +995,11 @@ export default function VerticalStudioIsland(
         <button
           type="button"
           onClick={handleLoadDemo}
-          class="px-8 py-4 bg-[#FF69B4] text-[#1e1714] border-3 border-[#1e1714] rounded-2xl font-black text-lg shadow-[4px_4px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+          class="w-full sm:w-auto min-h-[44px] px-8 py-4 bg-[var(--spot-riso-pink,#ff6ac2)] text-[#1e1714] border-3 border-[#1e1714] rounded-2xl font-black text-base sm:text-lg shadow-[4px_4px_0px_#1e1714] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#1e1714] active:translate-y-0 transition-all cursor-pointer"
         >
           {copy.footerCta}
         </button>
-        <p class="text-xs text-[#1e1714]/60">{copy.footerNote}</p>
+        <p class="text-xs font-mono text-[#1e1714]/60">{copy.footerNote}</p>
       </footer>
     </div>
   );

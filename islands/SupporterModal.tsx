@@ -232,7 +232,7 @@ export default function SupporterModal() {
           <button
             type="button"
             onClick={closeSupporterModal}
-            class="w-8 h-8 rounded-lg border-2 border-[var(--line-ink)] bg-[var(--surface-white-warm)] text-[var(--soft-black)] font-black text-sm hover:bg-[var(--accent-strong)] hover:text-[var(--surface-white-warm)] transition-colors flex items-center justify-center shadow-[2px_2px_0px_var(--line-ink)]"
+            class="w-11 h-11 rounded-lg border-2 border-[var(--line-ink)] bg-[var(--surface-white-warm)] text-[var(--soft-black)] font-black text-sm hover:bg-[var(--accent-strong)] hover:text-[var(--surface-white-warm)] hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center shadow-[2px_2px_0px_var(--line-ink)] cursor-pointer"
             aria-label="Close"
           >
             ✕
@@ -244,7 +244,7 @@ export default function SupporterModal() {
           <button
             type="button"
             onClick={() => setTab("pass")}
-            class={`flex-1 py-2.5 text-xs sm:text-sm font-black border-r-2 border-[var(--line-ink)] transition-colors ${
+            class={`flex-1 min-h-[44px] py-2.5 text-xs sm:text-sm font-black border-r-2 border-[var(--line-ink)] transition-colors cursor-pointer ${
               tab === "pass"
                 ? "bg-[var(--surface-card)] text-[var(--soft-black)]"
                 : "bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--surface-cream-hover)]"
@@ -255,7 +255,7 @@ export default function SupporterModal() {
           <button
             type="button"
             onClick={() => setTab("byok")}
-            class={`flex-1 py-2.5 text-xs sm:text-sm font-black border-r-2 border-[var(--line-ink)] transition-colors ${
+            class={`flex-1 min-h-[44px] py-2.5 text-xs sm:text-sm font-black border-r-2 border-[var(--line-ink)] transition-colors cursor-pointer ${
               tab === "byok"
                 ? "bg-[var(--surface-card)] text-[var(--soft-black)]"
                 : "bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--surface-cream-hover)]"
@@ -266,7 +266,7 @@ export default function SupporterModal() {
           <button
             type="button"
             onClick={() => setTab("faq")}
-            class={`py-2.5 px-4 text-xs sm:text-sm font-black transition-colors ${
+            class={`min-h-[44px] py-2.5 px-4 text-xs sm:text-sm font-black transition-colors cursor-pointer ${
               tab === "faq"
                 ? "bg-[var(--surface-card)] text-[var(--soft-black)]"
                 : "bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--surface-cream-hover)]"
@@ -302,7 +302,7 @@ export default function SupporterModal() {
                   <button
                     type="button"
                     onClick={handleCopyPass}
-                    class="px-3 py-1.5 bg-[var(--surface-white-warm)] border-2 border-[var(--line-ink)] rounded-lg text-xs font-bold shadow-[2px_2px_0px_var(--line-ink)] hover:bg-[var(--surface-cream-hover)]"
+                    class="min-h-[44px] px-3.5 py-2 bg-[var(--surface-white-warm)] border-2 border-[var(--line-ink)] rounded-lg text-xs font-bold shadow-[2px_2px_0px_var(--line-ink)] hover:bg-[var(--surface-cream-hover)] hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
                   >
                     {i18n.copyToken}
                   </button>
@@ -378,13 +378,13 @@ export default function SupporterModal() {
                     onInput={(e) =>
                       setPastedCode((e.target as HTMLInputElement).value)}
                     placeholder={i18n.codePlaceholder}
-                    class="flex-1 px-3 py-2 text-xs font-mono bg-[var(--surface-white-warm)] border-2 border-[var(--line-ink)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                    class="flex-1 min-h-[44px] px-3 py-2 text-base sm:text-xs font-mono bg-[var(--surface-white-warm)] border-2 border-[var(--line-ink)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                   />
                   <button
                     type="button"
                     onClick={handleRedeemCode}
                     disabled={isRedeeming || !pastedCode.trim()}
-                    class="px-4 py-2 bg-[var(--soft-black)] text-[var(--surface-white-warm)] text-xs font-black rounded-lg border-2 border-[var(--line-ink)] hover:bg-[var(--soft-black)] disabled:opacity-50"
+                    class="min-h-[44px] px-4 py-2 bg-[var(--soft-black)] text-[var(--surface-white-warm)] text-xs font-black rounded-lg border-2 border-[var(--line-ink)] hover:bg-[var(--accent-strong)] hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer disabled:opacity-50"
                   >
                     {isRedeeming ? "..." : i18n.redeemBtn}
                   </button>
@@ -419,7 +419,7 @@ export default function SupporterModal() {
                   onInput={(e) =>
                     setByoInput((e.target as HTMLInputElement).value)}
                   placeholder="sk-or-v1-..."
-                  class="w-full px-3 py-2 text-xs font-mono bg-[var(--surface-white-warm)] border-2 border-[var(--line-ink)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                  class="w-full min-h-[44px] px-3 py-2 text-base sm:text-xs font-mono bg-[var(--surface-white-warm)] border-2 border-[var(--line-ink)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
                 />
               </div>
 
@@ -428,7 +428,7 @@ export default function SupporterModal() {
                   type="button"
                   onClick={handleSaveByoKey}
                   disabled={isTestingByo}
-                  class="flex-1 py-2.5 px-4 bg-[var(--soft-black)] hover:bg-[var(--soft-black)] text-[var(--surface-white-warm)] font-black text-xs rounded-xl border-2 border-[var(--line-ink)] shadow-[3px_3px_0px_var(--line-ink)] disabled:opacity-50"
+                  class="flex-1 min-h-[44px] py-2.5 px-4 bg-[var(--soft-black)] hover:bg-[var(--accent-strong)] text-[var(--surface-white-warm)] font-black text-xs rounded-xl border-2 border-[var(--line-ink)] shadow-[3px_3px_0px_var(--line-ink)] hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer disabled:opacity-50"
                 >
                   {isTestingByo ? i18n.byokVerifying : i18n.byokSave}
                 </button>
@@ -440,7 +440,7 @@ export default function SupporterModal() {
                       setByoInput("");
                       setByoTestStatus(i18n.byokRemoved);
                     }}
-                    class="py-2.5 px-4 bg-[var(--surface-white-warm)] hover:bg-[var(--surface-cream-hover)] text-[var(--color-text-secondary)] font-black text-xs rounded-xl border-2 border-[var(--line-ink)] shadow-[3px_3px_0px_var(--line-ink)]"
+                    class="min-h-[44px] py-2.5 px-4 bg-[var(--surface-white-warm)] hover:bg-[var(--surface-cream-hover)] text-[var(--color-text-secondary)] font-black text-xs rounded-xl border-2 border-[var(--line-ink)] shadow-[3px_3px_0px_var(--line-ink)] hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
                   >
                     {i18n.byokClear}
                   </button>
@@ -475,33 +475,34 @@ export default function SupporterModal() {
                     </div>
                     <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
                       <strong class="text-[var(--soft-black)] block mb-1">
-                        ¿Pagar desde fuera de Australia?
+                        ¿Pago desde fuera de Australia?
                       </strong>
-                      Sin bronca — el precio es en dólares australianos (AUD),
-                      que casi siempre sale más barato al convertir. Tu banco
-                      hace el cambio en automático.
+                      Sin problema: el precio está en dólares australianos
+                      (AUD), que suele quedar más accesible al convertir. El
+                      banco aplica el tipo de cambio del día.
                     </div>
                     <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
                       <strong class="text-[var(--soft-black)] block mb-1">
-                        ¿Cómo lo uso en otro cel o compu?
+                        ¿Cómo funciona en otro celular o computadora?
                       </strong>
-                      Copia tu token del pase (en la pestaña Pase) y pégalo en
-                      "¿Tienes un código o pase?" en tu otro dispositivo.
+                      El botón Copiar Pase (en la pestaña Pase) entrega el token
+                      para pegarlo en el recuadro de desbloqueo de cualquier
+                      otro dispositivo.
                     </div>
                     <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
                       <strong class="text-[var(--soft-black)] block mb-1">
-                        ¿Cuál es el límite en la versión gratis?
+                        ¿Qué incluye la mesa gratuita?
                       </strong>
-                      La versión gratis te da 10 minutos de audio al día y 3
-                      mapas guardados con toda la IA. El Pase de Soporte
-                      desbloquea audio ilimitado y salas colaborativas en vivo.
+                      Mapas locales ilimitados en el navegador, tomas de audio
+                      diarias, los 8 formatos de exportación y conexión gratuita
+                      para llave propia (BYOK). El Pase de Soporte amplía el
+                      margen diario de audio y abre salas colaborativas en vivo.
                     </div>
                     <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
                       <strong class="text-[var(--soft-black)] block mb-1">
                         ¿Política de reembolso?
                       </strong>
-                      30 días sin preguntas ni trabas. Escribe a
-                      hello@promapper.app.
+                      30 días sin preguntas ni trabas en hello@promapper.app.
                     </div>
                   </>
                 )
@@ -512,7 +513,7 @@ export default function SupporterModal() {
                         Is this a recurring subscription?
                       </strong>
                       No. It is a single $49 AUD flat payment for 365 days. No
-                      cards stored, no surprises.
+                      cards stored, no auto-renewals.
                     </div>
                     <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
                       <strong class="text-[var(--soft-black)] block mb-1">
@@ -524,25 +525,25 @@ export default function SupporterModal() {
                     </div>
                     <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
                       <strong class="text-[var(--soft-black)] block mb-1">
-                        How do I use it on another laptop/phone?
+                        How does a pass move to another laptop or phone?
                       </strong>
-                      Copy your pass token (under the Supporter tab) and paste
-                      it into the "Already have a pass?" box on your other
-                      devices.
+                      Copy the pass token under the Supporter tab and paste it
+                      into the redeem box on any other browser or device.
                     </div>
                     <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
                       <strong class="text-[var(--soft-black)] block mb-1">
-                        What is the Free Tier limit?
+                        What is included on the free table?
                       </strong>
-                      Free tier gives you 10 minutes of audio processing per day
-                      and 3 saved maps with full AI intelligence. The Supporter
-                      Pass unlocks infinite audio and multiplayer live rooms.
+                      Unlimited local maps in the browser, daily audio takes,
+                      all 8 Markdown export decks, and free BYOK key routing.
+                      The Supporter Pass expands daily audio allowances and
+                      unlocks full collaborative live rooms.
                     </div>
                     <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
                       <strong class="text-[var(--soft-black)] block mb-1">
                         Refund policy?
                       </strong>
-                      30 days, no questions asked. Email hello@promapper.app.
+                      30 days, no questions asked via hello@promapper.app.
                     </div>
                   </>
                 )}

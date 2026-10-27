@@ -252,35 +252,36 @@ export default function PorchTable({ lang }: PorchTableProps = {}) {
         aria-label={spanish
           ? "Mesas de trabajo y rutas"
           : "Workshop tables and routes"}
-        class="mt-8 pt-5 border-t border-[#1e1714]/15 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs font-semibold text-[#1e1714]/75"
+        style={{ gridColumn: "1 / -1" }}
+        class="col-span-full mt-8 pt-5 border-t border-[#1e1714]/15 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs font-mono font-semibold text-[#1e1714]/75"
       >
-        <span class="uppercase tracking-wider text-[11px] font-bold text-[#1e1714]/55">
+        <span class="uppercase tracking-wider text-[11px] font-bold text-[#1e1714]/55 px-2">
           {spanish ? "Mesas:" : "Tables:"}
         </span>
         <a
           href={spanish ? "/es/juntas" : "/for/meetings"}
-          class="hover:text-[#1e1714] underline decoration-[#1e1714]/30 underline-offset-4"
+          class="min-h-[44px] px-2.5 inline-flex items-center hover:text-[#1e1714] underline decoration-[#1e1714]/30 hover:decoration-[#1e1714] underline-offset-4 transition-colors"
         >
           {spanish ? "Juntas y acuerdos" : "Weekly meetings"}
         </a>
         <span aria-hidden="true">·</span>
         <a
           href={spanish ? "/es/investigacion" : "/for/research"}
-          class="hover:text-[#1e1714] underline decoration-[#1e1714]/30 underline-offset-4"
+          class="min-h-[44px] px-2.5 inline-flex items-center hover:text-[#1e1714] underline decoration-[#1e1714]/30 hover:decoration-[#1e1714] underline-offset-4 transition-colors"
         >
           {spanish ? "Investigación y entrevistas" : "Research & interviews"}
         </a>
         <span aria-hidden="true">·</span>
         <a
           href={spanish ? "/es/ideas" : "/for/brainstorming"}
-          class="hover:text-[#1e1714] underline decoration-[#1e1714]/30 underline-offset-4"
+          class="min-h-[44px] px-2.5 inline-flex items-center hover:text-[#1e1714] underline decoration-[#1e1714]/30 hover:decoration-[#1e1714] underline-offset-4 transition-colors"
         >
           {spanish ? "Notas de voz e ideas" : "Voice notes & ideas"}
         </a>
         <span aria-hidden="true">·</span>
         <a
           href={spanish ? "/es/rol" : "/for/dnd"}
-          class="hover:text-[#1e1714] underline decoration-[#1e1714]/30 underline-offset-4"
+          class="min-h-[44px] px-2.5 inline-flex items-center hover:text-[#1e1714] underline decoration-[#1e1714]/30 hover:decoration-[#1e1714] underline-offset-4 transition-colors"
         >
           {spanish ? "Partidas de rol y D&D" : "Tabletop & D&D"}
         </a>
@@ -288,7 +289,7 @@ export default function PorchTable({ lang }: PorchTableProps = {}) {
         <a
           href={spanish ? "/" : "/es"}
           hrefLang={spanish ? "en" : "es"}
-          class="hover:text-[#1e1714] underline decoration-[#1e1714]/30 underline-offset-4"
+          class="min-h-[44px] px-2.5 inline-flex items-center hover:text-[#1e1714] underline decoration-[#1e1714]/30 hover:decoration-[#1e1714] underline-offset-4 transition-colors"
         >
           {spanish ? "English" : "Español"}
         </a>
