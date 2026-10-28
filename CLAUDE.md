@@ -114,20 +114,26 @@ context).
 were deleted in June 2026. Gemini models are reached through OpenRouter like
 everything else.
 
-**Offline path (prototype, not merged)** — Dennis built an offline version that
-downloads whisper for transcription and distilbert for action-item extraction.
-This lives in a separate branch (`conversation_mapper` lineage). The pattern:
+**On-Device Whisper Path (shipped Oct 2026)** — Browser-side Whisper runs inside
+`static/whisper-worker.js` via `utils/offlineWhisper.ts`, dynamically importing
+`@huggingface/transformers@3.3.3` from CDN inside the browser Worker so Deno
+Deploy never bundles ONNX/transformers on the server:
 
-1. Check for local whisper binary / wasm module
-2. If offline: transcribe locally, run extraction on text (cloud or local model)
-3. If online: use the cloud path above
-
-Whisper.cpp WebAssembly or Python subprocess are viable. TalkType has working
-offline whisper as a reference. DistilBERT (2019) is a classifier — for 2026
-offline extraction, consider a small local LLM (Llama 3.2 1B, Phi-3-mini)
-instead. A new `OfflineAIService` wrapper in `services/ai.ts` would check for
-local models before falling through to the cloud. Then fall through to the cloud
-path.
+1. Users (or the automatic `402 CLOUD_AUDIO_LIMIT_REACHED` overflow handler in
+   `UploadIsland.tsx` and `AudioRecorder.tsx`) transcribe audio locally in the
+   browser before calling `/api/process` or `/api/append` with pure text.
+2. Three selectable model tiers in `SupporterModal.tsx`
+   (`localWhisperModelSignal` in `signals/supporterStore.ts`):
+   - `tiny` (~75 MB, `Xenova/whisper-tiny`, WASM `q8`) — fastest download, works
+     on any phone or laptop.
+   - `base` (~140 MB, `Xenova/whisper-base`, WASM `q8`) — sharper punctuation &
+     names.
+   - `small` (~250 MB, `Xenova/whisper-small`, WebGPU `fp32`/`q4` with automatic
+     WASM `q8` fallback) — TalkType HD Studio grade for accents,
+     clinical/academic terms, and tabletop proper nouns.
+3. Marathon recordings (`AudioRecorder.tsx` + `useRecorder.ts`) support up to 4
+   hours for Supporters/BYOK by slicing a seamless 15-minute `Blob` checkpoint
+   (`rotateChunk()`) and mapping it in the background while the mic stays hot.
 
 ## Architecture Map
 
@@ -155,23 +161,28 @@ path.
   authSessions.ts               # HttpOnly API auth session
 
 /routes/
-  index.tsx                     # Main app route
+  index.tsx                     # Main app route (EN) + es/index.tsx (ES)
+  for/* & es/*                  # 14 vertical portals (dnd, meetings, research, brainstorming, clients, care, schools)
   api/process.ts                # New audio/text conversation
-  api/append.ts                 # Append audio to existing conversation
+  api/append.ts                 # Append audio/text to existing conversation
   api/markdown.ts               # Provider-agnostic markdown export
   api/auth.ts                   # API token session
+  api/supporter/*               # Square checkout (Solo $49 / Guild $99) + HMAC pass verification
   api/share/create.ts           # Guarded durable share creation
   api/share/[shareId].ts        # Public share lookup by ID
   shared/[shareId].tsx          # Shared conversation view
 
 /islands/                       # Hydrated Preact UI
   HomeIsland.tsx                # Main layout
-  UploadIsland.tsx              # Text/audio input
+  UploadIsland.tsx              # Text/audio input + Deepgram live preview + Whisper fallback
   DashboardIsland.tsx           # Dashboard shell
-  AudioRecorder.tsx             # Append recording flow
+  AudioRecorder.tsx             # Append recording flow + 15-min rolling marathon auto-appends
+  SupporterModal.tsx            # 3-Tier Pass ($0 / $49 Solo / $99 Guild), BYOK & Whisper model selector
+  VerticalStudioIsland.tsx      # Bilingual vertical portal studio with interactive demo loader
+  DndStudioIsland.tsx           # Bilingual D&D / TTRPG portal studio
   ForceDirectedGraph.tsx        # D3 graph renderer
   EmojimapViz.tsx               # Graph overlay wrapper
-  MarkdownMakerDrawer.tsx       # Export UI
+  MarkdownMakerDrawer.tsx       # Export UI (8 formats + Slide-O-Matic HTML deck + Printable PDF)
   MobileHistoryMenu.tsx         # Local conversation history (star/filter/backup)
 
 /components/                    # Shared presentational cards

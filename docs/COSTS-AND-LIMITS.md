@@ -105,4 +105,32 @@ Three layers, simplest-first — "can't scale IS the feature" helps here:
       ~12KB/s opus, 10 min ≈ 7MB). `AUDIO_BYTES_PER_DAY` ships 0 (DISABLED) —
       flipping the free tier on at launch is one env var. Keyed per IP today;
       add the device-id half when the license-key work lands.
-- [ ] License-key check for /api/live/* (pairs with the PartyKit deploy)
+- [x] License-key check & 3-tier cloud audio budget + On-Device Whisper overflow
+      — DONE 2026-10-28 (see Section 5 below).
+
+## 5. Shipped 2026-10-28: 3-Tier Pass, Cloud Audio Budget & On-Device Whisper Overflow
+
+1. **Three-Tier Pass Structure (`services/supporterPass.ts`,
+   `signals/supporterStore.ts`, `islands/SupporterModal.tsx`)**:
+   - **Free Taste (`$0`)**: 5 min/day cloud Deepgram live streaming
+     (`FREE_AUDIO_BYTES_PER_DAY`, default `3.5 MB`), 10-min single take cap,
+     unlimited text & on-device Whisper appends, full self-checkoff + exports.
+   - **Solo Pass (`$49 AUD` / 1 yr)**: 20 min/day cloud audio
+     (`SOLO_AUDIO_BYTES_PER_DAY`, default `14 MB`), automatic On-Device Whisper
+     overflow (`tiny` ~75 MB, `base` ~140 MB, `small` ~250 MB HD Studio with
+     WebGPU + WASM fallback), 4-hour marathon sessions with rolling 15-minute
+     auto-appends, and multiplayer live rooms.
+   - **Guild, Lab & Practice Pass (`$99 AUD` / 1 yr)**: 90 min/day cloud audio
+     (`GUILD_AUDIO_BYTES_PER_DAY`, default `63 MB`) for 3–4 hour D&D sessions,
+     university labs, clinics, and schools, plus unlimited On-Device Whisper
+     overflow.
+2. **Graceful Cloud-to-Local Overflow (`services/requestGuard.ts`,
+   `utils/offlineWhisper.ts`, `static/whisper-worker.js`)**:
+   - When daily cloud audio bytes are exhausted on `/api/process` or
+     `/api/append`, `guardAudioBudget()` returns
+     `402 { code: "CLOUD_AUDIO_LIMIT_REACHED", tier, dailyMinutes }`.
+   - `UploadIsland.tsx` and `AudioRecorder.tsx` catch
+     `CLOUD_AUDIO_LIMIT_REACHED`, transcribe the audio blob locally inside
+     `static/whisper-worker.js` (loaded from CDN inside a Web Worker so Deno
+     Deploy never bundles `@huggingface/transformers`), and resubmit pure text
+     (`~0.7¢/hr` OpenRouter cost instead of `~46¢/hr` cloud audio).

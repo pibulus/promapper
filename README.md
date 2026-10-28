@@ -31,8 +31,15 @@ screenshots may be wearing a different sky.
 
 ### 🎤 Capture → Shape
 
-- **Record or upload** audio files
-- **Automatic transcription** that tidies the talk and names the speakers
+- **Record or upload** audio files, or stream live speech-to-text straight into
+  the input box
+- **4-Hour Marathon Sessions** with seamless rolling 15-minute auto-appends so
+  3–4 hour D&D sessions, seminars, and workshops update the board while the mic
+  stays open
+- **On-Device Whisper Mode** (`Standard ~75 MB`, `Balanced ~140 MB`, or
+  `HD
+  Studio ~250 MB` WebGPU + WASM) for unlimited local transcription that
+  never leaves the browser
 - **Reads the conversation** and pulls out topics, action items, and a summary,
   all at once
 - **Real-time visualizer** during recording sessions
@@ -62,12 +69,13 @@ stays true without you tending it.
 - **WebRTC Voice Relay**: Zero-latency P2P voice chat with active speaker
   highlights, powered by Cloudflare RealtimeKit SFU.
 
-### 📤 Markdown Exports
+### 📤 Markdown, PDF & Slide-O-Matic Exports
 
 The same map can leave the table as eight different documents: **What got
 done**, **Meeting**, **Summary**, **Plan**, **Research**, **Journal**,
 **Unasked** (the questions nobody said out loud), and **Haiku** (why not?) —
-plus a custom prompt when you want something stranger.
+plus a **1-click Printable PDF**, a **6–9 slide HTML presentation deck
+(Slide-O-Matic)**, and a custom prompt when you want something stranger.
 
 ### 🎨 Soft Neo-Toybrut UI
 
