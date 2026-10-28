@@ -266,6 +266,27 @@ export default function PorchTable({ lang }: PorchTableProps = {}) {
         </a>
         <span aria-hidden="true">·</span>
         <a
+          href={spanish ? "/es/clientes" : "/for/clients"}
+          class="min-h-[44px] px-2.5 inline-flex items-center hover:text-[#1e1714] underline decoration-[#1e1714]/30 hover:decoration-[#1e1714] underline-offset-4 transition-colors"
+        >
+          {spanish ? "Clientes y asesorías" : "Client sessions"}
+        </a>
+        <span aria-hidden="true">·</span>
+        <a
+          href={spanish ? "/es/consultas" : "/for/care"}
+          class="min-h-[44px] px-2.5 inline-flex items-center hover:text-[#1e1714] underline decoration-[#1e1714]/30 hover:decoration-[#1e1714] underline-offset-4 transition-colors"
+        >
+          {spanish ? "Consultas médicas" : "Doctor & care visits"}
+        </a>
+        <span aria-hidden="true">·</span>
+        <a
+          href={spanish ? "/es/escuelas" : "/for/schools"}
+          class="min-h-[44px] px-2.5 inline-flex items-center hover:text-[#1e1714] underline decoration-[#1e1714]/30 hover:decoration-[#1e1714] underline-offset-4 transition-colors"
+        >
+          {spanish ? "Escuelas y laboratorios" : "Schools & labs"}
+        </a>
+        <span aria-hidden="true">·</span>
+        <a
           href={spanish ? "/es/investigacion" : "/for/research"}
           class="min-h-[44px] px-2.5 inline-flex items-center hover:text-[#1e1714] underline decoration-[#1e1714]/30 hover:decoration-[#1e1714] underline-offset-4 transition-colors"
         >

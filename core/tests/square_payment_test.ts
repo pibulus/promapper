@@ -7,11 +7,16 @@ import {
   verifySquareWebhookSignature,
 } from "../../services/square.ts";
 
-Deno.test("getSupporterPrice returns $49 AUD default", () => {
+Deno.test("getSupporterPrice returns $49 AUD default and $99 AUD for guild plan", () => {
   const price = getSupporterPrice();
   assertEquals(price.amount, 4900);
   assertEquals(price.currency, "AUD");
   assertEquals(price.displayPrice, "$49");
+
+  const guildPrice = getSupporterPrice("guild");
+  assertEquals(guildPrice.amount, 9900);
+  assertEquals(guildPrice.currency, "AUD");
+  assertEquals(guildPrice.displayPrice, "$99");
 });
 
 Deno.test("verifySquareWebhookSignature validates authentic HMAC signature", async () => {

@@ -19,8 +19,10 @@ function getMasterCodes(): string[] {
     .filter(Boolean);
 }
 
+export type SupporterTier = "supporter" | "guild" | "lifetime";
+
 export interface SupporterPayload {
-  tier: "supporter" | "lifetime";
+  tier: SupporterTier;
   exp: number; // Unix timestamp in seconds
   checkoutId?: string;
   email?: string;
@@ -88,7 +90,7 @@ export async function signSupporterPass(
     email?: string;
     durationDays?: number;
     secret?: string;
-    tier?: "supporter" | "lifetime";
+    tier?: SupporterTier;
   } = {},
 ): Promise<string> {
   const secret = options.secret ?? getSupporterSecret();
@@ -171,7 +173,11 @@ export async function verifySupporterPass(
     const payload = JSON.parse(
       new TextDecoder().decode(payloadBytes),
     ) as SupporterPayload;
-    if (payload.tier !== "supporter" && payload.tier !== "lifetime") {
+    if (
+      payload.tier !== "supporter" &&
+      payload.tier !== "guild" &&
+      payload.tier !== "lifetime"
+    ) {
       return null;
     }
     const now = Math.floor(Date.now() / 1000);

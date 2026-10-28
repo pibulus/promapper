@@ -8,11 +8,14 @@ import {
   closeSupporterModal,
   confirmStoredPass,
   isSupporterSignal,
+  localWhisperSignal,
   refreshSupporterState,
   removeByoKey,
   saveByoKey,
   supporterExpirySignal,
   supporterModalOpen,
+  supporterTierSignal,
+  toggleLocalWhisper,
 } from "@signals/supporterStore.ts";
 import {
   clearPendingCheckout,
@@ -33,10 +36,14 @@ export default function SupporterModal() {
   const i18n = t();
   const isOpen = supporterModalOpen.value;
   const isSupporter = isSupporterSignal.value;
+  const activeTier = supporterTierSignal.value;
   const expiry = supporterExpirySignal.value;
   const activeByoKey = byokKeySignal.value;
+  const localWhisperEnabled = localWhisperSignal.value;
+  const spanish = isSpanish();
 
   const [tab, setTab] = useState<"pass" | "byok" | "faq">("pass");
+  const [selectedPlan, setSelectedPlan] = useState<"solo" | "guild">("solo");
   const [isStartingCheckout, setIsStartingCheckout] = useState(false);
   const [pastedCode, setPastedCode] = useState("");
   const [redeemStatus, setRedeemStatus] = useState<string | null>(null);
@@ -115,13 +122,14 @@ export default function SupporterModal() {
 
   if (!isOpen) return null;
 
-  async function handleStartCheckout() {
+  async function handleStartCheckout(plan: "solo" | "guild" = selectedPlan) {
     setIsStartingCheckout(true);
     setRedeemStatus(null);
     try {
       const res = await fetch("/api/supporter/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
       });
       const data = await res.json();
       if (res.ok && data.checkoutUrl) {
@@ -285,7 +293,11 @@ export default function SupporterModal() {
                 <div class="p-4 bg-[var(--accent-rose-wash-soft)] border-3 border-[var(--line-ink)] rounded-xl shadow-[3px_3px_0px_var(--line-ink)] flex items-center justify-between">
                   <div>
                     <div class="font-black text-sm text-[var(--accent-ink)]">
-                      {i18n.activePassBanner}
+                      {activeTier === "guild"
+                        ? (spanish
+                          ? "✓ Pase de Gremio y Laboratorio Activo"
+                          : "✓ Guild, Lab & Practice Pass Active")
+                        : i18n.activePassBanner}
                     </div>
                     <div class="text-xs text-[var(--color-text-secondary)] font-medium mt-0.5">
                       {expiry
@@ -309,27 +321,107 @@ export default function SupporterModal() {
                 </div>
               )}
 
+              {/* Tier Selector: $49 Solo Pass vs $99 Guild, Lab & Practice Pass */}
+              <div class="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlan("solo")}
+                  class={`min-h-[44px] p-3 rounded-xl border-3 border-[var(--line-ink)] text-left transition-all cursor-pointer ${
+                    selectedPlan === "solo"
+                      ? "bg-[var(--accent-rose-wash-soft)] shadow-[3px_3px_0px_var(--line-ink)] -translate-y-0.5"
+                      : "bg-[var(--surface-white-warm)] opacity-80 hover:opacity-100"
+                  }`}
+                >
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-mono font-black uppercase tracking-wider text-[var(--soft-black)]">
+                      {spanish ? "Individual · 1 Año" : "Solo Pass · 1 Yr"}
+                    </span>
+                    <span class="text-sm">✨</span>
+                  </div>
+                  <div class="text-lg font-black text-[var(--soft-black)] mt-0.5">
+                    $49 AUD
+                  </div>
+                  <div class="text-[11px] text-[var(--color-text-secondary)] font-bold">
+                    {spanish
+                      ? "1 persona · 60m/día nube + Whisper local"
+                      : "1 seat · 60m/day cloud + local Whisper"}
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlan("guild")}
+                  class={`min-h-[44px] p-3 rounded-xl border-3 border-[var(--line-ink)] text-left transition-all cursor-pointer ${
+                    selectedPlan === "guild"
+                      ? "bg-[var(--accent-rose-wash-soft)] shadow-[3px_3px_0px_var(--line-ink)] -translate-y-0.5"
+                      : "bg-[var(--surface-white-warm)] opacity-80 hover:opacity-100"
+                  }`}
+                >
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-mono font-black uppercase tracking-wider text-[var(--soft-black)]">
+                      {spanish
+                        ? "Gremio / Lab · 5 Lugares"
+                        : "Guild & Lab · 5 Seats"}
+                    </span>
+                    <span class="text-sm">🏰</span>
+                  </div>
+                  <div class="text-lg font-black text-[var(--soft-black)] mt-0.5">
+                    $99 AUD
+                  </div>
+                  <div class="text-[11px] text-[var(--color-text-secondary)] font-bold">
+                    {spanish
+                      ? "Maratones 4h ·D&D, labs y prácticas"
+                      : "4h marathons · D&D, labs & practices"}
+                  </div>
+                </button>
+              </div>
+
               {/* Price & Pitch */}
               <div class="p-5 bg-gradient-to-br from-[var(--accent-rose-wash-soft)] to-[var(--surface-card)] border-3 border-[var(--line-ink)] rounded-xl shadow-[4px_4px_0px_var(--line-ink)] relative">
                 <div class="flex justify-between items-start">
                   <div>
                     <span class="text-xs font-black uppercase tracking-wider bg-[var(--accent-strong)] text-[var(--surface-white-warm)] px-2.5 py-0.5 rounded-md border-2 border-[var(--line-ink)]">
-                      {i18n.pass1Year}
+                      {selectedPlan === "guild"
+                        ? (spanish
+                          ? "Pase Grupal · Hasta 5 Lugares"
+                          : "Guild, Lab & Practice · Up to 5 Seats")
+                        : i18n.pass1Year}
                     </span>
                     <h3 class="text-2xl font-black text-[var(--soft-black)] mt-2">
-                      $49 AUD{" "}
+                      {selectedPlan === "guild" ? "$99 AUD" : "$49 AUD"}{" "}
                       <span class="text-xs font-bold text-[var(--color-text-secondary)]">
                         / {i18n.supporterTerm}
                       </span>
                     </h3>
                   </div>
-                  <div class="text-3xl">✨</div>
+                  <div class="text-3xl">
+                    {selectedPlan === "guild" ? "🏰" : "✨"}
+                  </div>
                 </div>
 
                 <ul class="mt-4 space-y-2 text-xs sm:text-sm font-medium text-[var(--color-text)]">
                   <li class="flex items-center gap-2">
                     <span class="text-[var(--accent-ink)] font-black">✓</span>
-                    <strong>{i18n.featTakes}</strong> {i18n.featTakesDesc}
+                    <strong>
+                      {selectedPlan === "guild"
+                        ? (spanish
+                          ? "Sesiones Maratónicas de 4 Horas"
+                          : "4-Hour Marathon Sessions")
+                        : i18n.featTakes}
+                    </strong>{" "}
+                    {selectedPlan === "guild"
+                      ? (spanish
+                        ? "(auto-guardado cada 15 min + 5 lugares)"
+                        : "(rolling 15-min auto-appends + up to 5 seats)")
+                      : i18n.featTakesDesc}
+                  </li>
+                  <li class="flex items-center gap-2">
+                    <span class="text-[var(--accent-ink)] font-black">✓</span>
+                    <strong>
+                      {spanish
+                        ? "Nube Rápida + Whisper Local Ilimitado"
+                        : "High-Speed Cloud + Unlimited On-Device Whisper"}
+                    </strong>
                   </li>
                   <li class="flex items-center gap-2">
                     <span class="text-[var(--accent-ink)] font-black">✓</span>
@@ -337,11 +429,9 @@ export default function SupporterModal() {
                   </li>
                   <li class="flex items-center gap-2">
                     <span class="text-[var(--accent-ink)] font-black">✓</span>
-                    <strong>{i18n.featDecks}</strong> {i18n.featDecksDesc}
-                  </li>
-                  <li class="flex items-center gap-2">
-                    <span class="text-[var(--accent-ink)] font-black">✓</span>
-                    <strong>{i18n.featAsk}</strong> {i18n.featAskDesc}
+                    <strong>{i18n.featDecks}</strong> {spanish
+                      ? "(PDF, Presentación Slide-O-Matic y 8 formatos)"
+                      : "(1-Click PDF, Slide-O-Matic Deck & 8 formats)"}
                   </li>
                   <li class="flex items-center gap-2">
                     <span class="text-[var(--accent-ink)] font-black">✓</span>
@@ -351,19 +441,58 @@ export default function SupporterModal() {
 
                 <button
                   type="button"
-                  onClick={handleStartCheckout}
+                  onClick={() => handleStartCheckout(selectedPlan)}
                   disabled={isStartingCheckout}
-                  class="w-full mt-5 py-3.5 px-6 bg-[var(--cta-plate)] hover:bg-[var(--cta-plate-hover)] text-[var(--soft-black)] font-black text-base border-3 border-[var(--line-ink)] rounded-xl shadow-[4px_4px_0px_var(--line-ink)] hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50"
+                  class="w-full mt-5 py-3.5 px-6 bg-[var(--cta-plate)] hover:bg-[var(--cta-plate-hover)] text-[var(--soft-black)] font-black text-base border-3 border-[var(--line-ink)] rounded-xl shadow-[4px_4px_0px_var(--line-ink)] hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer disabled:opacity-50"
                 >
                   {isStartingCheckout
                     ? i18n.ctaSquareBusy
                     : isSupporter
-                    ? i18n.extendPass("$49 AUD")
+                    ? i18n.extendPass(
+                      selectedPlan === "guild" ? "$99 AUD" : "$49 AUD",
+                    )
+                    : selectedPlan === "guild"
+                    ? (spanish
+                      ? "Desbloquear Pase de Gremio y Lab — $99 AUD"
+                      : "Unlock Guild, Lab & Practice Pass — $99 AUD")
                     : i18n.ctaSquare}
                 </button>
                 <p class="text-[11px] text-center text-[var(--color-text-secondary)] mt-2 font-bold">
                   {i18n.squareNotice}
                 </p>
+              </div>
+
+              {/* On-Device Whisper (Local Audio Privacy Mode) Toggle */}
+              <div class="p-4 bg-[var(--surface-card)] border-3 border-[var(--line-ink)] rounded-xl shadow-[3px_3px_0px_var(--line-ink)] flex items-center justify-between gap-3">
+                <div>
+                  <div class="font-black text-xs text-[var(--soft-black)] flex items-center gap-1.5">
+                    <span>🔒</span>
+                    <span>
+                      {spanish
+                        ? "Modo de Audio Local (On-Device Whisper)"
+                        : "On-Device Whisper (Strict Local Audio Mode)"}
+                    </span>
+                  </div>
+                  <p class="text-[11px] text-[var(--color-text-secondary)] mt-0.5 leading-relaxed">
+                    {spanish
+                      ? "Transcribe la voz dentro del navegador (WebAssembly ~40MB). El audio crudo no sube a servidores de transcripción."
+                      : "Transcribes speech locally inside the browser (WebAssembly ~40MB). Raw voice audio never uploads to cloud transcription servers."}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggleLocalWhisper()}
+                  class={`min-h-[44px] px-3.5 py-2 rounded-xl border-2 border-[var(--line-ink)] text-xs font-mono font-black shadow-[2px_2px_0px_var(--line-ink)] transition-all cursor-pointer shrink-0 ${
+                    localWhisperEnabled
+                      ? "bg-[var(--cta-plate)] text-[var(--soft-black)]"
+                      : "bg-[var(--surface-white-warm)] text-[var(--color-text-secondary)]"
+                  }`}
+                  aria-pressed={localWhisperEnabled}
+                >
+                  {localWhisperEnabled
+                    ? (spanish ? "ACTIVO" : "ON")
+                    : (spanish ? "APAGADO" : "OFF")}
+                </button>
               </div>
 
               {/* Restore / Redeem Section */}

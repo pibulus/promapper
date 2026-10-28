@@ -87,13 +87,24 @@ export default function VerticalLandingHead({
                 {
                   "@type": "Offer",
                   "name": lang === "es"
-                    ? "Pase de Soporte ProMapper (1 Año)"
-                    : "ProMapper 1-Year Supporter Pass",
+                    ? "Pase Individual ProMapper (1 Año)"
+                    : "ProMapper 1-Year Solo Pass",
                   "price": "49",
                   "priceCurrency": "AUD",
                   "description": lang === "es"
-                    ? "Tomas de audio extendidas, salas colaborativas en vivo con voz y enlaces permanentes — sin cobros automáticos"
-                    : "Extended audio takes, full collaborative live rooms with voice chat, and permanent share links — no auto-renewal",
+                    ? "60 min/día de audio en la nube + transcripción local ilimitada con Whisper, salas en vivo con voz y enlaces permanentes — sin cobros automáticos"
+                    : "60 mins/day high-speed cloud audio + unlimited On-Device Whisper, live voice rooms, and permanent share links — no auto-renewal",
+                },
+                {
+                  "@type": "Offer",
+                  "name": lang === "es"
+                    ? "Pase de Gremio, Laboratorio y Práctica (1 Año)"
+                    : "ProMapper 1-Year Guild, Lab & Practice Pass",
+                  "price": "99",
+                  "priceCurrency": "AUD",
+                  "description": lang === "es"
+                    ? "Hasta 5 lugares, sesiones maratónicas de 4 horas con auto-guardado cada 15 min, 120 horas/año de audio en la nube + Whisper local ilimitado"
+                    : "Up to 5 seats, 4-hour marathon sessions with rolling 15-min auto-appends, 120 hrs/yr cloud audio + unlimited On-Device Whisper",
                 },
               ],
             },

@@ -109,6 +109,90 @@
       href="https://promapper.app/for/brainstorming" />
   </url>
 
+  <!-- Client Sessions, Coaching & Consulting (EN) -->
+  <url>
+    <loc>https://promapper.app/for/clients</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en"
+      href="https://promapper.app/for/clients" />
+    <xhtml:link rel="alternate" hreflang="es"
+      href="https://promapper.app/es/clientes" />
+    <xhtml:link rel="alternate" hreflang="x-default"
+      href="https://promapper.app/for/clients" />
+  </url>
+
+  <!-- Sesiones con Clientes y Asesorías (ES) -->
+  <url>
+    <loc>https://promapper.app/es/clientes</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="es"
+      href="https://promapper.app/es/clientes" />
+    <xhtml:link rel="alternate" hreflang="en"
+      href="https://promapper.app/for/clients" />
+    <xhtml:link rel="alternate" hreflang="x-default"
+      href="https://promapper.app/for/clients" />
+  </url>
+
+  <!-- Pediatrician, Doctor & Care Visits (EN) -->
+  <url>
+    <loc>https://promapper.app/for/care</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en"
+      href="https://promapper.app/for/care" />
+    <xhtml:link rel="alternate" hreflang="es"
+      href="https://promapper.app/es/consultas" />
+    <xhtml:link rel="alternate" hreflang="x-default"
+      href="https://promapper.app/for/care" />
+  </url>
+
+  <!-- Consultas Médicas, Pediatra y Cuidado Familiar (ES) -->
+  <url>
+    <loc>https://promapper.app/es/consultas</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="es"
+      href="https://promapper.app/es/consultas" />
+    <xhtml:link rel="alternate" hreflang="en"
+      href="https://promapper.app/for/care" />
+    <xhtml:link rel="alternate" hreflang="x-default"
+      href="https://promapper.app/for/care" />
+  </url>
+
+  <!-- Schools, IEP Conferences & Uni Research Labs (EN) -->
+  <url>
+    <loc>https://promapper.app/for/schools</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en"
+      href="https://promapper.app/for/schools" />
+    <xhtml:link rel="alternate" hreflang="es"
+      href="https://promapper.app/es/escuelas" />
+    <xhtml:link rel="alternate" hreflang="x-default"
+      href="https://promapper.app/for/schools" />
+  </url>
+
+  <!-- Escuelas, Laboratorios y Grupos de Estudio (ES) -->
+  <url>
+    <loc>https://promapper.app/es/escuelas</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="es"
+      href="https://promapper.app/es/escuelas" />
+    <xhtml:link rel="alternate" hreflang="en"
+      href="https://promapper.app/for/schools" />
+    <xhtml:link rel="alternate" hreflang="x-default"
+      href="https://promapper.app/for/schools" />
+  </url>
+
   <!-- D&D Campaign Studio (EN) -->
   <url>
     <loc>https://promapper.app/for/dnd</loc>

@@ -58,6 +58,8 @@ const rateMap = new Map<string, { count: number; windowStart: number }>();
 // UTC calendar day rather than a rolling 24h — see durableBudget.ts.
 const apiDailyLimit = () => numEnv("API_DAILY_LIMIT", 1000);
 const audioBytesPerDay = () => numEnv("AUDIO_BYTES_PER_DAY", 0);
+const supporterAudioBytesPerDay = () =>
+  numEnv("SUPPORTER_AUDIO_BYTES_PER_DAY", 0);
 // Global circuit-breaker: per-IP daily budgets multiply across a botnet's
 // IPs, so ONE absolute ceiling caps the worst possible day on the house
 // key. 20k calls ≈ 60+ live meeting-hours — far above honest indie use.
@@ -199,12 +201,19 @@ export function getSupporterToken(req: Request): string | null {
 }
 
 /**
+ * Get verified supporter payload (or null if free/expired/invalid).
+ */
+export async function getSupporterPayload(req: Request) {
+  const token = getSupporterToken(req);
+  if (!token) return null;
+  return await verifySupporterPass(token);
+}
+
+/**
  * Check if the request is from an active, verified supporter.
  */
 export async function isSupporterRequest(req: Request): Promise<boolean> {
-  const token = getSupporterToken(req);
-  if (!token) return false;
-  const verified = await verifySupporterPass(token);
+  const verified = await getSupporterPayload(req);
   return verified !== null;
 }
 
@@ -230,10 +239,14 @@ export async function guardRequest(req: Request): Promise<Response | null> {
   // repo), so the house wallet had no floor at all. The global ceiling still
   // counts supporter traffic.
   const limit = apiDailyLimit();
-  return await enforceDailyBudgets(
-    req,
-    await isSupporterRequest(req) ? limit * 3 : limit,
-  );
+  const supporter = await getSupporterPayload(req);
+  const multiplier = supporter?.tier === "guild" ||
+      supporter?.tier === "lifetime"
+    ? 6
+    : supporter
+    ? 3
+    : 1;
+  return await enforceDailyBudgets(req, limit * multiplier);
 }
 
 /**
@@ -277,13 +290,42 @@ export async function guardAudioBudget(
   bytes: number,
   housePaysAudio = false,
 ): Promise<Response | null> {
-  // Supporters get unlimited recording allowance
-  if (await isSupporterRequest(req)) return null;
+  // Their key, their audio bill — when their key is what pays.
+  if (!housePaysAudio && getByoKey(req)) return null;
+
+  const supporter = await getSupporterPayload(req);
+  if (supporter) {
+    // Master-code lifetime passes waive cloud audio caps; Solo ($49) and Guild
+    // ($99) passes get a daily high-speed cloud audio budget when
+    // SUPPORTER_AUDIO_BYTES_PER_DAY is configured, and overflow to On-Device
+    // Whisper so unlimited takes remain 100% true without unbounded cloud spend.
+    if (supporter.tier === "lifetime") return null;
+    const supLimit = supporterAudioBytesPerDay();
+    if (supLimit <= 0) return null;
+    const tierLimit = supporter.tier === "guild" ? supLimit * 4 : supLimit;
+    const tokenKey = `sup:${
+      supporter.checkoutId || getSupporterToken(req)?.slice(-24) ||
+      getClientToken(req)
+    }`;
+    const supVerdict = await consumeByteBudget(
+      tokenKey,
+      bytes,
+      tierLimit,
+      Date.now(),
+    );
+    if (supVerdict.ok) return null;
+    return jsonResponse(
+      {
+        error:
+          "Daily high-speed cloud audio allowance reached — switching to On-Device Whisper for unlimited local takes.",
+        use_local_whisper: true,
+      },
+      429,
+    );
+  }
 
   const byteLimit = audioBytesPerDay();
   if (byteLimit <= 0) return null;
-  // Their key, their audio bill — but only when their key is what pays.
-  if (!housePaysAudio && getByoKey(req)) return null;
 
   const verdict = await consumeByteBudget(
     getClientToken(req),
@@ -296,7 +338,7 @@ export async function guardAudioBudget(
   return jsonResponse(
     {
       error:
-        "Today's free recording allowance is used up. Unlock with a Supporter Pass or plug in your own API key under the key icon.",
+        "Today's free recording allowance is used up. Unlock with a Supporter Pass or plug in an OpenRouter API key under the key icon.",
     },
     429,
   );

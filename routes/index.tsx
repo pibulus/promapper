@@ -85,11 +85,19 @@ export default function Home() {
               },
               {
                 "@type": "Offer",
-                "name": "ProMapper 1-Year Supporter Pass",
+                "name": "ProMapper 1-Year Solo Pass",
                 "price": "49",
                 "priceCurrency": "AUD",
                 "description":
-                  "Extended audio takes, full collaborative live rooms with voice chat, and permanent share links — no auto-renewal",
+                  "60 mins/day cloud audio + unlimited On-Device Whisper, full collaborative live rooms with voice chat, and permanent share links — no auto-renewal",
+              },
+              {
+                "@type": "Offer",
+                "name": "ProMapper 1-Year Guild, Lab & Practice Pass",
+                "price": "99",
+                "priceCurrency": "AUD",
+                "description":
+                  "Up to 5 seats, 4-hour marathon sessions with rolling 15-min auto-appends, 120 hrs/yr cloud audio + unlimited On-Device Whisper",
               },
             ],
           })}

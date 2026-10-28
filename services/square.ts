@@ -27,14 +27,23 @@ export function getSquareBaseUrl(): string {
     : "https://connect.squareup.com";
 }
 
-export function getSupporterPrice() {
-  const amountStr = Deno.env.get("SUPPORTER_PRICE_CENTS")?.trim();
-  const amount = amountStr ? Number(amountStr) : 4900; // $49.00 AUD
+export type CheckoutPlan = "solo" | "guild";
+
+export function getSupporterPrice(plan: CheckoutPlan = "solo") {
+  const isGuild = plan === "guild";
+  const envKey = isGuild ? "GUILD_PASS_PRICE_CENTS" : "SUPPORTER_PRICE_CENTS";
+  const fallbackCents = isGuild ? 9900 : 4900; // $99.00 AUD vs $49.00 AUD
+  const amountStr = Deno.env.get(envKey)?.trim();
+  const amount = amountStr ? Number(amountStr) : fallbackCents;
   const currency = Deno.env.get("SUPPORTER_CURRENCY")?.trim() || "AUD";
+  const finalAmount = Number.isFinite(amount) && amount > 0
+    ? amount
+    : fallbackCents;
   return {
-    amount: Number.isFinite(amount) && amount > 0 ? amount : 4900,
+    amount: finalAmount,
     currency,
-    displayPrice: `$${(amount / 100).toFixed(0)}`,
+    displayPrice: `$${(finalAmount / 100).toFixed(0)}`,
+    plan,
   };
 }
 
@@ -42,6 +51,7 @@ export interface CreateCheckoutOptions {
   checkoutId: string;
   redirectUrl: string;
   userEmail?: string;
+  plan?: CheckoutPlan;
 }
 
 export interface SquareCheckoutResult {
@@ -50,6 +60,7 @@ export interface SquareCheckoutResult {
   checkoutUrl: string;
   amount: number;
   currency: string;
+  plan: CheckoutPlan;
 }
 
 /**
@@ -63,14 +74,18 @@ export async function createSquareCheckout(
     throw new Error("Square checkout is not configured on the server");
   }
 
-  const price = getSupporterPrice();
+  const plan: CheckoutPlan = options.plan === "guild" ? "guild" : "solo";
+  const price = getSupporterPrice(plan);
   const baseUrl = getSquareBaseUrl();
+  const itemName = plan === "guild"
+    ? "ProMapper Guild, Lab & Practice Pass (1 Year)"
+    : "ProMapper Solo Supporter Pass (1 Year)";
 
   const body: Record<string, unknown> = {
     idempotency_key: options.checkoutId,
-    description: `ProMapper Supporter Pass (1 Year) — ${options.checkoutId}`,
+    description: `${itemName} — ${options.checkoutId}`,
     quick_pay: {
-      name: "ProMapper Supporter Pass (1 Year)",
+      name: itemName,
       price_money: {
         amount: price.amount,
         currency: price.currency,
@@ -81,7 +96,7 @@ export async function createSquareCheckout(
       redirect_url: options.redirectUrl,
       ask_for_shipping_address: false,
     },
-    payment_note: `ProMapper Supporter Pass ${options.checkoutId}`,
+    payment_note: `${itemName} ${options.checkoutId}`,
   };
 
   if (options.userEmail && options.userEmail.includes("@")) {
@@ -113,6 +128,7 @@ export async function createSquareCheckout(
     checkoutUrl: data.payment_link.long_url || data.payment_link.url,
     amount: price.amount,
     currency: price.currency,
+    plan,
   };
 }
 

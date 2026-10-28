@@ -20,6 +20,7 @@ import { useEffect, useRef } from "preact/hooks";
 import LevelBars from "../components/LevelBars.tsx";
 
 import { liveSession } from "@signals/liveSessionStore.ts";
+import { hasProAccess, localWhisperSignal } from "@signals/supporterStore.ts";
 import { reconcileAppendResult } from "@core/orchestration/append-reconcile.ts";
 import { clearUndo, conversationData } from "@signals/conversationStore.ts";
 import {
@@ -40,6 +41,7 @@ import { enqueueApiRequest } from "../utils/requestQueue.ts";
 import { coerceFlowResult } from "../utils/coerceFlowResult.ts";
 import { soundBloom } from "@utils/sound.ts";
 import { formatTime, useRecorder } from "./useRecorder.ts";
+import { transcribeWithOfflineWhisper } from "../utils/offlineWhisper.ts";
 import {
   clearTake,
   startJournal,
@@ -82,10 +84,57 @@ export default function AudioRecorder(
   // Processing feedback: elapsed time + cycling messages.
   const processingTime = useSignal(0);
   const processingStartRef = useRef<number | null>(null);
+  const lastRotatedMinuteRef = useRef<number>(0);
 
-  const MAX_RECORDING_TIME = 10 * 60;
+  // Free tier caps single takes at 10 mins; Supporters & BYOK unlock 4-hour
+  // marathon sessions with rolling 15-minute auto-appends.
+  const MAX_RECORDING_TIME = hasProAccess.value ? 4 * 60 * 60 : 10 * 60;
+  const MARATHON_CHUNK_SECONDS = 15 * 60;
   const WARNING_TIME = 30;
   const MIN_BACKUP_DURATION = 30;
+
+  async function persistRecordedTake(
+    blob: Blob,
+    durationSec: number,
+  ): Promise<StoredRecording> {
+    lastRecordingBlobRef.current = blob;
+    retryRecordingReady.value = true;
+    const nextTakeNumber = takes.value.reduce((max, t) => {
+      const m = /^Take (\d+)$/.exec(t.fileName ?? "");
+      return m ? Math.max(max, Number(m[1])) : max;
+    }, 0) + 1;
+    const take: StoredRecording = {
+      id: journalRef.current?.takeId ?? crypto.randomUUID(),
+      conversationId,
+      data: blob,
+      mimeType: blob.type || "audio/webm",
+      fileName: `Take ${nextTakeNumber}`,
+      createdAt: new Date().toISOString(),
+      durationSec,
+    };
+    lastTakeIdRef.current = take.id;
+    const persisted = await saveRecording(take);
+    if (persisted) void clearTake(take.id);
+    takes.value = [...takes.value, take];
+    if (
+      !persisted &&
+      (journalUnsafe.value || durationSec >= MIN_BACKUP_DURATION)
+    ) {
+      try {
+        saveAudioBackup(blob, conversationId);
+        showToast("Saved a backup copy to your Downloads folder", "info");
+      } catch (error) {
+        console.warn("Failed to auto-save recording backup:", error);
+      }
+    } else if (!persisted) {
+      showToast(
+        "This take couldn't be kept on this device — it'll fade when you leave.",
+        "warning",
+      );
+    }
+    if (persisted) journalUnsafe.value = false;
+    return take;
+  }
 
   const {
     isRecording,
@@ -94,6 +143,7 @@ export default function AudioRecorder(
     showTimeWarning,
     startRecording,
     stopRecording,
+    rotateRecording,
     streamRef,
   } = useRecorder({
     maxDurationSeconds: MAX_RECORDING_TIME,
@@ -127,52 +177,47 @@ export default function AudioRecorder(
       });
     },
     onStop: async (blob) => {
-      lastRecordingBlobRef.current = blob;
-      retryRecordingReady.value = true;
-      // Number from the highest existing "Take N", not the list length —
-      // after deleting a take, length+1 minted duplicate names.
-      const nextTakeNumber = takes.value.reduce((max, t) => {
-        const m = /^Take (\d+)$/.exec(t.fileName ?? "");
-        return m ? Math.max(max, Number(m[1])) : max;
-      }, 0) + 1;
-      // Persist the take FIRST — the audio must survive a failed AI pipeline.
-      const take: StoredRecording = {
-        id: journalRef.current?.takeId ?? crypto.randomUUID(),
-        conversationId,
-        data: blob,
-        mimeType: blob.type || "audio/webm",
-        fileName: `Take ${nextTakeNumber}`,
-        createdAt: new Date().toISOString(),
-        durationSec: recordingTime.value,
-      };
-      lastTakeIdRef.current = take.id;
-      const persisted = await saveRecording(take);
-      // Safe as a take now — the journal's copy has done its job.
-      if (persisted) void clearTake(take.id);
-      takes.value = [...takes.value, take];
-      if (
-        !persisted &&
-        (journalUnsafe.value || recordingTime.value >= MIN_BACKUP_DURATION)
-      ) {
-        // No IndexedDB (private mode) — long takes still get a file backup.
-        try {
-          saveAudioBackup(blob, conversationId);
-          showToast("Saved a backup copy to your Downloads folder", "info");
-        } catch (error) {
-          console.warn("Failed to auto-save recording backup:", error);
-        }
-      } else if (!persisted) {
-        // Short take, no file fallback — say so instead of showing a take
-        // that silently vanishes on the next visit (Safari private mode).
-        showToast(
-          "This take couldn't be kept on this device — it'll fade when you leave.",
-          "warning",
-        );
-      }
-      if (persisted) journalUnsafe.value = false;
+      lastRotatedMinuteRef.current = 0;
+      const take = await persistRecordedTake(blob, recordingTime.value);
       await processAudioAppend(blob, take.id);
     },
   });
+
+  /**
+   * Slice the current recording into a self-contained Take, save it to
+   * IndexedDB, and map it in the background while keeping the microphone open.
+   */
+  async function rotateAndMapChunk(isAutoMarathon = false) {
+    if (!isRecording.value || appendingRef.current) return;
+    const chunkDuration = recordingTime.value;
+    const blob = await rotateRecording();
+    if (!blob || blob.size < 1024) return;
+    const take = await persistRecordedTake(blob, chunkDuration);
+    showToast(
+      isAutoMarathon
+        ? "15-min marathon chunk saved — mapping in background while mic stays live…"
+        : "Chunk saved — mapping in background while mic stays live…",
+      "info",
+    );
+    void processAudioAppend(blob, take.id);
+  }
+
+  // Rolling 15-minute marathon auto-append for Supporters & BYOK.
+  useEffect(() => {
+    if (!isRecording.value) {
+      lastRotatedMinuteRef.current = 0;
+      return;
+    }
+    const elapsed = recordingTime.value;
+    if (
+      elapsed > 0 &&
+      elapsed % MARATHON_CHUNK_SECONDS === 0 &&
+      lastRotatedMinuteRef.current !== elapsed
+    ) {
+      lastRotatedMinuteRef.current = elapsed;
+      void rotateAndMapChunk(true);
+    }
+  }, [recordingTime.value, isRecording.value]);
 
   const timeRemaining = useComputed(() =>
     MAX_RECORDING_TIME - recordingTime.value
@@ -321,59 +366,94 @@ export default function AudioRecorder(
       // merge baseline and our reconcile baseline are provably identical.
       const base = conversationData.value;
 
-      const formData = new FormData();
-      formData.append("audio", audioBlob);
-      formData.append("conversationId", conversationId);
+      const buildFormData = (
+        payload: { audio?: Blob; transcriptText?: string },
+      ) => {
+        const fd = new FormData();
+        if (payload.audio) fd.append("audio", payload.audio);
+        if (payload.transcriptText) {
+          fd.append("transcriptText", payload.transcriptText);
+        }
+        fd.append("conversationId", conversationId);
 
-      // Pass existing transcript, action items, summary, and nodes for smart appending
-      if (base) {
-        if (base.transcript?.text) {
-          formData.append("existingTranscript", base.transcript.text);
+        if (base) {
+          if (base.transcript?.text) {
+            fd.append("existingTranscript", base.transcript.text);
+          }
+          if (base.conversation?.title) {
+            fd.append("existingTitle", base.conversation.title);
+          }
+          if (base.actionItems) {
+            fd.append(
+              "existingActionItems",
+              JSON.stringify(base.actionItems),
+            );
+          }
+          if (base.summary) {
+            fd.append("existingSummary", base.summary);
+          }
+          if (base.nodes) {
+            fd.append("existingNodes", JSON.stringify(base.nodes));
+          }
+          if (base.edges) {
+            fd.append("existingEdges", JSON.stringify(base.edges));
+          }
         }
-
-        // The title is settled — passing it through stops the server
-        // regenerating (and re-billing) it on every append.
-        if (base.conversation?.title) {
-          formData.append("existingTitle", base.conversation.title);
-        }
-
-        if (base.actionItems) {
-          formData.append(
-            "existingActionItems",
-            JSON.stringify(base.actionItems),
-          );
-        }
-
-        if (base.summary) {
-          formData.append("existingSummary", base.summary);
-        }
-
-        if (base.nodes) {
-          formData.append("existingNodes", JSON.stringify(base.nodes));
-        }
-        if (base.edges) {
-          // Feed existing edges so the topic prompt's relationship-preservation
-          // hint isn't empty on appends (the append route already parses this).
-          formData.append("existingEdges", JSON.stringify(base.edges));
-        }
-      }
-      // NOTE: roomId is deliberately NOT sent. /api/append's pushResultToRoom
-      // only echoes when roomId is present; keeping it absent means an append
-      // produces exactly ONE write to the initiator (the reconcile below) and
-      // ONE outbound liveSync broadcast — no second clobber window, no echo
-      // storm (audit Finding 3). The peer receives the reconciled snapshot via
-      // the normal outbound effect.
+        return fd;
+      };
 
       await ensureApiSession();
       const result = await enqueueApiRequest(async ({ signal }) => {
+        if (localWhisperSignal.value) {
+          showToast("Transcribing locally with On-Device Whisper…", "info");
+          const localText = await transcribeWithOfflineWhisper(audioBlob);
+          if (!localText.trim()) {
+            throw new Error(
+              "No clear speech detected by On-Device Whisper. Check your mic and give it another go.",
+            );
+          }
+          const localRes = await fetch("/api/append", {
+            method: "POST",
+            body: buildFormData({ transcriptText: localText }),
+            signal,
+          });
+          if (!localRes.ok) {
+            const err = await localRes.json();
+            throw new Error(err.error || "Failed to process");
+          }
+          return localRes.json();
+        }
+
         const response = await fetch("/api/append", {
           method: "POST",
-          body: formData,
+          body: buildFormData({ audio: audioBlob }),
           signal,
         });
 
         if (!response.ok) {
           const error = await response.json();
+          if (response.status === 429 && error.use_local_whisper) {
+            showToast(
+              "Cloud audio allowance reached — finishing take with On-Device Whisper…",
+              "info",
+            );
+            const localText = await transcribeWithOfflineWhisper(audioBlob);
+            if (!localText.trim()) {
+              throw new Error(
+                "No clear speech detected by On-Device Whisper.",
+              );
+            }
+            const fallbackRes = await fetch("/api/append", {
+              method: "POST",
+              body: buildFormData({ transcriptText: localText }),
+              signal,
+            });
+            if (!fallbackRes.ok) {
+              const fallbackErr = await fallbackRes.json();
+              throw new Error(fallbackErr.error || "Failed to process");
+            }
+            return fallbackRes.json();
+          }
           throw new Error(error.error || "Failed to process");
         }
 
@@ -475,31 +555,46 @@ export default function AudioRecorder(
       }
       {isRecording.value
         ? (
-          <button
-            type="button"
-            class="header-icon-btn is-live"
-            onClick={stopRecording}
-            aria-label={`Stop recording (${formatTime(recordingTime.value)})`}
-            title={showTimeWarning.value
-              ? `Auto-stop in ${formatTime(timeRemaining.value)}`
-              : "Stop and map this take"}
-          >
-            {
-              /* Live level meter — silence is visible, "is it hearing me?"
-                answers itself. Pulse stays as the no-stream fallback. */
-            }
-            {streamRef.current
-              ? <LevelBars stream={streamRef.current} />
-              : <span class="recording-hub__pulse" aria-hidden="true" />}
-            <span
-              class={`recording-hub__time${
-                showTimeWarning.value ? " is-warning" : ""
-              }`}
+          <div class="inline-flex items-center gap-1.5">
+            {recordingTime.value >= 15 && !appendingRef.current && (
+              <button
+                type="button"
+                class="header-icon-btn"
+                onClick={() => void rotateAndMapChunk(false)}
+                aria-label="Map current chunk and keep recording"
+                title="Map current chunk in background & keep mic rolling"
+                data-tip="Map chunk & keep rolling"
+                data-tip-align="right"
+              >
+                <i class="fa fa-layer-group" aria-hidden="true" />
+              </button>
+            )}
+            <button
+              type="button"
+              class="header-icon-btn is-live"
+              onClick={stopRecording}
+              aria-label={`Stop recording (${formatTime(recordingTime.value)})`}
+              title={showTimeWarning.value
+                ? `Auto-stop in ${formatTime(timeRemaining.value)}`
+                : "Stop and map this take"}
             >
-              {formatTime(recordingTime.value)}
-            </span>
-            <i class="fa fa-stop" aria-hidden="true" />
-          </button>
+              {
+                /* Live level meter — silence is visible, "is it hearing me?"
+                  answers itself. Pulse stays as the no-stream fallback. */
+              }
+              {streamRef.current
+                ? <LevelBars stream={streamRef.current} />
+                : <span class="recording-hub__pulse" aria-hidden="true" />}
+              <span
+                class={`recording-hub__time${
+                  showTimeWarning.value ? " is-warning" : ""
+                }`}
+              >
+                {formatTime(recordingTime.value)}
+              </span>
+              <i class="fa fa-stop" aria-hidden="true" />
+            </button>
+          </div>
         )
         : isProcessing.value
         ? (

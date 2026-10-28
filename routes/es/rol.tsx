@@ -79,11 +79,19 @@ export default function RolLandingPage() {
                   },
                   {
                     "@type": "Offer",
-                    "name": "Pase de Soporte ProMapper (1 Año)",
+                    "name": "Pase Individual ProMapper (1 Año)",
                     "price": "49",
                     "priceCurrency": "AUD",
                     "description":
-                      "Grabaciones largas de partida, salas colaborativas en vivo y enlaces permanentes — un solo pago sin cobros automáticos",
+                      "60 min/día de audio en la nube + Whisper local ilimitado, salas colaborativas en vivo y enlaces permanentes — un solo pago sin cobros automáticos",
+                  },
+                  {
+                    "@type": "Offer",
+                    "name": "Pase de Gremio y Mesa de Rol (1 Año)",
+                    "price": "99",
+                    "priceCurrency": "AUD",
+                    "description":
+                      "Hasta 5 lugares para la mesa, partidas maratónicas de 4 horas con auto-guardado cada 15 min, 120 horas/año en la nube + Whisper local ilimitado",
                   },
                 ],
               },

@@ -75,11 +75,19 @@ export default function DndLandingPage() {
                   },
                   {
                     "@type": "Offer",
-                    "name": "ProMapper 1-Year Supporter Pass",
+                    "name": "ProMapper 1-Year Solo Pass",
                     "price": "49",
                     "priceCurrency": "AUD",
                     "description":
-                      "Extended session audio takes, full multiplayer live rooms, and permanent campaign share links — no auto-renewal",
+                      "60 mins/day cloud audio + unlimited On-Device Whisper, multiplayer live rooms, and permanent campaign share links — no auto-renewal",
+                  },
+                  {
+                    "@type": "Offer",
+                    "name": "ProMapper 1-Year Guild & Party Pass",
+                    "price": "99",
+                    "priceCurrency": "AUD",
+                    "description":
+                      "Up to 5 party seats, 4-hour marathon D&D sessions with rolling 15-min auto-appends, 120 hrs/yr cloud audio + unlimited On-Device Whisper",
                   },
                 ],
               },

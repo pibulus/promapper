@@ -28,6 +28,8 @@ import {
   createDeepgramLiveClient,
   type DeepgramLiveClient,
 } from "../utils/deepgramLive.ts";
+import { hasProAccess, localWhisperSignal } from "@signals/supporterStore.ts";
+import { transcribeWithOfflineWhisper } from "../utils/offlineWhisper.ts";
 import { t } from "../utils/i18n.ts";
 
 // Module-level so pasted text survives the hero unmounting during processing
@@ -65,7 +67,9 @@ export default function UploadIsland(
   const journalRef = useRef<TakeJournal | null>(null);
   const unsubsRef = useRef<Array<() => void>>([]);
 
-  const MAX_RECORDING_TIME = 10 * 60;
+  // Free tier caps single takes at 10 mins; Supporters & BYOK unlock 30 mins
+  // on the Porch (and 4-hour rolling marathon takes inside the board).
+  const MAX_RECORDING_TIME = hasProAccess.value ? 30 * 60 : 10 * 60;
   const WARNING_TIME = 30;
 
   const timeRemaining = useComputed(() =>
@@ -145,29 +149,32 @@ export default function UploadIsland(
         }
       }
 
-      // Initialize Deepgram live streaming client
-      const liveClient = createDeepgramLiveClient();
-      deepgramClientRef.current = liveClient;
+      // Initialize Deepgram live streaming client unless Strict Local Audio
+      // (On-Device Whisper) mode is active.
       liveTranscript.value = "";
       liveInterim.value = "";
       isLiveConnected.value = false;
 
-      // Subscribe to live client state updates
-      const unsubTranscript = liveClient.state.transcript.subscribe((val) => {
-        liveTranscript.value = val;
-      });
-      const unsubInterim = liveClient.state.interim.subscribe((val) => {
-        liveInterim.value = val;
-      });
-      const unsubConnected = liveClient.state.connected.subscribe((val) => {
-        isLiveConnected.value = val;
-      });
-      unsubsRef.current = [unsubTranscript, unsubInterim, unsubConnected];
+      let liveClient: DeepgramLiveClient | null = null;
+      if (!localWhisperSignal.value) {
+        liveClient = createDeepgramLiveClient();
+        deepgramClientRef.current = liveClient;
 
-      // Start Deepgram live connection in background
-      liveClient.connect().catch((err) => {
-        console.warn("Live transcription fallback to batch:", err);
-      });
+        const unsubTranscript = liveClient.state.transcript.subscribe((val) => {
+          liveTranscript.value = val;
+        });
+        const unsubInterim = liveClient.state.interim.subscribe((val) => {
+          liveInterim.value = val;
+        });
+        const unsubConnected = liveClient.state.connected.subscribe((val) => {
+          isLiveConnected.value = val;
+        });
+        unsubsRef.current = [unsubTranscript, unsubInterim, unsubConnected];
+
+        liveClient.connect().catch((err) => {
+          console.warn("Live transcription fallback to batch:", err);
+        });
+      }
 
       const mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
       journalRef.current = startJournal(mediaRecorder);
@@ -176,7 +183,7 @@ export default function UploadIsland(
       mediaRecorder.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
           audioChunksRef.current.push(event.data);
-          liveClient.send(event.data);
+          liveClient?.send(event.data);
         }
       };
 
@@ -399,11 +406,30 @@ export default function UploadIsland(
     pendingAudio.value = audioBlob;
 
     try {
-      const formData = new FormData();
-      formData.append("audio", audioBlob, "recording.webm");
-
       await ensureApiSession();
       const result = await enqueueApiRequest(async ({ signal }) => {
+        if (localWhisperSignal.value) {
+          showToast("Transcribing locally with On-Device Whisper…", "info");
+          const localText = await transcribeWithOfflineWhisper(audioBlob);
+          if (!localText.trim()) {
+            throw new Error(i18n.noSpeechWarning);
+          }
+          const localRes = await fetch("/api/process", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: localText }),
+            signal,
+          });
+          if (!localRes.ok) {
+            const err = await localRes.json();
+            throw new Error(err.error || "Processing failed");
+          }
+          return localRes.json();
+        }
+
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "recording.webm");
+
         const response = await fetch("/api/process", {
           method: "POST",
           body: formData,
@@ -412,6 +438,27 @@ export default function UploadIsland(
 
         if (!response.ok) {
           const error = await response.json();
+          if (response.status === 429 && error.use_local_whisper) {
+            showToast(
+              "Cloud audio allowance reached — finishing take with On-Device Whisper…",
+              "info",
+            );
+            const localText = await transcribeWithOfflineWhisper(audioBlob);
+            if (!localText.trim()) {
+              throw new Error(i18n.noSpeechWarning);
+            }
+            const fallbackRes = await fetch("/api/process", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: localText }),
+              signal,
+            });
+            if (!fallbackRes.ok) {
+              const fallbackErr = await fallbackRes.json();
+              throw new Error(fallbackErr.error || "Processing failed");
+            }
+            return fallbackRes.json();
+          }
           console.error("❌ API error:", error);
           throw new Error(error.error || "Processing failed");
         }

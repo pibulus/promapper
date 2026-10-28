@@ -26,13 +26,14 @@ export const handler: Handlers = {
     }
 
     try {
-      let body: { email?: string } = {};
+      let body: { email?: string; plan?: "solo" | "guild" } = {};
       try {
         body = await req.json();
       } catch {
         // empty body is fine
       }
 
+      const plan = body.plan === "guild" ? "guild" : "solo";
       const checkoutId = crypto.randomUUID();
       const origin = new URL(req.url).origin;
       const redirectUrl = `${origin}/?checkout=${checkoutId}`;
@@ -41,6 +42,7 @@ export const handler: Handlers = {
         checkoutId,
         redirectUrl,
         userEmail: body.email,
+        plan,
       });
 
       await savePendingCheckout({

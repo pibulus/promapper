@@ -3,16 +3,24 @@
 import { computed, signal } from "@preact/signals";
 import {
   clearSupporterPass,
+  type ClientSupporterTier,
   getSupporterPass,
   setSupporterPass,
   supporterPassExpiry,
+  supporterPassTier,
 } from "../utils/supporter-pass.ts";
 import { clearByoKey, getByoKey, setByoKey } from "../utils/byoKey.ts";
+import {
+  getLocalWhisperPreference,
+  setLocalWhisperPreference,
+} from "../utils/offlineWhisper.ts";
 
 export const supporterModalOpen = signal(false);
 export const isSupporterSignal = signal(false);
+export const supporterTierSignal = signal<ClientSupporterTier | null>(null);
 export const supporterExpirySignal = signal<Date | null>(null);
 export const byokKeySignal = signal<string | null>(null);
+export const localWhisperSignal = signal(false);
 
 /**
  * Sync signals with localStorage & cookies.
@@ -22,10 +30,19 @@ export function refreshSupporterState() {
 
   const pass = getSupporterPass();
   isSupporterSignal.value = pass !== null;
+  supporterTierSignal.value = supporterPassTier();
   supporterExpirySignal.value = supporterPassExpiry();
 
   const byo = getByoKey();
   byokKeySignal.value = byo;
+
+  localWhisperSignal.value = getLocalWhisperPreference();
+}
+
+export function toggleLocalWhisper(enabled?: boolean) {
+  const next = enabled ?? !localWhisperSignal.value;
+  setLocalWhisperPreference(next);
+  localWhisperSignal.value = next;
 }
 
 /**

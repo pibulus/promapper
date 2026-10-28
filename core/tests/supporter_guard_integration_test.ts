@@ -32,19 +32,47 @@ Deno.test("isSupporterRequest returns true for valid x-promapper-pass header", a
   assertEquals(await isSupporterRequest(plainReq), false);
 });
 
-Deno.test("guardAudioBudget waives recording cap for supporters", async () => {
-  Deno.env.set("AUDIO_BYTES_PER_DAY", "1000"); // 1KB limit
+Deno.test("guardAudioBudget waives recording cap for supporters and overflows to On-Device Whisper when SUPPORTER_AUDIO_BYTES_PER_DAY is set", async () => {
+  Deno.env.set("AUDIO_BYTES_PER_DAY", "1000"); // 1KB free limit
   const token = await signSupporterPass({ checkoutId: "audio-test-1" });
 
   const supporterReq = new Request("http://localhost:8003/api/process", {
     headers: { "x-promapper-pass": token },
   });
 
-  // Even 100MB of audio is allowed for supporters
+  // Even 100MB of audio is allowed for supporters when SUPPORTER_AUDIO_BYTES_PER_DAY is 0
   const block = await guardAudioBudget(supporterReq, 100 * 1024 * 1024);
   assertEquals(block, null);
 
-  Deno.env.set("AUDIO_BYTES_PER_DAY", "0");
+  // When SUPPORTER_AUDIO_BYTES_PER_DAY is set, exceeding it signals use_local_whisper: true
+  Deno.env.set("SUPPORTER_AUDIO_BYTES_PER_DAY", "5000");
+  try {
+    const overflowToken = await signSupporterPass({
+      checkoutId: "audio-overflow-solo",
+      tier: "supporter",
+    });
+    const overflowReq = new Request("http://localhost:8003/api/process", {
+      headers: { "x-promapper-pass": overflowToken },
+    });
+    const overBlock = await guardAudioBudget(overflowReq, 6000);
+    assertEquals(overBlock?.status, 429);
+    const body = await overBlock?.json();
+    assertEquals(body.use_local_whisper, true);
+
+    // Guild tier gets 4x the daily cloud audio allowance (4 * 5000 = 20000 bytes)
+    const guildToken = await signSupporterPass({
+      checkoutId: "audio-overflow-guild",
+      tier: "guild",
+    });
+    const guildReq = new Request("http://localhost:8003/api/process", {
+      headers: { "x-promapper-pass": guildToken },
+    });
+    const guildAllow = await guardAudioBudget(guildReq, 15000);
+    assertEquals(guildAllow, null);
+  } finally {
+    Deno.env.delete("SUPPORTER_AUDIO_BYTES_PER_DAY");
+    Deno.env.set("AUDIO_BYTES_PER_DAY", "0");
+  }
 });
 
 Deno.test("guardLiveRoomAccess gates live room creation to supporters and BYOK", async () => {

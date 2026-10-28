@@ -123,17 +123,20 @@ export async function markCheckoutPaid(options: {
   if (existing?.status === "paid" && existing.licenseToken) return existing;
   const now = Date.now();
 
+  const existingAmount = existing?.amount ?? 4900;
+  const tier = existingAmount >= 9000 ? "guild" : "supporter";
+
   const licenseToken = await signSupporterPass({
     checkoutId: options.checkoutId,
     email: options.email ?? existing?.email,
     durationDays: 365,
-    tier: "supporter",
+    tier,
   });
 
   const updated: CheckoutRecord = {
     checkoutId: options.checkoutId,
     status: "paid",
-    amount: existing?.amount ?? 4900,
+    amount: existingAmount,
     currency: existing?.currency ?? "AUD",
     providerOrderId: options.providerOrderId ?? existing?.providerOrderId,
     paymentId: options.paymentId ?? existing?.paymentId,

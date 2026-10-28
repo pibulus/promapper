@@ -10,7 +10,10 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { processAudio } from "@core/orchestration/conversation-flow.ts";
+import {
+  processAudio,
+  processLiveText,
+} from "@core/orchestration/conversation-flow.ts";
 import type { ConversationFlowResult } from "@core/orchestration/conversation-flow.ts";
 import {
   mergeAppendActionItems,
@@ -71,7 +74,10 @@ export const handler: Handlers = {
 
       // Parse form data
       const formData = await req.formData();
-      const audioFile = formData.get("audio") as File;
+      const audioFile = formData.get("audio") as File | null;
+      const transcriptText = (
+        formData.get("transcriptText") as string | null
+      )?.trim() || "";
       const conversationId = formData.get("conversationId") as string;
       const existingTranscript = formData.get("existingTranscript") as
         | string
@@ -83,24 +89,12 @@ export const handler: Handlers = {
       const existingNodesJson = formData.get("existingNodes") as string | null;
       const existingEdgesJson = formData.get("existingEdges") as string | null;
 
-      if (!audioFile) {
-        return new Response(
-          JSON.stringify({ error: "No audio file provided" }),
-          { status: 400, headers: { "Content-Type": "application/json" } },
-        );
-      }
-
-      // Reject empty/near-empty recordings before they hit the provider. A
-      // glitched mobile recording (permission race, instant tap, backgrounded
-      // tab) yields a valid-but-tiny File that would otherwise become a cryptic
-      // transcription failure. A real recording with any audio is well over 1KB.
-      if (audioFile.size < MIN_AUDIO_SIZE) {
+      if (!audioFile && !transcriptText) {
         return new Response(
           JSON.stringify({
-            error:
-              "That recording came through empty — we didn't catch any audio. Give it another go.",
+            error: "No audio file or transcript text provided",
           }),
-          { status: 422, headers: { "Content-Type": "application/json" } },
+          { status: 400, headers: { "Content-Type": "application/json" } },
         );
       }
 
@@ -110,22 +104,6 @@ export const handler: Handlers = {
           { status: 400, headers: { "Content-Type": "application/json" } },
         );
       }
-
-      // Validate file size (max to prevent abuse)
-      if (audioFile.size > MAX_AUDIO_SIZE) {
-        return new Response(
-          JSON.stringify({
-            error: `File too large. Maximum size is 25MB (received ${
-              (audioFile.size / 1024 / 1024).toFixed(1)
-            }MB)`,
-          }),
-          { status: 413, headers: { "Content-Type": "application/json" } },
-        );
-      }
-
-      // Free-tier audio metering (no-op until AUDIO_BYTES_PER_DAY is set).
-      const budgetBlock = await guardAudioBudget(req, audioFile.size);
-      if (budgetBlock) return budgetBlock;
 
       const existingActionItems = parseExistingActionItems(
         existingActionItemsJson,
@@ -139,28 +117,76 @@ export const handler: Handlers = {
         existingEdgesJson,
         conversationId,
       );
-      const { part: audioPart } = await uploadAudioFile(audioFile);
+      const existingTitle = (formData.get("existingTitle") as string | null)
+        ?.slice(0, 200) ?? undefined;
 
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), APPEND_TIMEOUT_MS);
       let result: ConversationFlowResult;
       try {
-        result = await processAudio(
-          aiService,
-          audioPart,
-          conversationId,
-          {
-            existingActionItems,
-            existingNodes,
-            existingEdges,
-            existingSummary: existingSummary?.slice(0, MAX_EXISTING_SUMMARY) ||
-              undefined,
-            lightweightIfShort: true,
-            existingTitle: (formData.get("existingTitle") as string | null)
-              ?.slice(0, 200) ?? undefined,
-            signal: ctrl.signal,
-          },
-        );
+        if (transcriptText && !audioFile) {
+          // On-Device Whisper path: audio was already transcribed locally in
+          // the browser, so only text analysis runs (zero cloud audio cost).
+          result = await processLiveText(
+            aiService,
+            transcriptText.slice(0, MAX_EXISTING_TRANSCRIPT),
+            conversationId,
+            [],
+            existingTitle || "Conversation Map",
+            {
+              existingActionItems,
+              existingNodes,
+              existingEdges,
+              existingSummary:
+                existingSummary?.slice(0, MAX_EXISTING_SUMMARY) || undefined,
+              signal: ctrl.signal,
+            },
+          );
+        } else {
+          // Reject empty/near-empty recordings before they hit the provider.
+          if (audioFile!.size < MIN_AUDIO_SIZE) {
+            return new Response(
+              JSON.stringify({
+                error:
+                  "That recording came through empty — we didn't catch any audio. Give it another go.",
+              }),
+              { status: 422, headers: { "Content-Type": "application/json" } },
+            );
+          }
+
+          // Validate file size (max to prevent abuse)
+          if (audioFile!.size > MAX_AUDIO_SIZE) {
+            return new Response(
+              JSON.stringify({
+                error: `File too large. Maximum size is 25MB (received ${
+                  (audioFile!.size / 1024 / 1024).toFixed(1)
+                }MB)`,
+              }),
+              { status: 413, headers: { "Content-Type": "application/json" } },
+            );
+          }
+
+          // Audio metering (free tier + supporter high-speed cloud audio cap).
+          const budgetBlock = await guardAudioBudget(req, audioFile!.size);
+          if (budgetBlock) return budgetBlock;
+
+          const { part: audioPart } = await uploadAudioFile(audioFile!);
+          result = await processAudio(
+            aiService,
+            audioPart,
+            conversationId,
+            {
+              existingActionItems,
+              existingNodes,
+              existingEdges,
+              existingSummary:
+                existingSummary?.slice(0, MAX_EXISTING_SUMMARY) || undefined,
+              lightweightIfShort: true,
+              existingTitle,
+              signal: ctrl.signal,
+            },
+          );
+        }
       } finally {
         clearTimeout(timer);
       }

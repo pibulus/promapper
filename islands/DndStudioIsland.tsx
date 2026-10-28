@@ -362,8 +362,8 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
           </div>
           <span class="text-xs font-mono font-bold text-[#1e1714]/70">
             {isSpanish
-              ? "Exportación limpia en Markdown"
-              : "Clean Markdown output"}
+              ? "Exportación limpia en Markdown, PDF y diapositivas"
+              : "Clean Markdown, Styled PDF & Slide Deck output"}
           </span>
         </div>
         <p class="text-xs sm:text-sm text-[#1e1714]/80">
@@ -381,6 +381,57 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
 **Party Loot & Artifacts**: The Morzan Seal Tablet (-600g gold split)
 **The Story So Far**: The party confronted Madame Vesper and outbid the cultists before dawn...`}
         </pre>
+      </section>
+
+      {/* Multiplayer Party Room + Excalidraw Flip-Side + Export to Anything Strip */}
+      <section class="grid sm:grid-cols-3 gap-5">
+        <div class="bg-[#fbf1e4] border-3 border-[#1e1714] rounded-2xl p-5 shadow-[4px_4px_0px_#1e1714] space-y-2">
+          <span class="inline-block px-2.5 py-0.5 bg-[#1e1714] text-[#fffef7] text-[10px] font-mono font-bold uppercase rounded-full tracking-wider">
+            {isSpanish ? "Maratón de 4 horas" : "4-Hour Marathon Mode"}
+          </span>
+          <h3 class="text-base font-black text-[#1e1714]">
+            ⏱️ {isSpanish
+              ? "Auto-guardado cada 15 min sin cortar el micrófono"
+              : "Rolling 15-Min Auto-Appends"}
+          </h3>
+          <p class="text-xs text-[#1e1714]/80 leading-relaxed">
+            {isSpanish
+              ? "Las partidas de 3 a 4 horas se dividen en bloques de 15 minutos en segundo plano. El mapa de lore y las misiones se actualizan en vivo mientras el micrófono sigue grabando."
+              : "Long 3-to-4-hour tabletop sessions automatically slice and append every 15 minutes in the background. The lore graph and quest checklist update live while the mic stays open."}
+          </p>
+        </div>
+
+        <div class="bg-[#fbf1e4] border-3 border-[#1e1714] rounded-2xl p-5 shadow-[4px_4px_0px_#1e1714] space-y-2">
+          <span class="inline-block px-2.5 py-0.5 bg-[#1e1714] text-[#fffef7] text-[10px] font-mono font-bold uppercase rounded-full tracking-wider">
+            {isSpanish ? "Sala multijugador" : "Multiplayer Party Room"}
+          </span>
+          <h3 class="text-base font-black text-[#1e1714]">
+            🎨 {isSpanish
+              ? "Sala en vivo con voz y pizarrón Excalidraw"
+              : "Live Voice Room & Sketchboard"}
+          </h3>
+          <p class="text-xs text-[#1e1714]/80 leading-relaxed">
+            {isSpanish
+              ? "Comparte el enlace de la sala para que todo el grupo edite nodos, marque misiones y voltee el mapa al pizarrón Excalidraw compartido para dibujar calabozos en tiempo real."
+              : "Share one room link so the whole party edits lore nodes, checks off quests, and flips the Topic Map card over to a shared Excalidraw canvas to sketch dungeon maps in real time."}
+          </p>
+        </div>
+
+        <div class="bg-[#fbf1e4] border-3 border-[#1e1714] rounded-2xl p-5 shadow-[4px_4px_0px_#1e1714] space-y-2">
+          <span class="inline-block px-2.5 py-0.5 bg-[#1e1714] text-[#fffef7] text-[10px] font-mono font-bold uppercase rounded-full tracking-wider">
+            {isSpanish ? "Cajón de exportación" : "Export to Anything"}
+          </span>
+          <h3 class="text-base font-black text-[#1e1714]">
+            🖨️ {isSpanish
+              ? "PDF impreso, presentación y 8 formatos"
+              : "1-Click PDF, Slide Deck & 8 Presets"}
+          </h3>
+          <p class="text-xs text-[#1e1714]/80 leading-relaxed">
+            {isSpanish
+              ? "Convierte cualquier sesión en un PDF con estilo, una presentación de 6 a 9 diapositivas (Slide-O-Matic), Crónica de Campaña o Preguntas No Hechas."
+              : "Turn any session into a styled printable PDF, a 6–9 slide presentation deck (Slide-O-Matic), a Campaign Chronicle, or an Unasked Questions brief."}
+          </p>
+        </div>
       </section>
 
       {/* Comparison Table */}
@@ -566,6 +617,24 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
           class="inline-flex items-center min-h-[44px] px-3.5 py-2 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
         >
           📋 {isSpanish ? "Juntas y acuerdos" : "Weekly Meetings"}
+        </a>
+        <a
+          href={isSpanish ? "/es/clientes" : "/for/clients"}
+          class="inline-flex items-center min-h-[44px] px-3.5 py-2 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
+        >
+          🤝 {isSpanish ? "Clientes y asesorías" : "Client Sessions"}
+        </a>
+        <a
+          href={isSpanish ? "/es/consultas" : "/for/care"}
+          class="inline-flex items-center min-h-[44px] px-3.5 py-2 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
+        >
+          🩺 {isSpanish ? "Consultas médicas" : "Doctor & Care Visits"}
+        </a>
+        <a
+          href={isSpanish ? "/es/escuelas" : "/for/schools"}
+          class="inline-flex items-center min-h-[44px] px-3.5 py-2 bg-[#fffef7] border border-[#1e1714] rounded-xl hover:-translate-y-0.5 transition-transform"
+        >
+          🍎 {isSpanish ? "Escuelas y laboratorios" : "Schools & Research Labs"}
         </a>
         <a
           href={isSpanish ? "/es/investigacion" : "/for/research"}

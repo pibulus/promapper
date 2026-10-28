@@ -24,20 +24,31 @@ import * as $api_supporter_checkout from "./routes/api/supporter/checkout.ts";
 import * as $api_supporter_checkout_checkoutId_ from "./routes/api/supporter/checkout/[checkoutId].ts";
 import * as $api_supporter_redeem from "./routes/api/supporter/redeem.ts";
 import * as $brainstorming from "./routes/brainstorming.tsx";
+import * as $care from "./routes/care.tsx";
+import * as $clientes from "./routes/clientes.tsx";
+import * as $clients from "./routes/clients.tsx";
+import * as $consultas from "./routes/consultas.tsx";
 import * as $demo from "./routes/demo.tsx";
 import * as $dev_colors from "./routes/dev/colors.tsx";
 import * as $dev_nodemap from "./routes/dev/nodemap.tsx";
 import * as $dnd from "./routes/dnd.tsx";
+import * as $es_clientes from "./routes/es/clientes.tsx";
+import * as $es_consultas from "./routes/es/consultas.tsx";
+import * as $es_escuelas from "./routes/es/escuelas.tsx";
 import * as $es_ideas from "./routes/es/ideas.tsx";
 import * as $es_index from "./routes/es/index.tsx";
 import * as $es_investigacion from "./routes/es/investigacion.tsx";
 import * as $es_juntas from "./routes/es/juntas.tsx";
 import * as $es_rol from "./routes/es/rol.tsx";
+import * as $escuelas from "./routes/escuelas.tsx";
 import * as $example from "./routes/example.tsx";
 import * as $for_brainstorming from "./routes/for/brainstorming.tsx";
+import * as $for_care from "./routes/for/care.tsx";
+import * as $for_clients from "./routes/for/clients.tsx";
 import * as $for_dnd from "./routes/for/dnd.tsx";
 import * as $for_meetings from "./routes/for/meetings.tsx";
 import * as $for_research from "./routes/for/research.tsx";
+import * as $for_schools from "./routes/for/schools.tsx";
 import * as $ideas from "./routes/ideas.tsx";
 import * as $index from "./routes/index.tsx";
 import * as $investigacion from "./routes/investigacion.tsx";
@@ -46,6 +57,7 @@ import * as $live_roomId_ from "./routes/live/[roomId].tsx";
 import * as $meetings from "./routes/meetings.tsx";
 import * as $research from "./routes/research.tsx";
 import * as $rol from "./routes/rol.tsx";
+import * as $schools from "./routes/schools.tsx";
 import * as $shared_shareId_ from "./routes/shared/[shareId].tsx";
 import * as $shared_index from "./routes/shared/index.tsx";
 import * as $AudioRecorder from "./islands/AudioRecorder.tsx";
@@ -111,20 +123,31 @@ const manifest = {
       $api_supporter_checkout_checkoutId_,
     "./routes/api/supporter/redeem.ts": $api_supporter_redeem,
     "./routes/brainstorming.tsx": $brainstorming,
+    "./routes/care.tsx": $care,
+    "./routes/clientes.tsx": $clientes,
+    "./routes/clients.tsx": $clients,
+    "./routes/consultas.tsx": $consultas,
     "./routes/demo.tsx": $demo,
     "./routes/dev/colors.tsx": $dev_colors,
     "./routes/dev/nodemap.tsx": $dev_nodemap,
     "./routes/dnd.tsx": $dnd,
+    "./routes/es/clientes.tsx": $es_clientes,
+    "./routes/es/consultas.tsx": $es_consultas,
+    "./routes/es/escuelas.tsx": $es_escuelas,
     "./routes/es/ideas.tsx": $es_ideas,
     "./routes/es/index.tsx": $es_index,
     "./routes/es/investigacion.tsx": $es_investigacion,
     "./routes/es/juntas.tsx": $es_juntas,
     "./routes/es/rol.tsx": $es_rol,
+    "./routes/escuelas.tsx": $escuelas,
     "./routes/example.tsx": $example,
     "./routes/for/brainstorming.tsx": $for_brainstorming,
+    "./routes/for/care.tsx": $for_care,
+    "./routes/for/clients.tsx": $for_clients,
     "./routes/for/dnd.tsx": $for_dnd,
     "./routes/for/meetings.tsx": $for_meetings,
     "./routes/for/research.tsx": $for_research,
+    "./routes/for/schools.tsx": $for_schools,
     "./routes/ideas.tsx": $ideas,
     "./routes/index.tsx": $index,
     "./routes/investigacion.tsx": $investigacion,
@@ -133,6 +156,7 @@ const manifest = {
     "./routes/meetings.tsx": $meetings,
     "./routes/research.tsx": $research,
     "./routes/rol.tsx": $rol,
+    "./routes/schools.tsx": $schools,
     "./routes/shared/[shareId].tsx": $shared_shareId_,
     "./routes/shared/index.tsx": $shared_index,
   },

@@ -56,7 +56,7 @@ Deno.test("setSsrLocale switches server-side i18n between en and es", () => {
   }
 });
 
-Deno.test("static/sitemap.xml excludes /shared and includes all 10 bilingual routes with x-default", () => {
+Deno.test("static/sitemap.xml excludes /shared and includes all 16 bilingual routes with x-default", () => {
   assertEquals(
     sitemapSource.includes("https://promapper.app/shared"),
     false,
@@ -68,6 +68,12 @@ Deno.test("static/sitemap.xml excludes /shared and includes all 10 bilingual rou
     "https://promapper.app/es",
     "https://promapper.app/for/meetings",
     "https://promapper.app/es/juntas",
+    "https://promapper.app/for/clients",
+    "https://promapper.app/es/clientes",
+    "https://promapper.app/for/care",
+    "https://promapper.app/es/consultas",
+    "https://promapper.app/for/schools",
+    "https://promapper.app/es/escuelas",
     "https://promapper.app/for/research",
     "https://promapper.app/es/investigacion",
     "https://promapper.app/for/brainstorming",
@@ -98,6 +104,12 @@ Deno.test("shorthand redirect routes return permanent 301 status", async () => {
     "rol.tsx",
     "meetings.tsx",
     "juntas.tsx",
+    "clients.tsx",
+    "clientes.tsx",
+    "care.tsx",
+    "consultas.tsx",
+    "schools.tsx",
+    "escuelas.tsx",
     "research.tsx",
     "investigacion.tsx",
     "brainstorming.tsx",

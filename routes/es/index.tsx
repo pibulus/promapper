@@ -73,11 +73,19 @@ export default function SpanishHome() {
               },
               {
                 "@type": "Offer",
-                "name": "Pase de Soporte ProMapper (1 Año)",
+                "name": "Pase Individual ProMapper (1 Año)",
                 "price": "49",
                 "priceCurrency": "AUD",
                 "description":
-                  "Tomas de audio extendidas, salas colaborativas en vivo con voz y enlaces permanentes — un solo pago sin cobros automáticos",
+                  "60 min/día de audio en la nube + Whisper local ilimitado, salas colaborativas en vivo con voz y enlaces permanentes — un solo pago sin cobros automáticos",
+              },
+              {
+                "@type": "Offer",
+                "name": "Pase de Gremio, Laboratorio y Práctica (1 Año)",
+                "price": "99",
+                "priceCurrency": "AUD",
+                "description":
+                  "Hasta 5 lugares, sesiones maratónicas de 4 horas con auto-guardado cada 15 min, 120 horas/año en la nube + Whisper local ilimitado",
               },
             ],
           })}

@@ -3,8 +3,10 @@
 const STORAGE_KEY = "pm_supporter_pass";
 const PENDING_CHECKOUT_KEY = "pm_pending_checkout";
 
+export type ClientSupporterTier = "supporter" | "guild" | "lifetime";
+
 export interface ParsedPass {
-  tier: "supporter" | "lifetime";
+  tier: ClientSupporterTier;
   exp: number; // seconds
 }
 
@@ -20,7 +22,9 @@ export function parseExpiry(pass: string): ParsedPass | null {
     }
     const json = JSON.parse(atob(base64));
     if (
-      (json.tier === "supporter" || json.tier === "lifetime") &&
+      (json.tier === "supporter" ||
+        json.tier === "guild" ||
+        json.tier === "lifetime") &&
       Number.isFinite(json.exp)
     ) {
       return { tier: json.tier, exp: json.exp };
@@ -83,6 +87,16 @@ export function supporterPassExpiry(): Date | null {
   if (!pass) return null;
   const parsed = parseExpiry(pass);
   return parsed ? new Date(parsed.exp * 1000) : null;
+}
+
+/**
+ * Get pass tier ("supporter" | "guild" | "lifetime") or null.
+ */
+export function supporterPassTier(): ClientSupporterTier | null {
+  const pass = getSupporterPass();
+  if (!pass) return null;
+  const parsed = parseExpiry(pass);
+  return parsed ? parsed.tier : null;
 }
 
 export function setPendingCheckout(checkoutId: string) {
