@@ -11,8 +11,11 @@ import {
 } from "../utils/supporter-pass.ts";
 import { clearByoKey, getByoKey, setByoKey } from "../utils/byoKey.ts";
 import {
+  getLocalWhisperModel,
   getLocalWhisperPreference,
+  setLocalWhisperModel,
   setLocalWhisperPreference,
+  type WhisperModelTier,
 } from "../utils/offlineWhisper.ts";
 
 export const supporterModalOpen = signal(false);
@@ -21,6 +24,7 @@ export const supporterTierSignal = signal<ClientSupporterTier | null>(null);
 export const supporterExpirySignal = signal<Date | null>(null);
 export const byokKeySignal = signal<string | null>(null);
 export const localWhisperSignal = signal(false);
+export const localWhisperModelSignal = signal<WhisperModelTier>("tiny");
 
 /**
  * Sync signals with localStorage & cookies.
@@ -37,12 +41,18 @@ export function refreshSupporterState() {
   byokKeySignal.value = byo;
 
   localWhisperSignal.value = getLocalWhisperPreference();
+  localWhisperModelSignal.value = getLocalWhisperModel();
 }
 
 export function toggleLocalWhisper(enabled?: boolean) {
   const next = enabled ?? !localWhisperSignal.value;
   setLocalWhisperPreference(next);
   localWhisperSignal.value = next;
+}
+
+export function selectLocalWhisperModel(tier: WhisperModelTier) {
+  setLocalWhisperModel(tier);
+  localWhisperModelSignal.value = tier;
 }
 
 /**

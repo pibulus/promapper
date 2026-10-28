@@ -179,7 +179,7 @@ export default function DndStudioIsland({ lang = "en" }: DndStudioProps) {
   }
 
   return (
-    <div class="min-h-screen bg-[#fffef7] text-[#1e1714] font-sans px-4 py-8 sm:py-12 max-w-5xl mx-auto space-y-12">
+    <div class="min-h-screen bg-[#fffef7] text-[#1e1714] font-sans px-3 sm:px-4 py-6 sm:py-12 max-w-5xl mx-auto space-y-10 sm:space-y-12">
       {/* Navigation Breadcrumb */}
       <nav class="flex items-center justify-between border-b-2 border-[#1e1714]/15 pb-4">
         <a

@@ -2304,13 +2304,13 @@ h6,
     text-wrap: balance;
   }
 
-  /* Phones: the mic stands centred under the gist, wide enough to own the
-     thumb zone — still the squared Tokyo slab, not a pill. */
+  /* Phones: the mic spans full width flush with the paste tray below,
+     owning the thumb zone — still the squared Tokyo slab, not a pill. */
   .mapper-slab-button {
-    width: fit-content;
-    min-width: 72%;
-    margin-inline: auto;
-    padding: 0.95rem 1.9rem;
+    width: 100%;
+    min-width: 100%;
+    margin-inline: 0;
+    padding: 0.95rem 1.5rem;
   }
 
   /* Keyboard shortcuts on a touchscreen is a joke without a punchline. */
@@ -2336,7 +2336,8 @@ h6,
   }
 
   .mapper-capture-controls {
-    align-items: center;
+    width: 100%;
+    align-items: stretch;
   }
 
   .dashboard-card {
@@ -9652,6 +9653,29 @@ label {
   max-height: none;
 }
 
+/* Mobile (< 768px): the grid is a single column, so desktop masonry row spans
+   (span 1/2/3 × 10.5rem = up to 504px fixed height per card) boxed short cards
+   into hollow tall rectangles. Let cards size naturally to their content on
+   phones while keeping the map/canvas roomy and capping ultra-long transcripts. */
+@media (max-width: 767px) {
+  .dashboard-grid {
+    grid-auto-rows: auto;
+  }
+  .board-cell--small,
+  .board-cell--medium,
+  .board-cell--tall {
+    grid-row: auto;
+  }
+  .board-cell--canvas {
+    grid-row: auto;
+    min-height: 22rem;
+  }
+  .board-cell:not(.board-cell--canvas) .dashboard-card-body {
+    max-height: 26rem;
+    overflow-y: auto;
+  }
+}
+
 /* ===================================================================
    BOARD DRAG — pick up a card, the board re-packs around it
    (useGridSortable + boardOrderStore; grid-auto-flow: dense is the
@@ -9859,10 +9883,10 @@ html:has(.porch) {
   padding-block: calc(var(--porch-footer) + var(--porch-peek) + 0.75rem)
     calc(var(--porch-footer) + clamp(1rem, 3vh, 2rem));
   /* Full-bleed SKY, edge to edge: negative margins reach into <main>'s own
-     gutter (px-4, sm:px-6) — never 100vw, which counts the scrollbar and
+     gutter (px-2.5, sm:px-6) — never 100vw, which counts the scrollbar and
      would give <main> (overflow-y:auto, so x auto too) a sideways scroll.
      The padding puts the content back on the dashboard's 80rem column. */
-  --porch-gutter: 1rem;
+  --porch-gutter: 0.625rem;
   margin-inline: calc(-1 * var(--porch-gutter));
   padding-inline: calc(
     var(--porch-gutter) + max(0px, (100% - 80rem) / 2)

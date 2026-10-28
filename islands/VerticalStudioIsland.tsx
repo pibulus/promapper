@@ -1512,7 +1512,7 @@ export default function VerticalStudioIsland(
   }
 
   return (
-    <div class="min-h-screen bg-[#fffef7] text-[#1e1714] font-sans px-4 py-8 sm:py-12 max-w-5xl mx-auto space-y-12">
+    <div class="min-h-screen bg-[#fffef7] text-[#1e1714] font-sans px-3 sm:px-4 py-6 sm:py-12 max-w-5xl mx-auto space-y-10 sm:space-y-12">
       {/* Navigation Breadcrumb */}
       <nav class="flex items-center justify-between border-b-2 border-[#1e1714]/15 pb-4">
         <a
@@ -1570,11 +1570,11 @@ export default function VerticalStudioIsland(
       </header>
 
       {/* Value Pillars Grid */}
-      <section class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-6">
+      <section class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pt-4 sm:pt-6">
         {copy.pillars.map((pillar) => (
           <div
             key={pillar.title}
-            class="bg-[#fbf1e4] border-3 border-[#1e1714] rounded-2xl p-6 shadow-[4px_4px_0px_#1e1714] space-y-3"
+            class="bg-[#fbf1e4] border-3 border-[#1e1714] rounded-2xl p-4 sm:p-6 shadow-[4px_4px_0px_#1e1714] space-y-2.5 sm:space-y-3"
           >
             <div class="text-3xl">{pillar.emoji}</div>
             <h2 class="text-lg font-black text-[#1e1714]">{pillar.title}</h2>
@@ -1586,7 +1586,7 @@ export default function VerticalStudioIsland(
       </section>
 
       {/* Export Showcase */}
-      <section class="bg-[#fbf1e4] border-3 border-[#1e1714] rounded-2xl p-5 sm:p-8 shadow-[4px_4px_0px_#1e1714] space-y-4">
+      <section class="bg-[#fbf1e4] border-3 border-[#1e1714] rounded-2xl p-4 sm:p-8 shadow-[4px_4px_0px_#1e1714] space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b-2 border-[#1e1714]/15 pb-3">
           <div>
             <span class="inline-block px-2.5 py-0.5 bg-[#1e1714] text-[#fffef7] text-[10px] font-mono font-bold uppercase rounded-full tracking-wider mb-1">
@@ -1701,7 +1701,7 @@ export default function VerticalStudioIsland(
       {/* Visible FAQ Section (100% parity with FAQPage JSON-LD) */}
       <section
         aria-labelledby="vertical-faq-heading"
-        class="bg-[#fbf1e4] border-3 border-[#1e1714] rounded-2xl p-6 sm:p-8 shadow-[4px_4px_0px_#1e1714] space-y-6"
+        class="bg-[#fbf1e4] border-3 border-[#1e1714] rounded-2xl p-4 sm:p-8 shadow-[4px_4px_0px_#1e1714] space-y-5 sm:space-y-6"
       >
         <h2
           id="vertical-faq-heading"

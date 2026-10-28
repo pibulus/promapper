@@ -8,15 +8,22 @@ import {
   closeSupporterModal,
   confirmStoredPass,
   isSupporterSignal,
+  localWhisperModelSignal,
   localWhisperSignal,
   refreshSupporterState,
   removeByoKey,
   saveByoKey,
+  selectLocalWhisperModel,
   supporterExpirySignal,
   supporterModalOpen,
   supporterTierSignal,
   toggleLocalWhisper,
 } from "@signals/supporterStore.ts";
+import {
+  preloadOfflineWhisper,
+  WHISPER_MODEL_OPTIONS,
+  type WhisperModelTier,
+} from "../utils/offlineWhisper.ts";
 import {
   clearPendingCheckout,
   getPendingCheckout,
@@ -40,6 +47,7 @@ export default function SupporterModal() {
   const expiry = supporterExpirySignal.value;
   const activeByoKey = byokKeySignal.value;
   const localWhisperEnabled = localWhisperSignal.value;
+  const selectedWhisperModel = localWhisperModelSignal.value;
   const spanish = isSpanish();
 
   const [tab, setTab] = useState<"pass" | "byok" | "faq">("pass");
@@ -48,6 +56,13 @@ export default function SupporterModal() {
   const [pastedCode, setPastedCode] = useState("");
   const [redeemStatus, setRedeemStatus] = useState<string | null>(null);
   const [isRedeeming, setIsRedeeming] = useState(false);
+  const [whisperPreloading, setWhisperPreloading] = useState<
+    WhisperModelTier | null
+  >(null);
+  const [whisperProgress, setWhisperProgress] = useState<number | null>(null);
+  const [whisperReadyTier, setWhisperReadyTier] = useState<
+    WhisperModelTier | null
+  >(null);
 
   // BYOK state
   const [byoInput, setByoInput] = useState(activeByoKey || "");
@@ -209,9 +224,29 @@ export default function SupporterModal() {
     }
   }
 
+  async function handleSelectWhisperModel(tier: WhisperModelTier) {
+    selectLocalWhisperModel(tier);
+    if (!localWhisperEnabled) {
+      toggleLocalWhisper(true);
+    }
+    setWhisperPreloading(tier);
+    setWhisperProgress(0);
+    try {
+      await preloadOfflineWhisper(tier, (pct) => {
+        setWhisperProgress(pct);
+      });
+      setWhisperReadyTier(tier);
+    } catch {
+      // Model will lazy-load on next recording take if offline or blocked
+    } finally {
+      setWhisperPreloading(null);
+      setWhisperProgress(null);
+    }
+  }
+
   return (
     <div
-      class="fixed inset-0 flex items-center justify-center z-50 p-4"
+      class="fixed inset-0 flex items-center justify-center z-50 p-2.5 sm:p-4"
       style={{
         background: "rgba(24, 20, 17, 0.65)",
         backdropFilter: "blur(4px)",
@@ -221,11 +256,11 @@ export default function SupporterModal() {
       }}
     >
       <div
-        class="w-full max-w-xl bg-[var(--surface-card)] border-4 border-[var(--line-ink)] rounded-2xl shadow-[6px_6px_0px_var(--line-ink)] overflow-hidden flex flex-col max-h-[90vh]"
+        class="w-full max-w-xl bg-[var(--surface-card)] border-4 border-[var(--line-ink)] rounded-2xl shadow-[6px_6px_0px_var(--line-ink)] overflow-hidden flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar */}
-        <div class="px-6 py-4 bg-gradient-to-r from-[var(--accent-rose-wash)] via-[var(--accent-rose-wash-soft)] to-[var(--surface-card)] border-b-3 border-[var(--line-ink)] flex items-center justify-between">
+        <div class="px-4 py-3.5 sm:px-6 sm:py-4 bg-gradient-to-r from-[var(--accent-rose-wash)] via-[var(--accent-rose-wash-soft)] to-[var(--surface-card)] border-b-3 border-[var(--line-ink)] flex items-center justify-between">
           <div class="flex items-center gap-2">
             <span class="text-2xl">🗺️</span>
             <div>
@@ -285,12 +320,12 @@ export default function SupporterModal() {
         </div>
 
         {/* Modal Body */}
-        <div class="p-6 overflow-y-auto space-y-6">
+        <div class="p-4 sm:p-6 overflow-y-auto space-y-5 sm:space-y-6">
           {tab === "pass" && (
-            <div class="space-y-6">
+            <div class="space-y-5 sm:space-y-6">
               {/* Active Pass Banner */}
               {isSupporter && (
-                <div class="p-4 bg-[var(--accent-rose-wash-soft)] border-3 border-[var(--line-ink)] rounded-xl shadow-[3px_3px_0px_var(--line-ink)] flex items-center justify-between">
+                <div class="p-4 bg-[var(--accent-rose-wash-soft)] border-3 border-[var(--line-ink)] rounded-xl shadow-[3px_3px_0px_var(--line-ink)] flex items-center justify-between gap-3">
                   <div>
                     <div class="font-black text-sm text-[var(--accent-ink)]">
                       {activeTier === "guild"
@@ -322,11 +357,11 @@ export default function SupporterModal() {
               )}
 
               {/* Tier Selector: $49 Solo Pass vs $99 Guild, Lab & Practice Pass */}
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => setSelectedPlan("solo")}
-                  class={`min-h-[44px] p-3 rounded-xl border-3 border-[var(--line-ink)] text-left transition-all cursor-pointer ${
+                  class={`min-h-[44px] p-3.5 rounded-xl border-3 border-[var(--line-ink)] text-left transition-all cursor-pointer ${
                     selectedPlan === "solo"
                       ? "bg-[var(--accent-rose-wash-soft)] shadow-[3px_3px_0px_var(--line-ink)] -translate-y-0.5"
                       : "bg-[var(--surface-white-warm)] opacity-80 hover:opacity-100"
@@ -351,7 +386,7 @@ export default function SupporterModal() {
                 <button
                   type="button"
                   onClick={() => setSelectedPlan("guild")}
-                  class={`min-h-[44px] p-3 rounded-xl border-3 border-[var(--line-ink)] text-left transition-all cursor-pointer ${
+                  class={`min-h-[44px] p-3.5 rounded-xl border-3 border-[var(--line-ink)] text-left transition-all cursor-pointer ${
                     selectedPlan === "guild"
                       ? "bg-[var(--accent-rose-wash-soft)] shadow-[3px_3px_0px_var(--line-ink)] -translate-y-0.5"
                       : "bg-[var(--surface-white-warm)] opacity-80 hover:opacity-100"
@@ -370,7 +405,7 @@ export default function SupporterModal() {
                   </div>
                   <div class="text-[11px] text-[var(--color-text-secondary)] font-bold">
                     {spanish
-                      ? "Maratones 4h ·D&D, labs y prácticas"
+                      ? "Maratones 4h · D&D, labs y prácticas"
                       : "4h marathons · D&D, labs & practices"}
                   </div>
                 </button>
@@ -462,37 +497,91 @@ export default function SupporterModal() {
                 </p>
               </div>
 
-              {/* On-Device Whisper (Local Audio Privacy Mode) Toggle */}
-              <div class="p-4 bg-[var(--surface-card)] border-3 border-[var(--line-ink)] rounded-xl shadow-[3px_3px_0px_var(--line-ink)] flex items-center justify-between gap-3">
-                <div>
-                  <div class="font-black text-xs text-[var(--soft-black)] flex items-center gap-1.5">
-                    <span>🔒</span>
+              {/* On-Device Whisper (Local Audio Privacy Mode) + Model Size Selector */}
+              <div class="p-4 bg-[var(--surface-card)] border-3 border-[var(--line-ink)] rounded-xl shadow-[3px_3px_0px_var(--line-ink)] space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <div class="font-black text-xs text-[var(--soft-black)] flex items-center gap-1.5">
+                      <span>🔒</span>
+                      <span>
+                        {spanish
+                          ? "Modo de Audio Local (On-Device Whisper)"
+                          : "On-Device Whisper (Strict Local Audio Mode)"}
+                      </span>
+                    </div>
+                    <p class="text-[11px] text-[var(--color-text-secondary)] mt-0.5 leading-relaxed">
+                      {spanish
+                        ? "Transcribe dentro del navegador (WebAssembly / WebGPU). El audio crudo no sube a servidores de transcripción."
+                        : "Transcribes speech locally inside the browser (WebAssembly / WebGPU). Raw voice audio never uploads to cloud transcription servers."}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toggleLocalWhisper()}
+                    class={`min-h-[44px] px-3.5 py-2 rounded-xl border-2 border-[var(--line-ink)] text-xs font-mono font-black shadow-[2px_2px_0px_var(--line-ink)] transition-all cursor-pointer shrink-0 ${
+                      localWhisperEnabled
+                        ? "bg-[var(--cta-plate)] text-[var(--soft-black)]"
+                        : "bg-[var(--surface-white-warm)] text-[var(--color-text-secondary)]"
+                    }`}
+                    aria-pressed={localWhisperEnabled}
+                  >
+                    {localWhisperEnabled
+                      ? (spanish ? "ACTIVO" : "ON")
+                      : (spanish ? "APAGADO" : "OFF")}
+                  </button>
+                </div>
+
+                {/* TalkType-style Model Tier Picker (Tiny ~75MB / Base ~140MB / Small HD Studio ~250MB) */}
+                <div class="pt-2 border-t-2 border-[var(--line-ink)]/10 space-y-2">
+                  <div class="flex items-center justify-between text-[11px] font-mono font-bold text-[var(--color-text-secondary)]">
                     <span>
                       {spanish
-                        ? "Modo de Audio Local (On-Device Whisper)"
-                        : "On-Device Whisper (Strict Local Audio Mode)"}
+                        ? "Tamaño del modelo Whisper (guardado en caché del navegador):"
+                        : "Whisper model size (cached in browser after first download):"}
                     </span>
+                    {whisperPreloading && (
+                      <span class="text-[var(--accent-ink)] font-black">
+                        {spanish ? "Cargando" : "Loading"}{" "}
+                        {whisperProgress !== null ? `${whisperProgress}%` : "…"}
+                      </span>
+                    )}
+                    {!whisperPreloading && whisperReadyTier && (
+                      <span class="text-[var(--accent-ink)] font-black">
+                        ✓ {spanish ? "Listo en caché" : "Cached & ready"}
+                      </span>
+                    )}
                   </div>
-                  <p class="text-[11px] text-[var(--color-text-secondary)] mt-0.5 leading-relaxed">
-                    {spanish
-                      ? "Transcribe la voz dentro del navegador (WebAssembly ~40MB). El audio crudo no sube a servidores de transcripción."
-                      : "Transcribes speech locally inside the browser (WebAssembly ~40MB). Raw voice audio never uploads to cloud transcription servers."}
-                  </p>
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {WHISPER_MODEL_OPTIONS.map((opt) => {
+                      const active = selectedWhisperModel === opt.tier;
+                      return (
+                        <button
+                          key={opt.tier}
+                          type="button"
+                          onClick={() => handleSelectWhisperModel(opt.tier)}
+                          class={`min-h-[44px] p-2.5 rounded-xl border-2 border-[var(--line-ink)] text-left transition-all cursor-pointer ${
+                            active
+                              ? "bg-[var(--accent-rose-wash-soft)] shadow-[2px_2px_0px_var(--line-ink)] -translate-y-0.5"
+                              : "bg-[var(--surface-white-warm)] opacity-85 hover:opacity-100"
+                          }`}
+                          aria-pressed={active}
+                        >
+                          <div class="flex items-center justify-between gap-1">
+                            <span class="text-[11px] font-mono font-black text-[var(--soft-black)]">
+                              {spanish ? opt.badgeEs : opt.badgeEn}
+                            </span>
+                            <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[var(--surface-card)] border border-[var(--line-ink)]/30 text-[var(--soft-black)]">
+                              {opt.sizeLabel}
+                            </span>
+                          </div>
+                          <p class="text-[10px] text-[var(--color-text-secondary)] mt-1 leading-snug">
+                            {spanish ? opt.descEs : opt.descEn}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => toggleLocalWhisper()}
-                  class={`min-h-[44px] px-3.5 py-2 rounded-xl border-2 border-[var(--line-ink)] text-xs font-mono font-black shadow-[2px_2px_0px_var(--line-ink)] transition-all cursor-pointer shrink-0 ${
-                    localWhisperEnabled
-                      ? "bg-[var(--cta-plate)] text-[var(--soft-black)]"
-                      : "bg-[var(--surface-white-warm)] text-[var(--color-text-secondary)]"
-                  }`}
-                  aria-pressed={localWhisperEnabled}
-                >
-                  {localWhisperEnabled
-                    ? (spanish ? "ACTIVO" : "ON")
-                    : (spanish ? "APAGADO" : "OFF")}
-                </button>
               </div>
 
               {/* Restore / Redeem Section */}

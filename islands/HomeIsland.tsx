@@ -1318,7 +1318,7 @@ export default function HomeIsland({ lang }: HomeIslandProps = {}) {
             on top of this, so the card's edge gutter drifted to ~96px
             while header/footer chrome sat at ~24px. */
         }
-        <main class="app-scroll flex-1 overflow-y-auto px-4 pt-4 sm:px-6">
+        <main class="app-scroll flex-1 overflow-y-auto px-2.5 pt-3 sm:px-6 sm:pt-4">
           {
             /* THE PORCH — two screens with a membrane between them (scroll
               snap, styles.css). Screen one is hit-record-and-go on the desk;

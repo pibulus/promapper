@@ -5,16 +5,56 @@
  * to `/whisper-worker.js` (which loads @huggingface/transformers from CDN in
  * a Web Worker so 0 bytes are added to Deno Deploy's server isolate).
  *
- * Used when:
- * 1. The user enables Strict Local Audio Mode (On-Device Whisper) for privacy, OR
- * 2. A Supporter Pass exceeds its daily high-speed cloud audio allowance and
- *    automatically overflows to unlimited On-Device Whisper takes.
+ * Supports three user-selectable model sizes (matching TalkType):
+ * - "tiny"  (~75 MB): Fast, mobile-safe, universal default
+ * - "base"  (~140 MB): Sharper names & everyday phrasing
+ * - "small" (~250 MB): HD Studio accuracy (WebGPU / WASM) for D&D lore,
+ *           clinical terminology, and academic research
  */
 
 import { getLocale } from "./i18n.ts";
 
 const LOCAL_WHISPER_STORAGE_KEY = "pm_local_whisper";
+const LOCAL_WHISPER_MODEL_KEY = "pm_local_whisper_model";
 const TARGET_SAMPLE_RATE = 16000;
+
+export type WhisperModelTier = "tiny" | "base" | "small";
+
+export interface WhisperModelOption {
+  tier: WhisperModelTier;
+  badgeEn: string;
+  badgeEs: string;
+  sizeLabel: string;
+  descEn: string;
+  descEs: string;
+}
+
+export const WHISPER_MODEL_OPTIONS: readonly WhisperModelOption[] = [
+  {
+    tier: "tiny",
+    badgeEn: "Standard · Fast",
+    badgeEs: "Estándar · Rápido",
+    sizeLabel: "~75 MB",
+    descEn: "Phone-friendly & fast on any device",
+    descEs: "Ligero y veloz en celulares y laptops",
+  },
+  {
+    tier: "base",
+    badgeEn: "Balanced",
+    badgeEs: "Equilibrado",
+    sizeLabel: "~140 MB",
+    descEn: "Sharper names & everyday phrasing",
+    descEs: "Mayor precisión en nombres y términos",
+  },
+  {
+    tier: "small",
+    badgeEn: "HD Studio",
+    badgeEs: "Estudio HD",
+    sizeLabel: "~250 MB",
+    descEn: "Studio accuracy (WebGPU / Desktop) for D&D, clinical & lab notes",
+    descEs: "Máxima precisión (WebGPU / Escritorio) para rol, clínica y lab",
+  },
+] as const;
 
 let workerInstance: Worker | null = null;
 let requestCounter = 0;
@@ -40,6 +80,18 @@ export function setLocalWhisperPreference(enabled: boolean): void {
   } else {
     localStorage.removeItem(LOCAL_WHISPER_STORAGE_KEY);
   }
+}
+
+export function getLocalWhisperModel(): WhisperModelTier {
+  if (typeof localStorage === "undefined") return "tiny";
+  const raw = localStorage.getItem(LOCAL_WHISPER_MODEL_KEY);
+  if (raw === "base" || raw === "small") return raw;
+  return "tiny";
+}
+
+export function setLocalWhisperModel(tier: WhisperModelTier): void {
+  if (typeof localStorage === "undefined") return;
+  localStorage.setItem(LOCAL_WHISPER_MODEL_KEY, tier);
 }
 
 function getWorker(): Worker {
@@ -107,6 +159,29 @@ export async function decodeAudioBlobTo16kMono(
 }
 
 /**
+ * Preload the selected On-Device Whisper model into the browser's Cache API
+ * so the first recording take doesn't wait on model download.
+ */
+export async function preloadOfflineWhisper(
+  modelTier: WhisperModelTier = getLocalWhisperModel(),
+  onProgress?: (pct: number) => void,
+): Promise<void> {
+  const worker = getWorker();
+  const id = ++requestCounter;
+  const lang = getLocale();
+
+  await new Promise<string>((resolve, reject) => {
+    pendingRequests.set(id, { resolve, reject, onProgress });
+    worker.postMessage({
+      id,
+      type: "preload",
+      lang,
+      modelTier,
+    });
+  });
+}
+
+/**
  * Transcribe an audio Blob locally in the browser using On-Device Whisper.
  */
 export async function transcribeWithOfflineWhisper(
@@ -117,6 +192,7 @@ export async function transcribeWithOfflineWhisper(
   const worker = getWorker();
   const id = ++requestCounter;
   const lang = getLocale();
+  const modelTier = getLocalWhisperModel();
 
   return await new Promise<string>((resolve, reject) => {
     pendingRequests.set(id, { resolve, reject, onProgress });
@@ -126,6 +202,7 @@ export async function transcribeWithOfflineWhisper(
         type: "transcribe",
         audio: pcm,
         lang,
+        modelTier,
       },
       [pcm.buffer],
     );
