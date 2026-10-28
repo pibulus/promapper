@@ -839,19 +839,6 @@ h6,
   transform: translate(-50%, -50%);
 }
 
-/* ICON-ONLY (Sept 15, Pablo's call). The labels are hidden rather than
-   deleted from the JSX: they stay in the accessibility tree via each button's
-   own aria-label, and one rule flips the whole thing back.
-   ⚠️ This knowingly reverses "labels survive on mobile" — data-tip fires on
-   hover and :focus-visible, NEITHER of which a touch device sends, so a
-   phone would otherwise get three bare glyphs and no way to learn them.
-   The mitigation is the `:active` tooltip trigger further down (search
-   "PRESS-TO-LABEL"): pressing a control on touch reveals its chip. */
-.header-export-btn > span,
-.header-action-btn > span {
-  display: none;
-}
-
 /* THE THREE HEADER ACTIONS — Add (Record) · Invite (Share) · Export.
    These are the product's whole loop (add more, open it up, get it out), so
    they share ONE shape, height, and typography to read as a tight, tactile trio.
@@ -864,20 +851,20 @@ h6,
 .header-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  min-height: 2.125rem;
-  /* Symmetric now that the label is gone — a word-width plate around a lone
-     glyph reads as a gap, not a button. */
-  padding: 0.4rem;
-  min-width: 2.125rem;
+  gap: 0.42rem;
+  min-height: 2.15rem;
+  padding: 0.38rem 0.75rem;
+  min-width: 2.15rem;
   justify-content: center;
   border-radius: 10px;
   font-size: var(--tiny-size);
   font-weight: 700;
+  letter-spacing: -0.01em;
   line-height: 1;
   cursor: pointer;
   white-space: nowrap;
   position: relative;
+  flex-shrink: 0;
   transition:
     background var(--transition-fast),
     border-color var(--transition-fast),
@@ -885,9 +872,15 @@ h6,
     transform var(--transition-fast);
 }
 
+.header-export-btn > span,
+.header-action-btn > span {
+  display: inline-block;
+  line-height: 1;
+}
+
 .header-export-btn i,
 .header-action-btn i {
-  font-size: 0.875rem;
+  font-size: 0.85rem;
 }
 
 /* Outlined plate with subtle cream surface — siblings of Export */
@@ -895,13 +888,13 @@ h6,
   background: var(--surface-cream);
   color: var(--color-text);
   border: 2px solid var(--border-cream-medium);
-  box-shadow: 1px 1px 0 var(--line-ink);
+  box-shadow: 1.5px 1.5px 0 var(--line-ink);
 }
 
 .header-action-btn:hover {
   border-color: var(--line-ink);
   background: var(--surface-cream-hover);
-  box-shadow: 2px 2px 0 var(--line-ink);
+  box-shadow: 2.5px 2.5px 0 var(--line-ink);
   transform: translateY(-1.5px);
 }
 
@@ -914,9 +907,10 @@ h6,
 @media (max-width: 639px) {
   .header-export-btn,
   .header-action-btn {
-    padding: 0.35rem 0.5rem;
-    gap: 0.3rem;
-    font-size: var(--tiny-size);
+    min-height: 2rem;
+    padding: 0.34rem 0.58rem;
+    gap: 0.32rem;
+    font-size: 0.75rem;
   }
 }
 
@@ -998,7 +992,8 @@ h6,
 .app-header__actions {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.5rem;
+  overflow: visible;
 }
 
 /* Header icon button — small, square, quiet. Hover lifts a warm tint, NOT a
@@ -1142,11 +1137,15 @@ h6,
       card, never past its edge.
    2. Lift the whole card's context above its siblings while one of its
       tooltips is showing. */
+.app-header__actions [data-tip]::before,
 .card-header-actions [data-tip]::before {
   left: auto;
   right: 0;
   transform: translate(0, -4px);
 }
+.app-header__actions [data-tip]:hover::before,
+.app-header__actions [data-tip]:focus-visible::before,
+.app-header__actions [data-tip]:active::before,
 .card-header-actions [data-tip]:hover::before,
 .card-header-actions [data-tip]:focus-visible::before,
 .card-header-actions [data-tip]:active::before {
@@ -2111,13 +2110,11 @@ h6,
   .app-header-glass .app-header__container {
     display: grid;
     /* Wordmark column is auto (natural width, never overlapped); the action
-       cluster gets the REMAINDER and scrolls internally. The old
-       minmax(0,1fr)/auto order let a 9-control live cluster paint straight
-       over the brand. */
+       cluster gets the REMAINDER. */
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     row-gap: 0;
-    padding-top: 6px;
+    padding-top: 4px;
     padding-bottom: 0;
     height: 100%;
   }
@@ -2137,20 +2134,6 @@ h6,
     grid-column: 2;
     justify-self: end;
     max-width: 100%;
-  }
-  /* Scroll affordance — a JS-toggled class (HomeIsland watches overflow)
-     fades the clipped edge so hidden live controls announce themselves. */
-  .app-header-glass .app-header__actions.has-overflow-right {
-    -webkit-mask-image: linear-gradient(
-      to right,
-      black calc(100% - 20px),
-      transparent
-    );
-    mask-image: linear-gradient(
-      to right,
-      black calc(100% - 20px),
-      transparent
-    );
   }
   /* Phones: the conversation title docks in the FOOTER (thumb zone, light
      single-row header — Pablo's call). The h1 stays in the a11y tree,
@@ -2174,22 +2157,13 @@ h6,
     font-size: 0.82rem;
   }
 
-  /* Header: in a live session the action cluster holds up to 9 controls,
-     which overflow a 375px bar. Let the cluster scroll horizontally so every
-     control stays reachable (never clipped), and tighten the gap. The title
-     yields width first so the controls keep their tap targets. */
+  /* Keep overflow visible so Neo-Brutalist button shadows, hover lifts,
+     tooltips, and the Invite/Share popover never clip or fade on the right. */
   .app-header__actions {
-    gap: 0.05rem;
-    overflow-x: auto;
-    overflow-y: hidden;
+    gap: 0.4rem;
+    overflow: visible;
     flex-wrap: nowrap;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
     max-width: 100%;
-  }
-
-  .app-header__actions::-webkit-scrollbar {
-    display: none;
   }
 
   .app-header__title {
@@ -2197,44 +2171,35 @@ h6,
     flex-shrink: 1;
   }
 
-  /* The wordmark never shrinks or gets overlapped. The left group's Tailwind
-     flex-1 means basis 0% — it yields EVERYTHING to the actions cluster and
-     the brand text overflows underneath it. Basis auto instead: both sides
-     shrink proportionally, the title truncates, and the actions cluster
-     scrolls internally once it runs out of room. */
   .app-header__brand {
     flex-shrink: 0;
   }
 
-  /* Tiny phones only. flex-shrink stays 0 above — the wordmark must never be
-     squeezed or overlapped by the actions cluster, which is what that rule
-     fixed. This shrinks the TYPE instead, which is a different lever. At 16px
-     the wordmark plus the three plates measured ~330px into a 320px screen,
-     so Export was clipped mid-word on an iPhone SE. Nothing else in that row
-     can give: the labels have to survive on touch (data-tip never fires on a
-     tap), and the three plates ARE the product's loop. */
-  @media (max-width: 400px) {
+  /* Tiny phones (≤ 380px): keep Export fully labelled as the primary CTA, and
+     tuck the secondary Add/Invite spans into clean square icon buttons so
+     everything fits with zero clipping or crowding on a 320px iPhone SE. */
+  @media (max-width: 380px) {
     .app-header__brand {
       font-size: var(--small-size);
       letter-spacing: -0.04em;
     }
 
-    /* One tighter tier for the smallest phones. The actions strip is
-       overflow-x:auto, so what clips is the STRIP's right edge, not the
-       viewport — on a 320px screen the strip gets 206px and the three plates
-       needed ~220px, which cut "Export" mid-word. Trimming the horizontal
-       padding and gap buys that back WITHOUT touching the labels, which have
-       to survive on touch (data-tip never fires on a tap). Vertical padding
-       and min-height are untouched, so the 44px coarse-pointer tap box is
-       unaffected. */
-    .header-export-btn,
+    .header-action-btn > span {
+      display: none;
+    }
+
     .header-action-btn {
-      padding-inline: 0.4rem;
-      gap: 0.25rem;
+      padding: 0.38rem;
+      min-width: 2rem;
+    }
+
+    .header-export-btn {
+      padding-inline: 0.52rem;
+      gap: 0.28rem;
     }
 
     .app-header__actions {
-      gap: 0.25rem;
+      gap: 0.32rem;
     }
   }
 
@@ -2245,8 +2210,8 @@ h6,
   .app-header__actions {
     flex: 0 1 auto;
     min-width: 0;
-    /* Clear air between the wordmark and the icon cluster. */
-    margin-left: 1rem;
+    /* Clear air between the wordmark and the action cluster. */
+    margin-left: 0.75rem;
   }
 
   /* (The dot-only .live-badge phone rule lives NEXT TO its base rules far
@@ -7829,8 +7794,8 @@ a:focus-visible {
 
 /* App Header styling - integration of inline styles */
 .app-header-glass {
-  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 2px 12px rgba(30, 23, 20, 0.04);
+  border-bottom: 2px solid var(--border-cream-medium);
+  box-shadow: 0 2px 10px rgba(30, 23, 20, 0.05);
   height: var(--header-height);
   display: flex;
   align-items: center;
@@ -7842,10 +7807,13 @@ a:focus-visible {
 .app-header__container {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   height: 100%;
-  /* 8px, not 3: the fixed 4px rainbow rule overlaps the bar's top, so true
-     centering needs the content nudged down or it reads high/unbalanced. */
-  padding-top: 8px;
+  /* 4px clears the fixed 4px rainbow scroll-progress rule cleanly while
+     keeping the wordmark, title, and action plates vertically centered. */
+  padding-top: 4px;
+  padding-bottom: 0;
 }
 
 /* Live session header elements */

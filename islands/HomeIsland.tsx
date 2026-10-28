@@ -127,7 +127,6 @@ export default function HomeIsland({ lang }: HomeIslandProps = {}) {
   // every later hook "conditional".
   const liveRoomId = liveSession.value?.roomId;
   const livePartyHost = liveSession.value?.partyHost;
-  const hasConversation = conversationData.value ? 1 : 0;
 
   // Auto-start live mode if arriving via /live/:roomId link
   useEffect(() => {
@@ -267,31 +266,6 @@ export default function HomeIsland({ lang }: HomeIslandProps = {}) {
     globalThis.addEventListener("keydown", onKeydown);
     return () => globalThis.removeEventListener("keydown", onKeydown);
   }, []);
-
-  // The header action cluster scrolls horizontally on phones once a live
-  // session stacks up controls. CSS can't see overflow, so this watcher
-  // toggles the fade-hint class (.has-overflow-right) that tells thumbs
-  // there's more to the right.
-  useEffect(() => {
-    if (!IS_BROWSER) return;
-    const update = () => {
-      document.querySelectorAll<HTMLElement>(".app-header__actions").forEach(
-        (el) => {
-          const overflowsRight = el.scrollWidth - el.clientWidth >
-            Math.max(1, el.scrollLeft + 1);
-          el.classList.toggle("has-overflow-right", overflowsRight);
-        },
-      );
-    };
-    update();
-    globalThis.addEventListener("resize", update);
-    const el = document.querySelector<HTMLElement>(".app-header__actions");
-    el?.addEventListener("scroll", update, { passive: true });
-    return () => {
-      globalThis.removeEventListener("resize", update);
-      el?.removeEventListener("scroll", update);
-    };
-  }, [liveRoomId, hasConversation]);
 
   // Hero heading entrance is CSS-only (.mapper-hero-line / mapperLineIn in
   // styles.css) — full text is server-rendered immediately, no JS retype.
@@ -1048,6 +1022,7 @@ export default function HomeIsland({ lang }: HomeIslandProps = {}) {
                     data-tip={isSpanish()
                       ? "Exporta esto a un documento"
                       : "Turn this into a document"}
+                    data-tip-align="right"
                     aria-label={isSpanish()
                       ? "Exportar conversación"
                       : "Export conversation"}
@@ -1141,6 +1116,7 @@ export default function HomeIsland({ lang }: HomeIslandProps = {}) {
                             ? "Stop recording"
                             : "Record meeting"}
                           data-tip={isRecording.value ? "Stop" : "Record"}
+                          data-tip-align="right"
                         >
                           <i
                             class={`fa ${
@@ -1162,6 +1138,7 @@ export default function HomeIsland({ lang }: HomeIslandProps = {}) {
                           voiceDrawerOpen.value = !voiceDrawerOpen.value}
                         class="header-icon-btn"
                         data-tip="Voice"
+                        data-tip-align="right"
                         aria-label="Toggle voice panel"
                       >
                         <i class="fa fa-headphones" aria-hidden="true" />
