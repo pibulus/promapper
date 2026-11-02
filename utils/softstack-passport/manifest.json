@@ -1,0 +1,14 @@
+{
+  "files": {
+    "avatar.js": "5c5670466f326f3d0f86dc369003533e345c6ecb970f1479dcd56b1dff2aa10f",
+    "card.css": "d92300c720c592f0fc84f2a248bfcc93dbf6f0b8df1f7ad01523e0410a69ae2c",
+    "card.html.js": "38e9eab9b00ed8b60c892b4d9aff5ace20e83818e3b4f0af09742254ad2a6f2c",
+    "code.js": "afff54fcf489f00bea65faae9df15298758cba429049a092acf985b3fb421ac2",
+    "identity.js": "42534a47a710fbcff591c2129661dff7bda2ec25e8bd65330dcf75b09bfa9481",
+    "index.js": "cf8a17e5997cddf4bf5255001bb1373a0213b88bf37f7f7c2dda8c4968896d31",
+    "palettes.js": "4cbc75a22fd40506b9c261cd8061c3475c4db5f2a4d84bd9e8a6c32700905473",
+    "README.md": "edb4c41e6fd95a6683da912df34f0054a4d251d7ca2c63c0fdaaf2b5003ee3d1",
+    "skins.js": "ed4e02e351834fc1e9dfe849f59be28d5c696103edec00b7559c7e7960018b3f",
+    "test-vectors.json": "504103ec806742dcdcaf00dec4e86f7692a5bd690435508acc58528183342f74"
+  }
+}

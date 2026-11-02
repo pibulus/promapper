@@ -22,6 +22,7 @@ import * as $api_share_create from "./routes/api/share/create.ts";
 import * as $api_square_webhook from "./routes/api/square/webhook.ts";
 import * as $api_supporter_checkout from "./routes/api/supporter/checkout.ts";
 import * as $api_supporter_checkout_checkoutId_ from "./routes/api/supporter/checkout/[checkoutId].ts";
+import * as $api_supporter_passport from "./routes/api/supporter/passport.ts";
 import * as $api_supporter_redeem from "./routes/api/supporter/redeem.ts";
 import * as $brainstorming from "./routes/brainstorming.tsx";
 import * as $care from "./routes/care.tsx";
@@ -121,6 +122,7 @@ const manifest = {
     "./routes/api/supporter/checkout.ts": $api_supporter_checkout,
     "./routes/api/supporter/checkout/[checkoutId].ts":
       $api_supporter_checkout_checkoutId_,
+    "./routes/api/supporter/passport.ts": $api_supporter_passport,
     "./routes/api/supporter/redeem.ts": $api_supporter_redeem,
     "./routes/brainstorming.tsx": $brainstorming,
     "./routes/care.tsx": $care,

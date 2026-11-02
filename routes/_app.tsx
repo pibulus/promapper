@@ -79,6 +79,12 @@ export default function App({ Component, url }: PageProps) {
             how a local build and the live site could disagree all afternoon. */
         }
         <link rel="stylesheet" href={asset("/styles.build.css")} />
+        {
+          /* Passport card — the canonical card.css, copied from
+            utils/softstack-passport and committed; the parity test keeps the
+            pair byte-identical. */
+        }
+        <link rel="stylesheet" href={asset("/passport-card.css")} />
 
         {
           /* FOUC prevention: apply saved theme CSS vars before first paint.

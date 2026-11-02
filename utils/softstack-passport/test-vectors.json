@@ -1,0 +1,25 @@
+{
+  "apps": ["talktype", "ziplist", "qrbuddy", "promapper"],
+  "secret": "softstack-test-secret-32-chars-min!!",
+  "seed": "checkout-test-001",
+  "code": "SS-03D2-9722-1310",
+  "vaultHash": "38fd730966eb59a53bd9fc5957ba30496c3672c98eb123d2aaa8a7e6e8f8931c",
+  "identity": {
+    "name": "Glitch Walrus",
+    "phrase": "glitch-walrus-ripples-harbourside",
+    "memberId": "SS-03D2-9722-1310",
+    "bg": "fff1a8",
+    "shape": "f0c080"
+  },
+  "card": {
+    "skin": "shuffle",
+    "palette": "Grape Soda",
+    "choices": {
+      "holo": "prismatic",
+      "frame": "soft",
+      "texture": "halftone",
+      "type": "display",
+      "avatar": "adventurer"
+    }
+  }
+}

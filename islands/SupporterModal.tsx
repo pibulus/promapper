@@ -10,6 +10,7 @@ import {
   isSupporterSignal,
   localWhisperModelSignal,
   localWhisperSignal,
+  passportDetailsSignal,
   refreshSupporterState,
   removeByoKey,
   saveByoKey,
@@ -27,8 +28,10 @@ import {
 import {
   clearPendingCheckout,
   getPendingCheckout,
+  getSupporterPass,
   setPendingCheckout,
 } from "../utils/supporter-pass.ts";
+import { PassportMembershipCard } from "../components/passport/MembershipCard.tsx";
 import { isSpanish, t } from "../utils/i18n.ts";
 
 function stripCheckoutParam() {
@@ -39,12 +42,29 @@ function stripCheckoutParam() {
   history.replaceState(null, "", url.toString());
 }
 
+function stripPassportParams() {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has("passport") && !url.searchParams.has("pass")) {
+    return;
+  }
+  url.searchParams.delete("passport");
+  url.searchParams.delete("pass");
+  history.replaceState(null, "", url.toString());
+}
+
 export default function SupporterModal() {
   const i18n = t();
   const isOpen = supporterModalOpen.value;
   const isSupporter = isSupporterSignal.value;
   const activeTier = supporterTierSignal.value;
   const expiry = supporterExpirySignal.value;
+  const storedPassport = passportDetailsSignal.value;
+  const passportRestoreUrl = storedPassport
+    ? `${globalThis.location?.origin ?? ""}/?passport=${
+      encodeURIComponent(storedPassport.code)
+    }`
+    : "";
   const activeByoKey = byokKeySignal.value;
   const localWhisperEnabled = localWhisperSignal.value;
   const selectedWhisperModel = localWhisperModelSignal.value;
@@ -69,8 +89,40 @@ export default function SupporterModal() {
   const [byoTestStatus, setByoTestStatus] = useState<string | null>(null);
   const [isTestingByo, setIsTestingByo] = useState(false);
 
+  // Arrive with ?passport=SS-... (card QR) or ?pass=token (old email link),
+  // then confirm whatever is stored. The code lookup is the short link the
+  // card can carry in a scannable QR.
   useEffect(() => {
-    void confirmStoredPass();
+    let cancelled = false;
+    const bootstrap = async () => {
+      if (typeof window === "undefined") return;
+      const params = new URL(window.location.href).searchParams;
+      const code = params.get("passport");
+      const legacyPass = params.get("pass");
+      try {
+        if (code) {
+          const res = await fetch(
+            `/api/supporter/passport?code=${encodeURIComponent(code)}`,
+            { headers: { "Cache-Control": "no-store" } },
+          );
+          const data = await res.json().catch(() => ({}));
+          if (cancelled) return;
+          if (res.ok && typeof data.license === "string") {
+            activatePass(data.license);
+            stripPassportParams();
+          }
+        } else if (legacyPass) {
+          if (activatePass(legacyPass)) stripPassportParams();
+        }
+      } catch {
+        // A dead link is not an error state; the redeem form still works.
+      }
+      if (!cancelled) await confirmStoredPass();
+    };
+    void bootstrap();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Initial sync on mount
@@ -217,7 +269,7 @@ export default function SupporterModal() {
   }
 
   function handleCopyPass() {
-    const pass = localStorage.getItem("pm_supporter_pass");
+    const pass = getSupporterPass();
     if (pass && navigator.clipboard) {
       navigator.clipboard.writeText(pass);
       setRedeemStatus("Pass token copied to clipboard!");
@@ -262,7 +314,11 @@ export default function SupporterModal() {
         {/* Header Bar */}
         <div class="px-4 py-3.5 sm:px-6 sm:py-4 bg-gradient-to-r from-[var(--accent-rose-wash)] via-[var(--accent-rose-wash-soft)] to-[var(--surface-card)] border-b-3 border-[var(--line-ink)] flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <span class="text-2xl">🗺️</span>
+            <img
+              src="/icon-192.png"
+              alt=""
+              class="h-10 w-10 rounded-xl border-2 border-[var(--line-ink)] shadow-[2px_2px_0px_var(--line-ink)]"
+            />
             <div>
               <h2 class="text-xl font-black text-[var(--soft-black)] leading-none">
                 {i18n.supporterTitle}
@@ -355,6 +411,21 @@ export default function SupporterModal() {
                   </button>
                 </div>
               )}
+
+              {
+                /* The shared Passport card. Active holders see their own;
+                  everyone else sees the same card as a preview. */
+              }
+              <div class="mx-auto w-full max-w-[342px]">
+                {isSupporter && storedPassport
+                  ? (
+                    <PassportMembershipCard
+                      passport={storedPassport}
+                      restoreUrl={passportRestoreUrl}
+                    />
+                  )
+                  : <PassportMembershipCard passport={null} isPreview />}
+              </div>
 
               {/* Tier Selector: $49 Solo Pass vs $99 Guild, Lab & Practice Pass */}
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">

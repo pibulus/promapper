@@ -3,6 +3,7 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { redeemSupporterCode } from "@services/supporterPass.ts";
+import { savePassportRecord } from "@services/passportStore.ts";
 import { guardPublicRequest } from "@services/requestGuard.ts";
 
 export const handler: Handlers = {
@@ -31,6 +32,15 @@ export const handler: Handlers = {
         );
       }
 
+      if (result.passport) {
+        await savePassportRecord({
+          ...result.passport,
+          licenseToken: result.license,
+          exp: result.exp ??
+            Math.floor(Date.now() / 1000) + 365 * 24 * 60 * 60,
+        });
+      }
+
       return new Response(
         JSON.stringify({
           valid: true,
@@ -38,6 +48,7 @@ export const handler: Handlers = {
           expires: result.exp
             ? new Date(result.exp * 1000).toISOString()
             : null,
+          passport: result.passport ?? null,
         }),
         { headers: { "Content-Type": "application/json" } },
       );

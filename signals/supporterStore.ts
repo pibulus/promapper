@@ -4,8 +4,10 @@ import { computed, signal } from "@preact/signals";
 import {
   clearSupporterPass,
   type ClientSupporterTier,
+  getStoredPassport,
   getSupporterPass,
   setSupporterPass,
+  type StoredPassport,
   supporterPassExpiry,
   supporterPassTier,
 } from "../utils/supporter-pass.ts";
@@ -22,6 +24,8 @@ export const supporterModalOpen = signal(false);
 export const isSupporterSignal = signal(false);
 export const supporterTierSignal = signal<ClientSupporterTier | null>(null);
 export const supporterExpirySignal = signal<Date | null>(null);
+/** SS- code + shared name/phrase, once the token carries one. */
+export const passportDetailsSignal = signal<StoredPassport | null>(null);
 export const byokKeySignal = signal<string | null>(null);
 export const localWhisperSignal = signal(false);
 export const localWhisperModelSignal = signal<WhisperModelTier>("tiny");
@@ -36,6 +40,7 @@ export function refreshSupporterState() {
   isSupporterSignal.value = pass !== null;
   supporterTierSignal.value = supporterPassTier();
   supporterExpirySignal.value = supporterPassExpiry();
+  passportDetailsSignal.value = getStoredPassport();
 
   const byo = getByoKey();
   byokKeySignal.value = byo;
@@ -70,7 +75,19 @@ export async function confirmStoredPass(): Promise<void> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code: pass }),
     });
-    if (res.status === 400) deactivatePass();
+    if (res.status === 400) {
+      deactivatePass();
+      return;
+    }
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      // Legacy promapper-pass tokens are upgraded in place here. Same
+      // expiry, new identity; the badge never lies about what is stored.
+      if (typeof data.license === "string" && data.license !== pass) {
+        setSupporterPass(data.license);
+        refreshSupporterState();
+      }
+    }
   } catch {
     // offline — keep the pass; the next load asks again
   }
