@@ -62,6 +62,7 @@ import * as $rol from "./routes/rol.tsx";
 import * as $schools from "./routes/schools.tsx";
 import * as $shared_shareId_ from "./routes/shared/[shareId].tsx";
 import * as $shared_index from "./routes/shared/index.tsx";
+import * as $version_json from "./routes/version.json.ts";
 import * as $AudioRecorder from "./islands/AudioRecorder.tsx";
 import * as $AudioVisualizer from "./islands/AudioVisualizer.tsx";
 import * as $AuthModalIsland from "./islands/AuthModalIsland.tsx";
@@ -163,6 +164,7 @@ const manifest = {
     "./routes/schools.tsx": $schools,
     "./routes/shared/[shareId].tsx": $shared_shareId_,
     "./routes/shared/index.tsx": $shared_index,
+    "./routes/version.json.ts": $version_json,
   },
   islands: {
     "./islands/AudioRecorder.tsx": $AudioRecorder,

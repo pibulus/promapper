@@ -132,9 +132,14 @@ export default function SupporterModal() {
         hashParams.get("unlock") ||
         ""
       ).trim();
+      const hashPass = (hashParams.get("pass") || "").trim();
       const legacyCode = params.get("passport");
-      const legacyPass = params.get("pass");
+      const legacyQueryPass = params.get("pass");
       try {
+        // Never accept bearer tokens or codes from the URL query string; scrub immediately.
+        if (legacyQueryPass) {
+          stripPassportParams();
+        }
         if (phrase) {
           stripPassportParams();
           const res = await fetch("/api/supporter/redeem", {
@@ -150,8 +155,8 @@ export default function SupporterModal() {
           if (res.ok && typeof data.license === "string") {
             activatePass(data.license);
           }
-        } else if (legacyPass) {
-          if (activatePass(legacyPass)) stripPassportParams();
+        } else if (hashPass) {
+          if (activatePass(hashPass)) stripPassportParams();
         } else if (legacyCode) {
           stripPassportParams();
           supporterModalOpen.value = true;

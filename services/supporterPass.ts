@@ -13,7 +13,10 @@ import {
   formatCode,
   generateMemberIdentity,
   idInput,
+  kdfInput,
   parseFourWordPasskey,
+  PASSKEY_INDEX_ITERATIONS,
+  passkeyIndexSalt,
   phraseFromHash,
   phraseInput,
   stampsFor,
@@ -269,7 +272,7 @@ export async function hashPasskeyPhrase(
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
-    enc.encode(parsed.phrase),
+    enc.encode(kdfInput(parsed.phrase)),
     "PBKDF2",
     false,
     ["deriveBits"],
@@ -277,8 +280,8 @@ export async function hashPasskeyPhrase(
   const bits = await crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
-      salt: enc.encode(`softstack-passkey-v1:${secret}`),
-      iterations: 100000,
+      salt: enc.encode(passkeyIndexSalt(secret)),
+      iterations: PASSKEY_INDEX_ITERATIONS,
       hash: "SHA-256",
     },
     keyMaterial,

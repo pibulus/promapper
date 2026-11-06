@@ -70,7 +70,7 @@ export function cardStyleFor(skin) {
 	].join("; ");
 }
 
-const GHOST_SEAL = `<div class="ghost-seal" aria-hidden="true">
+const GHOST_SEAL = `<div class="ghost-seal" data-slot="qr-ghost" aria-hidden="true">
 			<svg class="ghost-mark" viewBox="0 0 32 36" focusable="false" aria-hidden="true">
 				<path d="M16 3c-7.1 0-12 5.4-12 13.1V32l3.5-2.2L11 32l3.5-2.2L18 32l3.5-2.2L25 32l3-1.9v-14C28 8.4 23.1 3 16 3Z" />
 				<circle cx="11.5" cy="16" r="2.4" />
@@ -106,12 +106,14 @@ export function renderMembershipCard({
 	customAvatar = false,
 	qrUrl = "",
 	qrImageUrl = "",
+	qrSvg = "",
 	revealed = false,
 	showQr = false,
 	copied = false,
 	squishing = false,
 	reducedMotion = false,
 }) {
+	const resolvedQrImage = qrImageUrl || qrSvg;
 	const name = identity?.name || "Passport Pending";
 	const phrase = identity?.phrase || identity?.memberId || "";
 	const displayPhrase = revealed ? phrase : maskPassphrase(phrase);
@@ -146,13 +148,13 @@ export function renderMembershipCard({
 		? `<button type="button" class="avatar-reset" title="Reset to default avatar" aria-label="Reset custom Passport avatar">&times;</button>`
 		: "";
 
-	const qr = showQr && qrImageUrl && !isPreview
+	const qr = showQr && resolvedQrImage && !isPreview
 		? `<a class="passport-qr-stamp" href="${escapeHtml(qrUrl)}" aria-label="Open ${escapeHtml(appName)} on another device">
-				<img src="${escapeHtml(qrImageUrl)}" alt="" decoding="async" referrerpolicy="no-referrer" loading="eager" />
+				<img src="${escapeHtml(resolvedQrImage)}" alt="" decoding="async" referrerpolicy="no-referrer" loading="eager" />
 				<span class="qr-tap-hint" aria-hidden="true">tap to sync</span>
 			</a>`
-		: qrImageUrl && !isPreview
-			? `<button type="button" class="ghost-seal ghost-seal--interactive" data-passport-qr-toggle title="Pair a device" aria-label="Pair a device">
+		: resolvedQrImage && !isPreview
+			? `<button type="button" class="ghost-seal ghost-seal--interactive" data-slot="qr-ghost" data-passport-qr-toggle title="Pair a device" aria-label="Pair a device">
 			<svg class="ghost-mark" viewBox="0 0 32 36" focusable="false" aria-hidden="true">
 				<path d="M16 3c-7.1 0-12 5.4-12 13.1V32l3.5-2.2L11 32l3.5-2.2L18 32l3.5-2.2L25 32l3-1.9v-14C28 8.4 23.1 3 16 3Z" />
 				<circle cx="11.5" cy="16" r="2.4" />
@@ -218,3 +220,5 @@ export function renderMembershipCard({
 		</div>
 	</div>`;
 }
+
+export const renderCardHtml = renderMembershipCard;

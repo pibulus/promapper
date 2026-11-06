@@ -60,6 +60,14 @@ export function kdfInput(phrase) {
   return `${KDF_NAMESPACE}${String(phrase ?? "").trim().toLowerCase()}`;
 }
 
+export const PASSKEY_INDEX_SALT_PREFIX = "softstack-passkey-index-v1:";
+export const PASSKEY_INDEX_ITERATIONS = 100_000;
+
+/** Canonical salt for PBKDF2-SHA256 passkey index hashing across all four apps. */
+export function passkeyIndexSalt(secret) {
+  return `${PASSKEY_INDEX_SALT_PREFIX}${String(secret ?? "").trim()}`;
+}
+
 /** App names are stamps on one passport, never a separate identity. */
 export function stampsFor(...apps) {
   const wanted = new Set(apps.flat());

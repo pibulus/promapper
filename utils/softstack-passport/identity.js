@@ -2021,8 +2021,8 @@ export const WORDS = [
   "happier",
   "happy",
   "harbor",
-  "harbourside",
-  "harbourward",
+  "harborside",
+  "harbour",
   "hardhat",
   "hardy",
   "harmful",
@@ -4233,7 +4233,7 @@ export const WORDS = [
   "undead",
   "underfoot",
   "undergo",
-  "underground",
+  "underpass",
   "underneath",
   "underwater",
   "undone",
@@ -4373,6 +4373,7 @@ export const WORDS = [
   "zorch",
 ];
 
+export const PASSKEY_WORDS = WORDS;
 export const PASSPHRASE_WORDS = WORDS;
 export const PASSPHRASE_WORD_COUNT = 4;
 export const SYNC_PHRASE_COMBINATIONS = WORDS.length ** PASSPHRASE_WORD_COUNT;
