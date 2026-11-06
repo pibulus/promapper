@@ -252,6 +252,27 @@ export async function passportForSeed(
   return { code, name: identity.name, phrase: identity.phrase };
 }
 
+/** Extract or derive PassportDetails from a verified SupporterPayload. */
+export async function passportFromPayload(
+  payload: SupporterPayload,
+  secret?: string,
+): Promise<PassportDetails | null> {
+  if (payload.code && payload.name && payload.phrase) {
+    return {
+      code: payload.code,
+      name: payload.name,
+      phrase: payload.phrase,
+    };
+  }
+  const seed = payload.checkoutId || payload.code || payload.email;
+  if (!seed) return null;
+  return await passportForSeed(
+    seed,
+    secret ?? getPassportSecret(),
+    payload.code?.startsWith("SS-") ? payload.code : undefined,
+  );
+}
+
 /**
  * Mint a new Passport token. Returns the token and the identity it carries so
  * checkout/KV/email can all use the same values.
