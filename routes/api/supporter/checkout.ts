@@ -47,6 +47,7 @@ export const handler: Handlers = {
 
       await savePendingCheckout({
         checkoutId,
+        plan,
         amount: checkout.amount,
         currency: checkout.currency,
         providerOrderId: checkout.providerOrderId,
@@ -77,13 +78,30 @@ export const handler: Handlers = {
   },
 
   GET() {
-    const price = getSupporterPrice();
+    const solo = getSupporterPrice("solo");
+    const guild = getSupporterPrice("guild");
     return new Response(
       JSON.stringify({
         enabled: isSquareConfigured(),
-        price: price.amount / 100,
-        currency: price.currency,
-        displayPrice: price.displayPrice,
+        price: solo.amount / 100,
+        currency: solo.currency,
+        displayPrice: solo.displayPrice,
+        plans: {
+          solo: {
+            amount: solo.amount,
+            price: solo.amount / 100,
+            currency: solo.currency,
+            displayPrice: solo.displayPrice,
+            label: `${solo.displayPrice} ${solo.currency}`,
+          },
+          guild: {
+            amount: guild.amount,
+            price: guild.amount / 100,
+            currency: guild.currency,
+            displayPrice: guild.displayPrice,
+            label: `${guild.displayPrice} ${guild.currency}`,
+          },
+        },
       }),
       { headers: { "Content-Type": "application/json" } },
     );

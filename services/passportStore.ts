@@ -25,7 +25,15 @@ async function getKv(): Promise<Deno.Kv | null> {
     if (!kvPromise) kvPromise = Deno.openKv(path);
     return await kvPromise;
   } catch (err) {
+    kvPromise = null;
     console.error("[PassportStore] Deno KV unavailable:", err);
+    if (Deno.env.get("DENO_DEPLOYMENT_ID")) {
+      throw new Error(
+        `Deno KV is required in production: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
     return null;
   }
 }

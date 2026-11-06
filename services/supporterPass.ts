@@ -92,20 +92,28 @@ export function getLegacySecret(): string {
   return "promapper-dev-secret-change-in-production-2026";
 }
 
+const MIN_SECRET_LENGTH = 32;
+
 /**
- * One Passport secret for the whole fleet. A deployment without it can still
- * verify its own old passes, but new tokens are not cross-app; say so loudly.
+ * One Passport secret for the whole fleet. Fails closed in production if
+ * missing or shorter than 32 characters so ProMapper never mints tokens with a
+ * different secret than TalkType, ZipList, and QRBuddy.
  */
 export function getPassportSecret(): string {
   const secret = Deno.env.get("SOFTSTACK_PASSPORT_SECRET")?.trim();
-  if (secret && secret.length >= 16) return secret;
+  if (secret && secret.length >= MIN_SECRET_LENGTH) return secret;
   if (Deno.env.get("DENO_DEPLOYMENT_ID")) {
-    console.warn(
-      "[SupporterPass] SOFTSTACK_PASSPORT_SECRET is missing; falling back to " +
-        "PROMAPPER_LICENSE_SECRET. New passes will not verify in the other apps.",
+    throw new Error(
+      `SOFTSTACK_PASSPORT_SECRET must be set to at least ${MIN_SECRET_LENGTH} characters in production`,
     );
   }
-  return getLegacySecret();
+  const legacy = getLegacySecret();
+  if (legacy.length < MIN_SECRET_LENGTH) {
+    throw new Error(
+      `Passport secret must be at least ${MIN_SECRET_LENGTH} characters`,
+    );
+  }
+  return legacy;
 }
 
 function bytesToBase64Url(bytes: Uint8Array): string {

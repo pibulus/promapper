@@ -155,7 +155,7 @@ function buildToastShell(
   toast.setAttribute("role", type === "error" ? "alert" : "status");
   toast.setAttribute("aria-live", type === "error" ? "assertive" : "polite");
   toast.style.cssText =
-    `position:fixed;right:1rem;bottom:1rem;z-index:9999;max-width:min(360px,calc(100vw - 2rem));` +
+    `position:fixed;right:1rem;bottom:1rem;z-index:45;max-width:min(360px,calc(100vw - 2rem));` +
     `display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.9rem;border-radius:12px;` +
     `background:${bg};color:#fffef7;font-weight:600;font-size:0.875rem;` +
     `box-shadow:0 8px 24px rgba(30,23,20,0.18);`;

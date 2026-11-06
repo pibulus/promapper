@@ -72,10 +72,18 @@ export default function SupporterModal() {
 
   const [tab, setTab] = useState<"pass" | "byok" | "faq">("pass");
   const [selectedPlan, setSelectedPlan] = useState<"solo" | "guild">("solo");
+  const [soloPriceLabel, setSoloPriceLabel] = useState("$49 AUD");
+  const [guildPriceLabel, setGuildPriceLabel] = useState("$99 AUD");
   const [isStartingCheckout, setIsStartingCheckout] = useState(false);
   const [pastedCode, setPastedCode] = useState("");
   const [redeemStatus, setRedeemStatus] = useState<string | null>(null);
   const [isRedeeming, setIsRedeeming] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailValue, setEmailValue] = useState("");
+  const [emailStatus, setEmailStatus] = useState<
+    "idle" | "sending" | "sent" | "error"
+  >("idle");
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [whisperPreloading, setWhisperPreloading] = useState<
     WhisperModelTier | null
   >(null);
@@ -124,6 +132,31 @@ export default function SupporterModal() {
       cancelled = true;
     };
   }, []);
+
+  // Fetch server prices when the modal opens so client and server never drift.
+  useEffect(() => {
+    if (!isOpen || typeof window === "undefined") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/supporter/checkout", {
+          headers: { "Cache-Control": "no-store" },
+        });
+        if (!res.ok || cancelled) return;
+        const data = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        const solo = data?.plans?.solo?.label;
+        const guild = data?.plans?.guild?.label;
+        if (typeof solo === "string" && solo) setSoloPriceLabel(solo);
+        if (typeof guild === "string" && guild) setGuildPriceLabel(guild);
+      } catch {
+        // Fallback labels remain in place.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   // Initial sync on mount
   useEffect(() => {
@@ -268,11 +301,41 @@ export default function SupporterModal() {
     }
   }
 
-  function handleCopyPass() {
+  async function handleEmailPass() {
     const pass = getSupporterPass();
-    if (pass && navigator.clipboard) {
-      navigator.clipboard.writeText(pass);
-      setRedeemStatus("Pass token copied to clipboard!");
+    if (!pass || !emailValue.trim()) return;
+    setEmailStatus("sending");
+    setEmailError(null);
+    try {
+      const res = await fetch("/api/supporter/email-pass", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-promapper-supporter-token": pass,
+        },
+        body: JSON.stringify({
+          email: emailValue.trim(),
+          token: pass,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data?.sent) {
+        setEmailStatus("sent");
+        setEmailOpen(false);
+      } else {
+        setEmailStatus("error");
+        setEmailError(
+          data?.error ||
+            (spanish
+              ? "No se pudo enviar el correo."
+              : "Could not send the email."),
+        );
+      }
+    } catch {
+      setEmailStatus("error");
+      setEmailError(
+        spanish ? "Error de red al enviar." : "Network error sending email.",
+      );
     }
   }
 
@@ -376,39 +439,94 @@ export default function SupporterModal() {
         </div>
 
         {/* Modal Body */}
-        <div class="p-4 sm:p-6 overflow-y-auto space-y-5 sm:space-y-6">
+        <div class="p-3.5 sm:p-5 overflow-y-auto space-y-3.5 sm:space-y-4">
           {tab === "pass" && (
-            <div class="space-y-5 sm:space-y-6">
-              {/* Active Pass Banner */}
+            <div class="space-y-3.5 sm:space-y-4">
+              {/* Active Pass Banner + Email Passport */}
               {isSupporter && (
-                <div class="p-4 bg-[var(--accent-rose-wash-soft)] border-3 border-[var(--line-ink)] rounded-xl shadow-[3px_3px_0px_var(--line-ink)] flex items-center justify-between gap-3">
-                  <div>
-                    <div class="font-black text-sm text-[var(--accent-ink)]">
-                      {activeTier === "guild"
-                        ? (spanish
-                          ? "✓ Pase de Gremio y Laboratorio Activo"
-                          : "✓ Guild, Lab & Practice Pass Active")
-                        : i18n.activePassBanner}
+                <div class="p-3.5 bg-[var(--accent-rose-wash-soft)] border-3 border-[var(--line-ink)] rounded-xl shadow-[3px_3px_0px_var(--line-ink)] space-y-2.5">
+                  <div class="flex items-center justify-between gap-3">
+                    <div>
+                      <div class="font-black text-sm text-[var(--accent-ink)]">
+                        {activeTier === "guild"
+                          ? (spanish
+                            ? "✓ Pase de Gremio y Laboratorio Activo"
+                            : "✓ Guild, Lab & Practice Pass Active")
+                          : i18n.activePassBanner}
+                      </div>
+                      <div class="text-xs text-[var(--color-text-secondary)] font-medium mt-0.5">
+                        {expiry
+                          ? i18n.validUntil(
+                            expiry.toLocaleDateString("en-AU", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            }),
+                          )
+                          : i18n.lifetimePass}
+                      </div>
                     </div>
-                    <div class="text-xs text-[var(--color-text-secondary)] font-medium mt-0.5">
-                      {expiry
-                        ? i18n.validUntil(
-                          expiry.toLocaleDateString("en-AU", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          }),
-                        )
-                        : i18n.lifetimePass}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmailOpen((v) => !v);
+                        setEmailStatus("idle");
+                        setEmailError(null);
+                      }}
+                      class="min-h-[44px] px-4 py-2 bg-[#ffbe0b] hover:bg-[#ffd04a] text-[#1e1714] border-2 border-[#1e1714] rounded-xl text-xs font-black shadow-[3px_3px_0px_#1e1714] hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer shrink-0"
+                    >
+                      {emailStatus === "sent"
+                        ? (spanish ? "Pasaporte enviado" : "Passport emailed")
+                        : (spanish ? "Enviar Pasaporte" : "Email Passport")}
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleCopyPass}
-                    class="min-h-[44px] px-3.5 py-2 bg-[var(--surface-white-warm)] border-2 border-[var(--line-ink)] rounded-lg text-xs font-bold shadow-[2px_2px_0px_var(--line-ink)] hover:bg-[var(--surface-cream-hover)] hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
-                  >
-                    {i18n.copyToken}
-                  </button>
+                  {emailStatus === "sent" && (
+                    <p
+                      class="text-xs font-bold text-[var(--soft-black)]"
+                      role="status"
+                    >
+                      {spanish
+                        ? "Pasaporte enviado. Revisa la bandeja."
+                        : "Passport sent. Check the inbox."}
+                    </p>
+                  )}
+                  {emailOpen && emailStatus !== "sent" && (
+                    <div class="space-y-1.5 pt-1">
+                      <div class="flex gap-2">
+                        <input
+                          type="email"
+                          value={emailValue}
+                          onInput={(e) =>
+                            setEmailValue(
+                              (e.target as HTMLInputElement).value,
+                            )}
+                          placeholder={spanish
+                            ? "correo@ejemplo.com"
+                            : "name@example.com"}
+                          aria-label={spanish
+                            ? "Correo para el Pasaporte"
+                            : "Email for the Passport"}
+                          class="min-w-0 flex-1 min-h-[44px] px-3 border-2 border-[var(--line-ink)] rounded-xl bg-[var(--surface-white-warm)] text-sm font-bold focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleEmailPass}
+                          disabled={emailStatus === "sending" ||
+                            !emailValue.includes("@")}
+                          class="shrink-0 min-h-[44px] px-4 rounded-xl border-2 border-[#1e1714] bg-[#ffbe0b] text-[#1e1714] text-xs font-black disabled:opacity-50 cursor-pointer"
+                        >
+                          {emailStatus === "sending"
+                            ? "…"
+                            : (spanish ? "Enviar" : "Send")}
+                        </button>
+                      </div>
+                      {emailError && (
+                        <p class="text-xs font-bold text-[var(--accent-ink)]">
+                          {emailError}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -427,85 +545,60 @@ export default function SupporterModal() {
                   : <PassportMembershipCard passport={null} isPreview />}
               </div>
 
-              {/* Tier Selector: $49 Solo Pass vs $99 Guild, Lab & Practice Pass */}
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Tier Selector: Solo Pass vs Guild, Lab & Practice Pass (2 columns on mobile too so CTA fits in 390×844) */}
+              <div class="grid grid-cols-2 gap-2.5">
                 <button
                   type="button"
                   onClick={() => setSelectedPlan("solo")}
-                  class={`min-h-[44px] p-3.5 rounded-xl border-3 border-[var(--line-ink)] text-left transition-all cursor-pointer ${
+                  class={`min-h-[44px] p-2.5 sm:p-3.5 rounded-xl border-3 border-[var(--line-ink)] text-left transition-all cursor-pointer ${
                     selectedPlan === "solo"
                       ? "bg-[var(--accent-rose-wash-soft)] shadow-[3px_3px_0px_var(--line-ink)] -translate-y-0.5"
                       : "bg-[var(--surface-white-warm)] opacity-80 hover:opacity-100"
                   }`}
                 >
                   <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-mono font-black uppercase tracking-wider text-[var(--soft-black)]">
-                      {spanish ? "Individual · 1 Año" : "Solo Pass · 1 Yr"}
+                    <span class="text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider text-[var(--soft-black)]">
+                      {spanish ? "Individual · 1 Año" : "Solo · 1 Yr"}
                     </span>
-                    <span class="text-sm">✨</span>
                   </div>
-                  <div class="text-lg font-black text-[var(--soft-black)] mt-0.5">
-                    $49 AUD
+                  <div class="text-base sm:text-lg font-black text-[var(--soft-black)] mt-0.5">
+                    {soloPriceLabel}
                   </div>
-                  <div class="text-[11px] text-[var(--color-text-secondary)] font-bold">
+                  <div class="text-[10px] sm:text-[11px] text-[var(--color-text-secondary)] font-bold leading-tight">
                     {spanish
-                      ? "1 persona · 60m/día nube + Whisper local"
-                      : "1 seat · 60m/day cloud + local Whisper"}
+                      ? "1 lugar · 60m/día + Whisper"
+                      : "1 seat · 60m/day + Whisper"}
                   </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setSelectedPlan("guild")}
-                  class={`min-h-[44px] p-3.5 rounded-xl border-3 border-[var(--line-ink)] text-left transition-all cursor-pointer ${
+                  class={`min-h-[44px] p-2.5 sm:p-3.5 rounded-xl border-3 border-[var(--line-ink)] text-left transition-all cursor-pointer ${
                     selectedPlan === "guild"
                       ? "bg-[var(--accent-rose-wash-soft)] shadow-[3px_3px_0px_var(--line-ink)] -translate-y-0.5"
                       : "bg-[var(--surface-white-warm)] opacity-80 hover:opacity-100"
                   }`}
                 >
                   <div class="flex items-center justify-between">
-                    <span class="text-[11px] font-mono font-black uppercase tracking-wider text-[var(--soft-black)]">
-                      {spanish
-                        ? "Gremio / Lab · 5 Lugares"
-                        : "Guild & Lab · 5 Seats"}
+                    <span class="text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider text-[var(--soft-black)]">
+                      {spanish ? "Gremio · 5 Lugares" : "Guild · 5 Seats"}
                     </span>
-                    <span class="text-sm">🏰</span>
                   </div>
-                  <div class="text-lg font-black text-[var(--soft-black)] mt-0.5">
-                    $99 AUD
+                  <div class="text-base sm:text-lg font-black text-[var(--soft-black)] mt-0.5">
+                    {guildPriceLabel}
                   </div>
-                  <div class="text-[11px] text-[var(--color-text-secondary)] font-bold">
+                  <div class="text-[10px] sm:text-[11px] text-[var(--color-text-secondary)] font-bold leading-tight">
                     {spanish
-                      ? "Maratones 4h · D&D, labs y prácticas"
-                      : "4h marathons · D&D, labs & practices"}
+                      ? "Maratones 4h · D&D y labs"
+                      : "4h marathons · D&D & labs"}
                   </div>
                 </button>
               </div>
 
-              {/* Price & Pitch */}
-              <div class="p-5 bg-gradient-to-br from-[var(--accent-rose-wash-soft)] to-[var(--surface-card)] border-3 border-[var(--line-ink)] rounded-xl shadow-[4px_4px_0px_var(--line-ink)] relative">
-                <div class="flex justify-between items-start">
-                  <div>
-                    <span class="text-xs font-black uppercase tracking-wider bg-[var(--accent-strong)] text-[var(--surface-white-warm)] px-2.5 py-0.5 rounded-md border-2 border-[var(--line-ink)]">
-                      {selectedPlan === "guild"
-                        ? (spanish
-                          ? "Pase Grupal · Hasta 5 Lugares"
-                          : "Guild, Lab & Practice · Up to 5 Seats")
-                        : i18n.pass1Year}
-                    </span>
-                    <h3 class="text-2xl font-black text-[var(--soft-black)] mt-2">
-                      {selectedPlan === "guild" ? "$99 AUD" : "$49 AUD"}{" "}
-                      <span class="text-xs font-bold text-[var(--color-text-secondary)]">
-                        / {i18n.supporterTerm}
-                      </span>
-                    </h3>
-                  </div>
-                  <div class="text-3xl">
-                    {selectedPlan === "guild" ? "🏰" : "✨"}
-                  </div>
-                </div>
-
-                <ul class="mt-4 space-y-2 text-xs sm:text-sm font-medium text-[var(--color-text)]">
+              {/* Pitch & Primary CTA (no duplicate price block above the list) */}
+              <div class="p-3.5 sm:p-4 bg-gradient-to-br from-[var(--accent-rose-wash-soft)] to-[var(--surface-card)] border-3 border-[var(--line-ink)] rounded-xl shadow-[4px_4px_0px_var(--line-ink)] relative">
+                <ul class="space-y-1.5 text-xs sm:text-sm font-medium text-[var(--color-text)]">
                   <li class="flex items-center gap-2">
                     <span class="text-[var(--accent-ink)] font-black">✓</span>
                     <strong>
@@ -549,21 +642,25 @@ export default function SupporterModal() {
                   type="button"
                   onClick={() => handleStartCheckout(selectedPlan)}
                   disabled={isStartingCheckout}
-                  class="w-full mt-5 py-3.5 px-6 bg-[var(--cta-plate)] hover:bg-[var(--cta-plate-hover)] text-[var(--soft-black)] font-black text-base border-3 border-[var(--line-ink)] rounded-xl shadow-[4px_4px_0px_var(--line-ink)] hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer disabled:opacity-50"
+                  class="w-full mt-3.5 py-3 px-5 bg-[var(--cta-plate)] hover:bg-[var(--cta-plate-hover)] text-[var(--soft-black)] font-black text-sm sm:text-base border-3 border-[var(--line-ink)] rounded-xl shadow-[4px_4px_0px_var(--line-ink)] hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer disabled:opacity-50"
                 >
                   {isStartingCheckout
                     ? i18n.ctaSquareBusy
                     : isSupporter
                     ? i18n.extendPass(
-                      selectedPlan === "guild" ? "$99 AUD" : "$49 AUD",
+                      selectedPlan === "guild"
+                        ? guildPriceLabel
+                        : soloPriceLabel,
                     )
                     : selectedPlan === "guild"
                     ? (spanish
-                      ? "Desbloquear Pase de Gremio y Lab — $99 AUD"
-                      : "Unlock Guild, Lab & Practice Pass — $99 AUD")
-                    : i18n.ctaSquare}
+                      ? `Desbloquear Pase de Gremio y Lab · ${guildPriceLabel}`
+                      : `Unlock Guild, Lab & Practice Pass · ${guildPriceLabel}`)
+                    : `${
+                      i18n.ctaSquare.replace(/\s*[—·-]\s*\$49 AUD/i, "")
+                    } · ${soloPriceLabel}`}
                 </button>
-                <p class="text-[11px] text-center text-[var(--color-text-secondary)] mt-2 font-bold">
+                <p class="text-[11px] text-center text-[var(--color-text-secondary)] mt-1.5 font-bold">
                   {i18n.squareNotice}
                 </p>
               </div>
@@ -774,9 +871,9 @@ export default function SupporterModal() {
                       <strong class="text-[var(--soft-black)] block mb-1">
                         ¿Cómo funciona en otro celular o computadora?
                       </strong>
-                      El botón Copiar Pase (en la pestaña Pase) entrega el token
-                      para pegarlo en el recuadro de desbloqueo de cualquier
-                      otro dispositivo.
+                      Usa Enviar Pasaporte o escribe las cuatro palabras de la
+                      tarjeta en el recuadro de desbloqueo de cualquier otro
+                      dispositivo.
                     </div>
                     <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
                       <strong class="text-[var(--soft-black)] block mb-1">
@@ -816,8 +913,8 @@ export default function SupporterModal() {
                       <strong class="text-[var(--soft-black)] block mb-1">
                         How does a pass move to another laptop or phone?
                       </strong>
-                      Copy the pass token under the Supporter tab and paste it
-                      into the redeem box on any other browser or device.
+                      Use Email Passport or enter the 4-word passkey from the
+                      card into the redeem box on any other browser or device.
                     </div>
                     <div class="p-3 bg-[var(--surface-card)] border-2 border-[var(--line-ink)] rounded-lg">
                       <strong class="text-[var(--soft-black)] block mb-1">

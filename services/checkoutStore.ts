@@ -7,6 +7,7 @@ import { savePassportRecord } from "./passportStore.ts";
 export interface CheckoutRecord {
   checkoutId: string;
   status: "pending" | "paid" | "failed";
+  plan?: "solo" | "guild";
   amount: number;
   currency: string;
   providerOrderId?: string;
@@ -28,7 +29,15 @@ async function getKv(): Promise<Deno.Kv | null> {
     if (!kvPromise) kvPromise = Deno.openKv(path);
     return await kvPromise;
   } catch (err) {
+    kvPromise = null;
     console.error("[CheckoutStore] Deno KV unavailable:", err);
+    if (Deno.env.get("DENO_DEPLOYMENT_ID")) {
+      throw new Error(
+        `Deno KV is required in production: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
     return null;
   }
 }
@@ -41,6 +50,7 @@ const memStore = new Map<string, CheckoutRecord>();
  */
 export async function savePendingCheckout(data: {
   checkoutId: string;
+  plan?: "solo" | "guild";
   amount: number;
   currency: string;
   providerOrderId?: string;
@@ -49,6 +59,7 @@ export async function savePendingCheckout(data: {
   const record: CheckoutRecord = {
     checkoutId: data.checkoutId,
     status: "pending",
+    plan: data.plan,
     amount: data.amount,
     currency: data.currency,
     providerOrderId: data.providerOrderId,
@@ -128,7 +139,8 @@ export async function markCheckoutPaid(options: {
   const now = Date.now();
 
   const existingAmount = existing?.amount ?? 4900;
-  const tier = existingAmount >= 9000 ? "guild" : "supporter";
+  const plan = existing?.plan ?? (existingAmount >= 9000 ? "guild" : "solo");
+  const tier = plan === "guild" ? "guild" : "supporter";
 
   const minted = await mintSupporterPassport({
     seed: `checkout:${options.checkoutId}`,
@@ -141,6 +153,7 @@ export async function markCheckoutPaid(options: {
   const updated: CheckoutRecord = {
     checkoutId: options.checkoutId,
     status: "paid",
+    plan,
     amount: existingAmount,
     currency: existing?.currency ?? "AUD",
     providerOrderId: options.providerOrderId ?? existing?.providerOrderId,
@@ -194,63 +207,95 @@ export async function markCheckoutPaid(options: {
   return updated;
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+export function isSupporterEmailConfigured(): boolean {
+  return Boolean(Deno.env.get("RESEND_API_KEY")?.trim());
+}
+
 /**
- * Send a pastel-punk receipt email with the 1-click magic unlock link via Resend (optional).
+ * Send a receipt / recovery email with the 1-click unlock link via Resend.
  */
-async function sendSupporterReceiptEmail(options: {
+export async function sendSupporterReceiptEmail(options: {
   email: string;
   code: string;
   name: string;
   phrase: string;
-  checkoutId: string;
-}) {
+  checkoutId?: string;
+  appOrigin?: string;
+}): Promise<{ sent: boolean; error?: string }> {
   const resendApiKey = Deno.env.get("RESEND_API_KEY")?.trim();
-  if (!resendApiKey || !options.email.includes("@")) return;
+  if (!resendApiKey || !options.email.includes("@")) {
+    return {
+      sent: false,
+      error: "Passport email needs server setup first.",
+    };
+  }
 
-  const appUrl = Deno.env.get("APP_URL")?.trim() || "https://promapper.app";
+  const appUrl = (
+    options.appOrigin?.trim() ||
+    Deno.env.get("APP_URL")?.trim() ||
+    "https://promapper.app"
+  ).replace(/\/+$/, "");
   // Short code link, not the raw token: scannable, and safe in mail logs.
   const unlockLink = `${appUrl}/?passport=${encodeURIComponent(options.code)}`;
+  const from = Deno.env.get("RESEND_FROM_EMAIL")?.trim() ||
+    "ProMapper <hello@promapper.app>";
+  const safeName = escapeHtml(options.name || "SoftStack Passport");
+  const safeCode = escapeHtml(options.code);
+  const safePhrase = escapeHtml(options.phrase);
 
   try {
-    await fetch("https://api.resend.com/emails", {
+    const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${resendApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "ProMapper <hello@promapper.app>",
+        from,
         to: [options.email],
-        subject: "Your ProMapper Supporter Pass is inside 💜",
+        subject: "ProMapper Passport is ready",
         html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; background: #fffcf4; border: 3px solid #181411; border-radius: 16px;">
-            <h1 style="font-size: 24px; font-weight: 900; color: #181411; margin-bottom: 8px;">You're a Supporter! 💜</h1>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; background: #fffef7; border: 3px solid #1e1714; border-radius: 16px;">
+            <p style="margin: 0 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #db2777;">ProMapper Passport</p>
+            <h1 style="font-size: 24px; font-weight: 900; color: #1e1714; margin: 0 0 8px;">${safeName}, kept safe.</h1>
             <p style="font-size: 15px; line-height: 1.5; color: #3a322c;">
-              Thank you for supporting ProMapper. Your Passport is <strong>${options.name}</strong>.
+              One Passport across devices. Open the link below or enter the 4-word passkey under Redeem.
             </p>
-            <div style="margin: 18px 0; padding: 14px 16px; background: #f0eae1; border: 2px solid #181411; border-radius: 10px;">
+            <div style="margin: 18px 0; padding: 14px 16px; background: #fbf1e4; border: 2px solid #1e1714; border-radius: 10px;">
               <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: #726559;">Passport code</div>
-              <div style="font-family: monospace; font-size: 15px; font-weight: 800; color: #181411; margin-top: 4px;">${options.code}</div>
+              <div style="font-family: monospace; font-size: 15px; font-weight: 800; color: #1e1714; margin-top: 4px;">${safeCode}</div>
               <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: #726559; margin-top: 10px;">4-word passkey</div>
-              <div style="font-family: monospace; font-size: 15px; font-weight: 800; color: #181411; margin-top: 4px;">${options.phrase}</div>
+              <div style="font-family: monospace; font-size: 15px; font-weight: 800; color: #1e1714; margin-top: 4px;">${safePhrase}</div>
             </div>
             <div style="margin: 28px 0; text-align: center;">
-              <a href="${unlockLink}" style="display: inline-block; padding: 14px 28px; background: #ff6ac2; color: #ffffff; text-decoration: none; font-weight: 900; font-size: 16px; border: 3px solid #181411; border-radius: 12px; box-shadow: 4px 4px 0px #181411;">
-                Unlock ProMapper on This Device
+              <a href="${unlockLink}" style="display: inline-block; padding: 14px 28px; background: #ffbe0b; color: #1e1714; text-decoration: none; font-weight: 900; font-size: 16px; border: 3px solid #1e1714; border-radius: 12px; box-shadow: 4px 4px 0px #1e1714;">
+                Open ProMapper Passport
               </a>
             </div>
-            <p style="font-size: 13px; color: #726559;">
-              The card is already on this device. Open the Supporter panel to
-              see it, or use the link above on another device.
-            </p>
             <p style="font-size: 12px; color: #8e8072; margin-top: 24px; border-top: 1px solid #e2d9cd; padding-top: 12px;">
               ProMapper by Pablo Alvarado · Zero tracking, zero surveillance.
             </p>
           </div>
         `,
+        text:
+          `${options.name}\nPassport code: ${options.code}\n4-word passkey: ${options.phrase}\n\nOpen ProMapper: ${unlockLink}\n`,
       }),
     });
+    if (!res.ok) {
+      console.error("[CheckoutStore] Resend rejected email:", res.status);
+      return { sent: false, error: "The email did not send. Try again." };
+    }
+    return { sent: true };
   } catch (err) {
     console.error("[CheckoutStore] Resend email error (non-fatal):", err);
+    return { sent: false, error: "The email did not send. Try again." };
   }
 }

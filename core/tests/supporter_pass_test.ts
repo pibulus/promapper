@@ -2,13 +2,14 @@
 
 import { assertEquals, assertNotEquals } from "./_assert.ts";
 import {
+  getPassportSecret,
   mintSupporterPassport,
   redeemSupporterCode,
   signLegacySupporterPass,
   verifySupporterPass,
 } from "../../services/supporterPass.ts";
 
-const TEST_SECRET = "test-secret-promapper-2026";
+const TEST_SECRET = "test-secret-promapper-2026-32chars!!";
 
 function payloadOf(token: string): Record<string, unknown> {
   const part = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
@@ -197,4 +198,35 @@ Deno.test("master codes come from env, and only from env", async () => {
   }
   // Unset env means no master codes at all — not a fallback list.
   assertEquals(await verifySupporterPass("OTTER-HARBOUR-9"), null);
+});
+
+Deno.test("getPassportSecret fails closed in production when secret is missing or under 32 chars", () => {
+  Deno.env.set("DENO_DEPLOYMENT_ID", "prod-deploy-123");
+  Deno.env.set("PROMAPPER_LICENSE_SECRET", TEST_SECRET);
+  try {
+    Deno.env.delete("SOFTSTACK_PASSPORT_SECRET");
+    let threwMissing = false;
+    try {
+      getPassportSecret();
+    } catch {
+      threwMissing = true;
+    }
+    assertEquals(threwMissing, true);
+
+    Deno.env.set("SOFTSTACK_PASSPORT_SECRET", "too-short-16-chr");
+    let threwShort = false;
+    try {
+      getPassportSecret();
+    } catch {
+      threwShort = true;
+    }
+    assertEquals(threwShort, true);
+
+    Deno.env.set("SOFTSTACK_PASSPORT_SECRET", TEST_SECRET);
+    assertEquals(getPassportSecret(), TEST_SECRET);
+  } finally {
+    Deno.env.delete("DENO_DEPLOYMENT_ID");
+    Deno.env.delete("SOFTSTACK_PASSPORT_SECRET");
+    Deno.env.delete("PROMAPPER_LICENSE_SECRET");
+  }
 });
