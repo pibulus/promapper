@@ -1,17 +1,28 @@
 // ProMapper is the fourth Passport stamp. This pins the shared vector, the
-// rendered card, the vendored hashes, and the committed static card.css.
+// rendered card, the vendored hashes, the pinned manifest SHA-256, and the
+// committed static card.css.
 
 import { assertEquals } from "./_assert.ts";
 import {
   codeInput,
+  deriveLegacyPhrase,
   formatCode,
   generateMemberIdentity,
+  getSyncRoomId,
   idInput,
   normalizeCode,
+  parseFourWordPasskey,
+  PASSPHRASE_ENTROPY_BITS,
+  phraseFromHash,
+  phraseInput,
   renderMembershipCard,
   selectSkin,
   stampsFor,
+  WORDS,
 } from "../../utils/softstack-passport/index.js";
+
+const EXPECTED_MANIFEST_SHA256 =
+  "c4169f1c7bc0cfe2a455533f7194e6ee67760a2af2159920114b707c05259ced";
 
 const vectors = JSON.parse(
   await Deno.readTextFile(
@@ -21,11 +32,10 @@ const vectors = JSON.parse(
     ),
   ),
 );
-const manifest = JSON.parse(
-  await Deno.readTextFile(
-    new URL("../../utils/softstack-passport/manifest.json", import.meta.url),
-  ),
+const manifestBytes = await Deno.readFile(
+  new URL("../../utils/softstack-passport/manifest.json", import.meta.url),
 );
+const manifest = JSON.parse(new TextDecoder().decode(manifestBytes));
 
 const encoder = new TextEncoder();
 const hex = (bytes: Uint8Array) =>
@@ -54,18 +64,50 @@ async function sha256(value: Uint8Array) {
   return hex(new Uint8Array(await crypto.subtle.digest("SHA-256", data)));
 }
 
-Deno.test("Passport: ProMapper shares the vector code and identity", async () => {
-  const digest = await hmacHex(codeInput(vectors.seed), vectors.secret);
+Deno.test("Passport: bank entropy >= 44 bits (4,096 curated words = 48 bits)", () => {
+  assertEquals(WORDS.length, 4096);
+  assertEquals(new Set(WORDS).size, 4096);
+  assertEquals(PASSPHRASE_ENTROPY_BITS >= 44, true);
+  assertEquals(PASSPHRASE_ENTROPY_BITS, 48);
+});
+
+Deno.test("Passport: ProMapper shares the vector phrase, code, and identity", async () => {
+  const phraseDigest = await hmacHex(phraseInput(vectors.seed), vectors.secret);
+  const phrase = phraseFromHash(phraseDigest);
+  assertEquals(phrase, vectors.phrase);
+
+  const digest = await hmacHex(codeInput(phrase), vectors.secret);
   const code = formatCode(digest.slice(0, 12));
   assertEquals(code, vectors.code);
   assertEquals(normalizeCode(`  ${code.toLowerCase()}  `), vectors.code);
 
   const hash = await sha256(encoder.encode(idInput(code)));
-  const identity = generateMemberIdentity(hash, code);
+  const identity = generateMemberIdentity(hash, code, { phrase });
   assertEquals(identity.name, vectors.identity.name);
   assertEquals(identity.phrase, vectors.identity.phrase);
   assertEquals(identity.memberId, vectors.code);
-  assertEquals(identity.name, "Glitch Walrus");
+  assertEquals(identity.name, "Quiet Tapir");
+  assertEquals(getSyncRoomId(phrase), vectors.syncRoomId);
+
+  // Legacy holder keeps stored name and legacy phrase
+  const legacyIdentity = generateMemberIdentity(
+    vectors.legacy.vaultHash,
+    vectors.legacy.code,
+  );
+  assertEquals(legacyIdentity.name, vectors.legacy.name);
+  assertEquals(
+    deriveLegacyPhrase(vectors.legacy.vaultHash),
+    vectors.legacy.phrase,
+  );
+
+  // Phrase with one wrong word fails cleanly in < 50ms
+  const t0 = performance.now();
+  assertEquals(parseFourWordPasskey(vectors.phrase)?.phrase, vectors.phrase);
+  assertEquals(
+    parseFourWordPasskey("umbra-scanner-amplify-notawordinbank"),
+    null,
+  );
+  assertEquals(performance.now() - t0 < 50, true);
 });
 
 Deno.test("Passport: ProMapper is a first-class stamp", () => {
@@ -82,32 +124,47 @@ Deno.test("Passport: the vector resolves the shared card skin and palette", asyn
   assertEquals(skin.choices, vectors.card.choices);
 });
 
-Deno.test("Passport: the shared renderer draws the ProMapper card", async () => {
+Deno.test("Passport: resting card masks words and omits QR; reveals on demand", async () => {
   const hash = await sha256(encoder.encode(idInput(vectors.code)));
-  const identity = generateMemberIdentity(hash, vectors.code);
+  const identity = generateMemberIdentity(hash, vectors.code, {
+    phrase: vectors.phrase,
+  });
   const skin = selectSkin(hash);
-  const html = renderMembershipCard({ identity, skin, appName: "ProMapper" });
+  const resting = renderMembershipCard({
+    identity,
+    skin,
+    appName: "ProMapper",
+    qrUrl: "https://promapper.app/#sync=test",
+    qrImageUrl: "data:image/png;base64,AAAA",
+  });
 
-  assertEquals(html.includes('data-passport-name="Glitch Walrus"'), true);
+  assertEquals(resting.includes('data-passport-name="Quiet Tapir"'), true);
+  assertEquals(resting.includes('data-passport-masked="true"'), true);
+  assertEquals(resting.includes(vectors.phrase), false);
+  assertEquals(resting.includes("data:image/png;base64,AAAA"), false);
+  assertEquals(resting.includes(">••••• ••••• ••••• •••••</p>"), true);
+
+  const html = renderMembershipCard({
+    identity,
+    skin,
+    appName: "ProMapper",
+    revealed: true,
+    showQr: true,
+    qrUrl: "https://promapper.app/#sync=test",
+    qrImageUrl: "data:image/png;base64,AAAA",
+  });
+
   assertEquals(
-    html.includes('data-passport-phrase="glitch-walrus-ripples-harbourside"'),
+    html.includes(`data-passport-phrase="${vectors.phrase}"`),
     true,
   );
-  assertEquals(html.includes('data-member-id="SS-03D2-9722-1310"'), true);
-  assertEquals(html.includes('data-palette="Grape Soda"'), true);
-  assertEquals(html.includes('data-holo="prismatic"'), true);
-  assertEquals(html.includes('data-frame="soft"'), true);
-  assertEquals(html.includes('data-texture="halftone"'), true);
-  assertEquals(html.includes('data-type="display"'), true);
-  assertEquals(html.includes('data-avatar="adventurer"'), true);
-  assertEquals(html.includes(">Glitch Walrus</p>"), true);
-  assertEquals(
-    html.includes(">glitch-walrus-ripples-harbourside</p>"),
-    true,
-  );
+  assertEquals(html.includes('data-member-id="SS-FA39-DE19-4608"'), true);
+  assertEquals(html.includes(">Quiet Tapir</p>"), true);
+  assertEquals(html.includes(`>${vectors.phrase}</p>`), true);
 });
 
-Deno.test("Passport: vendored files and static card.css match", async () => {
+Deno.test("Passport: vendored files, pinned manifest hash, and static card.css match", async () => {
+  assertEquals(await sha256(manifestBytes), EXPECTED_MANIFEST_SHA256);
   for (const [file, expected] of Object.entries(manifest.files)) {
     const bytes = await Deno.readFile(
       new URL(`../../utils/softstack-passport/${file}`, import.meta.url),

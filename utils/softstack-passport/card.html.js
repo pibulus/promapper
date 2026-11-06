@@ -10,6 +10,7 @@
  * here without a rule there is a silent visual break.
  */
 
+import { maskPassphrase } from "./identity.js";
 import { hexToRgba, mixHex } from "./palettes.js";
 
 function escapeHtml(value) {
@@ -89,6 +90,8 @@ const GHOST_SEAL = `<div class="ghost-seal" aria-hidden="true">
  * @param {boolean} [options.customAvatar] Show the reset affordance
  * @param {string} [options.qrUrl] Anchor href for the sync stamp
  * @param {string} [options.qrImageUrl] Data-URI QR image; omit for the ghost seal
+ * @param {boolean} [options.revealed] Show the 4 words instead of the resting mask
+ * @param {boolean} [options.showQr] Show the pairing QR instead of the resting ghost seal
  * @param {boolean} [options.copied]
  * @param {boolean} [options.squishing]
  * @param {boolean} [options.reducedMotion]
@@ -103,12 +106,15 @@ export function renderMembershipCard({
 	customAvatar = false,
 	qrUrl = "",
 	qrImageUrl = "",
+	revealed = false,
+	showQr = false,
 	copied = false,
 	squishing = false,
 	reducedMotion = false,
 }) {
 	const name = identity?.name || "Passport Pending";
 	const phrase = identity?.phrase || identity?.memberId || "";
+	const displayPhrase = revealed ? phrase : maskPassphrase(phrase);
 	const memberId = identity?.memberId || "";
 	const initials = identity?.initials || "SS";
 	const isPlaceholder = Boolean(identity?.isFallback);
@@ -126,6 +132,11 @@ export function renderMembershipCard({
 	const tapHint = isPreview
 		? ""
 		: `<span class="passport-tap-hint">tap to copy</span>`;
+	const revealBtn = isPreview
+		? ""
+		: `<button type="button" class="passport-reveal-btn" data-passport-reveal aria-pressed="${
+				revealed ? "true" : "false"
+		  }">${revealed ? "Hide" : "Reveal"}</button>`;
 
 	const avatar = avatarUri
 		? `<img src="${escapeHtml(avatarUri)}" alt="" class="avatar-img" draggable="false" />`
@@ -135,12 +146,20 @@ export function renderMembershipCard({
 		? `<button type="button" class="avatar-reset" title="Reset to default avatar" aria-label="Reset custom Passport avatar">&times;</button>`
 		: "";
 
-	const qr = qrImageUrl
-		? `<a class="passport-qr-stamp" href="${escapeHtml(qrUrl)}" aria-label="Open ${escapeHtml(appName)} on another device with ${escapeHtml(phrase)}">
+	const qr = showQr && qrImageUrl && !isPreview
+		? `<a class="passport-qr-stamp" href="${escapeHtml(qrUrl)}" aria-label="Open ${escapeHtml(appName)} on another device">
 				<img src="${escapeHtml(qrImageUrl)}" alt="" decoding="async" referrerpolicy="no-referrer" loading="eager" />
 				<span class="qr-tap-hint" aria-hidden="true">tap to sync</span>
 			</a>`
-		: GHOST_SEAL;
+		: qrImageUrl && !isPreview
+			? `<button type="button" class="ghost-seal ghost-seal--interactive" data-passport-qr-toggle title="Pair a device" aria-label="Pair a device">
+			<svg class="ghost-mark" viewBox="0 0 32 36" focusable="false" aria-hidden="true">
+				<path d="M16 3c-7.1 0-12 5.4-12 13.1V32l3.5-2.2L11 32l3.5-2.2L18 32l3.5-2.2L25 32l3-1.9v-14C28 8.4 23.1 3 16 3Z" />
+				<circle cx="11.5" cy="16" r="2.4" />
+				<circle cx="20.5" cy="16" r="2.4" />
+			</svg>
+		</button>`
+			: GHOST_SEAL;
 
 	const classes = [
 		"passport-card",
@@ -152,7 +171,11 @@ export function renderMembershipCard({
 		.filter(Boolean)
 		.join(" ");
 
-	return `<div class="${classes}" style="${escapeHtml(cardStyleFor(skin))}" role="button" tabindex="0" aria-label="${cardAria}" data-passport-card data-card-app="${escapeHtml(appName)}" data-passport-name="${escapeHtml(name)}" data-passport-phrase="${escapeHtml(phrase)}" data-member-id="${escapeHtml(memberId)}" data-palette="${escapeHtml(skin.palette.name)}" data-holo="${escapeHtml(skin.choices.holo)}" data-frame="${escapeHtml(skin.choices.frame)}" data-texture="${escapeHtml(skin.choices.texture)}" data-type="${escapeHtml(skin.choices.type)}" data-avatar="${escapeHtml(skin.avatarStyle)}">
+	const phraseAttr = revealed
+		? ` data-passport-phrase="${escapeHtml(phrase)}"`
+		: ` data-passport-masked="true"`;
+
+	return `<div class="${classes}" style="${escapeHtml(cardStyleFor(skin))}" role="button" tabindex="0" aria-label="${cardAria}" data-passport-card data-card-app="${escapeHtml(appName)}" data-passport-name="${escapeHtml(name)}"${phraseAttr} data-member-id="${escapeHtml(memberId)}" data-palette="${escapeHtml(skin.palette.name)}" data-holo="${escapeHtml(skin.choices.holo)}" data-frame="${escapeHtml(skin.choices.frame)}" data-texture="${escapeHtml(skin.choices.texture)}" data-type="${escapeHtml(skin.choices.type)}" data-avatar="${escapeHtml(skin.avatarStyle)}">
 		<div class="passport-substrate" aria-hidden="true"></div>
 		<div class="passport-glow" aria-hidden="true"></div>
 		<div class="holofoil" aria-hidden="true"></div>
@@ -187,8 +210,8 @@ export function renderMembershipCard({
 			}" aria-label="${
 				isPreview ? "Passport preview (sample)" : "Click to copy 4-word passkey"
 			}">
-				<p class="passport-label"><span>${passkeyLabel}</span>${copiedBadge}${tapHint}</p>
-				<p class="passport-member-id">${escapeHtml(phrase)}</p>
+				<p class="passport-label"><span>${passkeyLabel}</span>${revealBtn}${copiedBadge}${tapHint}</p>
+				<p class="passport-member-id">${escapeHtml(displayPhrase)}</p>
 			</div>
 
 			${qr}

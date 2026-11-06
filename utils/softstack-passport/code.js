@@ -1,9 +1,12 @@
-// SoftStack Passport — one code, one identity, every app.
-// Pure helpers only: each runtime supplies HMAC/SHA-256 with its own crypto.
+// SoftStack Passport — the 4-word passphrase is the root credential; the SS-
+// code is the derived, public handle across TalkType, ZipList, QRBuddy, and ProMapper.
+// Pure helpers only: each runtime supplies HMAC/SHA-256/PBKDF2 with its own crypto.
 
 export const CODE_PREFIX = "SS";
+export const PHRASE_NAMESPACE = "softstack-passport-phrase:";
 export const CODE_NAMESPACE = "softstack-passport-code:";
 export const ID_NAMESPACE = "softstack-passport-id:";
+export const KDF_NAMESPACE = "softstack-passport-kdf:";
 export const TOKEN_TIER = "supporter";
 export const APPS = ["talktype", "ziplist", "qrbuddy", "promapper"];
 
@@ -31,9 +34,18 @@ export function sameCode(a, b) {
   return left !== "" && left === normalizeCode(b);
 }
 
-/** `softstack-passport-code:<seed>` is what the HMAC consumes. */
-export function codeInput(seed) {
-  return `${CODE_NAMESPACE}${String(seed ?? "").trim()}`;
+/** `softstack-passport-phrase:<seed>` feeds deterministic seed → 4-word phrase derivation. */
+export function phraseInput(seed) {
+  return `${PHRASE_NAMESPACE}${String(seed ?? "").trim()}`;
+}
+
+/**
+ * `softstack-passport-code:<phrase>` is what the one-way HMAC consumes.
+ * Given a phrase, any app holding SOFTSTACK_PASSPORT_SECRET derives the same
+ * SS-XXXX-XXXX-XXXX handle; given the handle, the phrase cannot be recovered.
+ */
+export function codeInput(phraseOrSeed) {
+  return `${CODE_NAMESPACE}${String(phraseOrSeed ?? "").trim()}`;
 }
 
 /** `softstack-passport-id:<code>` is what the SHA-256 consumes. */
@@ -41,6 +53,11 @@ export function idInput(code) {
   const normalized = normalizeCode(code);
   if (!normalized) throw new Error("Not a SoftStack passport code");
   return `${ID_NAMESPACE}${normalized}`;
+}
+
+/** `softstack-passport-kdf:<phrase>` domain-separates PBKDF2/scrypt passkey indexing. */
+export function kdfInput(phrase) {
+  return `${KDF_NAMESPACE}${String(phrase ?? "").trim().toLowerCase()}`;
 }
 
 /** App names are stamps on one passport, never a separate identity. */

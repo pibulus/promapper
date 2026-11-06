@@ -6,6 +6,7 @@ import {
   getCheckout,
   markCheckoutPaid,
   savePendingCheckout,
+  sendSupporterReceiptEmail,
 } from "../../services/checkoutStore.ts";
 import { verifySupporterPass } from "../../services/supporterPass.ts";
 
@@ -66,4 +67,15 @@ Deno.test("a repeated COMPLETED webhook keeps the first pass", async () => {
   const again = await markCheckoutPaid({ checkoutId, paymentId: "sq-1" });
   assertEquals(again?.licenseToken, first?.licenseToken);
   assertEquals(again?.paidAt, first?.paidAt);
+});
+
+Deno.test("sendSupporterReceiptEmail validates email before checking RESEND_API_KEY", async () => {
+  const res = await sendSupporterReceiptEmail({
+    email: "not-an-email",
+    code: "SS-FA39-DE19-4608",
+    name: "Quiet Tapir",
+    phrase: "umbra-scanner-amplify-cosmos",
+  });
+  assertEquals(res.sent, false);
+  assertEquals(res.error, "That email address looks off.");
 });

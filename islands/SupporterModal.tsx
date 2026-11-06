@@ -45,12 +45,32 @@ function stripCheckoutParam() {
 function stripPassportParams() {
   if (typeof window === "undefined") return;
   const url = new URL(window.location.href);
-  if (!url.searchParams.has("passport") && !url.searchParams.has("pass")) {
-    return;
+  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+  let changed = false;
+  if (url.searchParams.has("passport") || url.searchParams.has("pass")) {
+    url.searchParams.delete("passport");
+    url.searchParams.delete("pass");
+    changed = true;
   }
-  url.searchParams.delete("passport");
-  url.searchParams.delete("pass");
-  history.replaceState(null, "", url.toString());
+  if (
+    hashParams.has("phrase") ||
+    hashParams.has("unlock") ||
+    hashParams.has("passport")
+  ) {
+    hashParams.delete("phrase");
+    hashParams.delete("unlock");
+    hashParams.delete("passport");
+    const nextHash = hashParams.toString();
+    url.hash = nextHash ? `#${nextHash}` : "";
+    changed = true;
+  }
+  if (changed) {
+    history.replaceState(
+      null,
+      "",
+      url.pathname + (url.search || "") + (url.hash || ""),
+    );
+  }
 }
 
 export default function SupporterModal() {
@@ -60,9 +80,9 @@ export default function SupporterModal() {
   const activeTier = supporterTierSignal.value;
   const expiry = supporterExpirySignal.value;
   const storedPassport = passportDetailsSignal.value;
-  const passportRestoreUrl = storedPassport
-    ? `${globalThis.location?.origin ?? ""}/?passport=${
-      encodeURIComponent(storedPassport.code)
+  const passportRestoreUrl = storedPassport?.phrase
+    ? `${globalThis.location?.origin ?? ""}/#phrase=${
+      encodeURIComponent(storedPassport.phrase)
     }`
     : "";
   const activeByoKey = byokKeySignal.value;
@@ -97,30 +117,44 @@ export default function SupporterModal() {
   const [byoTestStatus, setByoTestStatus] = useState<string | null>(null);
   const [isTestingByo, setIsTestingByo] = useState(false);
 
-  // Arrive with ?passport=SS-... (card QR) or ?pass=token (old email link),
-  // then confirm whatever is stored. The code lookup is the short link the
-  // card can carry in a scannable QR.
+  // Arrive with #phrase=<4-words> (card QR or recovery email) or ?pass=token,
+  // then confirm whatever is stored. Bare ?passport=SS-... codes never restore
+  // a token and are scrubbed cleanly.
   useEffect(() => {
     let cancelled = false;
     const bootstrap = async () => {
       if (typeof window === "undefined") return;
-      const params = new URL(window.location.href).searchParams;
-      const code = params.get("passport");
+      const url = new URL(window.location.href);
+      const params = url.searchParams;
+      const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+      const phrase = (
+        hashParams.get("phrase") ||
+        hashParams.get("unlock") ||
+        ""
+      ).trim();
+      const legacyCode = params.get("passport");
       const legacyPass = params.get("pass");
       try {
-        if (code) {
-          const res = await fetch(
-            `/api/supporter/passport?code=${encodeURIComponent(code)}`,
-            { headers: { "Cache-Control": "no-store" } },
-          );
+        if (phrase) {
+          stripPassportParams();
+          const res = await fetch("/api/supporter/redeem", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Cache-Control": "no-store",
+            },
+            body: JSON.stringify({ phrase }),
+          });
           const data = await res.json().catch(() => ({}));
           if (cancelled) return;
           if (res.ok && typeof data.license === "string") {
             activatePass(data.license);
-            stripPassportParams();
           }
         } else if (legacyPass) {
           if (activatePass(legacyPass)) stripPassportParams();
+        } else if (legacyCode) {
+          stripPassportParams();
+          supporterModalOpen.value = true;
         }
       } catch {
         // A dead link is not an error state; the redeem form still works.

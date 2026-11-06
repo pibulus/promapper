@@ -4,10 +4,20 @@ import { assertEquals, assertNotEquals } from "./_assert.ts";
 import {
   getPassportSecret,
   mintSupporterPassport,
+  passportForSeed,
   redeemSupporterCode,
   signLegacySupporterPass,
   verifySupporterPass,
 } from "../../services/supporterPass.ts";
+import {
+  clearPhraseFailures,
+  getPassportRecordByPhrase,
+  isPhraseLockedOut,
+  recordPhraseFailure,
+  savePassportRecord,
+} from "../../services/passportStore.ts";
+import { handler as passportHandler } from "../../routes/api/supporter/passport.ts";
+import { handler as redeemHandler } from "../../routes/api/supporter/redeem.ts";
 
 const TEST_SECRET = "test-secret-promapper-2026-32chars!!";
 
@@ -228,5 +238,108 @@ Deno.test("getPassportSecret fails closed in production when secret is missing o
     Deno.env.delete("DENO_DEPLOYMENT_ID");
     Deno.env.delete("SOFTSTACK_PASSPORT_SECRET");
     Deno.env.delete("PROMAPPER_LICENSE_SECRET");
+  }
+});
+
+Deno.test("passportForSeed derives 4-word phrase first and one-way SS- code from phrase", async () => {
+  const fromSeed = await passportForSeed(
+    "checkout-test-001",
+    "softstack-test-secret-32-chars-min!!",
+  );
+  assertEquals(fromSeed.phrase, "umbra-scanner-amplify-cosmos");
+  assertEquals(fromSeed.code, "SS-FA39-DE19-4608");
+  assertEquals(fromSeed.name, "Quiet Tapir");
+
+  // Feeding the SS- code back as a seed does NOT reverse-derive the phrase
+  const fromCode = await passportForSeed(
+    fromSeed.code,
+    "softstack-test-secret-32-chars-min!!",
+  );
+  assertNotEquals(fromCode.phrase, fromSeed.phrase);
+});
+
+Deno.test("savePassportRecord indexes by PBKDF2 passkey hash, rejects bare SS- codes on redeem, and enforces 5-miss lockout", async () => {
+  Deno.env.set("SOFTSTACK_PASSPORT_SECRET", TEST_SECRET);
+  try {
+    const minted = await mintSupporterPassport({
+      seed: `checkout:phrase-test-${Date.now()}`,
+      checkoutId: `chk-${Date.now()}`,
+      email: "pablo@promapper.app",
+      secret: TEST_SECRET,
+    });
+
+    await savePassportRecord({
+      code: minted.code,
+      name: minted.name,
+      phrase: minted.phrase,
+      licenseToken: minted.token,
+      email: "pablo@promapper.app",
+      checkoutId: "chk-phrase-1",
+      exp: minted.exp,
+    });
+
+    const foundByPhrase = await getPassportRecordByPhrase(minted.phrase);
+    assertEquals(foundByPhrase?.code, minted.code);
+    assertEquals(foundByPhrase?.licenseToken, minted.token);
+
+    // GET /api/supporter/passport?code=SS-... is retired (410)
+    const getRes = await passportHandler.GET!(
+      new Request(
+        `https://promapper.app/api/supporter/passport?code=${minted.code}`,
+      ),
+      {} as never,
+    );
+    assertEquals(getRes.status, 410);
+
+    // POST /api/supporter/redeem rejects bare SS- code with 400
+    const bareRedeemRes = await redeemHandler.POST!(
+      new Request("https://promapper.app/api/supporter/redeem", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ code: minted.code }),
+      }),
+      {} as never,
+    );
+    assertEquals(bareRedeemRes.status, 400);
+    const bareBody = await bareRedeemRes.json();
+    assertEquals(bareBody.valid, false);
+
+    // POST /api/supporter/redeem accepts the 4-word passkey
+    const phraseRedeemRes = await redeemHandler.POST!(
+      new Request("https://promapper.app/api/supporter/redeem", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ code: minted.phrase }),
+      }),
+      {} as never,
+    );
+    assertEquals(phraseRedeemRes.status, 200);
+    const phraseBody = await phraseRedeemRes.json();
+    assertEquals(phraseBody.valid, true);
+    assertEquals(phraseBody.passport?.code, minted.code);
+
+    // 5-miss per-phrase lockout
+    const targetPhrase = "amber-harbor-velvet-lantern";
+    await clearPhraseFailures(targetPhrase);
+    assertEquals(await isPhraseLockedOut(targetPhrase), false);
+    for (let i = 0; i < 4; i++) {
+      await recordPhraseFailure(targetPhrase);
+      assertEquals(await isPhraseLockedOut(targetPhrase), false);
+    }
+    await recordPhraseFailure(targetPhrase);
+    assertEquals(await isPhraseLockedOut(targetPhrase), true);
+
+    const lockedRedeemRes = await redeemHandler.POST!(
+      new Request("https://promapper.app/api/supporter/redeem", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ code: targetPhrase }),
+      }),
+      {} as never,
+    );
+    assertEquals(lockedRedeemRes.status, 429);
+    await clearPhraseFailures(targetPhrase);
+  } finally {
+    Deno.env.delete("SOFTSTACK_PASSPORT_SECRET");
   }
 });

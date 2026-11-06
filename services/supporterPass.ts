@@ -13,6 +13,9 @@ import {
   formatCode,
   generateMemberIdentity,
   idInput,
+  parseFourWordPasskey,
+  phraseFromHash,
+  phraseInput,
   stampsFor,
 } from "../utils/softstack-passport/index.js";
 
@@ -239,17 +242,52 @@ function nowSeconds(): number {
   return Math.floor(Date.now() / 1000);
 }
 
-/** Seed → SS code + the shared name/phrase. */
+/** Seed → 4-word root phrase → one-way SS code + the shared name/phrase. */
 export async function passportForSeed(
   seed: string,
   secret: string,
   codeHint?: string,
 ): Promise<PassportDetails> {
-  const digest = await hmacHex(codeInput(seed), secret);
+  const parsed = parseFourWordPasskey(seed);
+  const phrase = parsed
+    ? parsed.phrase
+    : phraseFromHash(await hmacHex(phraseInput(seed), secret));
+  const digest = await hmacHex(codeInput(phrase), secret);
   const code = codeHint || formatCode(digest.slice(0, 12));
   const hash = await sha256Hex(idInput(code));
-  const identity = generateMemberIdentity(hash, code);
+  const identity = generateMemberIdentity(hash, code, { phrase });
   return { code, name: identity.name, phrase: identity.phrase };
+}
+
+/** PBKDF2-SHA256 (100k iterations) passkey hash for indexing and lockout. */
+export async function hashPasskeyPhrase(
+  phrase: string,
+  secret = getPassportSecret(),
+): Promise<string> {
+  const parsed = parseFourWordPasskey(phrase);
+  if (!parsed) return "";
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(parsed.phrase),
+    "PBKDF2",
+    false,
+    ["deriveBits"],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: enc.encode(`softstack-passkey-v1:${secret}`),
+      iterations: 100000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    256,
+  );
+  return Array.from(
+    new Uint8Array(bits),
+    (b) => b.toString(16).padStart(2, "0"),
+  ).join("");
 }
 
 /** Extract or derive PassportDetails from a verified SupporterPayload. */

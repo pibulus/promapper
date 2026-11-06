@@ -1,12 +1,19 @@
-// GET /api/supporter/passport?code=SS-XXXX-XXXX-XXXX
-// Short-link lookup for the card's QR. The code is the handle; the token is
-// re-verified before it leaves, so a deleted/expired record cannot leak a pass.
+// GET /api/supporter/passport — retired (bare SS- code is a public handle, never a credential).
+// POST /api/supporter/passport — restores a Passport given its 4-word passkey.
 
 import { Handlers } from "$fresh/server.ts";
-import { getPassportRecord } from "@services/passportStore.ts";
+import {
+  clearPhraseFailures,
+  getPassportRecordByPhrase,
+  isPhraseLockedOut,
+  recordPhraseFailure,
+} from "@services/passportStore.ts";
 import { verifySupporterPass } from "@services/supporterPass.ts";
 import { guardPublicRequest } from "@services/requestGuard.ts";
-import { normalizeCode } from "../../../utils/softstack-passport/index.js";
+import {
+  isCode,
+  parseFourWordPasskey,
+} from "../../../utils/softstack-passport/index.js";
 
 const NO_STORE = {
   "Content-Type": "application/json",
@@ -15,22 +22,70 @@ const NO_STORE = {
 };
 
 export const handler: Handlers = {
-  async GET(req) {
+  GET(_req) {
+    return new Response(
+      JSON.stringify({
+        error:
+          "Code-only lookup is retired. Enter the 4-word passkey to restore this Passport.",
+      }),
+      {
+        status: 410,
+        headers: NO_STORE,
+      },
+    );
+  },
+
+  async POST(req) {
     const limited = guardPublicRequest(req);
     if (limited) return limited;
 
-    const code = normalizeCode(
-      new URL(req.url).searchParams.get("code") ?? "",
-    );
-    if (!code) {
-      return new Response(JSON.stringify({ error: "Invalid Passport code" }), {
-        status: 400,
-        headers: NO_STORE,
-      });
+    const body = await req.json().catch(() => ({}));
+    const rawInput = typeof body.phrase === "string"
+      ? body.phrase.trim()
+      : typeof body.code === "string"
+      ? body.code.trim()
+      : "";
+
+    if (!rawInput || isCode(rawInput)) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Enter the 4-word passkey to restore this Passport. The SS- code is a public handle.",
+        }),
+        {
+          status: 400,
+          headers: NO_STORE,
+        },
+      );
     }
 
-    const record = await getPassportRecord(code);
+    const parsed = parseFourWordPasskey(rawInput);
+    if (!parsed) {
+      return new Response(
+        JSON.stringify({ error: "Enter a valid 4-word passkey." }),
+        {
+          status: 400,
+          headers: NO_STORE,
+        },
+      );
+    }
+
+    if (await isPhraseLockedOut(parsed.phrase)) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Too many attempts for this passkey. Wait 15 minutes and try again.",
+        }),
+        {
+          status: 429,
+          headers: NO_STORE,
+        },
+      );
+    }
+
+    const record = await getPassportRecordByPhrase(parsed.phrase);
     if (!record) {
+      await recordPhraseFailure(parsed.phrase);
       return new Response(JSON.stringify({ error: "Passport not found" }), {
         status: 404,
         headers: NO_STORE,
@@ -39,11 +94,14 @@ export const handler: Handlers = {
 
     const verified = await verifySupporterPass(record.licenseToken);
     if (!verified) {
+      await recordPhraseFailure(parsed.phrase);
       return new Response(JSON.stringify({ error: "Passport expired" }), {
         status: 404,
         headers: NO_STORE,
       });
     }
+
+    await clearPhraseFailures(parsed.phrase);
 
     return new Response(
       JSON.stringify({

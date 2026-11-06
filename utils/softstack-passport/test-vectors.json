@@ -1,25 +1,40 @@
 {
-  "apps": ["talktype", "ziplist", "qrbuddy", "promapper"],
+  "apps": [
+    "talktype",
+    "ziplist",
+    "qrbuddy",
+    "promapper"
+  ],
   "secret": "softstack-test-secret-32-chars-min!!",
   "seed": "checkout-test-001",
-  "code": "SS-03D2-9722-1310",
-  "vaultHash": "38fd730966eb59a53bd9fc5957ba30496c3672c98eb123d2aaa8a7e6e8f8931c",
+  "phrase": "umbra-scanner-amplify-cosmos",
+  "code": "SS-FA39-DE19-4608",
+  "vaultHash": "9c8320eb927e461d729522c52689ba6324e3a74dc55e51262ef7c2401adbe18f",
+  "syncRoomId": "81d1897cabe6f12b6ffc097e85b29f45114561af343752699f8e635f2dfd2360",
+  "entropyBits": 48,
+  "wordCount": 4096,
   "identity": {
-    "name": "Glitch Walrus",
-    "phrase": "glitch-walrus-ripples-harbourside",
-    "memberId": "SS-03D2-9722-1310",
+    "name": "Quiet Tapir",
+    "phrase": "umbra-scanner-amplify-cosmos",
+    "memberId": "SS-FA39-DE19-4608",
     "bg": "fff1a8",
-    "shape": "f0c080"
+    "shape": "f4afa3"
   },
   "card": {
     "skin": "shuffle",
-    "palette": "Grape Soda",
+    "palette": "Sunset",
     "choices": {
-      "holo": "prismatic",
+      "holo": "pearl",
       "frame": "soft",
-      "texture": "halftone",
-      "type": "display",
-      "avatar": "adventurer"
+      "texture": "none",
+      "type": "airy",
+      "avatar": "bottts"
     }
+  },
+  "legacy": {
+    "code": "SS-03D2-9722-1310",
+    "vaultHash": "38fd730966eb59a53bd9fc5957ba30496c3672c98eb123d2aaa8a7e6e8f8931c",
+    "name": "Glitch Walrus",
+    "phrase": "glitch-walrus-ripples-harbourside"
   }
 }

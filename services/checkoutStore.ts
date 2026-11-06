@@ -230,8 +230,14 @@ export async function sendSupporterReceiptEmail(options: {
   checkoutId?: string;
   appOrigin?: string;
 }): Promise<{ sent: boolean; error?: string }> {
+  if (!options.email || !options.email.includes("@")) {
+    return {
+      sent: false,
+      error: "That email address looks off.",
+    };
+  }
   const resendApiKey = Deno.env.get("RESEND_API_KEY")?.trim();
-  if (!resendApiKey || !options.email.includes("@")) {
+  if (!resendApiKey) {
     return {
       sent: false,
       error: "Passport email needs server setup first.",
@@ -243,8 +249,8 @@ export async function sendSupporterReceiptEmail(options: {
     Deno.env.get("APP_URL")?.trim() ||
     "https://promapper.app"
   ).replace(/\/+$/, "");
-  // Short code link, not the raw token: scannable, and safe in mail logs.
-  const unlockLink = `${appUrl}/?passport=${encodeURIComponent(options.code)}`;
+  // Fragment link carrying the 4-word passkey, never in server query logs.
+  const unlockLink = `${appUrl}/#phrase=${encodeURIComponent(options.phrase)}`;
   const from = Deno.env.get("RESEND_FROM_EMAIL")?.trim() ||
     "ProMapper <hello@promapper.app>";
   const safeName = escapeHtml(options.name || "SoftStack Passport");
