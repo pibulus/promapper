@@ -22,7 +22,7 @@ import {
 } from "../../utils/softstack-passport/index.js";
 
 const EXPECTED_MANIFEST_SHA256 =
-  "bafe5820caa6f1b97dacc421ca10ca4972a39a86659cef3a0b41f843f6f2d75b";
+  "d89419c336fcfa38118f1ba083df8a6f768f0f27708dfcfb50e5e35acbe5a748";
 
 const vectors = JSON.parse(
   await Deno.readTextFile(

@@ -4379,7 +4379,18 @@ export const PASSPHRASE_WORD_COUNT = 4;
 export const SYNC_PHRASE_COMBINATIONS = WORDS.length ** PASSPHRASE_WORD_COUNT;
 export const PASSPHRASE_ENTROPY_BITS = Math.log2(WORDS.length) * PASSPHRASE_WORD_COUNT;
 
-const WORD_SET = new Set(WORDS);
+// Typed words are accepted from the curated list PLUS the pre-Phase-2 banks.
+// The old model could emit a word the 4,096 list dropped ("harbourside" was
+// PLACES[30]), and those holders must still be able to type what they were
+// given. Accepting them here cannot move an index in WORDS: derivation hashes
+// the words as typed, and phraseFromHash still indexes the curated list.
+const WORD_SET = new Set([
+	...WORDS,
+	...ADJECTIVES.map((word) => word.toLowerCase()),
+	...ANIMALS.map((word) => word.toLowerCase()),
+	...VERBS.map((word) => word.toLowerCase()),
+	...PLACES.map((word) => word.toLowerCase()),
+]);
 
 // The word banks double as the display-name vocabulary and legacy passkey fallback.
 export { ADJECTIVES, ANIMALS, PLACES, VERBS };
