@@ -115,13 +115,30 @@ export function renderMembershipCard({
 }) {
 	const resolvedQrImage = qrImageUrl || qrSvg;
 	const name = identity?.name || "Passport Pending";
-	const phrase = identity?.phrase || identity?.memberId || "";
-	const displayPhrase = revealed ? phrase : maskPassphrase(phrase);
+	const phrase = identity?.phrase || "";
 	const memberId = identity?.memberId || "";
+	// A card with no supplied passkey holds only the public SS- code. Showing
+	// hash-derived words here (and copying them) handed holders a passkey that
+	// unlocked nothing; say Passport ID and show the code instead.
+	const hasPasskey = Boolean(phrase);
+	const displayPhrase = hasPasskey
+		? revealed
+			? phrase
+			: maskPassphrase(phrase)
+		: memberId;
 	const initials = identity?.initials || "SS";
 	const isPlaceholder = Boolean(identity?.isFallback);
 	const kicker = isPreview ? "Passport Preview" : `${appName} Passport`;
-	const passkeyLabel = isPreview ? "Sample Passkey" : "4-Word Passkey";
+	const passkeyLabel = isPreview
+		? "Sample Passkey"
+		: hasPasskey
+			? "4-Word Passkey"
+			: "Passport ID";
+	const chipLabel = isPreview
+		? "Passport preview (sample)"
+		: hasPasskey
+			? "Click to copy 4-word passkey"
+			: "Click to copy Passport ID";
 	const cardAria = isPlaceholder
 		? `${escapeHtml(appName)} passport placeholder`
 		: `${escapeHtml(appName)} passport${
@@ -134,7 +151,7 @@ export function renderMembershipCard({
 	const tapHint = isPreview
 		? ""
 		: `<span class="passport-tap-hint">tap to copy</span>`;
-	const revealBtn = isPreview
+	const revealBtn = isPreview || !hasPasskey
 		? ""
 		: `<button type="button" class="passport-reveal-btn" data-passport-reveal aria-pressed="${
 				revealed ? "true" : "false"
@@ -207,11 +224,7 @@ export function renderMembershipCard({
 		</div>
 
 		<div class="passport-bottom">
-			<div class="passport-id-chip" role="button" tabindex="0" title="${
-				isPreview ? "Passport preview (sample)" : "Click to copy 4-word passkey"
-			}" aria-label="${
-				isPreview ? "Passport preview (sample)" : "Click to copy 4-word passkey"
-			}">
+			<div class="passport-id-chip" role="button" tabindex="0" title="${chipLabel}" aria-label="${chipLabel}">
 				<p class="passport-label"><span>${passkeyLabel}</span>${revealBtn}${copiedBadge}${tapHint}</p>
 				<p class="passport-member-id">${escapeHtml(displayPhrase)}</p>
 			</div>

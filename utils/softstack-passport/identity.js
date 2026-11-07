@@ -4647,7 +4647,12 @@ export function generateMemberIdentity(vaultHash, code, options = {}) {
       .slice(0, 2)
       .map((w) => w[0].toUpperCase())
       .join("") || `${adj[0]}${animal[0]}`;
-  const phrase = explicitPhrase || phraseFromHash(hash);
+  // No phrase in the bank was supplied, so there is no passkey to show. The
+  // hash-derived words this used to invent (`phraseFromHash(hash)`) unlock
+  // nothing: the card's copy chip copied them, the emailed card printed them,
+  // and ZipList built a pairing QR out of them. Show only what a caller
+  // actually provided; everything downstream already falls back to the code.
+  const phrase = explicitPhrase;
   const legacyPhrase = deriveLegacyPhrase(hash);
 
   return {
