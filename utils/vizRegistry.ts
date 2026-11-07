@@ -8,7 +8,7 @@
  */
 
 import type { ComponentType } from "preact";
-import EmojimapViz from "./EmojimapViz.tsx";
+import EmojimapViz from "@islands/EmojimapViz.tsx";
 
 export interface VizEntry {
   id: string;

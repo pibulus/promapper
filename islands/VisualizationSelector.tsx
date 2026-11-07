@@ -8,7 +8,7 @@
 
 import { useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
-import { defaultVizId, vizRegistry } from "./vizRegistry.ts";
+import { defaultVizId, vizRegistry } from "@utils/vizRegistry.ts";
 
 export default function VisualizationSelector() {
   const activeViz = useSignal<string>(defaultVizId);

@@ -25,8 +25,35 @@ import { FreshContext } from "$fresh/server.ts";
  * feature silently, with nothing pointing back at this file. It wants its own
  * pass with the origin list verified against the running app.
  */
+export const LEGACY_VERTICAL_REDIRECTS: Readonly<Record<string, string>> = {
+  "/brainstorming": "/for/brainstorming",
+  "/care": "/for/care",
+  "/clients": "/for/clients",
+  "/dnd": "/for/dnd",
+  "/meetings": "/for/meetings",
+  "/research": "/for/research",
+  "/schools": "/for/schools",
+  "/clientes": "/es/clientes",
+  "/consultas": "/es/consultas",
+  "/escuelas": "/es/escuelas",
+  "/ideas": "/es/ideas",
+  "/investigacion": "/es/investigacion",
+  "/juntas": "/es/juntas",
+  "/rol": "/es/rol",
+};
+
 export async function handler(req: Request, ctx: FreshContext) {
-  const resp = await ctx.next();
+  const path = new URL(req.url).pathname;
+  const redirectTarget = req.method === "GET" || req.method === "HEAD"
+    ? LEGACY_VERTICAL_REDIRECTS[path]
+    : undefined;
+
+  const resp = redirectTarget
+    ? new Response(null, {
+      status: 301,
+      headers: { Location: redirectTarget },
+    })
+    : await ctx.next();
 
   resp.headers.set(
     "Strict-Transport-Security",
@@ -36,7 +63,6 @@ export async function handler(req: Request, ctx: FreshContext) {
   resp.headers.set("X-Frame-Options", "SAMEORIGIN");
   resp.headers.set("X-Content-Type-Options", "nosniff");
 
-  const path = new URL(req.url).pathname;
   if (
     path === "/shared" ||
     path.startsWith("/shared/") ||

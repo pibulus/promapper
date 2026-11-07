@@ -18,6 +18,7 @@
       ".partykit",
       ".playwright-mcp",
       "docs",
+      "scripts",
       "workers",
       "supabase"
     ],

@@ -10,22 +10,22 @@ import QRCode from "npm:qrcode@1.5.4";
 import {
   generateMemberIdentity,
   idInput,
-} from "../../utils/softstack-passport/index.js";
+} from "../utils/softstack-passport/index.js";
 import {
   selectNamedSkin,
   selectSkin,
   shuffleSkinSeed,
-} from "../../utils/softstack-passport/skins.js";
-import { renderMembershipCard } from "../../utils/softstack-passport/card.html.js";
+} from "../utils/softstack-passport/skins.js";
+import { renderMembershipCard } from "../utils/softstack-passport/card.html.js";
 import {
   buildPassportAvatar,
   clearCustomPassportAvatar,
   compressAvatarImageFile,
   readCustomPassportAvatar,
   saveCustomPassportAvatar,
-} from "../../utils/softstack-passport/avatar.js";
-import { hapticTap } from "../../utils/haptics.ts";
-import { showToast } from "../../utils/toast.ts";
+} from "../utils/softstack-passport/avatar.js";
+import { hapticTap } from "../utils/haptics.ts";
+import { showToast } from "../utils/toast.ts";
 
 const AVATAR_KEY = "promapper:passport_avatar";
 const PREVIEW_HASH =

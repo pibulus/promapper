@@ -76,7 +76,7 @@ import {
   soundPortal,
   soundTick,
 } from "@utils/sound.ts";
-import { formatTime, useRecorder } from "./useRecorder.ts";
+import { formatTime, useRecorder } from "@utils/useRecorder.ts";
 import UploadIsland from "./UploadIsland.tsx";
 import DashboardIsland from "./DashboardIsland.tsx";
 import MobileHistoryMenu from "./MobileHistoryMenu.tsx";

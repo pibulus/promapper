@@ -17,15 +17,21 @@ import { saveConversation } from "@core/storage/localStorage.ts";
 import { ALL_DEMOS, getRandomDemo } from "../utils/demoPresets.ts";
 import TactileLoader from "../components/TactileLoader.tsx";
 
-export default function DemoSeedIsland() {
+export interface DemoSeedIslandProps {
+  preset?: string;
+}
+
+export default function DemoSeedIsland({ preset }: DemoSeedIslandProps = {}) {
   const status = useSignal("Rolling demo…");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Check if a specific preset was requested via ?preset=t2 | sailor | wizard | dusty
+    // Check if a specific preset was requested via ?preset=t2 | sailor | wizard | dusty or route prop
     const params = new URLSearchParams(window.location.search);
-    const presetParam = params.get("preset")?.toLowerCase();
+    const presetParam = (params.get("preset") ?? preset)?.toLowerCase();
+    const isEs = params.get("lang")?.toLowerCase() === "es" ||
+      document.referrer.includes("/es");
 
     let chosenDemo = getRandomDemo();
     if (presetParam) {
@@ -36,15 +42,22 @@ export default function DemoSeedIsland() {
     }
 
     if (saveConversation(chosenDemo)) {
-      status.value = `Opening ${chosenDemo.conversation.title}…`;
+      status.value = isEs
+        ? `Abriendo ${chosenDemo.conversation.title}…`
+        : `Opening ${chosenDemo.conversation.title}…`;
+      const homePath = isEs ? "/es" : "/";
       // Brief pause to allow the TactileLoader to flash its playful vibe before landing
       setTimeout(() => {
-        globalThis.location.replace(`/?open=${chosenDemo.conversation.id}`);
+        globalThis.location.replace(
+          `${homePath}?open=${chosenDemo.conversation.id}`,
+        );
       }, 700);
     } else {
-      status.value = "Storage write failed (full?). Nothing was seeded.";
+      status.value = isEs
+        ? "Almacenamiento lleno. No se pudo guardar el tablero."
+        : "Storage write failed (full?). Nothing was seeded.";
     }
-  }, []);
+  }, [preset]);
 
   return (
     <div>

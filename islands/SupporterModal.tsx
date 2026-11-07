@@ -31,7 +31,7 @@ import {
   getSupporterPass,
   setPendingCheckout,
 } from "../utils/supporter-pass.ts";
-import { PassportMembershipCard } from "../components/passport/MembershipCard.tsx";
+import { PassportMembershipCard } from "../components/MembershipCard.tsx";
 import { isSpanish, t } from "../utils/i18n.ts";
 
 function stripCheckoutParam() {

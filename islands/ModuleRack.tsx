@@ -8,7 +8,7 @@
 
 import { useSignal } from "@preact/signals";
 import Modal from "../components/Modal.tsx";
-import { moduleRegistry } from "./modules/moduleRegistry.ts";
+import { moduleRegistry } from "@utils/moduleRegistry.ts";
 import { enabledModules, toggleModule } from "@signals/moduleStore.ts";
 import { boardCustomized, resetBoard } from "@signals/boardOrderStore.ts";
 import { hapticTap } from "@utils/haptics.ts";

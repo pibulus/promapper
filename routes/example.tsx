@@ -26,7 +26,7 @@ export default function ExamplePage() {
         <meta name="robots" content="noindex, nofollow" />
       </Head>
       <main style={{ minHeight: "100vh" }}>
-        <DemoSeedIsland />
+        <DemoSeedIsland preset="dusty" />
       </main>
     </>
   );

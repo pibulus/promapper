@@ -14,6 +14,10 @@
 
 import { assertEquals } from "./_assert.ts";
 import { getLocale, isSpanish, setSsrLocale, t } from "../../utils/i18n.ts";
+import {
+  handler as middlewareHandler,
+  LEGACY_VERTICAL_REDIRECTS,
+} from "../../routes/_middleware.ts";
 
 const appSource = await Deno.readTextFile(
   new URL("../../routes/_app.tsx", import.meta.url),
@@ -99,30 +103,49 @@ Deno.test("static/sitemap.xml excludes /shared and includes all 16 bilingual rou
 });
 
 Deno.test("shorthand redirect routes return permanent 301 status", async () => {
-  const redirectFiles = [
-    "dnd.tsx",
-    "rol.tsx",
-    "meetings.tsx",
-    "juntas.tsx",
-    "clients.tsx",
-    "clientes.tsx",
-    "care.tsx",
-    "consultas.tsx",
-    "schools.tsx",
-    "escuelas.tsx",
-    "research.tsx",
-    "investigacion.tsx",
-    "brainstorming.tsx",
-    "ideas.tsx",
-  ];
-  for (const file of redirectFiles) {
-    const src = await Deno.readTextFile(
-      new URL(`../../routes/${file}`, import.meta.url),
+  const expectedRedirects: Record<string, string> = {
+    "/brainstorming": "/for/brainstorming",
+    "/care": "/for/care",
+    "/clients": "/for/clients",
+    "/dnd": "/for/dnd",
+    "/meetings": "/for/meetings",
+    "/research": "/for/research",
+    "/schools": "/for/schools",
+    "/clientes": "/es/clientes",
+    "/consultas": "/es/consultas",
+    "/escuelas": "/es/escuelas",
+    "/ideas": "/es/ideas",
+    "/investigacion": "/es/investigacion",
+    "/juntas": "/es/juntas",
+    "/rol": "/es/rol",
+  };
+  assertEquals(LEGACY_VERTICAL_REDIRECTS, expectedRedirects);
+
+  for (const [shortPath, targetPath] of Object.entries(expectedRedirects)) {
+    const req = new Request(`https://promapper.app${shortPath}`);
+    const resp = await middlewareHandler(req, {
+      next: () => Promise.resolve(new Response("unreachable", { status: 200 })),
+    } as never);
+    assertEquals(
+      resp.status,
+      301,
+      `${shortPath} must use permanent 301 redirect`,
     );
     assertEquals(
-      src.includes("status: 301"),
-      true,
-      `routes/${file} must use permanent 301 redirect`,
+      resp.headers.get("Location"),
+      targetPath,
+      `${shortPath} must redirect to ${targetPath}`,
     );
   }
+});
+
+Deno.test("routes/example.tsx pins preset='dusty' so PorchTable opens The Halloran Situation", async () => {
+  const exampleSource = await Deno.readTextFile(
+    new URL("../../routes/example.tsx", import.meta.url),
+  );
+  assertEquals(
+    exampleSource.includes('preset="dusty"'),
+    true,
+    "routes/example.tsx must pass preset='dusty' to DemoSeedIsland",
+  );
 });

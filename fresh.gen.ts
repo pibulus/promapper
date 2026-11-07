@@ -25,15 +25,9 @@ import * as $api_supporter_checkout_checkoutId_ from "./routes/api/supporter/che
 import * as $api_supporter_email_pass from "./routes/api/supporter/email-pass.ts";
 import * as $api_supporter_passport from "./routes/api/supporter/passport.ts";
 import * as $api_supporter_redeem from "./routes/api/supporter/redeem.ts";
-import * as $brainstorming from "./routes/brainstorming.tsx";
-import * as $care from "./routes/care.tsx";
-import * as $clientes from "./routes/clientes.tsx";
-import * as $clients from "./routes/clients.tsx";
-import * as $consultas from "./routes/consultas.tsx";
 import * as $demo from "./routes/demo.tsx";
 import * as $dev_colors from "./routes/dev/colors.tsx";
 import * as $dev_nodemap from "./routes/dev/nodemap.tsx";
-import * as $dnd from "./routes/dnd.tsx";
 import * as $es_clientes from "./routes/es/clientes.tsx";
 import * as $es_consultas from "./routes/es/consultas.tsx";
 import * as $es_escuelas from "./routes/es/escuelas.tsx";
@@ -42,7 +36,6 @@ import * as $es_index from "./routes/es/index.tsx";
 import * as $es_investigacion from "./routes/es/investigacion.tsx";
 import * as $es_juntas from "./routes/es/juntas.tsx";
 import * as $es_rol from "./routes/es/rol.tsx";
-import * as $escuelas from "./routes/escuelas.tsx";
 import * as $example from "./routes/example.tsx";
 import * as $for_brainstorming from "./routes/for/brainstorming.tsx";
 import * as $for_care from "./routes/for/care.tsx";
@@ -51,15 +44,8 @@ import * as $for_dnd from "./routes/for/dnd.tsx";
 import * as $for_meetings from "./routes/for/meetings.tsx";
 import * as $for_research from "./routes/for/research.tsx";
 import * as $for_schools from "./routes/for/schools.tsx";
-import * as $ideas from "./routes/ideas.tsx";
 import * as $index from "./routes/index.tsx";
-import * as $investigacion from "./routes/investigacion.tsx";
-import * as $juntas from "./routes/juntas.tsx";
 import * as $live_roomId_ from "./routes/live/[roomId].tsx";
-import * as $meetings from "./routes/meetings.tsx";
-import * as $research from "./routes/research.tsx";
-import * as $rol from "./routes/rol.tsx";
-import * as $schools from "./routes/schools.tsx";
 import * as $shared_shareId_ from "./routes/shared/[shareId].tsx";
 import * as $shared_index from "./routes/shared/index.tsx";
 import * as $version_json from "./routes/version.json.ts";
@@ -96,9 +82,6 @@ import * as $modules_MagpieModule from "./islands/modules/MagpieModule.tsx";
 import * as $modules_NotesModule from "./islands/modules/NotesModule.tsx";
 import * as $modules_SoundModule from "./islands/modules/SoundModule.tsx";
 import * as $modules_TakesModule from "./islands/modules/TakesModule.tsx";
-import * as $modules_moduleRegistry from "./islands/modules/moduleRegistry.ts";
-import * as $useRecorder from "./islands/useRecorder.ts";
-import * as $vizRegistry from "./islands/vizRegistry.ts";
 import type { Manifest } from "$fresh/server.ts";
 
 const manifest = {
@@ -127,15 +110,9 @@ const manifest = {
     "./routes/api/supporter/email-pass.ts": $api_supporter_email_pass,
     "./routes/api/supporter/passport.ts": $api_supporter_passport,
     "./routes/api/supporter/redeem.ts": $api_supporter_redeem,
-    "./routes/brainstorming.tsx": $brainstorming,
-    "./routes/care.tsx": $care,
-    "./routes/clientes.tsx": $clientes,
-    "./routes/clients.tsx": $clients,
-    "./routes/consultas.tsx": $consultas,
     "./routes/demo.tsx": $demo,
     "./routes/dev/colors.tsx": $dev_colors,
     "./routes/dev/nodemap.tsx": $dev_nodemap,
-    "./routes/dnd.tsx": $dnd,
     "./routes/es/clientes.tsx": $es_clientes,
     "./routes/es/consultas.tsx": $es_consultas,
     "./routes/es/escuelas.tsx": $es_escuelas,
@@ -144,7 +121,6 @@ const manifest = {
     "./routes/es/investigacion.tsx": $es_investigacion,
     "./routes/es/juntas.tsx": $es_juntas,
     "./routes/es/rol.tsx": $es_rol,
-    "./routes/escuelas.tsx": $escuelas,
     "./routes/example.tsx": $example,
     "./routes/for/brainstorming.tsx": $for_brainstorming,
     "./routes/for/care.tsx": $for_care,
@@ -153,15 +129,8 @@ const manifest = {
     "./routes/for/meetings.tsx": $for_meetings,
     "./routes/for/research.tsx": $for_research,
     "./routes/for/schools.tsx": $for_schools,
-    "./routes/ideas.tsx": $ideas,
     "./routes/index.tsx": $index,
-    "./routes/investigacion.tsx": $investigacion,
-    "./routes/juntas.tsx": $juntas,
     "./routes/live/[roomId].tsx": $live_roomId_,
-    "./routes/meetings.tsx": $meetings,
-    "./routes/research.tsx": $research,
-    "./routes/rol.tsx": $rol,
-    "./routes/schools.tsx": $schools,
     "./routes/shared/[shareId].tsx": $shared_shareId_,
     "./routes/shared/index.tsx": $shared_index,
     "./routes/version.json.ts": $version_json,
@@ -200,9 +169,6 @@ const manifest = {
     "./islands/modules/NotesModule.tsx": $modules_NotesModule,
     "./islands/modules/SoundModule.tsx": $modules_SoundModule,
     "./islands/modules/TakesModule.tsx": $modules_TakesModule,
-    "./islands/modules/moduleRegistry.ts": $modules_moduleRegistry,
-    "./islands/useRecorder.ts": $useRecorder,
-    "./islands/vizRegistry.ts": $vizRegistry,
   },
   baseUrl: import.meta.url,
 } satisfies Manifest;

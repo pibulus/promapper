@@ -45,7 +45,7 @@ import BodyPortal from "../components/BodyPortal.tsx";
 import FlipCard from "./FlipCard.tsx";
 import ReaderModal from "./ReaderModal.tsx";
 import ModuleRack from "./ModuleRack.tsx";
-import { moduleRegistry } from "./modules/moduleRegistry.ts";
+import { moduleRegistry } from "@utils/moduleRegistry.ts";
 import NotesModule from "./modules/NotesModule.tsx";
 import TakesModule from "./modules/TakesModule.tsx";
 import { enabledModules } from "@signals/moduleStore.ts";

@@ -23,7 +23,7 @@ import { coerceFlowResult } from "../utils/coerceFlowResult.ts";
 import { soundBloom } from "@utils/sound.ts";
 import AudioVisualizer from "./AudioVisualizer.tsx";
 import { showErrorToast, showToast } from "../utils/toast.ts";
-import { blockedMicMessage, formatTime } from "./useRecorder.ts";
+import { blockedMicMessage, formatTime } from "@utils/useRecorder.ts";
 import {
   createDeepgramLiveClient,
   type DeepgramLiveClient,

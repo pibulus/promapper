@@ -14,12 +14,12 @@
 
 import type { ComponentType } from "preact";
 import type { BoardSize } from "@utils/boardLayout.ts";
-import NotesModule from "./NotesModule.tsx";
-import AskModule from "./AskModule.tsx";
-import TakesModule from "./TakesModule.tsx";
-import SoundModule from "./SoundModule.tsx";
-import MagpieModule from "./MagpieModule.tsx";
-import DiceModule from "./DiceModule.tsx";
+import NotesModule from "@islands/modules/NotesModule.tsx";
+import AskModule from "@islands/modules/AskModule.tsx";
+import TakesModule from "@islands/modules/TakesModule.tsx";
+import SoundModule from "@islands/modules/SoundModule.tsx";
+import MagpieModule from "@islands/modules/MagpieModule.tsx";
+import DiceModule from "@islands/modules/DiceModule.tsx";
 
 /** The 1:2:4 row system (utils/boardLayout.ts): small = 1 unit, medium = 2,
  * tall = 4. This is the module's DEFAULT — users cycle sizes per card. */

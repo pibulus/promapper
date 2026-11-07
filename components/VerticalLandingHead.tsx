@@ -1,8 +1,5 @@
 import { Head } from "$fresh/runtime.ts";
-import {
-  VERTICAL_CONFIG,
-  type VerticalKind,
-} from "../islands/VerticalStudioIsland.tsx";
+import { VERTICAL_CONFIG, type VerticalKind } from "../utils/verticalConfig.ts";
 
 export interface VerticalLandingHeadProps {
   kind: VerticalKind;

@@ -238,7 +238,11 @@ export default function PorchTable({ lang }: PorchTableProps = {}) {
       </ul>
 
       <div class="porch-doors">
-        <a href="/example" rel="nofollow" class="porch-door">
+        <a
+          href={spanish ? "/example?lang=es" : "/example"}
+          rel="nofollow"
+          class="porch-door"
+        >
           {i18n.tableOpen}
           <i class="fa fa-arrow-right" aria-hidden="true"></i>
         </a>

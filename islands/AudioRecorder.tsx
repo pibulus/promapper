@@ -40,7 +40,7 @@ import { saveAudioBackup } from "../utils/downloadBackup.ts";
 import { enqueueApiRequest } from "../utils/requestQueue.ts";
 import { coerceFlowResult } from "../utils/coerceFlowResult.ts";
 import { soundBloom } from "@utils/sound.ts";
-import { formatTime, useRecorder } from "./useRecorder.ts";
+import { formatTime, useRecorder } from "@utils/useRecorder.ts";
 import { transcribeWithOfflineWhisper } from "../utils/offlineWhisper.ts";
 import {
   clearTake,

@@ -19,9 +19,14 @@ export function setSsrLocale(locale: Locale): void {
 
 export function getLocale(): Locale {
   if (typeof window !== "undefined") {
-    if (window.location.pathname.startsWith("/es")) return "es";
-    const lang = (navigator.language || "").toLowerCase();
-    if (lang.startsWith("es")) return "es";
+    const pathname = window.location?.pathname || "";
+    if (pathname === "/es" || pathname.startsWith("/es/")) return "es";
+    if (
+      typeof document !== "undefined" &&
+      document.documentElement?.lang === "es"
+    ) {
+      return "es";
+    }
     return "en";
   }
   return ssrLocale;

@@ -18,7 +18,7 @@ import {
   type StoredRecording,
 } from "@core/storage/recordingsDB.ts";
 import { formatAppendReceipt } from "@core/orchestration/append-receipt.ts";
-import { formatTime } from "../useRecorder.ts";
+import { formatTime } from "@utils/useRecorder.ts";
 import { showToast, showUndoToast } from "@utils/toast.ts";
 
 function formatDate(iso: string): string {

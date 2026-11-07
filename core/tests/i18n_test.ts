@@ -1,5 +1,5 @@
 import { assertEquals } from "$std/assert/mod.ts";
-import { t, TRANSLATIONS } from "../../utils/i18n.ts";
+import { getLocale, t, TRANSLATIONS } from "../../utils/i18n.ts";
 
 Deno.test("i18n: translations dictionary has matching keys for en and es", () => {
   const enKeys = Object.keys(TRANSLATIONS.en).sort();
@@ -27,4 +27,28 @@ Deno.test("i18n: t('es') returns Spanish dictionary", () => {
     es.mappedSuccess(3, 5),
     "¡Listo el mapa! 3 tareas y 5 temas",
   );
+});
+
+Deno.test("i18n: client getLocale() respects URL lane over navigator.language", () => {
+  const g = globalThis as Record<string, unknown>;
+  const origWindow = g.window;
+  try {
+    g.window = {
+      location: { pathname: "/for/meetings" },
+      navigator: { language: "es-MX" },
+    };
+    assertEquals(getLocale(), "en");
+
+    g.window = {
+      location: { pathname: "/es/juntas" },
+      navigator: { language: "en-US" },
+    };
+    assertEquals(getLocale(), "es");
+  } finally {
+    if (origWindow === undefined) {
+      delete g.window;
+    } else {
+      g.window = origWindow;
+    }
+  }
 });

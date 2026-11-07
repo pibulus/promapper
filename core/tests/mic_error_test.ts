@@ -4,7 +4,7 @@ import { assertEquals } from "./_assert.ts";
 import {
   blockedMicMessage,
   describeMicError,
-} from "../../islands/useRecorder.ts";
+} from "../../utils/useRecorder.ts";
 
 const denied = new DOMException("nope", "NotAllowedError");
 const safari =
