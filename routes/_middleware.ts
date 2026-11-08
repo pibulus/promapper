@@ -44,8 +44,11 @@ export const LEGACY_VERTICAL_REDIRECTS: Readonly<Record<string, string>> = {
 
 export async function handler(req: Request, ctx: FreshContext) {
   const path = new URL(req.url).pathname;
+  const normalizedPath = path.length > 1 && path.endsWith("/")
+    ? path.slice(0, -1)
+    : path;
   const redirectTarget = req.method === "GET" || req.method === "HEAD"
-    ? LEGACY_VERTICAL_REDIRECTS[path]
+    ? LEGACY_VERTICAL_REDIRECTS[normalizedPath]
     : undefined;
 
   const resp = redirectTarget
