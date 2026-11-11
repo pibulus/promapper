@@ -98,9 +98,15 @@ export default function App({ Component, url }: PageProps) {
 var saved=localStorage.getItem("promapper-theme");
 if(!saved)return;
 var parsed=JSON.parse(saved);
-if(!parsed||parsed.name!=="SHUFFLE")return;
+if(!parsed)return;
+var cv=null;
+if(parsed.name==="SHUFFLE"){
 if(parsed.v!==14||!parsed.custom||!parsed.custom.vars)return;
-var cv=parsed.custom.vars;
+cv=parsed.custom.vars;
+}else if(parsed.vars){
+cv=parsed.vars;
+}
+if(!cv)return;
 for(var ck in cv){document.documentElement.style.setProperty(ck,cv[ck]);}
 }catch(e){}})();`,
           }}

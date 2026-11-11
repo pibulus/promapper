@@ -140,7 +140,7 @@
      ================================================================ */
   --surface-base: #F4EFE6; /* Desktop background */
   --surface-card: #FDFBF7; /* Modules / panels */
-  --surface-item: #FFFFFF; /* Interactive child cards (Action items, input rows) */
+  --surface-item: #fffef7; /* Interactive child cards — warm near-white, never #FFFFFF */
   --surface-item-hover: #F8F5EE;
 
   /* Borders & Lines */
@@ -217,14 +217,12 @@
   --border-radius-lg: 24px;
   --border-radius-xl: 32px;
 
-  /* Typography */
-  /* TWO fonts (Aug 19 reversal of the July 9 "Inter everywhere" ruling):
-     IBM Plex Mono is the app voice — body, inputs, transcript, tasks, chips.
-     Headers/titles stay Inter (--font-display). Pablo: "big fan of the
-     monospace vibe." A future font picker can flip --font-family the way the
-     theme picker flips --color-accent. */
+  /* Typography — Inter speaks for the UI chrome, headers, action cards,
+     buttons, drawers, and modals; IBM Plex Mono (--font-mono) stays strictly
+     on raw/captured material (Transcript, live stream, paste input, Notes
+     scratchpad, Markdown source editor). */
   --font-family:
-    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-display:
     "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono:
@@ -1172,13 +1170,22 @@ h6,
   min-height: 100vh;
   min-height: 100dvh;
   position: relative;
-  /* Layer 0, THE DESK, on every page — porch, dashboard, shared, 404. It
-     used to be the rolled theme's --gradient-bg here (saturated sky blobs +
-     a drifting sweep + grain) while the Tokyo pass gave only the dashboard
-     the Aperol desk, so the porch was the one heavy, un-airy room (Pablo,
-     Sept 28: "airier and lighter, more elegant"). The theme dice still roll
-     accents and plates; the ground is a place, not a mood. */
-  background: var(--surface-desk);
+  /* Layer 0, THE DESK: airy paper softly breathing the active theme's ground
+     and accent so curated palettes (Daybreak, Bubblegum, Sky, Grape, Lime,
+     Gold) and Shuffle rolls genuinely transform the room atmosphere while
+     keeping card paper crisp and legible. */
+  background:
+    radial-gradient(
+    ellipse 80% 60% at 68% 0%,
+    color-mix(in srgb, var(--color-base-solid) 38%, transparent),
+    transparent 70%
+  ),
+    radial-gradient(
+    ellipse 95% 75% at 22% 38%,
+    color-mix(in srgb, var(--color-accent) 9%, transparent),
+    transparent 80%
+  ),
+    color-mix(in srgb, var(--color-base-solid) 16%, #fffaf3);
   /* clip, NOT hidden: hidden makes the scene a (never-scrolling) scroll
      container, which kills the footer's position:sticky. */
   overflow: clip;
@@ -2009,23 +2016,19 @@ h6,
   }
 }
 
-/* Rainbow top-rule — a persistent decorative hairline across the very top of
-   every page (was a scroll-progress bar that vanished when a page didn't
-   scroll, e.g. the dashboard; now it's always there). */
+/* Theme-harmonious top rule — wears the active palette's trio instead of a
+   clashing fixed 6-hue rainbow. */
 .scroll-progress {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  height: 4px;
+  height: 3px;
   background: linear-gradient(
     90deg,
-    #ff5c8d,
-    #ff62d7,
-    #7659ff,
-    #00d6c4,
-    #32cd32,
-    #ffc400
+    var(--color-accent),
+    var(--header-band),
+    var(--cta-plate)
   );
   z-index: 60;
   pointer-events: none;
@@ -3790,16 +3793,16 @@ h6,
    rest of the board, not a stray textarea. */
 .notes-module-textarea {
   width: 100%;
-  min-height: 14rem;
+  min-height: 11rem;
   height: 100%;
   resize: none;
   border: none;
   outline: none;
   background: transparent;
   color: var(--color-text);
-  font-family: var(--font-family);
+  font-family: var(--font-mono);
   font-size: var(--small-size);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 .notes-module-textarea:focus,
 .notes-module-textarea:focus-visible {
@@ -3810,12 +3813,12 @@ h6,
 }
 
 .dashboard-card {
-  /* Tokyo Hi-Fi Layer 2: Modular Index Stock
-     Resting cleanly on the desk surface with crisp carbon line work. */
+  /* Soft Neo Toybrut modular card: warm cream stock, warm sepia-ink border &
+     tactile offset shadow, friendly rounded corners. */
   background: var(--surface-card, #FDFBF7);
-  border-radius: var(--border-radius-sm, 8px);
-  border: 2px solid var(--border-strong, #1A1A1A);
-  box-shadow: var(--shadow-card, 3px 3px 0px var(--border-strong, #1A1A1A));
+  border-radius: 14px;
+  border: 2px solid var(--line-ink);
+  box-shadow: 3px 3px 0px var(--line-ink);
   height: 100%;
   overflow: hidden;
 }
@@ -3851,9 +3854,12 @@ h6,
    without this, header action icons (sliders, copy, backup…) sit underneath
    the flip circle and become unclickable. */
 .flip-card-face .dashboard-card-header {
-  /* Reserve the flip button's slot so the actions cluster ends exactly one
-     intra-cluster gap (0.25rem) to its left — same rhythm as the cluster. */
-  padding-right: calc(var(--header-pad-x) + 2rem + 0.25rem);
+  padding-right: calc(var(--header-pad-x) + 2.1rem + 0.35rem);
+}
+
+/* Labeled pill flip button (e.g. Map ↔ Canvas) needs room for icon + word. */
+.flip-card-perspective.has-flip-pill .flip-card-face .dashboard-card-header {
+  padding-right: calc(var(--header-pad-x) + 5.6rem + 0.35rem);
 }
 
 .flip-card-face {
@@ -3872,36 +3878,67 @@ h6,
   transform: rotateY(180deg);
 }
 
-/* Corner flip button — tactile mechanical latch sitting in card top-right */
+/* Corner flip button — unified Soft Neo Toybrut pill/square sitting in card top-right */
 .flip-card-btn {
   position: absolute;
-  top: calc(var(--header-pad-y) + 2px);
-  right: calc(var(--header-pad-x) + 2px);
+  top: calc(var(--header-pad-y) + 1px);
+  right: var(--header-pad-x);
   z-index: 2;
-  width: 1.85rem;
-  height: 1.85rem;
+  width: 1.9rem;
+  height: 1.9rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 3px;
-  border: 1.5px solid var(--ink-carbon, #121212);
-  background: var(--surface-board);
-  color: var(--ink-carbon, #121212);
-  box-shadow: 1.5px 1.5px 0px var(--ink-carbon, #121212);
+  gap: 0.35rem;
+  border-radius: 8px;
+  border: 1.5px solid var(--line-ink);
+  background: var(--surface-white-warm, #fffef7);
+  color: var(--soft-black);
+  box-shadow: 1.5px 1.5px 0px var(--line-ink);
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: transform 80ms ease, box-shadow 80ms ease, background 120ms ease;
+  transition:
+    transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 120ms ease,
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.flip-card-btn::after {
+  content: "";
+  position: absolute;
+  inset: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+
+.flip-card-btn--pill {
+  width: auto;
+  min-width: 5.1rem;
+  padding: 0 0.65rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cta-plate) 42%,
+    var(--surface-white-warm));
+}
+
+.flip-card-btn.is-flipped {
+  background: var(--cta-plate);
+  color: var(--soft-black);
 }
 
 .flip-card-btn:hover {
-  background: var(--spot-riso-pink, #FF2A6D);
-  color: #121212;
-  transform: translate(-0.5px, -0.5px);
-  box-shadow: 2px 2px 0px var(--ink-carbon, #121212);
+  background: var(--cta-plate);
+  color: var(--soft-black);
+  transform: translate(-1px, -1px);
+  box-shadow: 2.5px 2.5px 0px var(--line-ink);
 }
 
 .flip-card-btn:active {
   transform: translate(1px, 1px);
-  box-shadow: 0px 0px 0px var(--ink-carbon, #121212);
+  box-shadow: 0.5px 0.5px 0px var(--line-ink);
 }
 
 .flip-card-btn:focus-visible {
@@ -3909,24 +3946,28 @@ h6,
   outline-offset: 2px;
 }
 
-/* Only the glyph spins — the button itself stays put, like its header-icon
-   siblings that just shift background/color on hover. */
+/* Only the glyph spins — the button itself lifts like its sibling controls. */
 .flip-card-btn__icon {
   display: inline-block;
+  font-size: 0.78rem;
   transition: transform var(--transition-fast);
 }
 
 .flip-card-btn:hover .flip-card-btn__icon {
-  transform: rotate(-30deg);
+  transform: rotate(180deg);
+}
+
+.flip-card-btn--pill:hover .flip-card-btn__icon {
+  transform: scale(1.08);
 }
 
 /* News dot — something landed on the face you're not looking at. */
 .flip-card-btn__dot {
   position: absolute;
-  top: 0.15rem;
-  right: 0.15rem;
-  width: 0.5rem;
-  height: 0.5rem;
+  top: -0.15rem;
+  right: -0.15rem;
+  width: 0.55rem;
+  height: 0.55rem;
   border-radius: 50%;
   background: var(--accent-strong, var(--color-accent));
   border: 1.5px solid #fffdf8;
@@ -3956,71 +3997,145 @@ h6,
 }
 
 .dashboard-card-header {
-  /* Dedicated subtle fill physically anchoring the header to the module */
-  background: var(--surface-header, #F0EAE1);
+  /* Warm pastel-washed header band anchored cleanly to the card */
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--header-band) 36%, #fffaf2) 0%,
+    var(--module-header-wash) 100%
+  );
   color: var(--ink-primary, #18181B);
-  padding: var(--header-pad-y) var(--header-pad-x);
-  border-bottom: 1.5px solid var(--border-strong, #1A1A1A);
+  padding: 0.52rem var(--header-pad-x);
+  border-bottom: 1.5px solid var(--line-ink);
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
-  min-height: calc(2rem + 2 * var(--header-pad-y));
+  min-height: 2.85rem;
 }
 
-/* The desk and paper stay put; a roll colors the index bands on the working
-   board. Keep the wash under the stamped tabs so their module identities and
-   the header controls remain legible across the full shuffle wheel. */
 .dashboard-grid .dashboard-card-header {
-  background: var(--module-header-wash);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--header-band) 38%, #fffaf2) 0%,
+    var(--module-header-wash) 100%
+  );
 }
 
-.dashboard-card-header h3 {
-  font-family: var(--font-mono);
-  font-size: var(--small-size);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: var(--ink-primary, #18181B);
-  margin: 0;
+.card-header-title {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
+}
+
+.card-header-icon {
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.76rem;
+  background: var(--surface-white-warm, #fffef7);
+  color: var(--accent-ink);
+  border: 1.5px solid color-mix(in srgb, var(--line-ink) 28%, transparent);
+  box-shadow: 1px 1px 0 color-mix(in srgb, var(--line-ink) 22%, transparent);
+}
+
+.dashboard-card-header h3,
+.card-header-heading {
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  color: var(--soft-black);
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-header-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.1rem 0.48rem;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink-secondary, #52525B);
+  background: color-mix(in srgb, var(--surface-white-warm) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line-ink) 18%, transparent);
+  white-space: nowrap;
 }
 
 /* Sub-text in the header (e.g. "1 of 4 done") */
-.dashboard-card-header :is(span, small, p):not(.stamped-tab) {
+.dashboard-card-header :is(span, small, p):not(.stamped-tab):not(.card-header-icon):not(.card-header-heading) {
   color: var(--ink-secondary, #52525B);
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.74rem;
 }
 
-/* ===================================================================
-   TOKYO HI-FI — STAMPED INDEX TABS
-   Precision Japanese stationery indexing with high-voltage spot ink
-   ================================================================ */
+/* Warm Soft Neo Toybrut status/kicker pill (replaces industrial ALL-CAPS stamped-tab) */
+.soft-kicker-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-display);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+  padding: 0.26rem 0.68rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--line-ink);
+  color: var(--soft-black);
+  background: var(--surface-white-warm, #fffef7);
+  box-shadow: 1.5px 1.5px 0px var(--line-ink);
+  user-select: none;
+}
+
+.soft-kicker-pill--accent {
+  background: color-mix(in srgb, var(--cta-plate) 55%,
+    var(--surface-white-warm));
+}
+
+.soft-kicker-pill--live {
+  background: color-mix(in srgb, var(--ink-mandarin) 38%,
+    var(--surface-white-warm));
+}
+
+/* Legacy .stamped-tab softened gracefully in case any external/specimen markup references it */
 .stamped-tab {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  line-height: 1.1;
-  padding: 0.22rem 0.5rem;
-  border-radius: 3px;
-  border: 1.5px solid var(--border-strong, #1A1A1A);
-  color: var(--ink-primary, #18181B);
-  background: var(--surface-item, #FFFFFF);
-  box-shadow: 1px 1px 0px var(--border-strong, #1A1A1A);
+  font-family: var(--font-display);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+  padding: 0.22rem 0.58rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--line-ink);
+  color: var(--soft-black);
+  background: var(--surface-white-warm, #fffef7);
+  box-shadow: 1.5px 1.5px 0px var(--line-ink);
   user-select: none;
 }
 
 .stamped-tab--sm {
-  font-size: 10px;
-  padding: 0.15rem 0.4rem;
-  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  padding: 0.14rem 0.48rem;
 }
 
 .stamped-tab--yellow {
@@ -4028,11 +4143,6 @@ h6,
   color: #78350F;
 }
 
-/* Fuchsia, not rose — Sept 30 2026 fix: the old #FFE4E6/#881337 pair was the
-   same rose/maroon family the house vetoed (Aug 17 2026, "never, on
-   anything, ever"), just reused across 4 module headers via this one
-   class (Summary, Summary-back, Dice, export drawer). Fuchsia reads
-   unmistakably pink/purple, nowhere near the red axis. */
 .stamped-tab--pink {
   background: #FAE8FF;
   color: #86198F;
@@ -4054,12 +4164,6 @@ h6,
   overflow-y: auto;
 }
 
-/* Equal-height rows (side-by-side layouts only): every card is a flex column
-   whose scroll body FILLS the grid cell instead of stopping at its own cap —
-   so Transcript/Summary rise to meet the Action Items card instead of leaving
-   a ragged gap under the row. `height: 0` zeroes the body's intrinsic size
-   (a 5000-word transcript must never dictate the row height); the min-height
-   floor is what the card asks for when it's the tallest thing in its row. */
 @media (min-width: 768px) {
   .dashboard-card {
     display: flex;
@@ -4068,40 +4172,55 @@ h6,
   .dashboard-card-body {
     flex: 1 1 auto;
     height: 0;
-    min-height: 26rem;
+    min-height: 14rem;
     max-height: none;
   }
 }
 
-/* (Scrollbars are ONE global recipe now — see the SCROLLBARS block near the
-   top of this file. The per-scope html/.app-scroll/.reader/.card-scroll
-   variants were folded into it.) */
-/* The expand + copy buttons in a card header. */
+/* Card header action cluster — unified squishy Soft Neo Toybrut controls */
 .card-header-actions {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.3rem;
   color: var(--color-text-secondary);
+  flex-shrink: 0;
 }
 
-/* Same 32px visual square + invisible 44px tap box as .header-icon-btn, so
-   these three-icon clusters (Summary/Transcript/Overview card headers) don't
-   ask a thumb to land on a bare 14px glyph. */
 .card-header-actions button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.85rem;
-  height: 1.85rem;
+  gap: 0.32rem;
+  width: 1.9rem;
+  height: 1.9rem;
   flex-shrink: 0;
   position: relative;
-  border-radius: 3px;
-  border: 1.5px solid var(--ink-carbon, #121212);
-  background: var(--surface-board);
-  color: var(--ink-carbon, #121212);
-  box-shadow: 1.5px 1.5px 0px var(--ink-carbon, #121212);
+  border-radius: 8px;
+  border: 1.5px solid color-mix(in srgb, var(--line-ink) 75%, transparent);
+  background: var(--surface-white-warm, #fffef7);
+  color: var(--soft-black);
+  box-shadow: 1.5px 1.5px 0px var(--line-ink);
+  font-family: var(--font-display);
+  font-size: 0.74rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: transform 80ms ease, box-shadow 80ms ease, background 120ms ease;
+  transition:
+    transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 120ms ease,
+    background 140ms ease,
+    border-color 140ms ease;
+}
+
+.card-header-actions button.card-header-btn--pill {
+  width: auto;
+  padding: 0 0.55rem;
+}
+
+.card-header-actions button.card-header-btn--ghost {
+  background: color-mix(in srgb, var(--surface-white-warm) 65%, transparent);
+  border-color: color-mix(in srgb, var(--line-ink) 28%, transparent);
+  box-shadow: none;
+  color: var(--ink-secondary, #52525B);
 }
 
 .card-header-actions button::after {
@@ -4114,19 +4233,27 @@ h6,
 }
 
 .card-header-actions button:hover:not(:disabled) {
-  background: var(--spot-fluro-yellow, #FFE600);
-  color: #121212;
-  transform: translate(-0.5px, -0.5px);
-  box-shadow: 2px 2px 0px var(--ink-carbon, #121212);
+  background: var(--cta-plate);
+  border-color: var(--line-ink);
+  color: var(--soft-black);
+  transform: translate(-1px, -1px);
+  box-shadow: 2.5px 2.5px 0px var(--line-ink);
+}
+
+.card-header-actions button.is-active:not(:disabled) {
+  background: color-mix(in srgb, var(--cta-plate) 65%,
+    var(--surface-white-warm));
+  border-color: var(--line-ink);
+  color: var(--soft-black);
 }
 
 .card-header-actions button:active:not(:disabled) {
   transform: translate(1px, 1px);
-  box-shadow: 0px 0px 0px var(--ink-carbon, #121212);
+  box-shadow: 0.5px 0.5px 0px var(--line-ink);
 }
 
 .card-header-actions button:focus-visible {
-  outline: 2px solid var(--ink-carbon, #121212);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
@@ -4214,11 +4341,11 @@ h6,
 
 .action-item-card {
   position: relative;
-  padding: 0.7rem 0.85rem;
-  border-radius: var(--border-radius-sm);
-  background: var(--surface-item, #FFFFFF);
-  border: 1px solid var(--border-strong, #1A1A1A);
-  box-shadow: 1px 1px 0px var(--border-strong, #1A1A1A);
+  padding: 0.72rem 0.85rem;
+  border-radius: 10px;
+  background: var(--surface-item, #fffef7);
+  border: 1.5px solid var(--line-ink);
+  box-shadow: 1.5px 1.5px 0px var(--line-ink);
   transition:
     transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
     box-shadow 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -4226,27 +4353,13 @@ h6,
     background 160ms ease,
     opacity 160ms ease;
   cursor: pointer;
-  font-family: var(--font-mono); /* Force monospace for the card text */
-}
-
-/* Monospace fonts for all inputs, textareas, search and presets in action items */
-.action-item-card textarea,
-.action-item-card input,
-.action-item-card button,
-.action-quick-add,
-.action-items-search input,
-.action-dropdown-menu,
-.action-dropdown-menu button,
-.action-dropdown-menu input,
-.action-filter-pill,
-.action-date-preset {
-  font-family: var(--font-mono) !important;
+  font-family: var(--font-display);
 }
 
 .action-item-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 2px 2px 0px var(--border-strong, #1A1A1A);
-  border-color: var(--border-strong, #1A1A1A);
+  transform: translateY(-1.5px);
+  box-shadow: 2.5px 2.5px 0px var(--line-ink);
+  border-color: var(--line-ink);
   background: var(--surface-item-hover, #F8F5EE);
 }
 
@@ -6383,6 +6496,184 @@ a:focus-visible {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* Raw captured transcript material keeps IBM Plex Mono while UI speaks Inter. */
+.transcript-content {
+  font-family: var(--font-mono);
+  font-size: var(--small-size);
+  line-height: 1.6;
+  color: var(--color-text);
+}
+
+/* ===================================================================
+   THEME SWITCHER POPOVER — Palette Studio (6 curated themes + Shuffle)
+   =================================================================== */
+.theme-switcher-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.theme-trigger-btn {
+  width: auto !important;
+  padding: 0 0.5rem !important;
+  gap: 0.35rem;
+}
+
+.theme-trigger-btn.is-open {
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  color: var(--accent-ink);
+}
+
+.theme-trigger-dot {
+  width: 0.58rem;
+  height: 0.58rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--line-ink);
+  flex-shrink: 0;
+}
+
+.theme-popover {
+  position: absolute;
+  bottom: calc(100% + 0.65rem);
+  right: 0;
+  z-index: var(--z-modal);
+  width: 15.5rem;
+  padding: 0.75rem;
+  border-radius: 14px;
+  border: 2px solid var(--line-ink);
+  background: var(--surface-white-warm, #fffef7);
+  box-shadow: 4px 4px 0 var(--line-ink);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  animation: popover-spring-up 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes popover-spring-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.theme-popover__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0 0.15rem;
+}
+
+.theme-popover__title {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--soft-black);
+  letter-spacing: -0.01em;
+}
+
+.theme-popover__vibe {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.theme-swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.theme-swatch {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.52rem;
+  border-radius: 9px;
+  border: 1.5px solid var(--border-cream-medium, #e2dcd2);
+  background: var(--surface-card, #fdfbf7);
+  color: var(--soft-black);
+  font-family: var(--font-display);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
+}
+
+.theme-swatch:hover {
+  border-color: var(--line-ink);
+  background: var(--surface-white-warm, #fffef7);
+  transform: translateY(-1px);
+  box-shadow: 1.5px 1.5px 0 var(--line-ink);
+}
+
+.theme-swatch.is-active {
+  border-color: var(--line-ink);
+  background: color-mix(in srgb, var(--cta-plate) 35%,
+    var(--surface-white-warm));
+  box-shadow: 2px 2px 0 var(--line-ink);
+  font-weight: 700;
+}
+
+.theme-swatch__chip {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--line-ink);
+  flex-shrink: 0;
+}
+
+.theme-swatch__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-roll-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+  padding: 0.52rem 0.75rem;
+  border-radius: 10px;
+  border: 2px solid var(--cta-plate-border);
+  background: var(--cta-plate);
+  color: var(--soft-black);
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  box-shadow: 2px 2px 0 var(--line-ink);
+  cursor: pointer;
+  transition:
+    transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 120ms ease,
+    background 120ms ease;
+}
+
+.theme-roll-btn:hover {
+  background: var(--cta-plate-hover);
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--line-ink);
+}
+
+.theme-roll-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--line-ink);
 }
 
 /* ===================================================================

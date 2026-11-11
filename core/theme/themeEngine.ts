@@ -54,6 +54,25 @@ export class ThemeSystem {
   // PUBLIC API
   // ===================================================================
 
+  /** Return all curated named themes in the configuration. */
+  getThemes(): Theme[] {
+    return this.config.themes;
+  }
+
+  /** Return the currently active theme (named or SHUFFLE). */
+  getCurrentTheme(): Theme {
+    return this.currentTheme;
+  }
+
+  /** Select and apply one of the curated named themes by name. */
+  setThemeByName(name: string): Theme | null {
+    const found = this.config.themes.find((t) => t.name === name);
+    if (!found) return null;
+    this.currentTheme = found;
+    this.applyTheme(found);
+    return found;
+  }
+
   /**
    * Apply a theme object to the document root via CSS custom properties.
    * No-ops on the server (typeof document guard).
@@ -197,14 +216,17 @@ export class ThemeSystem {
    * FOUC script can set them verbatim before first paint. */
   private themeToVars(theme: Theme): Record<string, string> {
     const prefix = this.config.cssPrefix;
+    const solidFallback = (theme.cssVars?.["--color-base-solid"] as string) ??
+      (theme.base.includes("gradient")
+        ? (this.extractColorFromGradient(theme.base) || "#FFEBD4")
+        : theme.base);
     const vars: Record<string, string> = {
       [`${prefix}-secondary`]: theme.secondary,
       [`${prefix}-accent`]: theme.accent,
       [`${prefix}-text`]: theme.text,
       [`${prefix}-border`]: theme.border,
       [`${prefix}-base`]: theme.base,
-      [`${prefix}-base-solid`]:
-        (theme.cssVars?.["--color-base-solid"] as string) ?? theme.base,
+      [`${prefix}-base-solid`]: solidFallback,
     };
     if (theme.textSecondary) {
       vars[`${prefix}-text-secondary`] = theme.textSecondary;
@@ -219,16 +241,17 @@ export class ThemeSystem {
     if (typeof window !== "undefined") {
       const storageKey = this.config.storageKey || "app-theme";
       try {
-        // SHUFFLE rolls aren't in the named-theme list, so persist the
-        // full theme + a flat CSS-var map (the FOUC script applies the vars
-        // directly before first paint without knowing how to derive them).
+        const flatVars = this.themeToVars(theme);
+        // Persist a flat CSS-var map for both curated themes and SHUFFLE rolls
+        // so the FOUC script in _app.tsx paints saved preferences before hydration.
         const payload: Record<string, unknown> = {
           name: theme.name,
           timestamp: Date.now(),
+          vars: flatVars,
         };
         if (theme.name === "SHUFFLE") {
           payload.v = SHUFFLE_SCHEMA_VERSION;
-          payload.custom = { theme, vars: this.themeToVars(theme) };
+          payload.custom = { theme, vars: flatVars };
         }
         localStorage.setItem(storageKey, JSON.stringify(payload));
       } catch (err) {
