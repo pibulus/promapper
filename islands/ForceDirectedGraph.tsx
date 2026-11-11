@@ -5,9 +5,9 @@
  * Shows topics as emoji nodes with physics simulation and draggable interactions
  *
  * Graph gestures:
- *   click         → select node / edge (detail panel: rename/delete/unlink)
+ *   click         → select node / edge (inspector: focus / inline rename / remove / unlink)
  *   double-click  → focus mode (isolate node + neighbors, dim the rest)
- *   right-click   → delete node (confirm modal)
+ *   right-click   → contextual menu (node actions on a node, canvas actions on empty space)
  *   drag-to-node  → merge when released within MERGE_THRESHOLD (live preview)
  *   layout toggle → organic (loose physics) vs readable (spread out)
  */
@@ -17,6 +17,7 @@ import { useComputed, useSignal } from "@preact/signals";
 import {
   canUndo,
   conversationData,
+  isViewingShared,
   undoLastMutation,
 } from "@signals/conversationStore.ts";
 import {
@@ -31,7 +32,6 @@ import {
   persistTopicPositions,
   renameTopic,
 } from "@signals/actionItemsStore.ts";
-import { isViewingShared } from "@signals/conversationStore.ts";
 import { MAX_LABEL_LENGTH } from "@core/orchestration/conversation-ops.ts";
 import { edgePhrase } from "@core/types/edge.ts";
 import { showToast, showUndoToast } from "@utils/toast.ts";
@@ -44,9 +44,8 @@ interface ForceDirectedGraphProps {
   loading?: boolean;
 }
 
-// Default edge color: carbon ink (--ink-carbon), never grey — connections you
-// can actually see on the paper grid.
-const EDGE_INK = "#121212";
+// Default edge color: warm sepia-black (--ink-carbon), never grey or pure #000.
+const EDGE_INK = "#1e1714";
 
 export default function ForceDirectedGraph(
   { loading = false }: ForceDirectedGraphProps,
@@ -65,25 +64,23 @@ export default function ForceDirectedGraph(
   const newNodeLabel = useSignal("");
   const newNodeEmoji = useSignal("");
 
-  // Context menu state
+  // Context menu state (contextual: node actions when right-clicking a node,
+  // canvas actions when right-clicking the paper plane)
   const contextMenuVisible = useSignal(false);
   const contextMenuX = useSignal(0);
   const contextMenuY = useSignal(0);
+  const contextMenuNodeId = useSignal<string | null>(null);
 
-  // Rename modal state
-  const renameModalNodeId = useSignal<string | null>(null);
-  const renameModalValue = useSignal("");
-
-  // Delete confirm modal state
-  const deleteModalNodeId = useSignal<string | null>(null);
+  // Inline rename state inside the node inspector card (no modal jump)
+  const isRenamingInline = useSignal(false);
+  const inlineRenameValue = useSignal("");
 
   // Simulation parameters
-  const linkDistance = useSignal(100);
-  const chargeStrength = useSignal(-850);
-  const collisionRadius = useSignal(70);
+  const linkDistance = useSignal(105);
+  const chargeStrength = useSignal(-880);
+  const collisionRadius = useSignal(72);
 
-  // Layout toggle: "organic" = current physics defaults, "readable" = spread
-  // Organic: loose clustering. Readable: stronger repulsion + longer links.
+  // Layout toggle: "organic" = cozy physics defaults, "readable" = spread out
   const layoutMode = useSignal<"organic" | "readable">("organic");
 
   // ===================================================================
@@ -91,8 +88,8 @@ export default function ForceDirectedGraph(
   // ===================================================================
 
   const LAYOUT_PRESETS = {
-    organic: { linkDistance: 100, chargeStrength: -850, collisionRadius: 70 },
-    readable: { linkDistance: 180, chargeStrength: -1800, collisionRadius: 90 },
+    organic: { linkDistance: 105, chargeStrength: -880, collisionRadius: 72 },
+    readable: { linkDistance: 180, chargeStrength: -1800, collisionRadius: 92 },
   };
 
   function applyLayoutPreset(mode: "organic" | "readable") {
@@ -117,15 +114,8 @@ export default function ForceDirectedGraph(
     }, 400) as unknown as number;
   }
 
-  // Get topics and edges from store.
-  //
-  // CLONE the nodes before they ever reach D3. D3's force sim writes x/y/vx/vy/
-  // fx/fy directly onto the objects it's given — if those were the store's own
-  // node objects, that transient physics state would leak into autosave, share
-  // payloads, and live-sync (a node could even be saved permanently pinned via
-  // a stray fx/fy). Cloning keeps the store pristine. We seed x/y from any saved
-  // `position` so a reload (or any later update) restores the hand-laid layout
-  // instead of re-scattering from center.
+  // CLONE the nodes before they ever reach D3 so transient physics fields
+  // (x/y/vx/vy/fx/fy) never leak into autosave or live-sync payloads.
   const topics = useComputed(() =>
     (conversationData.value?.nodes || []).map((n) => ({
       ...n,
@@ -143,12 +133,27 @@ export default function ForceDirectedGraph(
   }
 
   // ===================================================================
-  // FULLSCREEN MANAGEMENT
+  // FULLSCREEN & HEADER ACTION BRIDGE
   // ===================================================================
 
   function toggleFullscreen() {
     isFullscreen.value = !isFullscreen.value;
   }
+
+  useEffect(() => {
+    const onExport = () => {
+      exportAsPng();
+    };
+    const onFullscreen = () => {
+      toggleFullscreen();
+    };
+    globalThis.addEventListener("promapper:map-export-png", onExport);
+    globalThis.addEventListener("promapper:map-fullscreen", onFullscreen);
+    return () => {
+      globalThis.removeEventListener("promapper:map-export-png", onExport);
+      globalThis.removeEventListener("promapper:map-fullscreen", onFullscreen);
+    };
+  }, []);
 
   // ===================================================================
   // VISUALIZATION MANAGEMENT
@@ -160,10 +165,6 @@ export default function ForceDirectedGraph(
       : svgContainerRef.current;
     if (!container || topics.value.length === 0) return;
 
-    // Destroy existing visualization — but take its layout with us first.
-    // Fullscreen toggling rebuilds the handle, and a fresh closure has no
-    // position memory, so the map used to cold-restart (full-energy alpha(1))
-    // and re-scatter the arrangement on the way in AND the way out.
     let seedPositions: Record<string, { x: number; y: number }> | undefined;
     if (emojimapHandleRef.current) {
       seedPositions = emojimapHandleRef.current.getPositions();
@@ -176,11 +177,6 @@ export default function ForceDirectedGraph(
     const height = rect.height || container.offsetHeight ||
       Math.min(800, window.innerHeight * 0.6);
 
-    // Map edges to correct format. Edges are ALWAYS the warm dark ink (never
-    // grey — Pablo's call). The AI emits "muted modern hex" edge colors, so
-    // honoring rel.color here painted every real conversation as the exact
-    // washed-out cobweb this ink was chosen to kill (the dev harness seeds
-    // empty colors, which is why it looked right there).
     const edges = relationships.value.map((rel, index) => ({
       id: getRelationshipId(rel, index),
       source: rel.source_topic_id,
@@ -188,11 +184,8 @@ export default function ForceDirectedGraph(
       color: EDGE_INK,
     }));
 
-    // A fresh init consumed the current structure — stamp the signature so the
-    // update effect doesn't immediately re-run update() over the same data.
     lastGraphSigRef.current = computeGraphSig();
 
-    // Initialize emojimap
     emojimapHandleRef.current = forceDirectedEmojimap(container, {
       nodes: topics.value,
       edges,
@@ -200,14 +193,10 @@ export default function ForceDirectedGraph(
       config: {
         width,
         height,
-        // Transparent so .topic-map-canvas shows through: the paper plane and
-        // its drafting dot-grid live in CSS. An opaque svg here is what buried
-        // the grid.
         backgroundColor: "transparent",
         linkDistance: linkDistance.value,
         chargeStrength: chargeStrength.value,
         collisionRadius: collisionRadius.value,
-        // Inked wiring, not a spiderweb: full carbon at 2.5px.
         linkStrokeWidth: 2.5,
         linkOpacity: 1,
         onClickNode: (_event: MouseEvent, node: { id: string }) => {
@@ -215,15 +204,18 @@ export default function ForceDirectedGraph(
           selectedEdgeId.value = null;
         },
         onDoubleClickNode: (_event: MouseEvent, node: { id: string }) => {
-          // Focus mode: dbl-click isolates this node + neighbors; dbl-click the
-          // already-focused node to zoom back out.
           focusedNodeId.value = focusedNodeId.value === node.id
             ? null
             : node.id;
         },
         onRightClickNode: (event: MouseEvent, node: { id: string }) => {
           event.preventDefault();
-          confirmDeleteTopic(node.id);
+          selectedNodeId.value = node.id;
+          selectedEdgeId.value = null;
+          contextMenuNodeId.value = node.id;
+          contextMenuX.value = event.clientX;
+          contextMenuY.value = event.clientY;
+          contextMenuVisible.value = true;
         },
         onClickEdge: (_event: MouseEvent, edge: { id?: string }) => {
           selectedEdgeId.value = edge.id || null;
@@ -232,30 +224,23 @@ export default function ForceDirectedGraph(
         onBackgroundClick: () => {
           selectedNodeId.value = null;
           selectedEdgeId.value = null;
-          // Clicking empty space also exits focus mode.
           focusedNodeId.value = null;
         },
         onRightClickBackground: (event: MouseEvent) => {
           event.preventDefault();
+          contextMenuNodeId.value = null;
           contextMenuX.value = event.clientX;
           contextMenuY.value = event.clientY;
           contextMenuVisible.value = true;
         },
         onMergeNodes: (sourceId: string, targetId: string) => {
-          // A shared snapshot can be pushed around to read it — positions
-          // don't persist and that's fine, it's exploring. Folding two topics
-          // into one is a change, and a photo can't take one.
           if (isViewingShared.value) return;
-          // Grab labels before the merge removes the source node.
           const nodes = conversationData.value?.nodes ?? [];
           const sourceLabel = nodes.find((n) => n.id === sourceId)?.label ??
             "topic";
           const targetLabel = nodes.find((n) => n.id === targetId)?.label ??
             "topic";
           mergeTopics(sourceId, targetId);
-          // Select the surviving topic so its detail panel (with Rename) is
-          // right there — merge = "these are the same thing," and the kept
-          // label often wants a quick tidy-up after folding two into one.
           selectedNodeId.value = targetId;
           selectedEdgeId.value = null;
           if (canUndo()) {
@@ -288,22 +273,21 @@ export default function ForceDirectedGraph(
       : svgContainerRef.current;
     if (!container) return;
 
-    // Declared outside the try so the finally can ALWAYS restore the UI — a
-    // failed toPng used to leave every control hidden and the overlay stuck.
     let header: HTMLDivElement | null = null;
     let buttons: NodeListOf<HTMLButtonElement> | null = null;
     try {
-      // Create header overlay
       header = document.createElement("div");
       header.style.position = "absolute";
       header.style.top = "20px";
       header.style.left = "20px";
-      header.style.backgroundColor = "rgba(255, 254, 247, 0.92)";
-      header.style.padding = "8px 20px";
+      header.style.backgroundColor = "rgba(255, 254, 247, 0.94)";
+      header.style.padding = "8px 18px";
       header.style.borderRadius = "12px";
-      header.style.fontSize = "18px";
-      header.style.fontWeight = "bold";
-      header.style.boxShadow = "0 2px 8px rgba(30, 23, 20, 0.12)";
+      header.style.border = "2px solid rgba(30, 23, 20, 0.85)";
+      header.style.fontSize = "17px";
+      header.style.fontWeight = "700";
+      header.style.color = "#1e1714";
+      header.style.boxShadow = "3px 3px 0 rgba(30, 23, 20, 0.85)";
 
       const title = conversationData.value?.conversation.title ||
         "Conversation Map";
@@ -315,30 +299,22 @@ export default function ForceDirectedGraph(
         minute: "2-digit",
       });
 
-      // textContent, not innerHTML: the title is untrusted twice over — it's
-      // AI-generated from whatever the user pasted, AND in a live room it
-      // arrives from a peer through the collab worker, whose normalizeString
-      // only strips control characters (< and > pass straight through). This
-      // was the one render path in the app that wasn't escaped; every other
-      // one goes through formatTranscriptSafe / formatMarkdownSafe.
       const titleEl = document.createElement("div");
       titleEl.textContent = title;
       const stampEl = document.createElement("div");
-      stampEl.style.cssText = "font-size:12px;font-weight:normal;color:#666;";
+      stampEl.style.cssText =
+        "font-size:12px;font-weight:500;color:#62564e;margin-top:2px;";
       stampEl.textContent = timestamp;
       header.append(titleEl, stampEl);
       container.appendChild(header);
 
-      // Hide control buttons during export
       buttons = container.querySelectorAll("button");
       buttons.forEach((btn) => (btn.style.display = "none"));
 
-      // Generate PNG
       const dataUrl = await htmlToImage.toPng(container, {
         backgroundColor: "#fffef7",
       });
 
-      // Download
       const link = document.createElement("a");
       link.href = dataUrl;
       const filename = `${title.replace(/\s+/g, "_")}_${
@@ -348,17 +324,14 @@ export default function ForceDirectedGraph(
       link.click();
     } catch (error) {
       console.error("Error exporting as PNG:", error);
-      showToast("Failed to export PNG. Please try again.", "error");
+      showToast("Failed to save PNG. Try again in a moment.", "error");
     } finally {
-      // Restore the UI whether the export worked or not.
       buttons?.forEach((btn) => (btn.style.display = ""));
       if (header?.parentNode === container) container.removeChild(header);
     }
   }
 
   function addManualNode() {
-    // Route through the store like every other graph mutation: undoable +
-    // validated, instead of a hand-rolled spread that skipped both.
     const id = addTopic({
       label: newNodeLabel.value,
       emoji: newNodeEmoji.value,
@@ -370,25 +343,50 @@ export default function ForceDirectedGraph(
     showAddNode.value = false;
   }
 
-  // Shared rename/delete so the gesture shortcuts (dbl-click / right-click) and
-  // the detail-panel buttons run the exact same path.
-  function promptRenameTopic(id: string) {
+  function startInlineRename(id: string) {
+    if (isViewingShared.value) return;
     const current = conversationData.value?.nodes.find((n) => n.id === id);
-    renameModalValue.value = current?.label ?? "";
-    renameModalNodeId.value = id;
+    if (!current) return;
+    selectedNodeId.value = id;
+    selectedEdgeId.value = null;
+    inlineRenameValue.value = current.label ?? "";
+    isRenamingInline.value = true;
   }
 
-  function confirmDeleteTopic(id: string) {
-    deleteModalNodeId.value = id;
+  function commitInlineRename() {
+    const id = selectedNodeId.value;
+    if (!id) {
+      isRenamingInline.value = false;
+      return;
+    }
+    const val = inlineRenameValue.value.trim();
+    const current = conversationData.value?.nodes.find((n) => n.id === id);
+    if (val && val !== current?.label) {
+      renameTopic(id, val);
+    }
+    isRenamingInline.value = false;
+  }
+
+  function removeTopicWithUndo(id: string) {
+    if (isViewingShared.value) return;
+    const current = conversationData.value?.nodes.find((n) => n.id === id);
+    const label = current?.label ?? "topic";
+    deleteTopic(id);
+    if (selectedNodeId.value === id) selectedNodeId.value = null;
+    if (focusedNodeId.value === id) focusedNodeId.value = null;
+    isRenamingInline.value = false;
+    if (canUndo()) {
+      showUndoToast(
+        `Removed "${label}"`,
+        undoLastMutation,
+      );
+    }
   }
 
   // ===================================================================
   // LIFECYCLE
   // ===================================================================
 
-  // Cleanup on unmount. (Initialization happens in the fullscreen effect
-  // below, which also runs at mount — having BOTH init used to build the sim
-  // twice per mount, 50ms apart.)
   useEffect(() => {
     return () => {
       clearTimeout(positionDebounceTimerRef.current);
@@ -398,12 +396,6 @@ export default function ForceDirectedGraph(
     };
   }, []);
 
-  // Structural signature of what the sim actually consumes: node identity/
-  // look + edge topology + physics params. Positions are EXCLUDED on purpose —
-  // the 400ms drag autosave writes positions back to the store, and without
-  // this guard that write re-triggered update() → alpha restart → seconds of
-  // ticks → fit-on-settle yanking the user's camera. Same for every unrelated
-  // store change (checking an action item reheated the whole map).
   function computeGraphSig(): string {
     return JSON.stringify([
       topics.value.map((t) => [t.id, t.label, t.emoji, t.color]),
@@ -419,7 +411,6 @@ export default function ForceDirectedGraph(
   }
   const lastGraphSigRef = useRef<string>("");
 
-  // Update when the graph STRUCTURE or physics params change
   useEffect(() => {
     if (topics.value.length > 0 && emojimapHandleRef.current) {
       const sig = computeGraphSig();
@@ -430,7 +421,7 @@ export default function ForceDirectedGraph(
         id: getRelationshipId(rel, index),
         source: rel.source_topic_id,
         target: rel.target_topic_id,
-        color: EDGE_INK, // always warm ink, see initializeVisualization
+        color: EDGE_INK,
       }));
 
       emojimapHandleRef.current.update({
@@ -453,18 +444,16 @@ export default function ForceDirectedGraph(
     collisionRadius.value,
   ]);
 
-  // Selection is a CHEAP highlight repaint — never a physics restart. Keeping it
-  // out of the update() effect above means a plain tap-to-select no longer
-  // reheats and reshuffles the whole graph (the most common gesture).
+  // Selection is a CHEAP highlight repaint — never a physics restart.
   useEffect(() => {
+    isRenamingInline.value = false;
     emojimapHandleRef.current?.setSelection({
       selectedNodeId: selectedNodeId.value,
       selectedEdgeId: selectedEdgeId.value,
     });
   }, [selectedNodeId.value, selectedEdgeId.value]);
 
-  // Focus mode: dim the rest + zoom to the focused node's neighborhood (or zoom
-  // back out when cleared). Escape exits, like a lightweight "back".
+  // Focus mode: dim the rest + zoom to the focused node's neighborhood.
   useEffect(() => {
     emojimapHandleRef.current?.setFocus(focusedNodeId.value);
     if (!focusedNodeId.value) return;
@@ -503,8 +492,6 @@ export default function ForceDirectedGraph(
   // ===================================================================
 
   if (loading) {
-    // The constellation loading animation from DashboardIsland, so the map
-    // feels like it's mapping while crunching audio, not just a generic spinner.
     const NODES = [
       { cx: 26, cy: 62, r: 7 },
       { cx: 50, cy: 30, r: 9 },
@@ -556,31 +543,70 @@ export default function ForceDirectedGraph(
       <div class="empty-state" style="min-height: 400px;">
         <div class="empty-state-icon">🌱</div>
         <div class="empty-state-text">
-          Nothing on the map yet — say or paste a few thoughts and the topics
-          start showing up here.
+          No topics mapped yet. Add or record a few thoughts to grow the map.
         </div>
       </div>
     );
   }
 
-  // Context menu items
-  const contextMenuItems = [
-    {
-      label: "Reset Positions",
-      icon: "fa-arrows-rotate",
-      onClick: resetVisualization,
-    },
-    {
-      label: "Fit to View",
-      icon: "fa-expand",
-      onClick: fitToView,
-    },
-    {
-      label: "Export as PNG",
-      icon: "fa-camera",
-      onClick: exportAsPng,
-    },
-  ];
+  // Contextual right-click menu items (node-specific vs canvas-level)
+  const ctxNodeId = contextMenuNodeId.value;
+  const contextMenuItems = ctxNodeId
+    ? [
+      {
+        label: focusedNodeId.value === ctxNodeId
+          ? "Show all topics"
+          : "Focus neighborhood",
+        icon: "fa-compass",
+        onClick: () => {
+          focusedNodeId.value = focusedNodeId.value === ctxNodeId
+            ? null
+            : ctxNodeId;
+        },
+      },
+      ...(!isViewingShared.value
+        ? [
+          {
+            label: "Rename topic",
+            icon: "fa-pen",
+            onClick: () => startInlineRename(ctxNodeId),
+          },
+          {
+            label: "Remove topic",
+            icon: "fa-trash-can",
+            onClick: () => removeTopicWithUndo(ctxNodeId),
+          },
+        ]
+        : []),
+    ]
+    : [
+      ...(!isViewingShared.value
+        ? [
+          {
+            label: "Add topic",
+            icon: "fa-plus",
+            onClick: () => {
+              showAddNode.value = true;
+            },
+          },
+        ]
+        : []),
+      {
+        label: "Fit map in view",
+        icon: "fa-expand",
+        onClick: fitToView,
+      },
+      {
+        label: "Re-tidy layout",
+        icon: "fa-wand-magic-sparkles",
+        onClick: resetVisualization,
+      },
+      {
+        label: "Save map as PNG",
+        icon: "fa-camera",
+        onClick: exportAsPng,
+      },
+    ];
 
   const selectedNode = selectedNodeId.value
     ? topics.value.find((node) => node.id === selectedNodeId.value)
@@ -612,57 +638,126 @@ export default function ForceDirectedGraph(
   const edgeTarget = selectedEdge
     ? topics.value.find((node) => node.id === selectedEdge.target_topic_id)
     : null;
+
   function renderNodeDetail() {
     if (!selectedNode) return null;
+    const isFocused = focusedNodeId.value === selectedNode.id;
+
     return (
       <aside class="topic-node-detail" aria-live="polite">
         <button
           type="button"
           class="topic-node-detail__close"
-          onClick={() => selectedNodeId.value = null}
+          onClick={() => {
+            selectedNodeId.value = null;
+            isRenamingInline.value = false;
+          }}
           aria-label="Close topic details"
         >
-          ×
+          <i class="fa fa-xmark" aria-hidden="true"></i>
         </button>
         <div class="topic-node-detail__emoji">
           {selectedNode.emoji || "✨"}
         </div>
-        <div>
-          <h4>{selectedNode.label}</h4>
+        <div class="min-w-0">
+          {isRenamingInline.value && !isViewingShared.value
+            ? (
+              <div class="topic-node-rename-row">
+                <input
+                  type="text"
+                  class="topic-node-rename-input"
+                  value={inlineRenameValue.value}
+                  onInput={(e) =>
+                    inlineRenameValue.value =
+                      (e.target as HTMLInputElement).value}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") commitInlineRename();
+                    if (e.key === "Escape") isRenamingInline.value = false;
+                  }}
+                  maxLength={MAX_LABEL_LENGTH}
+                  aria-label="Topic name"
+                  autoFocus
+                />
+                <div class="topic-node-rename-btns">
+                  <button
+                    type="button"
+                    class="topic-node-rename-btn is-save"
+                    onClick={commitInlineRename}
+                    disabled={!inlineRenameValue.value.trim()}
+                    aria-label="Save topic name"
+                  >
+                    <i class="fa fa-check" aria-hidden="true"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="topic-node-rename-btn"
+                    onClick={() => {
+                      isRenamingInline.value = false;
+                    }}
+                    aria-label="Cancel rename"
+                  >
+                    <i class="fa fa-xmark" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </div>
+            )
+            : (
+              <h4
+                class={!isViewingShared.value ? "is-editable" : ""}
+                onClick={() => {
+                  if (!isViewingShared.value) {
+                    startInlineRename(selectedNode.id);
+                  }
+                }}
+                title={!isViewingShared.value ? "Click to rename" : undefined}
+              >
+                {selectedNode.label}
+              </h4>
+            )}
           <p>
             {connectedEdges.length === 0
-              ? "Flying solo for now — it'll link up as the conversation grows."
-              : `Connected to ${connectedEdges.length} other topic${
-                connectedEdges.length === 1 ? "" : "s"
-              } so far.`}
+              ? "Standalone thread so far."
+              : `Linked to ${connectedEdges.length} ${
+                connectedEdges.length === 1 ? "topic" : "topics"
+              }.`}
           </p>
           {!!selectedNode.aliases?.length && (
             <p class="topic-node-detail__aliases">
-              Also holds: {selectedNode.aliases.join(", ")}
+              Merged: {selectedNode.aliases.join(", ")}
             </p>
           )}
         </div>
-        {/* Rename/delete are absent on a snapshot — see ActionItemsCard. */}
-        <div
-          class="topic-node-detail__actions"
-          style={{ display: isViewingShared.value ? "none" : undefined }}
-        >
+        <div class="topic-node-detail__actions">
           <button
             type="button"
-            class="topic-node-action"
-            onClick={() => promptRenameTopic(selectedNode.id)}
+            class={`topic-node-action ${isFocused ? "is-active" : ""}`}
+            onClick={() => {
+              focusedNodeId.value = isFocused ? null : selectedNode.id;
+            }}
           >
-            <i class="fa fa-pen" aria-hidden="true"></i>
-            <span>Rename</span>
+            <i class="fa fa-compass" aria-hidden="true"></i>
+            <span>{isFocused ? "Unfocus" : "Focus"}</span>
           </button>
-          <button
-            type="button"
-            class="topic-node-action topic-node-action--recede"
-            onClick={() => confirmDeleteTopic(selectedNode.id)}
-          >
-            <i class="fa fa-trash-can" aria-hidden="true"></i>
-            <span>Delete</span>
-          </button>
+          {!isViewingShared.value && (
+            <>
+              <button
+                type="button"
+                class="topic-node-action"
+                onClick={() => startInlineRename(selectedNode.id)}
+              >
+                <i class="fa fa-pen" aria-hidden="true"></i>
+                <span>Rename</span>
+              </button>
+              <button
+                type="button"
+                class="topic-node-action topic-node-action--recede"
+                onClick={() => removeTopicWithUndo(selectedNode.id)}
+              >
+                <i class="fa fa-trash-can" aria-hidden="true"></i>
+                <span>Remove</span>
+              </button>
+            </>
+          )}
         </div>
         {connectedTopics.length > 0 && (
           <div class="topic-node-detail__links">
@@ -694,26 +789,23 @@ export default function ForceDirectedGraph(
           }}
           aria-label="Close relationship details"
         >
-          ×
+          <i class="fa fa-xmark" aria-hidden="true"></i>
         </button>
         <div class="topic-node-detail__emoji">
           ↔
         </div>
-        <div>
-          <h4>Relationship</h4>
+        <div class="min-w-0">
+          <h4>Connection</h4>
           <p>
             {(edgeSource || edgeTarget)
               ? `${edgeSource?.emoji || "•"} ${edgeSource?.label || "Topic"} ${
                 edgePhrase(selectedEdge.kind)
               } ${edgeTarget?.emoji || "•"} ${edgeTarget?.label || "Topic"}.`
-              : "This line links two topics the map drew together from the conversation."}
+              : "Links two related topics from the conversation."}
           </p>
         </div>
-        {edgeSource && edgeTarget && (
-          <div
-            class="topic-node-detail__actions"
-            style={{ display: isViewingShared.value ? "none" : undefined }}
-          >
+        {edgeSource && edgeTarget && !isViewingShared.value && (
+          <div class="topic-node-detail__actions">
             <button
               type="button"
               class="topic-node-action topic-node-action--recede"
@@ -731,7 +823,7 @@ export default function ForceDirectedGraph(
               }}
             >
               <i class="fa fa-link-slash" aria-hidden="true"></i>
-              <span>Remove connection</span>
+              <span>Unlink topics</span>
             </button>
           </div>
         )}
@@ -754,41 +846,46 @@ export default function ForceDirectedGraph(
     );
   }
 
-  // ONE control cluster, rendered in both the inline map and fullscreen, so they
-  // can never drift. The only difference is the fullscreen button (enter vs
-  // exit). Every control is FontAwesome + tooltip'd + theme-following.
+  // Spatial canvas dock — Save PNG & Fullscreen live cleanly in the card header
+  // (and fullscreen header), leaving only direct spatial actions on the canvas.
   function renderControls() {
     return (
       <div class="topic-map-ctrls">
-        <button
-          type="button"
-          class="topic-map-ctrl topic-map-ctrl--add"
-          style={{ display: isViewingShared.value ? "none" : undefined }}
-          onClick={() => showAddNode.value = true}
-          title="Add a topic to the map"
-          aria-label="Add a topic"
-        >
-          <i class="fa fa-plus" aria-hidden="true"></i>
-          <span class="hidden sm:inline">Topic</span>
-        </button>
+        {!isViewingShared.value && (
+          <button
+            type="button"
+            class="topic-map-ctrl topic-map-ctrl--add"
+            onClick={() => showAddNode.value = true}
+            aria-label="Add topic"
+          >
+            <i class="fa fa-plus" aria-hidden="true"></i>
+            <span class="hidden sm:inline">Topic</span>
+          </button>
+        )}
+
+        {focusedNodeId.value && (
+          <button
+            type="button"
+            class="topic-map-ctrl topic-map-ctrl--active"
+            onClick={() => {
+              focusedNodeId.value = null;
+            }}
+            aria-label="Show all topics"
+          >
+            <i class="fa fa-compress" aria-hidden="true"></i>
+            <span>All topics</span>
+          </button>
+        )}
 
         <button
           type="button"
-          class="topic-map-ctrl"
+          class="topic-map-ctrl tooltip-btn"
+          data-tip={layoutMode.value === "organic"
+            ? "Spread topics apart"
+            : "Cluster topics closer"}
           onClick={toggleLayout}
-          title={layoutMode.value === "organic"
-            ? "Spread the map out (readable layout)"
-            : "Cluster the map tighter (organic layout)"}
           aria-label="Toggle layout density"
         >
-          {
-            /* Was a pair of resize-diagonal arrows (Sept 29 2026: Pablo
-              couldn't tell this apart from "fit to view"/"fullscreen" at a
-              glance — three arrow-cornered glyphs in one cluster). Swapped
-              for node-shaped icons that actually read as "how the nodes
-              sit," reusing fa-share-nodes/fa-diagram-project (both already
-              in the FA subset elsewhere, so no blank-icon risk). */
-          }
           <i
             class={layoutMode.value === "organic"
               ? "fa fa-share-nodes"
@@ -800,48 +897,22 @@ export default function ForceDirectedGraph(
 
         <button
           type="button"
-          class="topic-map-ctrl"
+          class="topic-map-ctrl tooltip-btn"
+          data-tip="Fit map in view"
           onClick={fitToView}
-          title="Fit the whole map in view"
-          aria-label="Fit to view"
+          aria-label="Fit map in view"
         >
           <i class="fa fa-expand" aria-hidden="true"></i>
         </button>
 
         <button
           type="button"
-          class="topic-map-ctrl"
+          class="topic-map-ctrl tooltip-btn"
+          data-tip="Re-tidy layout"
           onClick={resetVisualization}
-          title="Re-tidy the layout (re-runs the physics)"
-          aria-label="Re-tidy the layout"
+          aria-label="Re-tidy layout"
         >
           <i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i>
-        </button>
-
-        <button
-          type="button"
-          class="topic-map-ctrl"
-          onClick={exportAsPng}
-          title="Save the map as an image (PNG)"
-          aria-label="Export as PNG"
-        >
-          <i class="fa fa-camera" aria-hidden="true"></i>
-        </button>
-
-        <button
-          type="button"
-          class="topic-map-ctrl"
-          onClick={toggleFullscreen}
-          title={isFullscreen.value
-            ? "Exit fullscreen"
-            : "Open the map fullscreen"}
-          aria-label={isFullscreen.value ? "Exit fullscreen" : "Fullscreen"}
-        >
-          <i
-            class={isFullscreen.value ? "fa fa-compress" : "fa fa-maximize"}
-            aria-hidden="true"
-          >
-          </i>
         </button>
       </div>
     );
@@ -849,14 +920,6 @@ export default function ForceDirectedGraph(
 
   return (
     <div class="relative flex h-full w-full flex-col">
-      {
-        /* Full-bleed: the canvas fills the whole area below the card header with
-          no margin/border of its own — the card's chunky border frames it. It
-          fills the card body's height exactly (the card clips overflow, so a
-          taller canvas would push the controls + detail panel out of view);
-          the 440px floor keeps it usable where no parent height exists (the
-          /dev/nodemap harness). */
-      }
       <div
         ref={svgContainerRef}
         class="topic-map-canvas topic-map-canvas--bleed w-full overflow-hidden"
@@ -904,7 +967,7 @@ export default function ForceDirectedGraph(
                 onKeyDown={(event) => {
                   if (event.key === "Enter") addManualNode();
                 }}
-                placeholder="New topic thread..."
+                placeholder="New topic thread…"
                 maxLength={MAX_LABEL_LENGTH}
                 autoFocus
                 aria-label="Topic name"
@@ -927,169 +990,7 @@ export default function ForceDirectedGraph(
                 onClick={addManualNode}
                 disabled={!newNodeLabel.value.trim()}
               >
-                Add Topic
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {/* Rename topic modal */}
-      {renameModalNodeId.value !== null && (
-        <Modal
-          open
-          onClose={() => renameModalNodeId.value = null}
-          titleId="rename-topic-modal-title"
-        >
-          <div class="modal-stack">
-            <h3
-              id="rename-topic-modal-title"
-              style={{
-                margin: 0,
-                fontSize: "var(--heading-size)",
-                fontWeight: 700,
-                color: "var(--color-text)",
-              }}
-            >
-              Rename topic
-            </h3>
-            <input
-              // type="text" matters: the iOS anti-zoom guard (16px font on
-              // phones) targets input[type="text"] — a typeless input never
-              // matches the selector and Safari force-zooms on focus.
-              type="text"
-              value={renameModalValue.value}
-              onInput={(e) =>
-                renameModalValue.value = (e.target as HTMLInputElement).value}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  const id = renameModalNodeId.value;
-                  const val = renameModalValue.value.trim();
-                  if (id && val) renameTopic(id, val);
-                  renameModalNodeId.value = null;
-                  renameModalValue.value = "";
-                }
-              }}
-              placeholder="New name"
-              maxLength={MAX_LABEL_LENGTH}
-              autoFocus
-              style={{
-                minHeight: "2.75rem",
-                border: "2px solid var(--color-border)",
-                borderRadius: "8px",
-                background: "var(--surface-cream)",
-                padding: "0.55rem 0.7rem",
-                // No inline fontSize — inline beats the mobile 16px
-                // input[type="text"] rule and re-triggers iOS focus zoom.
-                color: "var(--color-text)",
-                width: "100%",
-                boxSizing: "border-box",
-              }}
-            />
-            <div class="modal-actions">
-              <button
-                class="btn btn--secondary"
-                style={{ flex: 1 }}
-                onClick={() => {
-                  renameModalNodeId.value = null;
-                  renameModalValue.value = "";
-                }}
-                type="button"
-              >
-                Cancel
-              </button>
-              <button
-                class="btn btn--primary"
-                style={{ flex: 1 }}
-                onClick={() => {
-                  const id = renameModalNodeId.value;
-                  const val = renameModalValue.value.trim();
-                  if (id && val) renameTopic(id, val);
-                  renameModalNodeId.value = null;
-                  renameModalValue.value = "";
-                }}
-                disabled={!renameModalValue.value.trim()}
-                type="button"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {/* Delete confirm modal */}
-      {deleteModalNodeId.value !== null && (
-        <Modal
-          open
-          onClose={() => deleteModalNodeId.value = null}
-          titleId="delete-topic-modal-title"
-        >
-          <div class="modal-stack">
-            <h3
-              id="delete-topic-modal-title"
-              style={{
-                margin: 0,
-                fontSize: "var(--heading-size)",
-                fontWeight: 700,
-                color: "var(--color-text)",
-              }}
-            >
-              Delete topic?
-            </h3>
-            <p
-              style={{
-                margin: 0,
-                fontSize: "var(--small-size)",
-                color: "var(--color-text-secondary)",
-                lineHeight: 1.5,
-              }}
-            >
-              "{conversationData.value?.nodes.find((n) =>
-                n.id === deleteModalNodeId.value
-              )?.label ?? "this topic"}" will be removed from the map, along
-              with its connections. You can undo this right after.
-            </p>
-            <div class="modal-actions">
-              <button
-                class="btn btn--secondary"
-                style={{ flex: 1 }}
-                onClick={() => deleteModalNodeId.value = null}
-                type="button"
-              >
-                Keep it
-              </button>
-              <button
-                class="btn btn--primary"
-                style={{
-                  flex: 1,
-                  background: "transparent",
-                  color: "var(--color-text-secondary)",
-                  borderColor: "var(--border-cream)",
-                  fontWeight: 600,
-                }}
-                onClick={() => {
-                  const id = deleteModalNodeId.value;
-                  if (!id) return;
-                  const current = conversationData.value?.nodes.find((n) =>
-                    n.id === id
-                  );
-                  const label = current?.label ?? id;
-                  deleteTopic(id);
-                  if (selectedNodeId.value === id) {
-                    selectedNodeId.value = null;
-                  }
-                  if (canUndo()) {
-                    showUndoToast(
-                      `Deleted "${label}"`,
-                      undoLastMutation,
-                    );
-                  }
-                  deleteModalNodeId.value = null;
-                }}
-                type="button"
-              >
-                Delete
+                Add topic
               </button>
             </div>
           </div>
@@ -1098,7 +999,6 @@ export default function ForceDirectedGraph(
 
       {renderControls()}
 
-      {/* Context menu */}
       <ContextMenu
         visible={contextMenuVisible.value}
         x={contextMenuX.value}
@@ -1107,36 +1007,53 @@ export default function ForceDirectedGraph(
         onClose={() => contextMenuVisible.value = false}
       />
 
-      {
-        /* Portaled: the flip card's perspective/rotateY would otherwise trap
-          this fixed overlay inside the card box — on mobile "fullscreen"
-          was the size of a playing card. */
-      }
       {isFullscreen.value && (
         <BodyPortal>
           <div class="topic-map-fullscreen" role="dialog" aria-modal="true">
             <div class="topic-map-fullscreen__panel">
               <div class="topic-map-fullscreen__header">
-                <div>
-                  <h3>Topic Map</h3>
-                  <p>Drag nodes, click topics or lines, scroll to zoom.</p>
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <span class="card-header-icon" aria-hidden="true">
+                    <i class="fa fa-diagram-project"></i>
+                  </span>
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                      <h3>Topic Map</h3>
+                      <span class="card-header-count">
+                        {topics.value.length}{" "}
+                        {topics.value.length === 1 ? "topic" : "topics"}
+                      </span>
+                    </div>
+                    <p>
+                      Drag topics to arrange or drop onto another to merge.
+                      Double-click to focus.
+                    </p>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={toggleFullscreen}
-                  aria-label="Close fullscreen map"
-                >
-                  ×
-                </button>
+                <div class="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    class="card-pill-btn"
+                    onClick={exportAsPng}
+                    aria-label="Save map as PNG"
+                  >
+                    <i class="fa fa-camera" aria-hidden="true"></i>
+                    <span class="hidden sm:inline">Save PNG</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="card-icon-btn"
+                    onClick={toggleFullscreen}
+                    aria-label="Close fullscreen map"
+                  >
+                    <i class="fa fa-xmark" aria-hidden="true"></i>
+                  </button>
+                </div>
               </div>
               <div
                 ref={fullscreenContainerRef}
                 class="topic-map-canvas topic-map-fullscreen__canvas"
               />
-              {
-                /* Same full control cluster as the inline map — one source of
-                truth, so they can't drift. */
-              }
               {renderControls()}
               {renderNodeDetail()}
               {renderEdgeDetail()}

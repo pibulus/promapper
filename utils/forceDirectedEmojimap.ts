@@ -176,8 +176,18 @@ export function forceDirectedEmojimap(
     }
   }
 
-  // Validate nodes and build node map; seed saved positions when available
-  nodes.forEach((n) => {
+  // Validate nodes and build node map; seed saved positions when available,
+  // or distribute cold-start nodes in a deterministic golden-angle ring around
+  // the canvas center (never near (0,0), which made the first camera fit frame
+  // top-left and push the settled constellation below the bottom edge).
+  let allNodesHadSavedPos = nodes.length > 0;
+  const initCx = mergedConfig.width / 2;
+  const initCy = mergedConfig.height / 2;
+  const initRadius = Math.max(
+    48,
+    Math.min(mergedConfig.width, mergedConfig.height) * 0.22,
+  );
+  nodes.forEach((n, idx) => {
     if (!n.id) {
       console.warn("Node missing ID, skipping:", n);
       return;
@@ -194,6 +204,11 @@ export function forceDirectedEmojimap(
     ) {
       n.x = savedPos.x;
       n.y = savedPos.y;
+    } else {
+      allNodesHadSavedPos = false;
+      const angle = idx * 2.399963; // golden angle
+      n.x = initCx + Math.cos(angle) * initRadius;
+      n.y = initCy + Math.sin(angle) * initRadius;
     }
     nodeMap.set(n.id, n);
   });
@@ -276,12 +291,32 @@ export function forceDirectedEmojimap(
     simulation,
   });
 
-  // Resize handling with debounced fit. Height-only wobbles under ~120px are
+  // Pre-settle cold layouts synchronously so frame 1 renders a legible,
+  // centered constellation rather than a mid-flight cluster, and preserve
+  // saved/inherited layouts gently instead of re-scattering at alpha(1).
+  if (nodes.length > 0) {
+    if (allNodesHadSavedPos) {
+      simulation.alpha(0.06);
+    } else {
+      simulation.tick(90);
+    }
+    ticked(renderedElements);
+    rememberPositions();
+    fitAllIcons(svg, zoom, node, nodes, true);
+  }
+
+  // Resize handling with debounced fit. Seed baseline from current container
+  // size BEFORE observing so ResizeObserver's attach callback does not fire a
+  // premature 200ms refit mid-settle. Height-only wobbles under ~120px are
   // ignored: iOS shows/hides its URL bar while you scroll, which resizes the
   // vh-sized canvas and would otherwise refit — stomping a pinch-zoom mid-read.
-  const debouncedFit = debounce(() => fitAllIcons(svg, zoom, node, nodes), 200);
-  let lastObservedW = 0;
-  let lastObservedH = 0;
+  const debouncedFit = debounce(
+    () => fitAllIcons(svg, zoom, node, focusSubset()),
+    200,
+  );
+  const initRect = node.getBoundingClientRect();
+  let lastObservedW = initRect.width;
+  let lastObservedH = initRect.height;
   const resizeObserver = new ResizeObserver(() => {
     const rect = node.getBoundingClientRect();
     const widthChanged = Math.abs(rect.width - lastObservedW) > 1;

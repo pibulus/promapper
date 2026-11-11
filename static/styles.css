@@ -5605,27 +5605,29 @@ h6,
   box-shadow: 3px 3px 0 rgba(30, 23, 20, 0.1);
 }
 
-/* Bottom-right control cluster — Frosted Drafting Pill Casing */
+/* Bottom-right spatial control cluster — Soft Neo Toybrut Pill Dock */
 .topic-map-ctrls {
   position: absolute;
-  bottom: 1rem;
-  right: 1rem;
+  bottom: 0.9rem;
+  right: 0.9rem;
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.35rem 0.45rem;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 2px solid var(--ink-carbon);
+  padding: 0.32rem 0.42rem;
+  background: color-mix(
+    in srgb,
+    var(--surface-white-warm, #fffef7) 95%,
+    transparent
+  );
+  border: 2px solid var(--line-ink);
   border-radius: 9999px;
-  box-shadow: 3px 3px 0 var(--ink-carbon);
+  box-shadow: 2.5px 2.5px 0 var(--line-ink);
   z-index: 10;
 }
 
 .topic-map-ctrl {
-  width: 2.2rem;
-  height: 2.2rem;
+  width: 2.15rem;
+  height: 2.15rem;
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -5635,16 +5637,18 @@ h6,
   background: transparent;
   box-shadow: none;
   color: var(--ink-carbon);
-  font-size: var(--small-size);
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
   cursor: pointer;
   transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
-    background 160ms ease,
-    border-color 160ms ease;
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease,
+    border-color 150ms ease;
 }
 
-/* 44px tap target on touch devices — the 35px visual stays compact. */
+/* 44px tap target on touch devices — the 34px visual stays compact. */
 @media (pointer: coarse) {
   .topic-map-ctrl::before {
     content: "";
@@ -5659,29 +5663,47 @@ h6,
 .topic-map-ctrl:hover,
 .topic-map-ctrl:focus-visible {
   outline: none;
-  border-color: var(--ink-carbon);
-  background: #FCFBF9;
+  border-color: var(--line-ink);
+  background: var(--surface-card, #fbf1e4);
   color: var(--ink-carbon);
   transform: translateY(-1px);
 }
 
-/* Add-topic leads the cluster as the primary action — styled with spot fluro yellow */
+/* Add-topic leads the cluster as the primary spatial action — theme candy plate */
 .topic-map-ctrl--add {
   width: auto;
-  gap: 0.4rem;
-  padding: 0 0.8rem;
+  gap: 0.35rem;
+  padding: 0 0.75rem;
   font-weight: 700;
-  border: 1.5px solid var(--ink-carbon);
-  background: var(--spot-fluro-yellow);
-  color: var(--ink-carbon);
-  box-shadow: 1.5px 1.5px 0 var(--ink-carbon);
+  border: 1.5px solid var(--line-ink);
+  background: var(--cta-plate);
+  color: var(--cta-ink, #1e1714);
+  box-shadow: 1.5px 1.5px 0 var(--line-ink);
 }
 
 .topic-map-ctrl--add:hover,
 .topic-map-ctrl--add:focus-visible {
+  color: var(--cta-ink, #1e1714);
+  background: color-mix(in srgb, var(--cta-plate) 85%, #fffef7);
+  transform: translate(-1px, -1px);
+  box-shadow: 2.5px 2.5px 0 var(--line-ink);
+}
+
+/* Active focus-exit chip when isolating a neighborhood */
+.topic-map-ctrl--active {
+  width: auto;
+  gap: 0.35rem;
+  padding: 0 0.72rem;
+  font-weight: 700;
+  border: 1.5px solid var(--line-ink);
+  background: color-mix(in srgb, var(--ink-spritz) 16%, #fffef7);
   color: var(--ink-carbon);
-  background: #FFEE33;
-  transform: translateY(-1px);
+  box-shadow: 1.5px 1.5px 0 var(--line-ink);
+}
+
+.topic-map-ctrl--active:hover,
+.topic-map-ctrl--active:focus-visible {
+  background: color-mix(in srgb, var(--ink-spritz) 24%, #fffef7);
 }
 
 /* Viz switcher — floats on the map's top-left, above the canvas. */
@@ -5797,68 +5819,144 @@ h6,
 /* Selection highlights the badge instead of bolding the label — bold text
    would outgrow a pill that was measured at regular weight. */
 .topic-map-canvas .node-group.is-selected .node-label-pill {
-  fill: var(--spot-fluro-yellow);
+  fill: var(--cta-plate);
 }
 
 .topic-node-detail {
   position: absolute;
-  left: 1rem;
-  bottom: 1rem;
-  z-index: 10;
-  width: min(20rem, calc(100% - 2rem));
+  left: 0.9rem;
+  bottom: 0.9rem;
+  z-index: 12;
+  width: min(21rem, calc(100% - 1.8rem));
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 0.8rem;
-  padding: 0.9rem;
-  border: 2px solid var(--color-border);
-  border-radius: 16px;
-  /* No backdrop-filter: at 92% opaque there is nothing left to see through,
-     so the blur was invisible and still cost a full re-blur of everything
-     behind it every frame — and this panel sits over the LIVE force
-     simulation, which repaints constantly. (Paint-tax law: modal-only
-     overlays may keep a blur; a persistent panel over moving content is the
-     exact case it bans.) */
-  background: rgba(255, 252, 248, 0.96);
-  box-shadow: var(--shadow-lifted);
+  gap: 0.75rem;
+  padding: 0.85rem 0.9rem;
+  border: 2px solid var(--line-ink);
+  border-radius: 14px;
+  background: var(--surface-white-warm, #fffef7);
+  box-shadow: 3px 3px 0 var(--line-ink);
 }
 
 .topic-node-detail__close {
   position: absolute;
-  top: 0.4rem;
-  right: 0.4rem;
-  width: 2rem;
-  height: 2rem;
-  border: 2px solid rgba(0, 0, 0, 0.08);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.8);
-  font-weight: 900;
-}
-
-.topic-node-detail__emoji {
-  width: 3.25rem;
-  height: 3.25rem;
+  top: 0.45rem;
+  right: 0.45rem;
+  width: 1.85rem;
+  height: 1.85rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--color-border);
-  border-radius: 14px;
-  background: var(--surface-white-warm);
-  font-size: 1.75rem;
-  box-shadow: 2px 2px 0 rgba(30, 23, 20, 0.08);
+  border: 1.5px solid var(--line-ink-soft);
+  border-radius: 8px;
+  background: var(--surface-card, #fbf1e4);
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, color 120ms ease;
+}
+
+.topic-node-detail__close:hover {
+  background: var(--surface-white-warm, #fffef7);
+  color: var(--ink-carbon);
+  border-color: var(--line-ink);
+  transform: translate(-1px, -1px);
+}
+
+.topic-node-detail__emoji {
+  width: 3rem;
+  height: 3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--line-ink);
+  border-radius: 12px;
+  background: var(--surface-card, #fbf1e4);
+  font-size: 1.55rem;
+  box-shadow: 2px 2px 0 var(--line-ink);
 }
 
 .topic-node-detail h4 {
-  margin: 0 1.7rem 0.15rem 0;
+  margin: 0 1.8rem 0.15rem 0;
   color: var(--color-text);
-  font-size: var(--heading-size);
-  font-weight: 900;
-  line-height: 1.1;
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+.topic-node-detail h4.is-editable {
+  cursor: text;
+  border-radius: 6px;
+  transition: background 120ms ease;
+}
+
+.topic-node-detail h4.is-editable:hover {
+  background: color-mix(in srgb, var(--cta-plate) 24%, transparent);
+}
+
+.topic-node-rename-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 1.8rem 0.25rem 0;
+}
+
+.topic-node-rename-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 2rem;
+  padding: 0.25rem 0.5rem;
+  border: 1.5px solid var(--line-ink);
+  border-radius: 8px;
+  background: var(--surface-card, #fbf1e4);
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.topic-node-rename-input:focus {
+  outline: none;
+  box-shadow: 2px 2px 0 var(--line-ink);
+  background: var(--surface-white-warm, #fffef7);
+}
+
+.topic-node-rename-btns {
+  display: inline-flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.topic-node-rename-btn {
+  width: 1.9rem;
+  height: 1.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--line-ink);
+  border-radius: 7px;
+  background: var(--surface-white-warm, #fffef7);
+  color: var(--ink-carbon);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.topic-node-rename-btn.is-save {
+  background: var(--cta-plate);
+  color: var(--cta-ink, #1e1714);
+}
+
+.topic-node-rename-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .topic-node-detail p {
   margin: 0;
   color: var(--color-text-secondary);
-  font-size: var(--small-size);
+  font-size: 0.78rem;
   line-height: 1.35;
 }
 
@@ -5869,74 +5967,86 @@ h6,
   opacity: 0.85;
 }
 
-/* Action row in the node detail panel — Rename / Delete, discoverable instead
-   of buried in dbl-click / right-click. */
+/* Action row in the node detail panel — Focus / Rename / Remove */
 .topic-node-detail__actions {
   grid-column: 1 / -1;
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .topic-node-action {
   flex: 1;
-  min-height: 2.2rem;
+  min-height: 2.1rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  border: 2px solid var(--color-border);
-  border-radius: var(--border-radius-sm);
-  background: var(--surface-white-warm, #fffef7);
+  gap: 0.35rem;
+  border: 1.5px solid var(--line-ink);
+  border-radius: 9px;
+  background: var(--surface-card, #fbf1e4);
   color: var(--color-text);
-  font-size: var(--small-size);
+  font-family: var(--font-display);
+  font-size: 0.76rem;
   font-weight: 700;
+  box-shadow: 1.5px 1.5px 0 var(--line-ink);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms
+    ease;
 }
 
 .topic-node-action:hover {
-  border-color: var(--accent-ink);
-  background: color-mix(
-    in srgb,
-    var(--color-accent) 10%,
-    var(--surface-white-warm, #fffef7)
-  );
+  background: var(--surface-white-warm, #fffef7);
+  transform: translate(-1px, -1px);
+  box-shadow: 2.5px 2.5px 0 var(--line-ink);
 }
 
-/* Delete recedes (desaturated/dim) rather than alarming red — destructive =
-   recession in this app's visual language, never red. */
+.topic-node-action.is-active {
+  background: var(--cta-plate);
+  color: var(--cta-ink, #1e1714);
+}
+
+/* Remove recedes (desaturated/dim) rather than alarming red */
 .topic-node-action--recede {
   color: var(--color-text-secondary);
+  background: var(--surface-white-warm, #fffef7);
+  border-color: var(--line-ink-soft);
+  box-shadow: none;
 }
 
 .topic-node-action--recede:hover {
-  border-color: var(--color-text-secondary);
-  background: color-mix(
-    in srgb,
-    var(--color-text-secondary) 12%,
-    var(--surface-white-warm, #fffef7)
-  );
+  border-color: var(--line-ink);
+  background: var(--surface-card, #fbf1e4);
   color: var(--color-text);
+  box-shadow: 1.5px 1.5px 0 var(--line-ink);
 }
 
 .topic-node-detail__links {
   grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
 .topic-node-detail__links button {
-  min-height: 2rem;
+  min-height: 1.85rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.28rem;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  gap: 0.3rem;
+  border: 1.5px solid var(--line-ink-soft);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  padding: 0.25rem 0.55rem;
-  font-size: var(--tiny-size);
-  font-weight: 700;
+  background: var(--surface-card, #fbf1e4);
+  color: var(--ink-carbon);
+  padding: 0.2rem 0.6rem;
+  font-family: var(--font-display);
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.topic-node-detail__links button:hover {
+  border-color: var(--line-ink);
+  background: var(--surface-white-warm, #fffef7);
 }
 
 .topic-node-modal-backdrop {
@@ -6042,11 +6152,11 @@ h6,
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-  border: 2px solid var(--color-border);
-  border-radius: 0;
-  background: var(--color-secondary);
+  border: 2px solid var(--line-ink);
+  border-radius: 16px;
+  background: var(--surface-card, #fbf1e4);
   padding: clamp(0.8rem, 2vw, 1.1rem);
-  box-shadow: none;
+  box-shadow: 5px 5px 0 var(--line-ink);
 }
 
 .topic-map-fullscreen__header {
@@ -6059,35 +6169,25 @@ h6,
 .topic-map-fullscreen__header h3 {
   margin: 0;
   color: var(--color-text);
-  font-size: var(--font-size-lg);
-  font-weight: 900;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
 }
 
 .topic-map-fullscreen__header p {
   margin: 0.15rem 0 0;
   color: var(--color-text-secondary);
-  font-size: var(--small-size);
-}
-
-.topic-map-fullscreen__header button,
-.topic-map-fullscreen__controls button {
-  min-width: 44px;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--color-border);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.84);
-  font-size: 1.1rem;
-  font-weight: 900;
+  font-size: 0.8rem;
 }
 
 .topic-map-fullscreen__canvas {
   flex: 1;
   min-height: 0 !important;
   height: auto !important;
-  border: 2px solid rgba(0, 0, 0, 0.08);
+  border: 2px solid var(--line-ink);
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .topic-map-fullscreen__controls {
@@ -6948,24 +7048,24 @@ a:focus-visible {
   user-select: none;
 }
 
-/* Labels ride on paper badges — physical tokens on the drafting board. The
-   pill carries the ground now, so the old cream text halo is gone. The shadow
-   is a second rect, not a filter: filters re-rasterize on every sim tick. */
+/* Labels ride on paper badges — physical tokens on the drafting board.
+   Sentence-case Inter (not screaming ALL-CAPS mono) keeps multi-word topics
+   immediately scannable at a glance. */
 .node-group .label {
-  font-family: var(--font-mono);
-  font-size: 12px;
+  font-family: var(--font-display);
+  font-size: 12.5px;
   font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  text-transform: none;
   fill: var(--ink-carbon);
   pointer-events: none;
   user-select: none;
 }
 
 .node-label-pill {
-  fill: var(--surface-board);
+  fill: var(--surface-white-warm, #fffef7);
   stroke: var(--ink-carbon);
-  stroke-width: 2;
+  stroke-width: 1.8;
   transition: fill 0.22s ease;
 }
 

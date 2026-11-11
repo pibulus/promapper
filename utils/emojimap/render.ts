@@ -198,8 +198,8 @@ export function createNodeGroup(
     .append("g")
     .attr("class", "node-label-group")
     .attr("transform", `translate(0, ${LABEL_BADGE_Y})`);
-  badge.append("rect").attr("class", "node-label-shadow").attr("rx", 4);
-  badge.append("rect").attr("class", "node-label-pill").attr("rx", 4);
+  badge.append("rect").attr("class", "node-label-shadow").attr("rx", 7);
+  badge.append("rect").attr("class", "node-label-pill").attr("rx", 7);
   badge
     .append("text")
     .attr("class", "label")
@@ -217,14 +217,15 @@ export function createNodeGroup(
 // Badge geometry. LABEL_BADGE_Y clears the r=20 disc; fitAllIcons'
 // NODE_EXTENT_DOWN must cover it plus half a badge plus the shadow.
 const LABEL_BADGE_Y = 32;
-const BADGE_PAD_X = 7;
-const BADGE_PAD_Y = 3;
+const BADGE_PAD_X = 8;
+const BADGE_PAD_Y = 3.5;
 const BADGE_SHADOW = 2;
+const CHAR_ESTIMATE_PX = 7.0;
 
 /** Calculate the horizontal half-extent of a node, covering both the emoji disc and the label pill. */
 export function nodeHalfWidth(d: NodeData): number {
   const label = d.label || "";
-  const textWidth = Math.max(30, label.length * 7.5);
+  const textWidth = Math.max(30, label.length * CHAR_ESTIMATE_PX);
   return Math.max(26, (textWidth / 2) + BADGE_PAD_X + BADGE_SHADOW + 4);
 }
 
@@ -234,7 +235,7 @@ export function getNodeCollisionRadius(
   baseRadius: number = 38,
 ): number {
   const label = d.label || "";
-  const textWidth = Math.max(28, label.length * 7.5);
+  const textWidth = Math.max(28, label.length * CHAR_ESTIMATE_PX);
   const pillRadius = (textWidth / 2) + BADGE_PAD_X + 14;
   return Math.max(baseRadius, pillRadius);
 }
@@ -252,7 +253,7 @@ function fitLabelBadge(badge: SVGGElement) {
     box = text.getBBox();
   } catch { /* unrendered */ }
   if (!box || box.width === 0) {
-    const width = (text.textContent || "").length * 7.5;
+    const width = (text.textContent || "").length * CHAR_ESTIMATE_PX;
     box = { x: -width / 2, y: -8, width, height: 16 };
   }
   const w = String(box.width + BADGE_PAD_X * 2);
@@ -478,29 +479,30 @@ export function ticked({
 /**
  * Adjust zoom/transform so the given nodes fit into the container. Pass the
  * whole node set to frame everything, or a subset (e.g. a focus cluster).
+ * When `immediate` is true, applies synchronously without camera transition.
  */
 export function fitAllIcons(
   svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
   zoom: d3.ZoomBehavior<SVGSVGElement, unknown>,
   node: HTMLElement,
   nodes: NodeData[],
+  immediate = false,
 ) {
   if (!nodes || nodes.length === 0) return;
 
-  const padding = 50;
-  const fillFactor = 0.8;
+  const padding = 54;
+  const fillFactor = 0.82;
 
   // A node is not a point: the disc is r=20 (glow pad r=23) and the label sits
-  // at y=28 below center. Label pills have dynamic width based on text length;
-  // using nodeHalfWidth guarantees long labels like SKELETON DENTAL AUDIT are
-  // never clipped on the viewport edges.
-  const NODE_EXTENT_UP = 23;
-  const NODE_EXTENT_DOWN = 46; // badge centre (32) + half its height + shadow
+  // at y=32 below center. Label pills have dynamic width based on text length;
+  // using nodeHalfWidth guarantees long labels are never clipped on the edges.
+  const NODE_EXTENT_UP = 26;
+  const NODE_EXTENT_DOWN = 54; // badge centre (32) + half its height + shadow + dock margin
 
   const minX = d3.min(nodes, (d) => (d.x ?? 0) - nodeHalfWidth(d)) ?? -26;
   const maxX = d3.max(nodes, (d) => (d.x ?? 0) + nodeHalfWidth(d)) ?? 26;
-  const minY = (d3.min(nodes, (d) => d.y || 0) || 0) - NODE_EXTENT_UP;
-  const maxY = (d3.max(nodes, (d) => d.y || 0) || 0) + NODE_EXTENT_DOWN;
+  const minY = (d3.min(nodes, (d) => d.y ?? 0) ?? 0) - NODE_EXTENT_UP;
+  const maxY = (d3.max(nodes, (d) => d.y ?? 0) ?? 0) + NODE_EXTENT_DOWN;
 
   const boxWidth = maxX - minX;
   const boxHeight = maxY - minY;
@@ -510,7 +512,7 @@ export function fitAllIcons(
   if (containerWidth < 1 || containerHeight < 1) return;
 
   // No degenerate-box branch needed: the node extents above give even a single
-  // node a real box (46×61), and MAX_FIT_SCALE caps how far a tiny box zooms.
+  // node a real box, and MAX_FIT_SCALE caps how far a tiny box zooms.
 
   const baseScale = Math.min(
     containerWidth / (boxWidth + 2 * padding),
@@ -518,10 +520,10 @@ export function fitAllIcons(
   );
 
   // Cap the fit zoom: a sparse graph (a few nodes close together) has a tiny
-  // bounding box, so fitting-to-fill would blow the nodes up huge. 1.3 keeps
+  // bounding box, so fitting-to-fill would blow the nodes up huge. 1.25 keeps
   // them a comfortable, readable size instead of cartoonishly large, while a
   // dense graph still zooms out to fit (scale < 1).
-  const MAX_FIT_SCALE = 1.3;
+  const MAX_FIT_SCALE = 1.25;
   const scale = Math.min(baseScale * fillFactor, MAX_FIT_SCALE);
   const translateX = containerWidth / 2 - scale * ((minX + maxX) / 2);
   const translateY = containerHeight / 2 - scale * ((minY + maxY) / 2);
@@ -531,11 +533,17 @@ export function fitAllIcons(
     .attr("height", containerHeight)
     .attr("viewBox", `0 0 ${containerWidth} ${containerHeight}`);
 
-  svg
-    .transition()
-    .duration(750)
-    .call(
-      zoom.transform,
-      d3.zoomIdentity.translate(translateX, translateY).scale(scale),
-    );
+  const nextTransform = d3.zoomIdentity
+    .translate(translateX, translateY)
+    .scale(scale);
+
+  if (immediate) {
+    svg.interrupt();
+    svg.call(zoom.transform, nextTransform);
+  } else {
+    svg
+      .transition()
+      .duration(520)
+      .call(zoom.transform, nextTransform);
+  }
 }
