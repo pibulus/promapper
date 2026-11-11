@@ -249,3 +249,18 @@ Deno.test("colSpanClassForCell: adapts 1-card, 2-card, and 3-card runs cleanly",
     "min-w-0 md:col-span-2 lg:col-span-2",
   );
 });
+
+Deno.test("hasCardContent: recognizes canonical text and legacy raw_text transcript fields", () => {
+  assertEquals(
+    hasCardContent("transcript", { transcript: { text: "Hello world" } }),
+    true,
+  );
+  assertEquals(
+    hasCardContent("transcript", { transcript: { raw_text: "Legacy hello" } }),
+    true,
+  );
+  assertEquals(
+    hasCardContent("transcript", { transcript: { text: "   " } }),
+    false,
+  );
+});

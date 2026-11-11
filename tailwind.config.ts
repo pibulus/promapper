@@ -8,7 +8,7 @@ export default {
     hoverOnlyWhenSupported: true,
   },
   content: [
-    "{routes,islands,components}/**/*.{ts,tsx}",
+    "{routes,islands,components,utils}/**/*.{ts,tsx}",
   ],
   theme: {
     extend: {

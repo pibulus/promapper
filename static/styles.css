@@ -2618,6 +2618,7 @@ h6,
   justify-content: space-between;
   gap: 0.65rem 1rem;
   padding: 0.7rem 0.95rem;
+  margin-bottom: 3.5rem;
   border-radius: 14px;
   border: 1.5px dashed color-mix(in srgb, var(--line-ink) 38%, transparent);
   background: color-mix(in srgb, var(--surface-card) 78%, transparent);
@@ -6227,21 +6228,32 @@ h6,
      a flat ease — the drawer ARRIVES rather than merely appearing. */
   transition:
     transform 380ms cubic-bezier(0.32, 1.2, 0.46, 1),
-    box-shadow 380ms ease-out;
+    box-shadow 380ms ease-out,
+    visibility 0s linear 380ms;
   transform: translateX(100%);
+  visibility: hidden;
+  pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .history-drawer {
-    transition: transform 200ms ease-out;
+    transition: transform 200ms ease-out, visibility 0s linear 200ms;
   }
 }
 
 .history-drawer.is-open {
   transform: translateX(0);
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    transform 380ms cubic-bezier(0.32, 1.2, 0.46, 1),
+    box-shadow 380ms ease-out,
+    visibility 0s linear 0s;
 }
 
 .history-drawer.is-closed {
   transform: translateX(100%);
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* ===================================================================
@@ -6725,7 +6737,8 @@ a:focus-visible {
   bottom: calc(100% + 0.65rem);
   right: 0;
   z-index: var(--z-modal);
-  width: 15.5rem;
+  width: 17.25rem;
+  max-width: calc(100vw - 1.5rem);
   padding: 0.75rem;
   border-radius: 14px;
   border: 2px solid var(--line-ink);
@@ -7237,26 +7250,28 @@ a:focus-visible {
 
 /* Backdrop behind the slide-out drawer. */
 .history-drawer-backdrop {
-  background: rgba(18, 18, 18, 0.4);
+  z-index: calc(var(--z-header) + 5);
+  background: rgba(30, 23, 20, 0.38);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
 
 /* Drawer shell — a solid panel sliding out from the right. */
 .history-drawer-panel {
+  z-index: calc(var(--z-header) + 10);
   width: 420px;
   max-width: 100vw;
-  background: var(--surface-card, #FDFBF7);
-  border-left: 2px solid var(--border-strong, #1A1A1A);
-  box-shadow: -6px 0 24px rgba(18, 18, 18, 0.15);
+  background: var(--surface-card, #fbf1e4);
+  border-left: 2px solid var(--line-ink);
+  box-shadow: -8px 0 28px rgba(30, 23, 20, 0.16);
   display: flex;
   flex-direction: column;
 }
 
 /* Drawer header with standard height and anchored header fill. */
 .history-drawer-header {
-  background: var(--surface-header, #F0EAE1);
-  border-bottom: 2px solid var(--border-strong, #1A1A1A);
+  background: var(--surface-header, #f3e8d8);
+  border-bottom: 2px solid var(--line-ink);
   padding: 0.75rem 1rem;
   min-height: 48px;
   display: flex;

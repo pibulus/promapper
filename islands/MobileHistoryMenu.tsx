@@ -386,7 +386,7 @@ export default function MobileHistoryMenu() {
       {/* Backdrop */}
       {isOpen.value && (
         <div
-          class="fixed inset-0 z-30 history-drawer-backdrop"
+          class="fixed inset-0 history-drawer-backdrop"
           onClick={() => (isOpen.value = false)}
         />
       )}
@@ -397,7 +397,7 @@ export default function MobileHistoryMenu() {
           order and screen-reader tree while invisible. */
       }
       <div
-        class={`history-drawer history-drawer-panel fixed inset-y-0 right-0 w-[420px] max-w-full z-40 ${
+        class={`history-drawer history-drawer-panel fixed inset-y-0 right-0 w-[420px] max-w-full ${
           isOpen.value ? "is-open" : "is-closed"
         }`}
         aria-hidden={!isOpen.value}

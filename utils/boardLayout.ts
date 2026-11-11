@@ -111,7 +111,11 @@ export function planCells(
 
 /** Minimal conversation data shape inspected for content-aware card visibility. */
 export interface CardContentSnapshot {
-  transcript?: { text?: string | null } | null;
+  transcript?: {
+    text?: string | null;
+    raw_text?: string | null;
+    formatted_text?: string | null;
+  } | null;
   summary?: string | null;
   actionItems?: readonly unknown[] | null;
   nodes?: readonly unknown[] | null;
@@ -143,7 +147,11 @@ export function hasCardContent(
   if (!data) return false;
   switch (id) {
     case "transcript":
-      return Boolean(data.transcript?.text?.trim());
+      return Boolean(
+        data.transcript?.text?.trim() ||
+          data.transcript?.raw_text?.trim() ||
+          data.transcript?.formatted_text?.trim(),
+      );
     case "summary": {
       const s = data.summary?.trim() ?? "";
       return s.length > 0 && s !== "No summary generated";
