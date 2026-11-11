@@ -9,12 +9,12 @@
 
 import { signal } from "@preact/signals";
 
-const KEY = "promapper-modules";
+const KEY = "promapper-modules-v2";
 
-/** The starter row-2 set (Sept 29 2026 — Pablo: a fresh board, or a fresh
- * conversation, should open with Notes/Ask/Collect already on, smallest
- * height, not a blank rack). */
-const DEFAULT_MODULES = ["notes", "ask", "magpie"];
+/** Modules start tucked on the Board Shelf by default so a board only shows
+ * components that actually carry content (Notes/Magpie/Takes auto-surface when
+ * non-empty; any card is 1 click away on the bottom shelf). */
+const DEFAULT_MODULES: string[] = [];
 
 /** Retired ids → their successors. radio/tones merged into sound
  * (July 19); canvas left the rack to become the node map's flip side;

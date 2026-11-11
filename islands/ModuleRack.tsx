@@ -1,34 +1,105 @@
 /**
- * The rack — where modules get switched on.
+ * Board Shelf (ModuleRack) — content-aware card shelf & customization drawer.
  *
- * Renders as a ghost tile at the end of the dashboard grid (same dashed
- * language as the action-items add-row) and opens a modal listing every
- * registered module with a toggle. State lives in @signals/moduleStore.
+ * Renders across the foot of the dashboard grid (col-span-full) as a warm,
+ * compact tactile shelf: any card hidden because it currently has no content
+ * (e.g. Actions, Topic Map, Notes, Ask, Magpie, Sound, Dice, Takes) can be
+ * summoned onto the board in 1 tap, alongside a "Customize" modal for full
+ * descriptions, toggles, and layout reset.
  */
 
 import { useSignal } from "@preact/signals";
 import Modal from "../components/Modal.tsx";
 import { moduleRegistry } from "@utils/moduleRegistry.ts";
-import { enabledModules, toggleModule } from "@signals/moduleStore.ts";
+import { hideModule, showModule } from "@signals/moduleStore.ts";
 import { boardCustomized, resetBoard } from "@signals/boardOrderStore.ts";
 import { hapticTap } from "@utils/haptics.ts";
-import { soundToggle } from "@utils/sound.ts";
+import { soundHover, soundToggle } from "@utils/sound.ts";
 import { showToast } from "@utils/toast.ts";
 
-export default function ModuleRack() {
+export interface HiddenCoreCard {
+  id: string;
+  name: string;
+  icon: string;
+}
+
+export interface ModuleRackProps {
+  /** Core cards hidden right now because they have no content yet. */
+  hiddenCoreCards?: HiddenCoreCard[];
+  /** Reveal an empty core card onto the board so the user can add to it. */
+  onRevealCoreCard?: (id: string) => void;
+  /** Optional module ids currently visible on the board (enabled or auto-shown). */
+  visibleModuleIds?: string[];
+}
+
+export default function ModuleRack({
+  hiddenCoreCards = [],
+  onRevealCoreCard,
+  visibleModuleIds = [],
+}: ModuleRackProps = {}) {
   const open = useSignal(false);
+  const visibleSet = new Set(visibleModuleIds);
+  const hiddenModules = moduleRegistry.filter((m) => !visibleSet.has(m.id));
+  const hasQuickAdd = hiddenCoreCards.length > 0 || hiddenModules.length > 0;
 
   return (
     <>
-      <button
-        type="button"
-        class="module-rack-tile"
-        onClick={() => open.value = true}
-        aria-haspopup="dialog"
-      >
-        <i class="fa fa-puzzle-piece" aria-hidden="true"></i>
-        <span>Modules</span>
-      </button>
+      <div class="board-shelf" role="region" aria-label="Board tools and cards">
+        <div class="board-shelf__pills">
+          {hasQuickAdd && (
+            <span class="board-shelf__label">
+              Add card
+            </span>
+          )}
+          {hiddenCoreCards.map((card) => (
+            <button
+              key={card.id}
+              type="button"
+              class="board-shelf__pill board-shelf__pill--core"
+              onMouseEnter={soundHover}
+              onClick={() => {
+                onRevealCoreCard?.(card.id);
+                hapticTap();
+                soundToggle(true);
+              }}
+              data-tip={`Open ${card.name} on this board`}
+            >
+              <i class={`fa ${card.icon}`} aria-hidden="true"></i>
+              <span>+ {card.name}</span>
+            </button>
+          ))}
+          {hiddenModules.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              class="board-shelf__pill"
+              onMouseEnter={soundHover}
+              onClick={() => {
+                showModule(m.id);
+                hapticTap();
+                soundToggle(true);
+              }}
+              data-tip={m.tagline}
+            >
+              <i class={`fa ${m.icon}`} aria-hidden="true"></i>
+              <span>+ {m.name}</span>
+            </button>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          class="board-shelf__customize"
+          onMouseEnter={soundHover}
+          onClick={() => open.value = true}
+          aria-haspopup="dialog"
+          data-tip="Customize board cards and arrangement"
+          data-tip-align="right"
+        >
+          <i class="fa fa-puzzle-piece" aria-hidden="true"></i>
+          <span>Customize</span>
+        </button>
+      </div>
 
       <Modal
         open={open.value}
@@ -36,15 +107,15 @@ export default function ModuleRack() {
         titleId="module-rack-title"
       >
         <h2 id="module-rack-title" class="module-rack-title">
-          Modules
+          Board cards
         </h2>
         <p class="module-rack-sub">
-          Extra cards for this board. Everything reads and writes the same
-          conversation, so they play together on their own.
+          Empty cards stay tucked out of your way until they have something to
+          show — or flip any tool on here whenever you want it on the table.
         </p>
         <ul class="module-rack-list">
           {moduleRegistry.map((m) => {
-            const on = enabledModules.value.includes(m.id);
+            const on = visibleSet.has(m.id);
             return (
               <li key={m.id} class="module-rack-row">
                 <span class="module-rack-icon" aria-hidden="true">
@@ -61,7 +132,11 @@ export default function ModuleRack() {
                   aria-checked={on}
                   aria-label={`${m.name} ${on ? "on" : "off"}`}
                   onClick={() => {
-                    toggleModule(m.id);
+                    if (on) {
+                      hideModule(m.id);
+                    } else {
+                      showModule(m.id);
+                    }
                     hapticTap();
                     soundToggle(!on);
                   }}
@@ -83,7 +158,7 @@ export default function ModuleRack() {
             }}
           >
             <i class="fa fa-rotate-left" aria-hidden="true"></i>
-            Reset the arrangement
+            Reset card sizes &amp; arrangement
           </button>
         )}
       </Modal>

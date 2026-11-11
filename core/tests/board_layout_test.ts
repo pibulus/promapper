@@ -8,10 +8,13 @@
 import { assertEquals } from "./_assert.ts";
 import {
   type BoardSize,
+  colSpanClassForCell,
   effectiveOrder,
+  hasCardContent,
   mergeVisibleOrder,
   NEXT_SIZE,
   planCells,
+  resolveVisibleBoardIds,
 } from "../../utils/boardLayout.ts";
 
 const MODULE_SIZES: Record<string, BoardSize> = {
@@ -131,4 +134,118 @@ Deno.test("NEXT_SIZE cycles small → medium → tall → small", () => {
   assertEquals(NEXT_SIZE.small, "medium");
   assertEquals(NEXT_SIZE.medium, "tall");
   assertEquals(NEXT_SIZE.tall, "small");
+});
+
+Deno.test("hasCardContent: detects populated vs empty core and optional cards", () => {
+  const empty = {
+    transcript: { text: "   " },
+    summary: "No summary generated",
+    actionItems: [],
+    nodes: [],
+    whiteboardScene: '{"elements":[{"id":"1","isDeleted":true}]}',
+    notes: "  ",
+    magpie: [],
+  };
+  assertEquals(hasCardContent("transcript", empty), false);
+  assertEquals(hasCardContent("summary", empty), false);
+  assertEquals(hasCardContent("actions", empty), false);
+  assertEquals(hasCardContent("canvas", empty), false);
+  assertEquals(hasCardContent("notes", empty), false);
+  assertEquals(hasCardContent("magpie", empty), false);
+  assertEquals(hasCardContent("takes", empty, 0), false);
+
+  const rich = {
+    transcript: { text: "Sheriff: Morning." },
+    summary: "A brief update.",
+    actionItems: [{ id: "a1" }],
+    nodes: [],
+    whiteboardScene: '{"elements":[{"id":"1","isDeleted":false}]}',
+    notes: "Check the fence",
+    magpie: [{ id: "m1" }],
+  };
+  assertEquals(hasCardContent("transcript", rich), true);
+  assertEquals(hasCardContent("summary", rich), true);
+  assertEquals(hasCardContent("actions", rich), true);
+  assertEquals(hasCardContent("canvas", rich), true);
+  assertEquals(hasCardContent("notes", rich), true);
+  assertEquals(hasCardContent("magpie", rich), true);
+  assertEquals(hasCardContent("takes", rich, 2), true);
+});
+
+Deno.test("resolveVisibleBoardIds: default dashboard shows only cards with content", () => {
+  const partial = {
+    transcript: { text: "We talked through the sprint." },
+    summary: "Sprint recap.",
+    actionItems: [],
+    nodes: [{ id: "n1" }],
+    notes: "Pinned note",
+    magpie: [],
+  };
+  assertEquals(
+    resolveVisibleBoardIds({
+      fullOrder: DEFAULTS,
+      data: partial,
+      enabledModules: [],
+    }),
+    ["transcript", "summary", "canvas", "notes"],
+  );
+});
+
+Deno.test("resolveVisibleBoardIds: dismissed content module hides, revealed empty core shows, blank falls back", () => {
+  const partial = {
+    transcript: { text: "Hello" },
+    summary: "",
+    actionItems: [],
+    nodes: [],
+    notes: "Keep me unless dismissed",
+  };
+  assertEquals(
+    resolveVisibleBoardIds({
+      fullOrder: DEFAULTS,
+      data: partial,
+      enabledModules: ["ask"],
+      dismissedModules: ["notes"],
+      revealedCoreIds: ["actions"],
+    }),
+    ["transcript", "actions", "ask"],
+  );
+
+  assertEquals(
+    resolveVisibleBoardIds({
+      fullOrder: DEFAULTS,
+      data: {},
+      enabledModules: [],
+    }),
+    ["transcript", "notes"],
+  );
+});
+
+Deno.test("colSpanClassForCell: adapts 1-card, 2-card, and 3-card runs cleanly", () => {
+  const oneAndOne = planCells(["transcript", "canvas", "notes"], sizeOf);
+  assertEquals(
+    colSpanClassForCell(oneAndOne, 0),
+    "min-w-0 md:col-span-4 lg:col-span-6",
+  );
+  assertEquals(colSpanClassForCell(oneAndOne, 1), "w-full board-cell--canvas");
+  assertEquals(
+    colSpanClassForCell(oneAndOne, 2),
+    "min-w-0 md:col-span-4 lg:col-span-6",
+  );
+
+  const twoAndThree = planCells(
+    ["transcript", "summary", "canvas", "notes", "ask", "sound"],
+    sizeOf,
+  );
+  assertEquals(
+    colSpanClassForCell(twoAndThree, 0),
+    "min-w-0 md:col-span-2 lg:col-span-3",
+  );
+  assertEquals(
+    colSpanClassForCell(twoAndThree, 1),
+    "min-w-0 md:col-span-2 lg:col-span-3",
+  );
+  assertEquals(
+    colSpanClassForCell(twoAndThree, 3),
+    "min-w-0 md:col-span-2 lg:col-span-2",
+  );
 });

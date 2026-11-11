@@ -108,3 +108,133 @@ export function planCells(
   }
   return cells;
 }
+
+/** Minimal conversation data shape inspected for content-aware card visibility. */
+export interface CardContentSnapshot {
+  transcript?: { text?: string | null } | null;
+  summary?: string | null;
+  actionItems?: readonly unknown[] | null;
+  nodes?: readonly unknown[] | null;
+  whiteboardScene?: string | null;
+  notes?: string | null;
+  magpie?: readonly unknown[] | null;
+}
+
+/** True when a serialized Excalidraw scene contains at least one non-deleted element. */
+export function hasWhiteboardElements(scene?: string | null): boolean {
+  if (!scene || !scene.trim()) return false;
+  try {
+    const parsed = JSON.parse(scene) as {
+      elements?: Array<{ isDeleted?: boolean }>;
+    };
+    return Array.isArray(parsed?.elements) &&
+      parsed.elements.some((el) => Boolean(el) && !el.isDeleted);
+  } catch {
+    return false;
+  }
+}
+
+/** Whether a core or optional card currently holds meaningful content to display. */
+export function hasCardContent(
+  id: string,
+  data: CardContentSnapshot | null | undefined,
+  takesCount = 0,
+): boolean {
+  if (!data) return false;
+  switch (id) {
+    case "transcript":
+      return Boolean(data.transcript?.text?.trim());
+    case "summary": {
+      const s = data.summary?.trim() ?? "";
+      return s.length > 0 && s !== "No summary generated";
+    }
+    case "actions":
+      return (data.actionItems?.length ?? 0) > 0;
+    case "canvas":
+      return (data.nodes?.length ?? 0) > 0 ||
+        hasWhiteboardElements(data.whiteboardScene);
+    case "notes":
+      return Boolean(data.notes?.trim());
+    case "magpie":
+      return (data.magpie?.length ?? 0) > 0;
+    case "takes":
+      return takesCount > 0;
+    default:
+      return false;
+  }
+}
+
+export interface ResolveVisibleOptions {
+  fullOrder: string[];
+  data: CardContentSnapshot | null | undefined;
+  takesCount?: number;
+  enabledModules: readonly string[];
+  dismissedModules?: readonly string[];
+  revealedCoreIds?: readonly string[];
+  isLive?: boolean;
+}
+
+/** Determine which cards appear on the dashboard in user order.
+ * - Core cards show when they have content, when revealed for this session,
+ *   or (for transcript) during a live room.
+ * - Optional modules show when switched on OR when they carry content and
+ *   haven't been explicitly dismissed.
+ * - Fallback: an all-empty conversation opens Transcript + Notes so the desk
+ *   never renders completely blank. */
+export function resolveVisibleBoardIds(opts: ResolveVisibleOptions): string[] {
+  const {
+    fullOrder,
+    data,
+    takesCount = 0,
+    enabledModules,
+    dismissedModules = [],
+    revealedCoreIds = [],
+    isLive = false,
+  } = opts;
+  const core = new Set<string>(CORE_CELL_IDS);
+  const enabled = new Set<string>(enabledModules);
+  const dismissed = new Set<string>(dismissedModules);
+  const revealed = new Set<string>(revealedCoreIds);
+
+  const visible = fullOrder.filter((id) => {
+    if (core.has(id)) {
+      if (revealed.has(id)) return true;
+      if (isLive && id === "transcript") return true;
+      return hasCardContent(id, data, takesCount);
+    }
+    if (enabled.has(id)) return true;
+    if (dismissed.has(id)) return false;
+    return hasCardContent(id, data, takesCount);
+  });
+
+  if (visible.length === 0) {
+    return fullOrder.filter((id) => id === "transcript" || id === "notes");
+  }
+  return visible;
+}
+
+/** Responsive Tailwind column-span classes for a cell inside a contiguous
+ * non-canvas run, so 1-card, 2-card, and 4-card rows fill all 6 desktop
+ * columns without orphan holes. Must return static class tokens for Tailwind. */
+export function colSpanClassForCell(
+  cells: readonly CellPlan[],
+  index: number,
+  customized = false,
+): string {
+  const target = cells[index];
+  if (!target || target.id === "canvas") return "w-full board-cell--canvas";
+
+  let start = index;
+  while (start > 0 && cells[start - 1].id !== "canvas") start--;
+  let end = index;
+  while (end < cells.length - 1 && cells[end + 1].id !== "canvas") end++;
+  const runLength = end - start + 1;
+
+  if (runLength === 1) {
+    return "min-w-0 md:col-span-4 lg:col-span-6";
+  }
+  if (runLength === 2 || (runLength === 4 && !customized)) {
+    return "min-w-0 md:col-span-2 lg:col-span-3";
+  }
+  return "min-w-0 md:col-span-2 lg:col-span-2";
+}

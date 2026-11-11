@@ -48,7 +48,7 @@ import ModuleRack from "./ModuleRack.tsx";
 import { moduleRegistry } from "@utils/moduleRegistry.ts";
 import NotesModule from "./modules/NotesModule.tsx";
 import TakesModule from "./modules/TakesModule.tsx";
-import { enabledModules } from "@signals/moduleStore.ts";
+import { dismissedModules, enabledModules } from "@signals/moduleStore.ts";
 import {
   boardOrder,
   boardSizes,
@@ -58,11 +58,14 @@ import {
 import {
   type BoardSize,
   type CellPlan,
+  colSpanClassForCell,
   CORE_CELL_IDS,
   effectiveOrder,
+  hasCardContent,
   mergeVisibleOrder,
   NEXT_SIZE,
   planCells,
+  resolveVisibleBoardIds,
 } from "@utils/boardLayout.ts";
 import { useGridSortable } from "@utils/useGridSortable.ts";
 
@@ -71,35 +74,24 @@ const AUTO_DRAW_COOLDOWN_MS = 30_000;
 /** Fire an auto-draw every Nth transcript chunk. */
 const AUTO_DRAW_EVERY = 3;
 
+const CORE_CARD_META = [
+  { id: "transcript", name: "Transcript", icon: "fa-align-left" },
+  { id: "summary", name: "Summary", icon: "fa-file-lines" },
+  { id: "actions", name: "Actions", icon: "fa-list-check" },
+  { id: "canvas", name: "Topic Map", icon: "fa-diagram-project" },
+] as const;
+
 /** A card's row-span size: user override, else its designed default. The
  * canvas returns undefined — full row, fixed height, not resizable. */
 function sizeOf(id: string): BoardSize | undefined {
   if (id === "canvas") return undefined;
   const override = boardSizes.value[id];
   if (override) return override;
-  // Transcript / Summary / Actions open FULLY EXTENDED on a first load —
-  // they are the three things worth reading, and landing them half-height
-  // meant every one of them opened mid-scroll. A user's own resize still
-  // wins (boardSizes override is checked above); this is only the default.
-  if ((CORE_CELL_IDS as readonly string[]).includes(id)) return "tall";
-  return moduleRegistry.find((m) => m.id === id)?.size ?? "small";
-}
-
-/** The board as data: the full id order (hidden modules included) and the
- * visible cards in user order. Cards are what you drag; the flat id list is
- * what persists (@signals/boardOrderStore). During a drag the preview's
- * card order is the render truth. */
-function planBoard(
-  previewCards?: string[] | null,
-): { full: string[]; cells: CellPlan[] } {
-  const defaults = [...CORE_CELL_IDS, ...moduleRegistry.map((m) => m.id)];
-  const full = effectiveOrder(boardOrder.value, defaults);
-  const core = new Set<string>(CORE_CELL_IDS);
-  const enabled = enabledModules.value;
-  const visible = previewCards
-    ? previewCards.flatMap((cid) => cid.split("+"))
-    : full.filter((id) => core.has(id) || enabled.includes(id));
-  return { full, cells: planCells(visible, sizeOf) };
+  // Core cards default to balanced medium height (2 row units) so the top row
+  // and the Topic Map fit together comfortably without giant empty boxes;
+  // tapping the top grip still cycles medium → tall → small per card.
+  if ((CORE_CELL_IDS as readonly string[]).includes(id)) return "medium";
+  return moduleRegistry.find((m) => m.id === id)?.size ?? "medium";
 }
 
 /** Tap the grip: small → medium → tall → small. Sizes persist per card
@@ -272,7 +264,61 @@ export default function DashboardIsland() {
   // whenever the conversation changes — an append finishing updates the store,
   // which re-runs this and picks up the freshly stamped receipt.
   const takes = useSignal<StoredRecording[]>([]);
+  const revealedCoreByConv = useSignal<Record<string, string[]>>({});
+  const seenCoreRef = useRef<{ id: string; seen: Set<string> }>({
+    id: "",
+    seen: new Set(),
+  });
   const activeConversationId = conversationData.value?.conversation.id ?? "";
+
+  function revealCoreCard(cardId: string) {
+    const convKey = activeConversationId || "__active__";
+    const existing = revealedCoreByConv.value[convKey] ?? [];
+    if (!existing.includes(cardId)) {
+      revealedCoreByConv.value = {
+        ...revealedCoreByConv.value,
+        [convKey]: [...existing, cardId],
+      };
+    }
+  }
+
+  function planBoard(
+    previewCards?: string[] | null,
+  ): { full: string[]; visible: string[]; cells: CellPlan[] } {
+    const defaults = [...CORE_CELL_IDS, ...moduleRegistry.map((m) => m.id)];
+    const full = effectiveOrder(boardOrder.value, defaults);
+    const data = conversationData.value;
+    const convKey = data?.conversation.id || "__active__";
+    if (seenCoreRef.current.id !== convKey) {
+      seenCoreRef.current = { id: convKey, seen: new Set() };
+    }
+    for (const coreId of CORE_CELL_IDS) {
+      if (hasCardContent(coreId, data, takes.value.length)) {
+        seenCoreRef.current.seen.add(coreId);
+      }
+    }
+    const revealed = [
+      ...(revealedCoreByConv.value[convKey] ?? []),
+      ...seenCoreRef.current.seen,
+    ];
+    const resolvedVisible = resolveVisibleBoardIds({
+      fullOrder: full,
+      data,
+      takesCount: takes.value.length,
+      enabledModules: enabledModules.value,
+      dismissedModules: dismissedModules.value,
+      revealedCoreIds: revealed,
+      isLive: Boolean(liveSession.value),
+    });
+    const visible = previewCards
+      ? previewCards.flatMap((cid) => cid.split("+"))
+      : resolvedVisible;
+    return {
+      full,
+      visible: resolvedVisible,
+      cells: planCells(visible, sizeOf),
+    };
+  }
   useEffect(() => {
     let cancelled = false;
     if (!activeConversationId) {
@@ -543,8 +589,15 @@ export default function DashboardIsland() {
   const { conversation, transcript, actionItems, nodes, summary } =
     conversationData.value;
 
-  const { cells } = planBoard(sortable.previewOrder.value);
+  const { visible: visibleIds, cells } = planBoard(sortable.previewOrder.value);
   const customized = boardOrder.value !== null;
+  const visibleSet = new Set(visibleIds);
+  const hiddenCoreCards = isViewingShared.value
+    ? []
+    : CORE_CARD_META.filter((c) => !visibleSet.has(c.id));
+  const visibleModuleIds = moduleRegistry
+    .map((m) => m.id)
+    .filter((id) => visibleSet.has(id));
 
   // Mobile hierarchy (until the user arranges the board themselves): a
   // returning user's question is "what do I do next" — Action Items lead the
@@ -662,6 +715,12 @@ export default function DashboardIsland() {
             <FlipCard
               key={conversation.id}
               label="Canvas"
+              pillLabel={{ front: "Canvas", back: "Map" }}
+              pillIcon={{ front: "fa-pen", back: "fa-diagram-project" }}
+              tipLabel={{
+                front: "Flip to drawing canvas",
+                back: "Flip back to topic map",
+              }}
               frontBadge={canvasNews.value}
               backBadge={mapNews.value}
               onFlip={(flipped) => {
@@ -677,15 +736,16 @@ export default function DashboardIsland() {
               back={
                 <div class="dashboard-card">
                   <div class="dashboard-card-header">
-                    <div class="inline-flex items-center gap-2">
-                      <span
-                        class="stamped-tab stamped-tab--yellow"
-                        data-tip={liveSession.value
-                          ? "Drawing live with the room"
-                          : "Draw alongside the map — it remembers"}
-                      >
-                        11 // CANVAS
+                    <div
+                      class="card-header-title"
+                      data-tip={liveSession.value
+                        ? "Drawing live with the room"
+                        : "Draw alongside the map — it remembers"}
+                    >
+                      <span class="card-header-icon" aria-hidden="true">
+                        <i class="fa fa-pen"></i>
                       </span>
+                      <h3 class="card-header-heading">Canvas</h3>
                     </div>
                     <div class="card-header-actions">
                       <button
@@ -826,14 +886,15 @@ export default function DashboardIsland() {
             answers can't leak across conversations (Bumblefuzz's
             hall-of-fame find). */
         }
-        {cells.map((cell) => {
+        {cells.map((cell, index) => {
           const cellId = cell.id;
           const lifting = sortable.draggingId.value === cellId;
           const settling = sortable.settlingId.value === cellId;
           const isCanvas = cellId === "canvas";
+          const colSpan = colSpanClassForCell(cells, index, customized);
           const shape = isCanvas
-            ? "w-full board-cell--canvas"
-            : `min-w-0 md:col-span-2 board-cell--${cell.size}${
+            ? colSpan
+            : `${colSpan} board-cell--${cell.size}${
               cell.core ? "" : " module-cell"
             }${
               !cell.core && cell.size === "small" ? " module-cell--small" : ""
@@ -869,9 +930,13 @@ export default function DashboardIsland() {
           );
         })}
 
-        {/* The rack — ghost tile, always last, not part of the shuffle. */}
-        <div class="order-last md:order-none min-w-0 module-cell module-cell--small">
-          <ModuleRack />
+        {/* Tactile Board Shelf — always spans full width at the foot of the board */}
+        <div class="order-last md:order-none min-w-0 board-shelf-cell">
+          <ModuleRack
+            hiddenCoreCards={hiddenCoreCards}
+            onRevealCoreCard={revealCoreCard}
+            visibleModuleIds={visibleModuleIds}
+          />
         </div>
       </div>
 

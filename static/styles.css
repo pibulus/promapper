@@ -2538,7 +2538,7 @@ h6,
    medium 2, tall 3 (see BOARD SIZE SYSTEM near the end of this file). */
 .dashboard-grid {
   grid-auto-flow: dense;
-  --board-row: 10.5rem;
+  --board-row: 11rem;
   grid-auto-rows: var(--board-row);
 }
 
@@ -2605,8 +2605,94 @@ h6,
   }
 }
 
-/* The rack tile — same ghost language as the action add-row: an invitation,
-   not a demand. */
+/* Full-width tactile Board Shelf across the bottom of the dashboard */
+.board-shelf-cell {
+  grid-column: 1 / -1;
+  grid-row: auto !important;
+}
+
+.board-shelf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  padding: 0.7rem 0.95rem;
+  border-radius: 14px;
+  border: 1.5px dashed color-mix(in srgb, var(--line-ink) 38%, transparent);
+  background: color-mix(in srgb, var(--surface-card) 78%, transparent);
+}
+
+.board-shelf__pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.42rem;
+  min-width: 0;
+}
+
+.board-shelf__label {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ink-secondary, #52525B);
+  margin-right: 0.25rem;
+  user-select: none;
+}
+
+.board-shelf__pill,
+.board-shelf__customize {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  padding: 0.36rem 0.72rem;
+  min-height: 2.05rem;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--line-ink) 70%, transparent);
+  background: var(--surface-white-warm, #fffef7);
+  color: var(--soft-black);
+  box-shadow: 1.5px 1.5px 0px var(--line-ink);
+  font-family: var(--font-display);
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 120ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 120ms ease,
+    background 140ms ease;
+}
+
+.board-shelf__pill i,
+.board-shelf__customize i {
+  font-size: 0.74rem;
+  color: var(--accent-ink);
+}
+
+.board-shelf__pill--core {
+  background: color-mix(in srgb, var(--cta-plate) 34%,
+    var(--surface-white-warm));
+}
+
+.board-shelf__customize {
+  margin-left: auto;
+  background: color-mix(in srgb, var(--header-band) 26%,
+    var(--surface-white-warm));
+}
+
+.board-shelf__pill:hover,
+.board-shelf__customize:hover {
+  background: var(--cta-plate);
+  transform: translate(-1px, -1px);
+  box-shadow: 2.5px 2.5px 0px var(--line-ink);
+}
+
+.board-shelf__pill:active,
+.board-shelf__customize:active {
+  transform: translate(1px, 1px);
+  box-shadow: 0.5px 0.5px 0px var(--line-ink);
+}
+
+/* The rack tile — legacy fallback */
 .module-rack-tile {
   width: 100%;
   min-height: 5.5rem;
