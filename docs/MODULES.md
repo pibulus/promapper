@@ -68,7 +68,7 @@ one entry. Same seam as `vizRegistry` and the export formats.
 | Magpie | medium | `fa-gem`          | A shelf for shiny things — drop files, links, scraps.                                             |
 | Takes  | medium | `fa-record-vinyl` | Every recording kept — listen back + append receipts (reads recordingsDB, same rows as the dock). |
 | Sound  | small  | `fa-radio`        | Radio + Tones as one dial: SomaFM/KPAB streams up top, WebAudio moods below the seam.             |
-| Dice   | small  | `fa-dice-five`    | Polyhedral tabletop roller (d4–d100) for TTRPG sessions and quick tie-breakers.                   |
+| Dice   | medium | `fa-dice-five`    | Polyhedral tabletop roller (d4–d100) for TTRPG sessions and quick tie-breakers.                   |
 
 **Content-aware board & shelf (`utils/boardLayout.ts` +
 `islands/ModuleRack.tsx`)**:
