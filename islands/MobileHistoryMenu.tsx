@@ -406,10 +406,18 @@ export default function MobileHistoryMenu() {
       >
         {/* Header */}
         <div class="history-drawer-header">
-          <div class="inline-flex items-center gap-2">
-            <span class="stamped-tab stamped-tab--yellow">
-              HISTORY // SAVED
+          <div class="card-header-title">
+            <span class="card-header-icon" aria-hidden="true">
+              <i class="fa fa-history"></i>
             </span>
+            <h2 class="card-header-heading" style={{ fontSize: "0.98rem" }}>
+              Saved maps
+            </h2>
+            {conversations.value.length > 0 && (
+              <span class="card-header-count">
+                {conversations.value.length}
+              </span>
+            )}
           </div>
           <div class="card-header-actions">
             <button

@@ -10,7 +10,11 @@
 
 import { useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
-import { conversationData } from "@signals/conversationStore.ts";
+import {
+  conversationData,
+  isViewingShared,
+} from "@signals/conversationStore.ts";
+import { hideModule } from "@signals/moduleStore.ts";
 import {
   deleteRecording,
   listRecordings,
@@ -145,10 +149,31 @@ export default function TakesModule() {
     <div class="w-full h-full">
       <div class="dashboard-card">
         <div class="dashboard-card-header">
-          <div class="inline-flex items-center gap-2">
-            <span class="stamped-tab stamped-tab--orange">09 // TAKES</span>
+          <div class="card-header-title">
+            <span class="card-header-icon" aria-hidden="true">
+              <i class="fa fa-record-vinyl"></i>
+            </span>
+            <h3 class="card-header-heading">Takes</h3>
+            {takes.value.length > 0 && (
+              <span class="card-header-count">
+                {takes.value.length}
+              </span>
+            )}
           </div>
-          <div class="card-header-actions"></div>
+          <div class="card-header-actions">
+            {!isViewingShared.value && (
+              <button
+                type="button"
+                onClick={() => hideModule("takes")}
+                class="card-header-btn--ghost"
+                data-tip="Hide card"
+                data-tip-align="right"
+                aria-label="Hide Takes card"
+              >
+                <i class="fa fa-xmark text-sm" aria-hidden="true"></i>
+              </button>
+            )}
+          </div>
         </div>
         <div class="dashboard-card-body takes-module-body">
           {takes.value.length === 0

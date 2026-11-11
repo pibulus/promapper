@@ -92,7 +92,7 @@ export default function PorchTable({ lang }: PorchTableProps = {}) {
       aria-labelledby="porch-table-title"
     >
       <header class="porch-table__head">
-        <span class="stamped-tab stamped-tab--yellow porch-table__kicker">
+        <span class="soft-kicker-pill soft-kicker-pill--accent porch-table__kicker">
           {i18n.tableKicker}
         </span>
         <h2 id="porch-table-title" class="porch-table__title">
@@ -105,10 +105,12 @@ export default function PorchTable({ lang }: PorchTableProps = {}) {
         <figure class="porch-specimen">
           <div class="dashboard-card porch-card">
             <div class="dashboard-card-header">
-              <div class="inline-flex items-center gap-2">
-                <span class="stamped-tab stamped-tab--yellow">
-                  01 // TRANSCRIPT
+              <div class="card-header-title">
+                <span class="card-header-icon" aria-hidden="true">
+                  <i class="fa fa-align-left"></i>
                 </span>
+                <h3 class="card-header-heading">Transcript</h3>
+                <span class="card-header-count">2 voices</span>
               </div>
             </div>
             <div
@@ -124,10 +126,12 @@ export default function PorchTable({ lang }: PorchTableProps = {}) {
         <figure class="porch-specimen">
           <div class="dashboard-card porch-card">
             <div class="dashboard-card-header">
-              <div class="inline-flex items-center gap-2">
-                <span class="stamped-tab stamped-tab--orange">
-                  03 // ACTIONS
+              <div class="card-header-title">
+                <span class="card-header-icon" aria-hidden="true">
+                  <i class="fa fa-list-check"></i>
                 </span>
+                <h3 class="card-header-heading">Actions</h3>
+                <span class="card-header-count">1 open</span>
               </div>
             </div>
             <ul class="porch-card__body porch-actions">
@@ -189,8 +193,12 @@ export default function PorchTable({ lang }: PorchTableProps = {}) {
         <figure class="porch-specimen">
           <div class="dashboard-card porch-card">
             <div class="dashboard-card-header">
-              <div class="inline-flex items-center gap-2">
-                <span class="stamped-tab stamped-tab--yellow">10 // MAP</span>
+              <div class="card-header-title">
+                <span class="card-header-icon" aria-hidden="true">
+                  <i class="fa fa-diagram-project"></i>
+                </span>
+                <h3 class="card-header-heading">Topic Map</h3>
+                <span class="card-header-count">7 topics</span>
               </div>
             </div>
             <svg

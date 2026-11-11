@@ -50,7 +50,7 @@ export const TRANSLATIONS = {
 
     // The porch's second screen — one finished board, laid out
     porchCue: "What it makes",
-    tableKicker: "Example // The Halloran Situation",
+    tableKicker: "Sample board · The Halloran Situation",
     tableTitle: "One rambling take, laid out",
     tableLede:
       "A sheriff's third callout this week: a biting, a sinkhole, and bloodwork that came back better than clean.",
@@ -174,7 +174,7 @@ export const TRANSLATIONS = {
 
     // La segunda pantalla del porche — un tablero terminado, bien acomodado
     porchCue: "Lo que arma",
-    tableKicker: "Ejemplo // The Halloran Situation",
+    tableKicker: "Tablero de ejemplo · The Halloran Situation",
     tableTitle: "Una plática enredada, bien acomodada",
     tableLede:
       "La tercera llamada de la semana para un sheriff de pueblo: una mordida, un socavón y unos análisis de sangre que salieron demasiado bien.",

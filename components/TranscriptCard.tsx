@@ -46,14 +46,22 @@ export default function TranscriptCard(
     cancelRename();
   }
 
+  const speakerCount = transcript?.speakers?.length ?? 0;
+
   return (
     <div class="w-full h-full">
       <div class="dashboard-card">
         <div class="dashboard-card-header">
-          <div class="inline-flex items-center gap-2">
-            <span class="stamped-tab stamped-tab--yellow">
-              01 // TRANSCRIPT
+          <div class="card-header-title">
+            <span class="card-header-icon" aria-hidden="true">
+              <i class="fa fa-align-left"></i>
             </span>
+            <h3 class="card-header-heading">Transcript</h3>
+            {speakerCount > 0 && (
+              <span class="card-header-count">
+                {speakerCount} {speakerCount === 1 ? "voice" : "voices"}
+              </span>
+            )}
           </div>
           <div class="card-header-actions">
             <button

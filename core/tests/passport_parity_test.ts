@@ -22,7 +22,7 @@ import {
 } from "../../utils/softstack-passport/index.js";
 
 const EXPECTED_MANIFEST_SHA256 =
-  "441e0cfe73245a9a8b79732e4e3957e5668d9a2b7dd8c45b9b8ee77c2cd5e6da";
+  "ef1d0be5b027325fdf6eb854ec034d392fcd9aa6a6dddb5a52b7c124f614e7c2";
 
 const vectors = JSON.parse(
   await Deno.readTextFile(
@@ -124,7 +124,7 @@ Deno.test("Passport: the vector resolves the shared card skin and palette", asyn
   assertEquals(skin.choices, vectors.card.choices);
 });
 
-Deno.test("Passport: resting card masks words and omits QR; reveals on demand", async () => {
+Deno.test("Passport: resting card masks words while carrying QR; reveals words on demand", async () => {
   const hash = await sha256(encoder.encode(idInput(vectors.code)));
   const identity = generateMemberIdentity(hash, vectors.code, {
     phrase: vectors.phrase,
@@ -141,8 +141,19 @@ Deno.test("Passport: resting card masks words and omits QR; reveals on demand", 
   assertEquals(resting.includes('data-passport-name="Quiet Tapir"'), true);
   assertEquals(resting.includes('data-passport-masked="true"'), true);
   assertEquals(resting.includes(vectors.phrase), false);
-  assertEquals(resting.includes("data:image/png;base64,AAAA"), false);
+  assertEquals(resting.includes("passport-qr-stamp"), true);
+  assertEquals(resting.includes("data:image/png;base64,AAAA"), true);
   assertEquals(resting.includes(">••••• ••••• ••••• •••••</p>"), true);
+
+  const qrHidden = renderMembershipCard({
+    identity,
+    skin,
+    appName: "ProMapper",
+    showQr: false,
+    qrUrl: "https://promapper.app/#sync=test",
+    qrImageUrl: "data:image/png;base64,AAAA",
+  });
+  assertEquals(qrHidden.includes("data:image/png;base64,AAAA"), false);
 
   const html = renderMembershipCard({
     identity,

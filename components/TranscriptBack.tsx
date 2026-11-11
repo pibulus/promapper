@@ -29,8 +29,16 @@ export default function TranscriptBack(
   return (
     <div class="dashboard-card">
       <div class="dashboard-card-header">
-        <div class="inline-flex items-center gap-2">
-          <span class="stamped-tab stamped-tab--yellow">01 // VOICES</span>
+        <div class="card-header-title">
+          <span class="card-header-icon" aria-hidden="true">
+            <i class="fa fa-comment"></i>
+          </span>
+          <h3 class="card-header-heading">Voices</h3>
+          {words > 0 && (
+            <span class="card-header-count">
+              {words.toLocaleString()} words
+            </span>
+          )}
         </div>
         <div class="card-header-actions">
           <button

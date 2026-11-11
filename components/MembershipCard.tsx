@@ -84,7 +84,7 @@ export function PassportMembershipCard({
   const [hovered, setHovered] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [revealed, setRevealed] = useState(false);
-  const [showQr, setShowQr] = useState(false);
+  const [showQr, setShowQr] = useState(true);
   const [qrImageUrl, setQrImageUrl] = useState("");
 
   useEffect(() => {
@@ -148,15 +148,13 @@ export function PassportMembershipCard({
     [customAvatarUri, vaultHash, passport?.code, skin.avatarStyle],
   );
 
+  const qrTargetUrl = !isPreview && restoreUrl
+    ? restoreUrl
+    : "https://promapper.app";
+
   useEffect(() => {
     let alive = true;
-    if (!restoreUrl || isPreview) {
-      setQrImageUrl("");
-      return () => {
-        alive = false;
-      };
-    }
-    QRCode.toDataURL(restoreUrl, {
+    QRCode.toDataURL(qrTargetUrl, {
       margin: 1,
       width: 256,
       color: { dark: "#1e1714", light: "#fffef7" },
@@ -171,7 +169,7 @@ export function PassportMembershipCard({
     return () => {
       alive = false;
     };
-  }, [restoreUrl, isPreview]);
+  }, [qrTargetUrl]);
 
   const markup = useMemo(
     () =>
@@ -391,7 +389,9 @@ export function PassportMembershipCard({
       toggleReveal();
       return;
     }
-    if (target.closest(".passport-qr-stamp")) return;
+    if (!isPreview && restoreUrl && target.closest(".passport-qr-stamp")) {
+      return;
+    }
     if (target.closest(".passport-id-chip")) {
       e.stopPropagation();
       copyPasskey();

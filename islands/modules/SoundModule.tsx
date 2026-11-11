@@ -12,6 +12,8 @@ import { useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import { soundHover, soundTick } from "../../utils/sound.ts";
 import { showToast } from "@utils/toast.ts";
+import { isViewingShared } from "@signals/conversationStore.ts";
+import { hideModule } from "@signals/moduleStore.ts";
 import FlipCard from "../FlipCard.tsx";
 
 interface Channel {
@@ -753,8 +755,11 @@ export default function SoundModule() {
       front={
         <div class="dashboard-card">
           <div class="dashboard-card-header">
-            <div class="inline-flex items-center gap-2">
-              <span class="stamped-tab stamped-tab--orange">04 // SOUND</span>
+            <div class="card-header-title">
+              <span class="card-header-icon" aria-hidden="true">
+                <i class="fa fa-radio"></i>
+              </span>
+              <h3 class="card-header-heading">Sound</h3>
               {playing.value && (
                 <span
                   ref={meterElRef}
@@ -768,7 +773,19 @@ export default function SoundModule() {
                 </span>
               )}
             </div>
-            <div class="card-header-actions"></div>
+            <div class="card-header-actions">
+              {!isViewingShared.value && (
+                <button
+                  type="button"
+                  onClick={() => hideModule("sound")}
+                  class="card-header-btn--ghost"
+                  data-tip="Hide card"
+                  aria-label="Hide Sound card"
+                >
+                  <i class="fa fa-xmark text-sm" aria-hidden="true"></i>
+                </button>
+              )}
+            </div>
           </div>
           <div class="dashboard-card-body radio-body">
             {
@@ -847,8 +864,11 @@ export default function SoundModule() {
       back={
         <div class="dashboard-card">
           <div class="dashboard-card-header">
-            <div class="inline-flex items-center gap-2">
-              <span class="stamped-tab stamped-tab--orange">04 // DIAL</span>
+            <div class="card-header-title">
+              <span class="card-header-icon" aria-hidden="true">
+                <i class="fa fa-music"></i>
+              </span>
+              <h3 class="card-header-heading">Dial</h3>
             </div>
             <div class="card-header-actions"></div>
           </div>

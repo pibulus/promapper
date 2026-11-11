@@ -20,7 +20,11 @@ import {
   magpieFilesAvailable,
   saveMagpieFile,
 } from "@core/storage/magpieFilesDB.ts";
-import { isModuleEnabled, toggleModule } from "@signals/moduleStore.ts";
+import {
+  hideModule,
+  isModuleEnabled,
+  showModule,
+} from "@signals/moduleStore.ts";
 import { resampleIntoFreshMap } from "@utils/resample.ts";
 import { soundBloom, soundTick } from "@utils/sound.ts";
 import { copyToClipboard, showToast, showUndoToast } from "@utils/toast.ts";
@@ -276,7 +280,7 @@ export default function MagpieModule() {
       notes: `${currentNotes}📌 From Magpie:\n> ${snippet}`,
     };
     if (!isModuleEnabled("notes")) {
-      toggleModule("notes");
+      showModule("notes");
     }
     soundBloom();
     showToast("Sampled into Notes!", "success");
@@ -399,26 +403,43 @@ export default function MagpieModule() {
         }}
       >
         <div class="dashboard-card-header">
-          <div class="inline-flex items-center gap-2">
-            <span
-              class="stamped-tab stamped-tab--cyan"
-              data-tip="A shelf for shiny things — drop files, links, scraps"
-            >
-              05 // MAGPIE
+          <div
+            class="card-header-title"
+            data-tip="A shelf for shiny things — drop files, links, scraps"
+          >
+            <span class="card-header-icon" aria-hidden="true">
+              <i class="fa fa-gem"></i>
             </span>
+            <h3 class="card-header-heading">Magpie</h3>
+            {items.length > 0 && (
+              <span class="card-header-count">
+                {items.length}
+              </span>
+            )}
           </div>
           <div class="card-header-actions">
             {!readOnly && (
-              <button
-                type="button"
-                class="cursor-pointer"
-                onClick={() => fileInputRef.current?.click()}
-                data-tip="Keep a file"
-                data-tip-align="right"
-                aria-label="Add a file to the shelf"
-              >
-                <i class="fa fa-paperclip" aria-hidden="true"></i>
-              </button>
+              <>
+                <button
+                  type="button"
+                  class="cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                  data-tip="Keep a file"
+                  aria-label="Add a file to the shelf"
+                >
+                  <i class="fa fa-paperclip" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => hideModule("magpie")}
+                  class="card-header-btn--ghost"
+                  data-tip="Hide card"
+                  data-tip-align="right"
+                  aria-label="Hide Magpie card"
+                >
+                  <i class="fa fa-xmark text-sm" aria-hidden="true"></i>
+                </button>
+              </>
             )}
           </div>
         </div>

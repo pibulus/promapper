@@ -21,8 +21,8 @@ app supplies HMAC-SHA256, SHA-256, and PBKDF2/scrypt from its own runtime.
   with the canonical 64-hex `SOFTSTACK_PASSPORT_SECRET` across all four apps.
 - Card: `renderMembershipCard({ identity, skin, appName, revealed, showQr, ... })`
   → markup string; `card.css` is the matching stylesheet. At rest (`revealed = false`,
-  `showQr = false`), the card masks the 4 words (`••••• ••••• ••••• •••••`) and
-  renders the ghost seal instead of a live QR so screenshots leak nothing. The
+  `showQr = true`), the card masks the 4 words (`••••• ••••• ••••• •••••`) while
+  displaying the scannable QR stamp (`showQr: false` swaps in the ghost seal). The
   four app wrappers own state, events, and adapters only.
 
 **DiceBear stays.** `avatar.js` imports `@dicebear/core` +

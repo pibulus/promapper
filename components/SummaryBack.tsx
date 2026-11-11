@@ -10,7 +10,6 @@
 import { formatAppendReceipt } from "@core/orchestration/append-receipt.ts";
 import { transcriptWordCount } from "@core/orchestration/talk-share.ts";
 import type { StoredRecording } from "@core/storage/recordingsDB.ts";
-import { copyToClipboard } from "../utils/toast.ts";
 
 interface SummaryBackProps {
   summary: string;
@@ -50,20 +49,13 @@ export default function SummaryBack(
   return (
     <div class="dashboard-card">
       <div class="dashboard-card-header">
-        <div class="inline-flex items-center gap-2">
-          <span class="stamped-tab stamped-tab--pink">02 // PULSE</span>
+        <div class="card-header-title">
+          <span class="card-header-icon" aria-hidden="true">
+            <i class="fa fa-chart-simple"></i>
+          </span>
+          <h3 class="card-header-heading">Pulse</h3>
         </div>
         <div class="card-header-actions">
-          <button
-            type="button"
-            onClick={() => summary && copyToClipboard(summary)}
-            class="cursor-pointer"
-            data-tip="Copy summary"
-            aria-label="Copy summary"
-            disabled={!summary}
-          >
-            <i class="fa fa-copy text-sm"></i>
-          </button>
           <button
             type="button"
             onClick={onBackup}

@@ -45,18 +45,45 @@ function load(): string[] {
 
 export const enabledModules = signal<string[]>(load());
 
+/** Session-scoped explicit dismissals so hiding a content-bearing module
+ * (e.g. Notes or Magpie with items) tucks it onto the shelf until re-added. */
+export const dismissedModules = signal<string[]>([]);
+
 export function isModuleEnabled(id: string): boolean {
   return enabledModules.value.includes(id);
 }
 
-export function toggleModule(id: string): void {
-  enabledModules.value = isModuleEnabled(id)
-    ? enabledModules.value.filter((x) => x !== id)
-    : [...enabledModules.value, id];
+function persistModules(ids: string[]): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(enabledModules.value));
+    localStorage.setItem(KEY, JSON.stringify(ids));
   } catch {
     // Storage full/blocked — the toggle still works for this session.
+  }
+}
+
+export function showModule(id: string): void {
+  dismissedModules.value = dismissedModules.value.filter((x) => x !== id);
+  if (!isModuleEnabled(id)) {
+    enabledModules.value = [...enabledModules.value, id];
+    persistModules(enabledModules.value);
+  }
+}
+
+export function hideModule(id: string): void {
+  if (!dismissedModules.value.includes(id)) {
+    dismissedModules.value = [...dismissedModules.value, id];
+  }
+  if (isModuleEnabled(id)) {
+    enabledModules.value = enabledModules.value.filter((x) => x !== id);
+    persistModules(enabledModules.value);
+  }
+}
+
+export function toggleModule(id: string): void {
+  if (isModuleEnabled(id)) {
+    hideModule(id);
+  } else {
+    showModule(id);
   }
 }
 
@@ -64,10 +91,7 @@ export function toggleModule(id: string): void {
  * the current one, so it opens with the default row rather than an empty
  * rack or the previous conversation's toggles. */
 export function resetModules(): void {
+  dismissedModules.value = [];
   enabledModules.value = [...DEFAULT_MODULES];
-  try {
-    localStorage.setItem(KEY, JSON.stringify(enabledModules.value));
-  } catch {
-    // Storage full/blocked — the reset still works for this session.
-  }
+  persistModules(enabledModules.value);
 }

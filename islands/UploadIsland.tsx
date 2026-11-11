@@ -809,7 +809,7 @@ export default function UploadIsland(
                     </span>
                     {isLiveConnected.value && (
                       <span
-                        class="mapper-live-pill stamped-tab stamped-tab--orange stamped-tab--sm"
+                        class="mapper-live-pill soft-kicker-pill soft-kicker-pill--live"
                         title="Live text stream active"
                       >
                         {i18n.livePill}

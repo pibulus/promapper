@@ -21,6 +21,7 @@ import {
   conversationData,
   isViewingShared,
 } from "@signals/conversationStore.ts";
+import { hideModule } from "@signals/moduleStore.ts";
 import { flushPendingSave } from "@core/storage/localStorage.ts";
 import { copyToClipboard } from "@utils/toast.ts";
 import { resampleIntoFreshMap } from "@utils/resample.ts";
@@ -109,8 +110,11 @@ export default function NotesModule() {
     <div class="w-full h-full">
       <div class="dashboard-card">
         <div class="dashboard-card-header">
-          <div class="inline-flex items-center gap-2">
-            <span class="stamped-tab stamped-tab--yellow">07 // NOTES</span>
+          <div class="card-header-title">
+            <span class="card-header-icon" aria-hidden="true">
+              <i class="fa fa-note-sticky"></i>
+            </span>
+            <h3 class="card-header-heading">Notes</h3>
           </div>
           <div class="card-header-actions">
             <button
@@ -126,17 +130,31 @@ export default function NotesModule() {
               <i class="fa fa-copy text-sm"></i>
             </button>
             {!isViewingShared.value && (
-              <button
-                type="button"
-                onClick={resampleNotes}
-                class="cursor-pointer"
-                data-tip="Resample notes as a new map"
-                data-tip-align="right"
-                aria-label="Resample notes as new map"
-                disabled={!notes.trim()}
-              >
-                <i class="fa fa-wand-magic-sparkles text-sm"></i>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={resampleNotes}
+                  class="cursor-pointer"
+                  data-tip="Resample notes as a new map"
+                  aria-label="Resample notes as new map"
+                  disabled={!notes.trim()}
+                >
+                  <i class="fa fa-wand-magic-sparkles text-sm"></i>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    commit();
+                    hideModule("notes");
+                  }}
+                  class="card-header-btn--ghost"
+                  data-tip="Hide card"
+                  data-tip-align="right"
+                  aria-label="Hide Notes card"
+                >
+                  <i class="fa fa-xmark text-sm" aria-hidden="true"></i>
+                </button>
+              </>
             )}
           </div>
         </div>

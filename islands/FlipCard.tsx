@@ -28,6 +28,12 @@ interface FlipCardProps {
   back: ComponentChildren;
   /** Accessible label for the flip control (e.g. "Action Items options"). */
   label?: string;
+  /** Optional visible pill label on the flip button (e.g. { front: "Canvas", back: "Map" }). */
+  pillLabel?: { front: string; back: string };
+  /** Optional custom FA icon class on the flip button when using pillLabel. */
+  pillIcon?: { front: string; back: string };
+  /** Optional custom tooltip copy for front/back states. */
+  tipLabel?: { front: string; back: string };
   /** Notified after every flip — lets a parent lazy-mount a heavy back face
    * or clear its own "news" state. */
   onFlip?: (flipped: boolean) => void;
@@ -39,7 +45,17 @@ interface FlipCardProps {
 }
 
 export default function FlipCard(
-  { front, back, label, onFlip, frontBadge, backBadge }: FlipCardProps,
+  {
+    front,
+    back,
+    label,
+    pillLabel,
+    pillIcon,
+    tipLabel,
+    onFlip,
+    frontBadge,
+    backBadge,
+  }: FlipCardProps,
 ) {
   const flipped = useSignal(false);
 
@@ -50,8 +66,20 @@ export default function FlipCard(
     onFlip?.(flipped.value);
   }
 
+  const currentPillText = pillLabel
+    ? (flipped.value ? pillLabel.back : pillLabel.front)
+    : null;
+  const currentIcon = pillIcon
+    ? (flipped.value ? pillIcon.back : pillIcon.front)
+    : (flipped.value ? "fa-rotate-left" : "fa-rotate");
+  const currentTip = tipLabel
+    ? (flipped.value ? tipLabel.back : tipLabel.front)
+    : (flipped.value ? "Flip back" : "Flip card");
+
   return (
-    <div class="w-full flip-card-perspective">
+    <div
+      class={`w-full flip-card-perspective${pillLabel ? " has-flip-pill" : ""}`}
+    >
       <div class={`flip-card-inner${flipped.value ? " is-flipped" : ""}`}>
         {
           /* FRONT — `inert` (not aria-hidden) on the hidden face: it removes the
@@ -83,19 +111,26 @@ export default function FlipCard(
       <button
         type="button"
         onClick={toggle}
-        class="flip-card-btn"
-        data-tip={flipped.value ? "Flip back" : "Flip"}
+        class={`flip-card-btn${pillLabel ? " flip-card-btn--pill" : ""}${
+          flipped.value ? " is-flipped" : ""
+        }`}
+        data-tip={currentTip}
+        data-tip-align="right"
+        aria-pressed={flipped.value}
         aria-label={flipped.value
-          ? "Flip back to front"
-          : (label ? `${label} — flip` : "Flip card")}
+          ? (currentPillText
+            ? `Switch to ${currentPillText}`
+            : "Flip back to front")
+          : (currentPillText
+            ? `Switch to ${currentPillText}`
+            : (label ? `${label} — flip` : "Flip card"))}
       >
         <i
-          class={`fa ${
-            flipped.value ? "fa-rotate-left" : "fa-rotate"
-          } flip-card-btn__icon`}
+          class={`fa ${currentIcon} flip-card-btn__icon`}
           aria-hidden="true"
         >
         </i>
+        {currentPillText && <span>{currentPillText}</span>}
         {(flipped.value ? backBadge : frontBadge) && (
           <span class="flip-card-btn__dot" aria-hidden="true"></span>
         )}

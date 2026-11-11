@@ -18,6 +18,7 @@ import {
   conversationData,
   isViewingShared,
 } from "@signals/conversationStore.ts";
+import { hideModule } from "@signals/moduleStore.ts";
 import { showToast } from "@utils/toast.ts";
 
 export type DieType = "d4" | "d6" | "d8" | "d10" | "d12" | "d20" | "d100";
@@ -189,8 +190,11 @@ export default function DiceModule() {
   return (
     <div class="dashboard-card dice-card">
       <div class="dashboard-card-header">
-        <div class="inline-flex items-center gap-2">
-          <span class="stamped-tab stamped-tab--pink">06 // DICE</span>
+        <div class="card-header-title">
+          <span class="card-header-icon" aria-hidden="true">
+            <i class="fa fa-dice-five"></i>
+          </span>
+          <h3 class="card-header-heading">Dice</h3>
         </div>
         <div class="card-header-actions">
           {roll && !isViewingShared.value && (
@@ -212,10 +216,21 @@ export default function DiceModule() {
               onMouseEnter={soundHover}
               class="cursor-pointer"
               data-tip="Clear history"
-              data-tip-align="right"
               aria-label="Clear history"
             >
               <i class="fa fa-broom text-xs"></i>
+            </button>
+          )}
+          {!isViewingShared.value && (
+            <button
+              type="button"
+              onClick={() => hideModule("dice")}
+              class="card-header-btn--ghost"
+              data-tip="Hide card"
+              data-tip-align="right"
+              aria-label="Hide Dice card"
+            >
+              <i class="fa fa-xmark text-sm" aria-hidden="true"></i>
             </button>
           )}
         </div>

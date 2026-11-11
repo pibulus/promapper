@@ -904,31 +904,31 @@ export default function HomeIsland({ lang }: HomeIslandProps = {}) {
   // holds its pulse until the real result lands.
   const brewNotes = spanish
     ? [
-      "01 // LEYENDO EL TEXTO…",
-      "02 // BUSCANDO PENDIENTES…",
-      "03 // TRAZANDO EL MAPA DE TEMAS…",
-      "04 // ENTINTANDO LO QUE CONECTA…",
-      "05 // ACOMODANDO LA MESA…",
+      "Leyendo el texto…",
+      "Buscando pendientes…",
+      "Trazando el mapa de temas…",
+      "Entintando lo que conecta…",
+      "Acomodando la mesa…",
     ]
     : [
-      "01 // READING IT THROUGH…",
-      "02 // PULLING OUT THE ACTIONS…",
-      "03 // SKETCHING THE TOPIC MAP…",
-      "04 // INKING WHAT CONNECTS…",
-      "05 // SETTING THE TABLE…",
+      "Reading it through…",
+      "Pulling out the actions…",
+      "Sketching the topic map…",
+      "Inking what connects…",
+      "Setting the table…",
     ];
 
   // Appending to a live map is a different story than the first brew.
   const appendNotes = spanish
     ? [
-      "01 // ESCUCHANDO DE NUEVO…",
-      "02 // SUMÁNDOLO AL MAPA…",
-      "03 // ACTUALIZANDO PENDIENTES…",
+      "Escuchando de nuevo…",
+      "Sumándolo al mapa…",
+      "Actualizando pendientes…",
     ]
     : [
-      "01 // LISTENING BACK…",
-      "02 // WEAVING IT INTO THE MAP…",
-      "03 // CHECKING OFF WHAT GOT DONE…",
+      "Listening back…",
+      "Weaving it into the map…",
+      "Checking off what got done…",
     ];
   const isBrewing = processingConversation.value && !conversationData.value
     ? 1
@@ -1403,9 +1403,18 @@ export default function HomeIsland({ lang }: HomeIslandProps = {}) {
           }
           {conversationData.value?.conversation.title
             ? (
-              <span class="app-footer__brand app-footer__brand--project flex items-center gap-2">
-                <span class="stamped-tab stamped-tab--orange stamped-tab--sm">
-                  SESSION // ACTIVE
+              <span
+                class="app-footer__brand app-footer__brand--project flex items-center gap-2 min-w-0"
+                aria-hidden="true"
+              >
+                <span class="soft-kicker-pill max-w-[220px] sm:max-w-[340px] truncate">
+                  <span
+                    class="w-2 h-2 rounded-full shrink-0"
+                    style={{ background: "var(--color-accent)" }}
+                  />
+                  <span class="truncate">
+                    {conversationData.value.conversation.title}
+                  </span>
                 </span>
               </span>
             )

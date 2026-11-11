@@ -108,7 +108,7 @@ export function renderMembershipCard({
 	qrImageUrl = "",
 	qrSvg = "",
 	revealed = false,
-	showQr = false,
+	showQr = true,
 	copied = false,
 	squishing = false,
 	reducedMotion = false,
@@ -165,11 +165,15 @@ export function renderMembershipCard({
 		? `<button type="button" class="avatar-reset" title="Reset to default avatar" aria-label="Reset custom Passport avatar">&times;</button>`
 		: "";
 
-	const qr = showQr && resolvedQrImage && !isPreview
-		? `<a class="passport-qr-stamp" href="${escapeHtml(qrUrl)}" aria-label="Open ${escapeHtml(appName)} on another device">
+	const qr = showQr && resolvedQrImage
+		? !isPreview && qrUrl
+			? `<a class="passport-qr-stamp" href="${escapeHtml(qrUrl)}" aria-label="Open ${escapeHtml(appName)} on another device">
 				<img src="${escapeHtml(resolvedQrImage)}" alt="" decoding="async" referrerpolicy="no-referrer" loading="eager" />
 				<span class="qr-tap-hint" aria-hidden="true">tap to sync</span>
 			</a>`
+			: `<div class="passport-qr-stamp passport-qr-stamp--preview" aria-hidden="true">
+				<img src="${escapeHtml(resolvedQrImage)}" alt="" decoding="async" referrerpolicy="no-referrer" loading="eager" />
+			</div>`
 		: resolvedQrImage && !isPreview
 			? `<button type="button" class="ghost-seal ghost-seal--interactive" data-slot="qr-ghost" data-passport-qr-toggle title="Pair a device" aria-label="Pair a device">
 			<svg class="ghost-mark" viewBox="0 0 32 36" focusable="false" aria-hidden="true">

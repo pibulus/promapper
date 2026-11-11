@@ -50,8 +50,11 @@ export default function SummaryCard(
     <div class="w-full h-full">
       <div class="dashboard-card">
         <div class="dashboard-card-header">
-          <div class="inline-flex items-center gap-2">
-            <span class="stamped-tab stamped-tab--pink">02 // SUMMARY</span>
+          <div class="card-header-title">
+            <span class="card-header-icon" aria-hidden="true">
+              <i class="fa fa-file-lines"></i>
+            </span>
+            <h3 class="card-header-heading">Summary</h3>
           </div>
           <div class="card-header-actions">
             <button

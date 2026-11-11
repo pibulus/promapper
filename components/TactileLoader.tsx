@@ -80,10 +80,10 @@ export default function TactileLoader({
       <div class="tactile-loader-wrap">
         <div class="tactile-loader-glow"></div>
         <div class="tactile-loader-card">
-          {/* Stamped tab header */}
+          {/* Header pill */}
           <div class="tactile-loader-header">
-            <span class="stamped-tab stamped-tab--yellow stamped-tab--sm">
-              {demoMode ? "00 // ROLLING DEMO" : "LIVE // INKING BOARD"}
+            <span class="soft-kicker-pill soft-kicker-pill--accent">
+              {demoMode ? "Sample take" : "Inking board"}
             </span>
             <span class="tactile-loader-led"></span>
           </div>

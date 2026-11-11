@@ -25,7 +25,6 @@ import {
 import { showToast, showUndoToast } from "@utils/toast.ts";
 import {
   canUndo,
-  conversationData,
   isViewingShared,
   undoLastMutation,
 } from "@signals/conversationStore.ts";
@@ -36,49 +35,6 @@ import {
   tokenizeActionText,
 } from "@utils/actionTags.ts";
 import Confetti from "./Confetti.tsx";
-
-/**
- * ZipList's import link decodes with plain atob, so the payload must be
- * Latin-1. Smart punctuation gets ASCII equivalents.
- */
-function toLatin1(s: string): string {
-  return s
-    .replace(/[‘’]/g, "'")
-    .replace(/[“”]/g, '"')
-    .replace(/[–—]/g, "-")
-    .replace(/…/g, "...")
-    // deno-lint-ignore no-control-regex
-    .replace(/[^\x00-\xFF]/g, "")
-    .trim();
-}
-
-function sendToZipList(items: ActionItem[]) {
-  const name = toLatin1(conversationData.value?.conversation?.title ?? "") ||
-    "Action items";
-  const payload = {
-    name,
-    items: items.map((i) => ({
-      text: toLatin1(i.description),
-      checked: i.status === "completed",
-    })).filter((i) => i.text),
-  };
-  if (payload.items.length === 0) {
-    showToast("Nothing here ZipList can carry — try adding items", "warning");
-    return;
-  }
-  try {
-    const encoded = btoa(JSON.stringify(payload));
-    globalThis.open(
-      `https://ziplist.app/import#listdata=${encoded}`,
-      "_blank",
-      "noopener",
-    );
-    showToast("Sent to ZipList!", "success");
-  } catch (error) {
-    console.error("ZipList handoff failed:", error);
-    showToast("Couldn't package that list — try again", "error");
-  }
-}
 
 interface ActionItem {
   id: string;
@@ -735,25 +691,26 @@ export default function ActionItemsCard(
           }}
         >
           <div class="dashboard-card-header">
-            <div class="inline-flex items-center gap-2">
-              <span class="stamped-tab stamped-tab--orange">03 // ACTIONS</span>
+            <div class="card-header-title">
+              <span class="card-header-icon" aria-hidden="true">
+                <i class="fa fa-list-check"></i>
+              </span>
+              <h3 class="card-header-heading">Actions</h3>
+              {visibleItems.value.length > 0 && (
+                <span class="card-header-count">
+                  {visibleItems.value.length - tuckedCount.value > 0
+                    ? `${visibleItems.value.length - tuckedCount.value} open`
+                    : `${visibleItems.value.length} done`}
+                </span>
+              )}
             </div>
             {
-              /* card-header-actions like every other card — this header used
-                its own btn--ghost cluster and read as a different species. */
+              /* card-header-actions like every other card — ZipList handoff
+                lives on the Overview flip side so front controls stay focused
+                on sorting and finding tasks. */
             }
             <div class="card-header-actions">
-              <button
-                type="button"
-                onClick={() => sendToZipList(visibleItems.value)}
-                onMouseEnter={soundHover}
-                data-tip="Send to ZipList"
-                aria-label="Send action items to ZipList"
-                disabled={visibleItems.value.length === 0}
-              >
-                <i class="fa fa-paper-plane" aria-hidden="true"></i>
-              </button>
-              {!readOnly && (
+              {!readOnly && visibleItems.value.length > 1 && (
                 <button
                   type="button"
                   onClick={cycleSort}
@@ -768,6 +725,7 @@ export default function ActionItemsCard(
                 type="button"
                 onClick={toggleSearch}
                 onMouseEnter={soundHover}
+                class={searchOpen.value ? "is-active" : undefined}
                 aria-label={searchOpen.value ? "Close search" : "Search tasks"}
                 aria-pressed={searchOpen.value}
                 data-tip="Search"

@@ -7,7 +7,11 @@
 
 import { useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
-import { conversationData } from "@signals/conversationStore.ts";
+import {
+  conversationData,
+  isViewingShared,
+} from "@signals/conversationStore.ts";
+import { hideModule } from "@signals/moduleStore.ts";
 import { ensureApiSession } from "@utils/apiAuth.ts";
 import { enqueueApiRequest } from "@utils/requestQueue.ts";
 import { formatMarkdownSafe } from "@utils/sanitize.ts";
@@ -129,13 +133,19 @@ export default function AskModule() {
     <div class="w-full h-full">
       <div class="dashboard-card">
         <div class="dashboard-card-header">
-          <div class="inline-flex items-center gap-2">
-            <span
-              class="stamped-tab stamped-tab--yellow"
-              data-tip="Ask anything — it answers from this conversation only"
-            >
-              08 // ASK
+          <div
+            class="card-header-title"
+            data-tip="Ask anything — answers come strictly from this conversation"
+          >
+            <span class="card-header-icon" aria-hidden="true">
+              <i class="fa fa-comment"></i>
             </span>
+            <h3 class="card-header-heading">Ask</h3>
+            {exchanges.value.length > 0 && (
+              <span class="card-header-count">
+                {exchanges.value.length}
+              </span>
+            )}
           </div>
           <div class="card-header-actions">
             {exchanges.value.length > 0 && (
@@ -144,10 +154,21 @@ export default function AskModule() {
                 onClick={() => exchanges.value = []}
                 class="cursor-pointer"
                 data-tip="Clear exchanges"
-                data-tip-align="right"
                 aria-label="Clear exchanges"
               >
                 <i class="fa fa-broom text-sm"></i>
+              </button>
+            )}
+            {!isViewingShared.value && (
+              <button
+                type="button"
+                onClick={() => hideModule("ask")}
+                class="card-header-btn--ghost"
+                data-tip="Hide card"
+                data-tip-align="right"
+                aria-label="Hide Ask card"
+              >
+                <i class="fa fa-xmark text-sm" aria-hidden="true"></i>
               </button>
             )}
           </div>
