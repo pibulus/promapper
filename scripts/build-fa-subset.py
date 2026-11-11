@@ -1,6 +1,16 @@
 """Build a self-hosted Font Awesome subset containing only the icons ProMapper
 actually uses. Replaces a 156KB CDN font + 103KB CDN stylesheet with a local
-pair a fraction of the size, and removes a third-party origin from the app."""
+pair a fraction of the size, and removes a third-party origin from the app.
+
+Adding an icon: put the class in the source as a literal `fa-*` token (the
+scanner below is text-based, so `fa-${x}` is invisible and ships a blank box),
+then re-run this script and commit BOTH the stylesheet and the two .woff2
+files. The stylesheet is cache-busted by Fresh's `asset()` helper, but the
+fonts are referenced at fixed paths, so the CDN can keep serving the OLD
+woff2 for up to its 4h TTL — a brand-new glyph may render as a blank box
+until the cache rolls. If it must appear immediately, rename the woff2 (and
+its two url() references) or purge the edge cache.
+"""
 
 import re
 import subprocess
