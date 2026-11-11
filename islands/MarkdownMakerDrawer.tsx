@@ -1,8 +1,10 @@
 /**
- * MarkdownMaker Drawer Island
+ * MarkdownMaker Drawer Island — Export Studio
  *
- * Right-hand slide-in drawer for converting conversations to different formats
- * Ported from Svelte project_mapper version with full functionality
+ * Right-hand slide-in studio for turning mapped conversations into crisp
+ * documents, summaries, decks, or custom artifacts — with instant formatted
+ * document preview, inline Markdown editing, PDF/Markdown download, and local
+ * snapshots.
  */
 
 import { useComputed, useSignal } from "@preact/signals";
@@ -23,6 +25,7 @@ import {
 } from "@utils/sound.ts";
 import { conversationData } from "@signals/conversationStore.ts";
 import { markdownService } from "../utils/markdownService.ts";
+import { formatMarkdownSafe } from "../utils/sanitize.ts";
 import { showToast, showUndoToast } from "../utils/toast.ts";
 import { resampleIntoFreshMap } from "@utils/resample.ts";
 import ChonkyQrCard from "../components/ChonkyQrCard.tsx";
@@ -41,39 +44,24 @@ interface MarkdownMakerDrawerProps {
   conversationId: string;
 }
 
-// How long the loading state must stay on screen once shown. Anti-flicker, not
-// padding: below ~600ms a spinner reads as a glitch rather than as work.
 const MIN_VISIBLE_MS = 650;
 
-// The snapshot shape + its persistence live in core/storage/exportSnapshots.ts
-// (quota-safe writes, cleanup on conversation delete, backup/import). This
-// island used to own the localStorage key directly and had none of that.
 type SavedOutput = ExportSnapshot;
 
 export default function MarkdownMakerDrawer(
   { isOpen, onClose, transcript, conversationId }: MarkdownMakerDrawerProps,
 ) {
-  // Per-instance state — useSignal, NOT module-level signal(): module scope
-  // is shared across concurrent SSR requests, so one visitor's generated
-  // markdown could flash into another visitor's first paint.
   const selectedPromptId = useSignal<string | null>(null);
   const customPrompt = useSignal("");
-  // Custom prompt is tucked behind a disclosure — most exports are one tap on
-  // a preset, and an always-open textarea + dead Generate button read as
-  // homework. Opening it is a deliberate "I want something else".
   const customOpen = useSignal(false);
   const markdown = useSignal("");
+  const previewMode = useSignal<"rendered" | "raw">("rendered");
+  const justCopied = useSignal(false);
   const loading = useSignal(false);
   const error = useSignal<string | null>(null);
-  // The model said "this content suits a different format" — shown as a
-  // friendly hint, never as a fake successful export.
   const formatHint = useSignal<string | null>(null);
-  // Slideomatic URL for a freshly generated deck — rendered as an
-  // "Open the deck" link (an anchor, so popup blockers stay out of it).
   const deckUrl = useSignal<string | null>(null);
   const savedOutputs = useSignal<SavedOutput[]>([]);
-  // When a saved snapshot is loaded back for editing, saving updates it in
-  // place instead of appending a new one.
   const activeDraftId = useSignal<string | null>(null);
 
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -81,9 +69,6 @@ export default function MarkdownMakerDrawer(
   const [shouldRender, setShouldRender] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // The contextual six — shape-based heuristics pick which formats fit THIS
-  // conversation (no extra AI call), best fit first. One row of chips, no
-  // sections; descriptions live in the tooltips.
   const visiblePrompts = useComputed(() => {
     const data = conversationData.value;
     return pickExportFormats({
@@ -97,17 +82,12 @@ export default function MarkdownMakerDrawer(
     });
   });
 
-  // Names the run in flight, so the loading state says which export you asked
-  // for instead of narrating invented pipeline stages.
   const runningLabel = useComputed(() => {
     const id = selectedPromptId.value;
-    if (!id) return "a custom format";
-    // markdownPrompts, not visiblePrompts: the latter is the filtered six.
-    return markdownPrompts.find((p) => p.id === id)?.label ?? "a custom format";
+    if (!id) return "custom export";
+    return markdownPrompts.find((p) => p.id === id)?.label ?? "custom export";
   });
 
-  // Nothing is in flight once the drawer is shut, and the next open must not
-  // inherit the last run's spinner — or, worse, another conversation's.
   useEffect(() => {
     if (isOpen) return;
     loading.value = false;
@@ -115,30 +95,23 @@ export default function MarkdownMakerDrawer(
     formatHint.value = null;
   }, [isOpen]);
 
-  // Load saved outputs from localStorage
   useEffect(() => {
     if (isOpen && conversationId) {
       loadSavedOutputs();
     }
   }, [isOpen, conversationId]);
 
-  // Handle smooth animation
   useEffect(() => {
     if (isOpen) {
       setShouldRender(true);
-      // Small delay to ensure DOM is ready
       setTimeout(() => setIsAnimating(true), 50);
     } else {
       setIsAnimating(false);
-      // Wait for animation to complete before unmounting
       const timeout = setTimeout(() => setShouldRender(false), 450);
       return () => clearTimeout(timeout);
     }
   }, [isOpen]);
 
-  // Dialog manners: move focus in on open, give it back on close, and lock
-  // body scroll while the backdrop is up. (Click-to-close is the backdrop's
-  // job — the old document-level listener could fight the header toggle.)
   useEffect(() => {
     if (!isOpen) return;
     lastFocused.current = document.activeElement as HTMLElement | null;
@@ -152,7 +125,6 @@ export default function MarkdownMakerDrawer(
     };
   }, [isOpen]);
 
-  // Handle ESC key to close
   useEffect(() => {
     if (!isOpen) return;
 
@@ -166,13 +138,10 @@ export default function MarkdownMakerDrawer(
     return () => window.removeEventListener("keydown", handleEscape);
   }, [isOpen, onClose]);
 
-  // Load saved outputs for this conversation.
   function loadSavedOutputs() {
     savedOutputs.value = getSnapshotsFor(conversationId);
   }
 
-  // Save output to localStorage — updates the loaded snapshot in place when one
-  // is active, otherwise appends a new one.
   function saveOutput() {
     if (!markdown.value || !conversationId) return;
 
@@ -186,8 +155,6 @@ export default function MarkdownMakerDrawer(
       ? allOutputs.findIndex((o) => o.id === activeDraftId.value)
       : -1;
 
-    // Auto-title, never asked for: the export's own first heading, else
-    // format + conversation title.
     const title = deriveSnapshotTitle(
       markdown.value,
       label,
@@ -196,7 +163,6 @@ export default function MarkdownMakerDrawer(
 
     let newId: string | null = null;
     if (existingIndex >= 0) {
-      // Update in place — keep id + created_at, refresh content + prompt.
       allOutputs[existingIndex] = {
         ...allOutputs[existingIndex],
         content: markdown.value,
@@ -215,13 +181,9 @@ export default function MarkdownMakerDrawer(
       });
     }
 
-    // Only claim success — and only adopt the new id as the active draft — if
-    // the write actually landed. Setting activeDraftId before the write meant a
-    // quota failure left it pointing at a snapshot that was never stored, so
-    // the NEXT save found no match and silently forked a duplicate.
     if (!writeSnapshots(allOutputs)) {
       showToast(
-        "Couldn't save the snapshot — storage is full. Copy or download it instead.",
+        "Couldn't save snapshot — browser storage is full. Copy or download instead.",
         "error",
         6000,
       );
@@ -230,39 +192,42 @@ export default function MarkdownMakerDrawer(
     if (newId) activeDraftId.value = newId;
     loadSavedOutputs();
     showToast(
-      existingIndex >= 0 ? "Snapshot updated!" : "Output saved!",
+      existingIndex >= 0 ? "Snapshot updated" : "Snapshot saved",
       "success",
     );
   }
 
-  // Load a saved snapshot back into the editor for tweaking.
-  function loadDraft(output: SavedOutput) {
+  function loadDraft(
+    output: SavedOutput,
+    mode: "rendered" | "raw" = "rendered",
+  ) {
     markdown.value = output.content;
     activeDraftId.value = output.id;
-    showToast("Loaded — edit and Save to update", "info");
+    previewMode.value = mode;
+    showToast(
+      mode === "raw"
+        ? "Loaded in Markdown editor"
+        : "Snapshot loaded into preview",
+      "info",
+    );
   }
 
-  // Delete saved output — undo toast is the safety net, no confirm friction.
   function deleteOutput(id: string) {
     const allOutputs = getAllSnapshots();
     const removed = allOutputs.find((o) => o.id === id);
     if (!removed) return;
 
     if (!writeSnapshots(allOutputs.filter((o) => o.id !== id))) {
-      showToast("Couldn't delete the snapshot — try again", "error");
+      showToast("Couldn't delete snapshot — try again", "error");
       return;
     }
-    // Deleting the snapshot being edited: future saves become a new one.
     if (activeDraftId.value === id) activeDraftId.value = null;
     loadSavedOutputs();
 
-    showUndoToast("Snapshot deleted", () => {
-      // Tell the truth if the restore can't land (storage filled up in the
-      // meantime). This used to console.error only, so a failed undo looked
-      // exactly like a successful one and the snapshot was just gone.
+    showUndoToast("Snapshot removed", () => {
       if (!writeSnapshots([...getAllSnapshots(), removed])) {
         showToast(
-          "Couldn't bring that snapshot back — storage is full.",
+          "Couldn't restore snapshot — browser storage is full.",
           "error",
           6000,
         );
@@ -270,12 +235,13 @@ export default function MarkdownMakerDrawer(
       }
       loadSavedOutputs();
     });
-  } // Generate markdown from preset prompt
+  }
+
   async function generateFromPreset(promptId: string) {
     const promptOption = markdownPrompts.find((p) => p.id === promptId);
     if (!promptOption || !transcript.trim()) {
-      error.value = "No transcript content available";
-      showToast("No transcript content available", "error");
+      error.value = "No transcript content available yet.";
+      showToast("No transcript content available yet", "error");
       return;
     }
     await runExport(() =>
@@ -286,11 +252,10 @@ export default function MarkdownMakerDrawer(
       ), promptId);
   }
 
-  // Generate markdown from custom prompt
   async function generateFromCustom() {
     if (!customPrompt.value.trim() || !transcript.trim()) {
-      error.value = "Please provide both a prompt and transcript";
-      showToast("Please provide both a prompt and transcript", "warning");
+      error.value = "Describe a format first so we know what to build.";
+      showToast("Describe a format first", "warning");
       return;
     }
     await runExport(() =>
@@ -310,19 +275,11 @@ export default function MarkdownMakerDrawer(
     formatHint.value = null;
     deckUrl.value = null;
     selectedPromptId.value = promptId;
-    // markdown / activeDraftId are deliberately NOT cleared here. A failed
-    // retry, an empty result, or a format-mismatch hint must not eat good
-    // work — including hand-edits living in the preview textarea. Assign on
-    // success only.
 
     const start = Date.now();
     try {
       const result = await work();
 
-      // Minimum VISIBLE duration, not padding on the work. A spinner that
-      // appears and vanishes inside a few hundred ms is a flash of nothing,
-      // which is what made a fast export feel broken rather than quick. Real
-      // exports take 2-15s, so this only ever fires on the fast tail.
       const elapsed = Date.now() - start;
       if (elapsed < MIN_VISIBLE_MS) {
         await new Promise((r) => setTimeout(r, MIN_VISIBLE_MS - elapsed));
@@ -331,11 +288,11 @@ export default function MarkdownMakerDrawer(
       const mismatch = parseFormatMismatch(result);
       if (mismatch) {
         formatHint.value = mismatch;
-        showToast("That format doesn't quite fit this one", "info");
+        showToast("Suggested a better-fitting format", "info");
         return;
       }
       if (!result.trim()) {
-        error.value = "The export came back empty — try again.";
+        error.value = "The export came back empty — give it another go.";
         showToast("The export came back empty — try again", "error");
         return;
       }
@@ -343,29 +300,32 @@ export default function MarkdownMakerDrawer(
       if (promptId === DECK_PROMPT_ID) {
         const slides = parseDeckJson(result);
         if (!slides) {
-          error.value = "The deck didn't come out right — give it another go.";
+          error.value =
+            "The deck didn't come out cleanly — give it another go.";
           showToast(
-            "The deck didn't come out right — give it another go",
+            "The deck didn't come out cleanly — try again",
             "error",
           );
           return;
         }
         const url = await buildDeckUrl(slides);
         markdown.value = JSON.stringify(slides, null, 2);
+        previewMode.value = "raw";
         activeDraftId.value = null;
         deckUrl.value = url;
         showToast("Deck ready — open it below", "success");
       } else {
         markdown.value = result;
+        previewMode.value = "rendered";
         activeDraftId.value = null;
-        showToast("Markdown generated!", "success");
+        showToast("Export ready", "success");
       }
 
       soundBloom();
     } catch (err) {
       error.value = err instanceof Error ? err.message : "Generation failed";
       showToast(
-        err instanceof Error ? err.message : "Failed to generate markdown",
+        err instanceof Error ? err.message : "Failed to generate export",
         "error",
       );
     } finally {
@@ -373,27 +333,28 @@ export default function MarkdownMakerDrawer(
     }
   }
 
-  // Copy to clipboard
   async function copyToClipboard() {
     try {
       await navigator.clipboard.writeText(markdown.value);
-      showToast("Copied to clipboard!", "success");
+      justCopied.value = true;
+      setTimeout(() => {
+        justCopied.value = false;
+      }, 1600);
+      showToast("Copied to clipboard", "success");
     } catch (_err) {
       showToast("Failed to copy", "error");
     }
   }
 
-  // Copy saved output
   async function copySavedOutput(content: string) {
     try {
       await navigator.clipboard.writeText(content);
-      showToast("Copied to clipboard!", "success");
+      showToast("Copied to clipboard", "success");
     } catch (_err) {
       showToast("Failed to copy", "error");
     }
   }
 
-  // Resample export/snapshot into a fresh conversation map
   function resampleText(text: string) {
     if (!text.trim()) return;
     onClose();
@@ -403,7 +364,6 @@ export default function MarkdownMakerDrawer(
     });
   }
 
-  // Download as markdown file
   function downloadMarkdown() {
     if (!markdown.value) return;
 
@@ -413,7 +373,6 @@ export default function MarkdownMakerDrawer(
       const a = document.createElement("a");
       a.href = url;
 
-      // Filename: conversation-title slug + format + date
       const promptLabel = selectedPromptId.value
         ? markdownPrompts.find((p) => p.id === selectedPromptId.value)?.label ||
           "Export"
@@ -421,7 +380,7 @@ export default function MarkdownMakerDrawer(
       const titleSlug = (conversationData.value?.conversation?.title ?? "")
         .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
         .slice(0, 40);
-      const timestamp = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+      const timestamp = new Date().toISOString().split("T")[0];
       a.download = `${
         titleSlug ? titleSlug + "-" : ""
       }${promptLabel}-${timestamp}.md`;
@@ -431,21 +390,19 @@ export default function MarkdownMakerDrawer(
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      showToast("Downloaded as markdown!", "success");
+      showToast("Downloaded .md file", "success");
     } catch (_err) {
       showToast("Failed to download", "error");
     }
   }
 
-  // Download as PDF using browser print
   function downloadPDF() {
     if (!markdown.value) return;
 
     try {
-      // Create a hidden print window with styled content
       const printWindow = window.open("", "_blank");
       if (!printWindow) {
-        showToast("Please allow popups to download PDF", "warning");
+        showToast("Allow popups to export PDF", "warning");
         return;
       }
 
@@ -454,10 +411,6 @@ export default function MarkdownMakerDrawer(
           "Export"
         : "Custom Export";
 
-      // Escape HTML before injecting into the print popup. The markdown is AI-
-      // generated, so a crafted conversation/prompt could otherwise smuggle a
-      // <script> that executes in the popup's origin. (The main preview is safe —
-      // it renders inside a <textarea>; only this print path interpolates HTML.)
       const escapeHtml = (s: string) =>
         s
           .replace(/&/g, "&amp;")
@@ -466,9 +419,6 @@ export default function MarkdownMakerDrawer(
           .replace(/"/g, "&quot;")
           .replace(/'/g, "&#39;");
 
-      // Mini markdown → print HTML (escaped FIRST, then structure). Handles
-      // headings, lists, code fences, and bold/italic/inline code, so a real
-      // export prints as a document instead of literal `#` and `**`.
       const inline = (s: string) =>
         s
           .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
@@ -499,18 +449,12 @@ export default function MarkdownMakerDrawer(
         };
         const flushTable = () => {
           if (table.length) {
-            // Ragged rows get padded to the widest one, or a short row runs
-            // past the table's own border in print.
             const width = Math.max(...table.map((r) => r.length));
             const pad = (
               r: string[],
             ) => [...r, ...Array(Math.max(0, width - r.length)).fill("")];
             const cells = (r: string[], tag: string) =>
               pad(r).map((c) => `<${tag}>${inline(c)}</${tag}>`).join("");
-            // Only promote row one to a HEADING when a separator row actually
-            // said it was one. An AI table that opens straight into data (or
-            // leads with its separator) was rendering its first real row in
-            // header type, on the header's shaded ground.
             const head = sawTableSep && table.length > 1 ? table[0] : null;
             const rows = head ? table.slice(1) : table;
             out.push(
@@ -525,8 +469,6 @@ export default function MarkdownMakerDrawer(
           sawTableSep = false;
         };
         for (const line of escapeHtml(md).split("\n")) {
-          // Pipe tables — AI meeting minutes love them; without this they
-          // print as raw | soup. Separator rows (|---|) are skipped.
           if (/^\s*\|.*\|\s*$/.test(line) && !inCode) {
             flushPara();
             flushQuote();
@@ -602,10 +544,6 @@ export default function MarkdownMakerDrawer(
       };
       const htmlContent = renderPrintHtml(markdown.value);
 
-      // A printed document is not a themed surface. Headings are warm
-      // near-black ink and the rules are warm sepia — a paper document, the
-      // same on every roll. (The theme accent used to ride in here, which is
-      // how a warm roll printed maroon headings. Never again.)
       const INK = "#1e1714";
       const RULE = "#d8cbbb";
       const docTitle = conversationData.value?.conversation?.title?.trim() ||
@@ -713,11 +651,9 @@ export default function MarkdownMakerDrawer(
 
       printWindow.document.close();
 
-      // Wait for content to load then trigger print
       setTimeout(() => {
         printWindow.print();
-        // Don't close immediately - let user save PDF first
-        showToast("Opening print dialog for PDF...", "success");
+        showToast("Opening print dialog for PDF…", "success");
       }, 250);
     } catch (_err) {
       showToast("Failed to generate PDF", "error");
@@ -726,16 +662,24 @@ export default function MarkdownMakerDrawer(
 
   if (!shouldRender) return null;
 
+  const renderedPreviewHtml = markdown.value && previewMode.value === "rendered"
+    ? formatMarkdownSafe(
+      selectedPromptId.value === DECK_PROMPT_ID
+        ? `\`\`\`json\n${markdown.value}\n\`\`\``
+        : markdown.value,
+    )
+    : "";
+
   return (
     <>
-      {/* Fading backdrop scrim — clearer modality + click-to-close */}
+      {/* Fading backdrop scrim */}
       <div
         onClick={onClose}
         aria-hidden="true"
         class={`export-drawer-backdrop ${isAnimating ? "is-visible" : ""}`}
       />
 
-      {/* Drawer with smooth bouncy slide (our spring — keep it) */}
+      {/* Export Studio Drawer */}
       <div
         ref={drawerRef}
         role="dialog"
@@ -746,20 +690,27 @@ export default function MarkdownMakerDrawer(
           isAnimating ? "is-open" : ""
         }`}
       >
-        {/* Header — same band grammar as every dashboard card */}
+        {/* Header — unified Soft Neo Toybrut card-header grammar */}
         <div class="dashboard-card-header">
-          <div class="inline-flex items-center gap-2">
-            <span class="stamped-tab stamped-tab--pink">
-              EXPORT // ARTIFACT
+          <div class="card-header-title">
+            <span class="card-header-icon" aria-hidden="true">
+              <i class="fa fa-file-export"></i>
             </span>
+            <h3 class="card-header-heading">Export</h3>
+            {savedOutputs.value.length > 0 && (
+              <span class="card-header-count">
+                {savedOutputs.value.length} saved
+              </span>
+            )}
           </div>
           <div class="card-header-actions">
             <button
+              type="button"
               onClick={onClose}
-              class="export-drawer-close-btn"
+              class="card-icon-btn tooltip-btn"
               data-tip="Close"
               data-tip-align="right"
-              aria-label="Close export"
+              aria-label="Close export drawer"
             >
               <i class="fa fa-xmark" aria-hidden="true"></i>
             </button>
@@ -767,75 +718,65 @@ export default function MarkdownMakerDrawer(
         </div>
 
         {/* Content */}
-        <div class="flex-1 overflow-y-auto p-4">
-          {
-            /* The contextual six, best fit first. A 2-col grid of icon +
-              label + one line of what it actually gives you: the bare-pill
-              version needed a hover to be legible, which is no version at
-              all on a phone, and "Unasked" means nothing cold. Still ONE
-              tier — the old two-section layout (suggested vs all formats)
-              was the busy-ness we cut. */
-          }
-          <div class="mb-1 export-format-grid">
-            {visiblePrompts.value.map((promptOption) => (
+        <div class="flex-1 overflow-y-auto p-4 space-y-3.5">
+          {/* Format Picker Header + Contextual Six */}
+          <div>
+            <div class="export-studio-lead">
+              <span>Choose a format fitted to this map</span>
               <button
-                key={promptOption.id}
                 type="button"
-                class={`export-chip${
-                  selectedPromptId.value === promptOption.id
-                    ? " is-selected"
-                    : ""
+                class={`export-custom-pill ${
+                  customOpen.value ? "is-open" : ""
                 }`}
+                aria-expanded={customOpen.value}
                 onMouseEnter={soundHover}
                 onClick={() => {
-                  soundTick();
-                  generateFromPreset(promptOption.id);
+                  soundToggle(!customOpen.value);
+                  customOpen.value = !customOpen.value;
                 }}
-                disabled={loading.value}
               >
-                <i
-                  class={`fa ${promptOption.icon} export-chip__icon`}
-                  aria-hidden="true"
-                >
-                </i>
-                <span class="export-chip__label">{promptOption.label}</span>
-                <span
-                  class="export-chip__desc"
-                  title={promptOption.description}
-                >
-                  {promptOption.short}
-                </span>
+                <i class="fa fa-pen" aria-hidden="true"></i>
+                <span>Custom…</span>
               </button>
-            ))}
-          </div>
+            </div>
 
-          {/* Custom prompt — tucked away until asked for */}
-          <div class="mb-4">
-            <button
-              type="button"
-              class="export-custom-toggle"
-              aria-expanded={customOpen.value}
-              onMouseEnter={soundHover}
-              onClick={() => {
-                soundToggle(!customOpen.value);
-                customOpen.value = !customOpen.value;
-              }}
-            >
-              <i
-                class={`fa ${
-                  customOpen.value ? "fa-chevron-down" : "fa-chevron-right"
-                }`}
-                aria-hidden="true"
-              >
-              </i>
-              <span>Or describe a format</span>
-            </button>
+            <div class="export-format-grid">
+              {visiblePrompts.value.map((promptOption) => (
+                <button
+                  key={promptOption.id}
+                  type="button"
+                  class={`export-chip${
+                    selectedPromptId.value === promptOption.id
+                      ? " is-selected"
+                      : ""
+                  }`}
+                  onMouseEnter={soundHover}
+                  onClick={() => {
+                    soundTick();
+                    generateFromPreset(promptOption.id);
+                  }}
+                  disabled={loading.value}
+                >
+                  <span class="export-chip__icon-box" aria-hidden="true">
+                    <i class={`fa ${promptOption.icon} export-chip__icon`}></i>
+                  </span>
+                  <span class="export-chip__label">{promptOption.label}</span>
+                  <span
+                    class="export-chip__desc"
+                    title={promptOption.description}
+                  >
+                    {promptOption.short}
+                  </span>
+                </button>
+              ))}
+            </div>
+
             {customOpen.value && (
               <div class="export-custom-body">
                 <textarea
                   id="custom-prompt-input"
                   class="export-textarea h-24"
-                  placeholder="A letter to a future self… a packing list… anything worth describing."
+                  placeholder="Describe any document — a handoff memo, client update, packing list, project brief…"
                   maxLength={5000}
                   value={customPrompt.value}
                   onInput={(e) =>
@@ -845,7 +786,7 @@ export default function MarkdownMakerDrawer(
                 />
                 <button
                   type="button"
-                  class="btn btn--accent w-full"
+                  class="btn btn--primary w-full"
                   onMouseEnter={soundHover}
                   onClick={() => {
                     soundTick();
@@ -854,54 +795,41 @@ export default function MarkdownMakerDrawer(
                   disabled={loading.value || !customPrompt.value.trim() ||
                     !transcript.trim()}
                 >
-                  Generate
+                  <i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i>
+                  <span>Draft custom export</span>
                 </button>
               </div>
             )}
           </div>
 
-          {
-            /* One clear loading state — names the format being generated, so you
-              always know which run (preset or custom) is in flight. */
-          }
+          {/* Loading state — uses verified fa-spinner from subset */}
           {loading.value && (
             <div
-              class="empty-state"
-              style={{ minHeight: "160px" }}
+              class="export-loading-card"
               role="status"
               aria-live="polite"
             >
-              {
-                /* Spinner sits outside .empty-state-face on purpose — that
-                  class carries its own wibble animation and is for the ASCII
-                  glyph face, so an icon inside it spins AND wobbles. */
-              }
-              <div
-                aria-hidden="true"
-                style={{ fontSize: "1.6rem", color: "var(--accent-ink)" }}
-              >
-                <i class="fa fa-asterisk fa-spin"></i>
+              <div class="export-loading-spinner" aria-hidden="true">
+                <i class="fa fa-spinner fa-spin"></i>
               </div>
-              <div class="empty-state-text">
-                Generating "{runningLabel.value}"…
+              <div class="export-loading-copy">
+                <strong>Drafting {runningLabel.value}…</strong>
+                <span>Pulling structure, topics, and takeaways together</span>
               </div>
             </div>
           )}
 
           {/* Error Display — warm rose wash, never alarm-red */}
           {error.value && (
-            <div class="export-note export-note--error mb-4" role="alert">
+            <div class="export-note export-note--error" role="alert">
               <i class="fa fa-circle-exclamation" aria-hidden="true"></i>
               <span>{error.value}</span>
             </div>
           )}
 
-          {
-            /* Format-mismatch hint — the model suggesting a better-fitting
-              format, presented as advice instead of a fake export */
-          }
+          {/* Format-mismatch hint */}
           {formatHint.value && (
-            <div class="export-note export-note--hint mb-4">
+            <div class="export-note export-note--hint">
               <i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i>
               <span>{formatHint.value}</span>
             </div>
@@ -909,121 +837,176 @@ export default function MarkdownMakerDrawer(
 
           {/* Fresh deck — one tap opens it in Slideomatic */}
           {deckUrl.value && (
-            <div class="mb-4 space-y-2">
+            <div class="space-y-2">
               <a
                 href={deckUrl.value}
                 target="_blank"
                 rel="noopener"
-                class="btn btn--accent w-full"
+                class="btn btn--primary w-full"
               >
                 <i class="fa fa-display" aria-hidden="true"></i>
-                <span>Open the deck</span>
+                <span>Open slide deck</span>
               </a>
               <ChonkyQrCard
                 url={deckUrl.value}
                 title="Scan to open deck on phone"
-                subtitle="Beam presentation directly to your device"
-                badge="SLIDEOMATIC PASS"
+                subtitle="Beam presentation directly to another screen"
+                badge="Slideomatic"
                 compact
               />
             </div>
           )}
 
-          {/* Markdown Preview */}
+          {/* Document Preview & Markdown Editor Studio */}
           {markdown.value && (
-            <div class="export-preview mb-4">
+            <div class="export-preview">
               <div class="export-preview-bar">
-                <span>Preview</span>
-                <div class="flex gap-2">
+                <div
+                  class="export-mode-tabs"
+                  role="tablist"
+                  aria-label="Export view mode"
+                >
                   <button
                     type="button"
-                    class="btn btn--ghost btn--compact btn--icon"
-                    onClick={copyToClipboard}
-                    data-tip="Copy to clipboard"
-                    aria-label="Copy to clipboard"
+                    role="tab"
+                    aria-selected={previewMode.value === "rendered"}
+                    class={`export-mode-tab ${
+                      previewMode.value === "rendered" ? "is-active" : ""
+                    }`}
+                    onClick={() => {
+                      previewMode.value = "rendered";
+                    }}
                   >
-                    <i class="fa fa-copy" aria-hidden="true"></i>
+                    <i class="fa fa-file-lines" aria-hidden="true"></i>
+                    <span>Preview</span>
                   </button>
                   <button
                     type="button"
-                    class="btn btn--ghost btn--compact btn--icon"
-                    onClick={downloadMarkdown}
-                    data-tip="Download .md"
-                    aria-label="Download as Markdown file"
+                    role="tab"
+                    aria-selected={previewMode.value === "raw"}
+                    class={`export-mode-tab ${
+                      previewMode.value === "raw" ? "is-active" : ""
+                    }`}
+                    onClick={() => {
+                      previewMode.value = "raw";
+                    }}
                   >
-                    <i class="fa fa-download" aria-hidden="true"></i>
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn--ghost btn--compact btn--icon"
-                    onClick={downloadPDF}
-                    data-tip="Download PDF"
-                    aria-label="Download as PDF"
-                  >
-                    <i class="fa fa-file-pdf" aria-hidden="true"></i>
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn--ghost btn--compact btn--icon"
-                    onClick={saveOutput}
-                    data-tip="Save snapshot"
-                    aria-label="Save snapshot"
-                  >
-                    <i class="fa fa-save" aria-hidden="true"></i>
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn--accent btn--compact flex items-center gap-1"
-                    onClick={() => resampleText(markdown.value)}
-                    data-tip="Resample into a new map"
-                    data-tip-align="right"
-                    aria-label="Resample as Map"
-                  >
-                    <i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i>
-                    <span>Resample</span>
+                    <i class="fa fa-pen" aria-hidden="true"></i>
+                    <span>Markdown</span>
                   </button>
                 </div>
+
+                {activeDraftId.value && (
+                  <span class="export-draft-pill">Saved draft</span>
+                )}
               </div>
+
+              {/* Explicit labeled action bar — zero mystery meat */}
+              <div class="export-actions-bar">
+                <button
+                  type="button"
+                  class="export-action-btn export-action-btn--primary"
+                  onClick={copyToClipboard}
+                >
+                  <i
+                    class={`fa ${justCopied.value ? "fa-check" : "fa-copy"}`}
+                    aria-hidden="true"
+                  >
+                  </i>
+                  <span>{justCopied.value ? "Copied!" : "Copy"}</span>
+                </button>
+                <button
+                  type="button"
+                  class="export-action-btn tooltip-btn"
+                  data-tip="Download Markdown file"
+                  onClick={downloadMarkdown}
+                >
+                  <i class="fa fa-download" aria-hidden="true"></i>
+                  <span>.md</span>
+                </button>
+                <button
+                  type="button"
+                  class="export-action-btn tooltip-btn"
+                  data-tip="Print or save as PDF"
+                  onClick={downloadPDF}
+                >
+                  <i class="fa fa-file-pdf" aria-hidden="true"></i>
+                  <span>PDF</span>
+                </button>
+                <button
+                  type="button"
+                  class="export-action-btn tooltip-btn"
+                  data-tip={activeDraftId.value
+                    ? "Update saved snapshot"
+                    : "Keep snapshot in this map"}
+                  onClick={saveOutput}
+                >
+                  <i class="fa fa-save" aria-hidden="true"></i>
+                  <span>{activeDraftId.value ? "Update" : "Save"}</span>
+                </button>
+                <button
+                  type="button"
+                  class="export-action-btn tooltip-btn"
+                  data-tip="Turn this export into a fresh map"
+                  data-tip-align="right"
+                  onClick={() => resampleText(markdown.value)}
+                >
+                  <i class="fa fa-wand-magic-sparkles" aria-hidden="true"></i>
+                  <span>Resample</span>
+                </button>
+              </div>
+
               <div class="export-preview-body">
-                {/* Editable — tweak the AI output before copying / saving. */}
-                <textarea
-                  value={markdown.value}
-                  onInput={(e) =>
-                    markdown.value = (e.target as HTMLTextAreaElement).value}
-                  spellcheck={false}
-                  aria-label="Generated markdown (editable)"
-                  class="export-textarea export-preview-editor"
-                />
+                {previewMode.value === "rendered"
+                  ? (
+                    <div
+                      class="export-rendered-sheet"
+                      dangerouslySetInnerHTML={{ __html: renderedPreviewHtml }}
+                    />
+                  )
+                  : (
+                    <textarea
+                      value={markdown.value}
+                      onInput={(e) =>
+                        markdown.value =
+                          (e.target as HTMLTextAreaElement).value}
+                      spellcheck={false}
+                      aria-label="Generated markdown (editable)"
+                      class="export-textarea export-preview-editor"
+                    />
+                  )}
               </div>
             </div>
           )}
 
-          {
-            /* First-open empty state — no preview, no snapshots, nothing in
-              flight. The bare format grid read as sparse/unfinished (Pablo,
-              2026-08-13); this names what the drawer DOES and where results
-              land, same empty-state grammar as the dashboard cards. */
-          }
+          {/* Warm inviting empty state when no export has run yet */}
           {!markdown.value && !loading.value &&
             !error.value &&
             savedOutputs.value.length === 0 && (
-            <div class="empty-state">
-              <div class="empty-state-face" aria-hidden="true">
-                ( • ᴗ • )
+            <div class="export-empty-card">
+              <div class="export-empty-icon" aria-hidden="true">
+                <i class="fa fa-file-lines"></i>
               </div>
-              <div class="empty-state-text">
-                Pick a format — exports stack up here as snapshots.
-              </div>
+              <h4>Turn this map into a finished artifact</h4>
+              <p>
+                Tap any format above to draft clean notes, summaries, or next
+                steps — ready to read, edit, copy, or print as PDF.
+              </p>
             </div>
           )}
 
           {/* Saved snapshots */}
           {savedOutputs.value.length > 0 && (
-            <div class="export-snaps pt-4 mt-4">
-              <h4 class="card-back-label export-section-label">
-                <i class="fa fa-box-archive" aria-hidden="true"></i>
-                Saved snapshots
-              </h4>
+            <div class="export-snaps pt-3">
+              <div class="export-snaps-header">
+                <span class="inline-flex items-center gap-1.5">
+                  <i class="fa fa-box-archive" aria-hidden="true"></i>
+                  <span>Saved snapshots</span>
+                </span>
+                <span class="card-header-count">
+                  {savedOutputs.value.length}
+                </span>
+              </div>
               <div class="space-y-2">
                 {savedOutputs.value.map((output) => {
                   const isActive = activeDraftId.value === output.id;
@@ -1032,23 +1015,49 @@ export default function MarkdownMakerDrawer(
                       key={output.id}
                       class={`export-snap ${isActive ? "is-active" : ""}`}
                     >
-                      <div class="flex justify-between items-start mb-2">
+                      <div class="flex justify-between items-start gap-2 mb-1.5">
                         <div class="flex-1 min-w-0">
                           <p class="export-snap-label truncate">
                             {output.title || output.prompt}
-                            {isActive ? " · editing" : ""}
+                            {isActive ? " · active" : ""}
                           </p>
                           <p class="export-snap-date">
                             {output.prompt} ·{" "}
-                            {new Date(output.created_at).toLocaleString()}
+                            {new Date(output.created_at).toLocaleDateString(
+                              undefined,
+                              {
+                                month: "short",
+                                day: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                              },
+                            )}
                           </p>
                         </div>
-                        <div class="flex gap-2 ml-2">
+                        <div class="flex items-center gap-1 shrink-0">
                           <button
                             type="button"
-                            class="btn btn--ghost btn--compact btn--icon"
+                            class="card-icon-btn tooltip-btn"
+                            onClick={() => loadDraft(output, "raw")}
+                            data-tip="Edit Markdown"
+                            aria-label="Edit snapshot Markdown"
+                          >
+                            <i class="fa fa-pen" aria-hidden="true"></i>
+                          </button>
+                          <button
+                            type="button"
+                            class="card-icon-btn tooltip-btn"
+                            onClick={() => copySavedOutput(output.content)}
+                            data-tip="Copy"
+                            aria-label="Copy snapshot"
+                          >
+                            <i class="fa fa-copy" aria-hidden="true"></i>
+                          </button>
+                          <button
+                            type="button"
+                            class="card-icon-btn tooltip-btn"
                             onClick={() => resampleText(output.content)}
-                            data-tip="Resample into a new map"
+                            data-tip="Resample into a fresh map"
                             aria-label="Resample snapshot"
                           >
                             <i
@@ -1059,42 +1068,26 @@ export default function MarkdownMakerDrawer(
                           </button>
                           <button
                             type="button"
-                            class="btn btn--ghost btn--compact btn--icon"
-                            onClick={() => loadDraft(output)}
-                            data-tip="Load to edit"
-                            aria-label="Load snapshot to edit"
-                          >
-                            <i class="fa fa-pen" aria-hidden="true"></i>
-                          </button>
-                          <button
-                            type="button"
-                            class="btn btn--ghost btn--compact btn--icon"
-                            onClick={() => copySavedOutput(output.content)}
-                            data-tip="Copy"
-                            aria-label="Copy snapshot"
-                          >
-                            <i class="fa fa-copy" aria-hidden="true"></i>
-                          </button>
-                          {/* Recessive delete — the undo toast is the safety */}
-                          <button
-                            type="button"
-                            class="btn btn--ghost btn--compact btn--icon"
+                            class="card-icon-btn card-icon-btn--quiet tooltip-btn"
                             onClick={() => deleteOutput(output.id)}
-                            data-tip="Delete (undoable)"
+                            data-tip="Remove snapshot"
                             data-tip-align="right"
-                            aria-label="Delete snapshot"
+                            aria-label="Remove snapshot"
                           >
-                            <i class="fa fa-trash" aria-hidden="true"></i>
+                            <i class="fa fa-trash-can" aria-hidden="true"></i>
                           </button>
                         </div>
                       </div>
                       <button
                         type="button"
-                        onClick={() => loadDraft(output)}
-                        class="export-snap-body line-clamp-3"
-                        aria-label="Load to edit"
+                        onClick={() => loadDraft(output, "rendered")}
+                        class="export-snap-body line-clamp-2"
+                        aria-label="Open snapshot preview"
                       >
-                        {output.content.substring(0, 150)}...
+                        {output.content.replace(/^#+\s*/gm, "").substring(
+                          0,
+                          160,
+                        )}
                       </button>
                     </div>
                   );
