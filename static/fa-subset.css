@@ -1,4 +1,4 @@
-/* Font Awesome Free 6.5.2 — self-hosted subset, 98 icons.
+/* Font Awesome Free 6.5.2 — self-hosted subset, 95 icons.
  * Generated, do not hand-edit: scratch/fa-subset.py rebuilds it.
  * Replaces the cdnjs stylesheet (103KB) + full solid font (156KB). Adding a
  * NEW fa-* icon to the app means re-running the generator, otherwise the
@@ -14,11 +14,10 @@
 .fa-spin{animation-name:fa-spin;animation-duration:2s;animation-iteration-count:infinite;animation-timing-function:linear}
 @keyframes fa-spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.fa-spin{animation-delay:-1ms;animation-duration:1ms;animation-iteration-count:1}}
-.fa-8::before{content:"\38"}
 .fa-align-left::before{content:"\f036"}
 .fa-arrow-down-wide-short::before{content:"\f160"}
 .fa-arrow-right::before{content:"\f061"}
-.fa-arrows-rotate::before{content:"\f021"}
+.fa-arrow-up-right-from-square::before{content:"\f08e"}
 .fa-at::before{content:"\40"}
 .fa-box-archive::before{content:"\f187"}
 .fa-broom::before{content:"\f51a"}
@@ -29,7 +28,7 @@
 .fa-check-circle::before{content:"\f058"}
 .fa-check-double::before{content:"\f560"}
 .fa-chevron-down::before{content:"\f078"}
-.fa-chevron-right::before{content:"\f054"}
+.fa-circle::before{content:"\f111"}
 .fa-circle-exclamation::before{content:"\f06a"}
 .fa-circle-question::before{content:"\f059"}
 .fa-clipboard-check::before{content:"\f46c"}
@@ -43,7 +42,6 @@
 .fa-diagram-project::before{content:"\f542"}
 .fa-dice-five::before{content:"\f523"}
 .fa-display::before{content:"\e163"}
-.fa-down-left-and-up-right-to-center::before{content:"\f422"}
 .fa-download::before{content:"\f019"}
 .fa-exclamation-circle::before{content:"\f06a"}
 .fa-exclamation-triangle::before{content:"\f071"}
@@ -65,8 +63,8 @@
 .fa-hourglass-half::before{content:"\f252"}
 .fa-image::before{content:"\f03e"}
 .fa-info-circle::before{content:"\f05a"}
-.fa-key::before{content:"\f084"}
 .fa-keyboard::before{content:"\f11c"}
+.fa-layer-group::before{content:"\f5fd"}
 .fa-leaf::before{content:"\f06c"}
 .fa-link::before{content:"\f0c1"}
 .fa-link-slash::before{content:"\f127"}
@@ -100,7 +98,6 @@
 .fa-stop::before{content:"\f04d"}
 .fa-times::before{content:"\f00d"}
 .fa-tower-broadcast::before{content:"\f519"}
-.fa-trash::before{content:"\f1f8"}
 .fa-trash-can::before{content:"\f2ed"}
 .fa-up-right-and-down-left-from-center::before{content:"\f424"}
 .fa-upload::before{content:"\f093"}

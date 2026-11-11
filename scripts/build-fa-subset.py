@@ -14,7 +14,13 @@ CSS_SRC = SCRATCH / "fa-all.css"
 # 1. every fa-* class the app actually references
 used = set()
 for path in APP.rglob("*"):
-    if path.is_dir() or "node_modules" in path.parts or path.suffix in {".css", ".md", ".lock"}:
+    if (
+        path.is_dir()
+        or ".git" in path.parts
+        or "node_modules" in path.parts
+        or "fa-venv" in path.parts
+        or path.suffix in {".css", ".md", ".lock"}
+    ):
         continue
     try:
         text = path.read_text(errors="ignore")

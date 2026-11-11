@@ -8,16 +8,20 @@ and `routes/_app.tsx` restores its variables before paint. Named themes in
 `core/theme/oklch.ts` and are swept by `core/tests/theme_contrast_test.ts` and
 `core/tests/random_theme_test.ts`.
 
-## Current visible contract (October 2026)
+## Current visible contract (November 2026)
 
 The page ground is a place: `.mapper-scene` uses the fixed warm
-`--surface-desk`, and the porch has its own fixed dawn and sky. A shuffle
+`--surface-desk`, and the porch has its own fixed dawn and sky. Choosing one of
+the 6 curated palettes in the **Palette Studio** (`Daybreak` default,
+`Bubblegum`, `Sky`, `Grape`, `Lime`, `Gold`) or rolling a fresh OKLCH shuffle
 changes the accent, its companion band, plates, and active controls. On the
-working board, every module header now wears a **30% wash of `--header-band`
-over `--surface-header`**; card paper, carbon borders, stamped module tabs, and
-speaker identity colors stay stable. This gives each roll a visible dashboard
-footprint without making every card a saturated slab. The generated
-`--gradient-bg` currently appears only in `/dev/colors`.
+working board, every card and module header wears a **30% wash of
+`--header-band` over `--surface-header`** with a unified `.card-header-icon`
+badge, sentence-case `Inter` heading, and `.card-header-count` pill; card paper,
+warm sepia borders, and speaker identity colors stay stable. This gives each
+palette or roll a visible dashboard footprint without making every card a
+saturated slab. The generated `--gradient-bg` currently appears only in
+`/dev/colors`.
 
 The July ground-journey and full-strength header-band descriptions below record
 earlier versions of the app. The rules above describe the current screen.
@@ -117,19 +121,15 @@ Ground hexes live in `themes.ts` cssVars (`--gradient-bg`, `--color-base*`)
 mirrored in the FOUC map. All grounds share the WARM_BG structure: two radial
 corner washes + a 168deg linear journey.
 
-### The airy floor (Aug 20, 2026)
+### Palette Studio & Airy Floor (Nov 2026)
 
-⚠️ **Named themes in `themes.ts` are NEVER SEEN, but they are NOT dead.**
-`ThemeSwitcher` auto-rolls a `SHUFFLE` theme on mount, so nobody looks at
-DAYBREAK et al., and tuning them changes nothing on screen. But `themes.ts` is
-still the CRASH-SAFE DEFAULT: `ThemeSystem`'s constructor resolves
-`this.currentTheme = defaultTheme || config.themes[0]` (`themeEngine.ts:46-50`),
-and `loadTheme()` falls back to it whenever a saved SHUFFLE payload has a stale
-`v`, malformed JSON, or a missing accent (`themeEngine.ts:130-159`). It is the
-only thing between a corrupt localStorage entry and an unthemed page, and it is
-the direct subject of 5 tests in `theme_contrast_test.ts`. **Do not delete it.**
-(Corrected Sept 12 2026 — the previous wording said "effectively DEAD", which
-contradicts line 6 of this same doc listing it as a load-bearing sync point.)
+**Named themes in `themes.ts` are first-class citizens again.** `ThemeSwitcher`
+defaults to `DAYBREAK` on a fresh browser (never overwriting a saved choice on
+mount) and exposes all 6 curated palettes (`Daybreak`, `Bubblegum`, `Sky`,
+`Grape`, `Lime`, `Gold`) inside the **Palette Studio** popover alongside the
+**"Roll fresh vibe"** OKLCH die. `themes.ts` also remains the crash-safe
+fallback whenever a saved `SHUFFLE` payload has a stale `v`, malformed JSON, or
+a missing accent (`themeEngine.ts`), and is swept by `theme_contrast_test.ts`.
 
 These ground knobs still feed the generated `--gradient-bg` and the dev color
 lab. They no longer paint the dashboard or porch scene:

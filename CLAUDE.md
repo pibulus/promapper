@@ -182,7 +182,7 @@ Deploy never bundles ONNX/transformers on the server:
   DndStudioIsland.tsx           # Bilingual D&D / TTRPG portal studio
   ForceDirectedGraph.tsx        # D3 graph renderer
   EmojimapViz.tsx               # Graph overlay wrapper
-  MarkdownMakerDrawer.tsx       # Export UI (8 formats + Slide-O-Matic HTML deck + Printable PDF)
+  MarkdownMakerDrawer.tsx       # Export Studio (Preview/Markdown tabs, 6 presets + Custom, Slide-O-Matic deck + PDF)
   MobileHistoryMenu.tsx         # Local conversation history (star/filter/backup)
 
 /components/                    # Shared presentational cards
@@ -236,7 +236,7 @@ truth:
 
 - `deno task check` passes (fmt + lint + typecheck; **run this, not just tests**
   — an Aug 19 session left `check` RED while `test` was green)
-- `deno task test` passes (437 tests, Sept 25 2026)
+- `deno task test` passes (496 tests, Nov 12 2026)
 - `deno task build` passes
 - OpenRouter text, markdown export, and a generated audio smoke test have worked
   locally with `google/gemini-2.5-flash-lite`

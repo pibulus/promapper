@@ -15,15 +15,14 @@ A module is:
   id: string; // kebab-case, stable forever (it's a storage key)
   name: string; // sentence case, warm, no jargon ("Notes", "Ask")
   tagline: string; // one line for the rack, in the app's voice
-  icon: string; // FontAwesome name without the fa- prefix
+  icon: string; // FULL FontAwesome class with fa- prefix ("fa-note-sticky") so scripts/build-fa-subset.py sees it
   size: "small" | "medium" | "tall"; // the DEFAULT — users cycle per card
   component: ComponentType; // an island, renders a .dashboard-card
 }
 ```
 
-Registered in `islands/modules/moduleRegistry.ts` — drop a file in
-`islands/modules/`, add one entry. Same seam as `vizRegistry` and the export
-formats.
+Registered in `utils/moduleRegistry.ts` — drop a file in `islands/modules/`, add
+one entry. Same seam as `vizRegistry` and the export formats.
 
 ## The rules
 
@@ -60,14 +59,28 @@ formats.
    cat) should be `small` — they exist to make leftover grid cells feel
    intentional.
 
-## Current rack
+## Current rack & Content-Aware Board Shelf (Nov 2026)
 
-| Module | Size   | What it does                                                                                      |
-| ------ | ------ | ------------------------------------------------------------------------------------------------- |
-| Notes  | small  | Scratch pad stored in the conversation JSON.                                                      |
-| Ask    | small  | Ask a question — answered from this conversation only.                                            |
-| Takes  | medium | Every recording kept — listen back + append receipts (reads recordingsDB, same rows as the dock). |
-| Sound  | small  | Radio + Tones as one dial: SomaFM/KPAB streams up top, WebAudio moods below the seam.             |
+| Module | Size   | Icon              | What it does                                                                                      |
+| ------ | ------ | ----------------- | ------------------------------------------------------------------------------------------------- |
+| Notes  | medium | `fa-note-sticky`  | Scratch pad stored in the conversation JSON.                                                      |
+| Ask    | medium | `fa-comment`      | Ask a question — answered from this conversation only.                                            |
+| Magpie | medium | `fa-gem`          | A shelf for shiny things — drop files, links, scraps.                                             |
+| Takes  | medium | `fa-record-vinyl` | Every recording kept — listen back + append receipts (reads recordingsDB, same rows as the dock). |
+| Sound  | small  | `fa-radio`        | Radio + Tones as one dial: SomaFM/KPAB streams up top, WebAudio moods below the seam.             |
+| Dice   | small  | `fa-dice-five`    | Polyhedral tabletop roller (d4–d100) for TTRPG sessions and quick tie-breakers.                   |
+
+**Content-aware board & shelf (`utils/boardLayout.ts` +
+`islands/ModuleRack.tsx`)**:
+
+- Empty core cards (`Transcript`, `Summary`, `Actions`, `Topic Map`) and
+  switched-off modules stay parked as 1-click `+ Card` chips on the full-width
+  **Add card** Board Shelf at the bottom of the dashboard (`hasCardContent` +
+  `resolveVisibleBoardIds`), while active runs expand adaptively
+  (`colSpanClassForCell`: full width for 1 card, 50/50 for 2 or 4 cards, thirds
+  for 3+ cards).
+- Modules with saved content auto-surface unless explicitly parked via their
+  header `✕` button (`dismissModule` in `@signals/moduleStore.ts`).
 
 Retired (July 19 compression): Radio + Tones merged into Sound; Canvas left the
 rack entirely — the whiteboard is now the node map's FLIP SIDE (the AI draws the
