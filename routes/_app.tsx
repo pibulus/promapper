@@ -13,7 +13,7 @@ export default function App({ Component, url }: PageProps) {
         <meta charset="utf-8" />
         <script
           defer
-          src="https://fleetcount.pibulus.deno.net/beacon.js"
+          src="https://hits.madebypablo.app/beacon.js"
           data-site="promapper.app"
         >
         </script>
